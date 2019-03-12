@@ -12,17 +12,18 @@ export class Content extends React.Component<ContentProps, any> {
     constructor(props, context) {
         super(props, context);
     }
+    // <p>{this.props.message}</p>
 
     render() {
         return (
             <div id='content-main'>
                 <div className='padding'>
-                    <p>{this.props.message}</p>
-                    <br />
-                    <h3>Try it out</h3>
-                    <br/>
                     <Button className='normal-button' buttonType={ButtonType.hero} onClick={this.props.click}>{this.props.buttonLabel}</Button>
                 </div>
+                    <br />
+		    <br />
+                    For more information, see <a href="https://excelint.org">excelint.org</a>.
+                    <br/>
             </div>
         );
     }

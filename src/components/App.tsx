@@ -40,6 +40,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		let values = usedRange.values;
 		let formulaRanges = usedRange.getSpecialCells(Excel.SpecialCellType.formulas);
 		formulaRanges.format.fill.color = "pink";
+		let numericRanges = usedRange.getSpecialCells(Excel.SpecialCellType.constants,
+		    Excel.SpecialCellValueType.numbers);
+		formulaRanges.format.fill.color = "pink";
+		numericRanges.format.fill.color = "yellow";
 		await context.sync();
                 console.log(`The range address was ${address}.`);
 		console.log(JSON.stringify(formulas, null, 4));
@@ -69,7 +73,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
         return (
             <div className='ms-welcome'>
-                <Header title='Welcome' />
+                <Header title='ExceLint' />
                 <Content message='Click the button below to reveal the deep structure of this spreadsheet.' buttonLabel='Reveal structure' click={this.setColor} />
             </div>
         );
