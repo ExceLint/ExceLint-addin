@@ -1,0 +1,1 @@
+//# sourceMappingURL=IPalette.js.map

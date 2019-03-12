@@ -1,0 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Utilities_1 = require("../../Utilities");
+var DocumentCardImage_base_1 = require("./DocumentCardImage.base");
+var DocumentCardImage_styles_1 = require("./DocumentCardImage.styles");
+exports.DocumentCardImage = Utilities_1.styled(DocumentCardImage_base_1.DocumentCardImageBase, DocumentCardImage_styles_1.getStyles, undefined, { scope: 'DocumentCardImage' });
+//# sourceMappingURL=DocumentCardImage.js.map

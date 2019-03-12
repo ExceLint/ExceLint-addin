@@ -1,0 +1,6 @@
+define(["require", "exports", "tslib", "@uifabric/foundation"], function (require, exports, tslib_1, foundation_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    tslib_1.__exportStar(foundation_1, exports);
+});
+//# sourceMappingURL=Foundation.js.map

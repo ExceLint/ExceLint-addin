@@ -1,0 +1,6 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
+var load_themed_styles_1 = require("@microsoft/load-themed-styles");
+load_themed_styles_1.loadStyles([]);
+//# sourceMappingURL=_focusBorder.scss.js.map

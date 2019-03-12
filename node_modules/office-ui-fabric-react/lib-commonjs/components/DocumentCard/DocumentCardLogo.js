@@ -1,0 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Utilities_1 = require("../../Utilities");
+var DocumentCardLogo_base_1 = require("./DocumentCardLogo.base");
+var DocumentCardLogo_styles_1 = require("./DocumentCardLogo.styles");
+exports.DocumentCardLogo = Utilities_1.styled(DocumentCardLogo_base_1.DocumentCardLogoBase, DocumentCardLogo_styles_1.getStyles, undefined, { scope: 'DocumentCardLogo' });
+//# sourceMappingURL=DocumentCardLogo.js.map

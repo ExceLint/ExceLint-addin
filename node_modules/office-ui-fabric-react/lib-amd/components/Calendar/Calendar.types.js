@@ -1,0 +1,8 @@
+define(["require", "exports", "../../utilities/dateValues/DateValues"], function (require, exports, DateValues_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DayOfWeek = DateValues_1.DayOfWeek;
+    exports.FirstWeekOfYear = DateValues_1.FirstWeekOfYear;
+    exports.DateRangeType = DateValues_1.DateRangeType;
+});
+//# sourceMappingURL=Calendar.types.js.map

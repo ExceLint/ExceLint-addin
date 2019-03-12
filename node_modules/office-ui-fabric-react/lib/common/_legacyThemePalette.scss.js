@@ -1,0 +1,4 @@
+/* tslint:disable */
+import { loadStyles } from '@microsoft/load-themed-styles';
+loadStyles([]);
+//# sourceMappingURL=_legacyThemePalette.scss.js.map

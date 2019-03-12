@@ -1,0 +1,40 @@
+define(["require", "exports", "tslib", "react", "office-ui-fabric-react/lib/Button", "office-ui-fabric-react/lib/Callout", "office-ui-fabric-react/lib/CommandBar", "office-ui-fabric-react/lib/Utilities", "./CalloutExample.scss"], function (require, exports, tslib_1, React, Button_1, Callout_1, CommandBar_1, Utilities_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var CalloutNestedExample = /** @class */ (function (_super) {
+        tslib_1.__extends(CalloutNestedExample, _super);
+        function CalloutNestedExample() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.state = {
+                isCalloutVisible: false
+            };
+            // Use getId() to ensure that the callout title ID is unique on the page.
+            // (It's also okay to use a plain string without getId() and manually ensure its uniqueness.)
+            _this._titleId = Utilities_1.getId('callout-label');
+            _this._onDismiss = function () {
+                _this.setState({
+                    isCalloutVisible: !_this.state.isCalloutVisible
+                });
+            };
+            return _this;
+        }
+        CalloutNestedExample.prototype.render = function () {
+            var _this = this;
+            var isCalloutVisible = this.state.isCalloutVisible;
+            return (React.createElement("div", { className: "ms-CalloutExample" },
+                React.createElement("div", { className: "ms-CalloutBasicExample-buttonArea", ref: function (menuButton) { return (_this._menuButtonElement = menuButton); } },
+                    React.createElement(Button_1.DefaultButton, { onClick: this._onDismiss, text: isCalloutVisible ? 'Hide callout' : 'Show callout' })),
+                isCalloutVisible ? (React.createElement("div", null,
+                    React.createElement(Callout_1.Callout, { role: "alertdialog", ariaLabelledBy: this._titleId, className: "ms-CalloutExample-callout", gapSpace: 0, target: this._menuButtonElement, onDismiss: this._onDismiss, setInitialFocus: true },
+                        React.createElement("div", { className: "ms-CalloutExample-header" },
+                            React.createElement("p", { className: "ms-CalloutExample-title", id: this._titleId }, "Callout title here")),
+                        React.createElement("div", { className: "ms-CalloutExample-inner" },
+                            React.createElement("div", { className: "ms-CalloutExample-content" },
+                                React.createElement("p", { className: "ms-CalloutExample-subText" }, "Message body is optional. If help documentation is available, consider adding a link to learn more at the bottom."))),
+                        React.createElement(CommandBar_1.CommandBar, { items: this.props.items })))) : null));
+        };
+        return CalloutNestedExample;
+    }(React.Component));
+    exports.CalloutNestedExample = CalloutNestedExample;
+});
+//# sourceMappingURL=Callout.Nested.Example.js.map

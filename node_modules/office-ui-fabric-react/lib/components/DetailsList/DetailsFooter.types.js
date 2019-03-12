@@ -1,0 +1,1 @@
+//# sourceMappingURL=DetailsFooter.types.js.map

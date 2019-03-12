@@ -1,0 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Utilities_1 = require("../../../Utilities");
+var ColorRectangle_base_1 = require("./ColorRectangle.base");
+var ColorRectangle_styles_1 = require("./ColorRectangle.styles");
+exports.ColorRectangle = Utilities_1.styled(ColorRectangle_base_1.ColorRectangleBase, ColorRectangle_styles_1.getStyles, undefined, { scope: 'ColorRectangle' });
+//# sourceMappingURL=ColorRectangle.js.map
