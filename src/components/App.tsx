@@ -25,11 +25,12 @@ export default class App extends React.Component<AppProps, AppState> {
             await Excel.run(async context => {
 	    	let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 		let usedRange = currentWorksheet.getUsedRange();
-                // const range = context.workbook.getSelectedRange();
-                //usedRange.load('address');
-                //usedRange.load('values');
+		let everythingRange = currentWorksheet.getRange();
+		await context.sync();
+		// Clear all formatting. Really we want to just clear colors but fine for now (FIXME later).
+		everythingRange.clear(Excel.ClearApplyTo.formats);
+		// Now get the addresses, the formulas, and the values.
                 usedRange.load('address');
-                //range.format.fill.color = 'blue'; // 'green';
 		await context.sync();
 		let address = usedRange.address;
                 usedRange.load('formulas'); // note that real formulas start with "="
@@ -38,10 +39,13 @@ export default class App extends React.Component<AppProps, AppState> {
                 usedRange.load('values');
 		await context.sync();
 		let values = usedRange.values;
+		// Now we can get the formula ranges (all cells with formulas),
+		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCells(Excel.SpecialCellType.formulas);
-		formulaRanges.format.fill.color = "pink";
 		let numericRanges = usedRange.getSpecialCells(Excel.SpecialCellType.constants,
 		    Excel.SpecialCellValueType.numbers);
+		await context.sync();
+		// For fun, make all formulas pink and all numbers yellow.
 		formulaRanges.format.fill.color = "pink";
 		numericRanges.format.fill.color = "yellow";
 		await context.sync();
