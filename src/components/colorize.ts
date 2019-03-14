@@ -1,7 +1,9 @@
 export class Colorize {
 
     // Matchers for all kinds of Excel expressions.
-    private static range_pair = new RegExp('(\\$?[A-Z]\\$?\\d+):(\\$?[A-Z]\\$?\\d+)', 'g');
+    private static general_dep = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
+    private static single_dep = new RegExp('('+Colorize.general_dep+')');
+    private static range_pair = new RegExp('('+Colorize.general_dep+'):('+Colorize.general_dep+')', 'g');
     private static cell_both_relative = new RegExp('^[^\\$]?([A-Z]+)(\\d+)');
     private static cell_col_absolute = new RegExp('^\\$([A-Z]+)[^\\$]?(\\d+)');
     private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
@@ -10,7 +12,7 @@ export class Colorize {
     
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     public static column_name_to_index(name: string) : number {
-	if (name.length === 1) { // overwhelming common case
+	if (name.length === 1) { // optimizing for the overwhelmingly common case
 	    return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
 	}
 	let value = 0;
@@ -78,6 +80,23 @@ export class Colorize {
 		last_cell = found_pair[2];
 		console.log(last_cell);
 		console.log(Colorize.cell_dependency(last_cell, origin_col, origin_row));
+		// Wipe out the matched contents of range.
+		let newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
+		range = newRange;
+	    }
+	}
+
+	// Now look for singletons.
+	let singleton = null;
+	while (singleton = Colorize.single_dep.exec(range)) {
+	    if (singleton) {
+		//	    console.log(found_pair);
+		first_cell = singleton[1];
+		console.log(first_cell);
+		console.log(Colorize.cell_dependency(first_cell, origin_col, origin_row));
+		// Wipe out the matched contents of range.
+		let newRange = range.replace(singleton[0], '_'.repeat(singleton[0].length));
+		range = newRange;
 	    }
 	}
 
@@ -85,5 +104,5 @@ export class Colorize {
 
 }
 
-//Colorize.dependencies('A1:B$12,$A12:$B$14', 10, 10);
+Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10);
 
