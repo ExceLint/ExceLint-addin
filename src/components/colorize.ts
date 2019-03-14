@@ -64,22 +64,45 @@ export class Colorize {
     }
 
 
-    public static dependencies(range: string, origin_col: number, origin_row: number) : void {
+    public static dependencies(range: string, origin_col: number, origin_row: number) : Array<number> {
 
-	let first_cell = null;
-	let last_cell = null;
+	let base_vector = [0, 0];
+	
 	let found_pair = null;
-
+	
 	// First, get all the range pairs out.
 	while (found_pair = Colorize.range_pair.exec(range)) {
 	    if (found_pair) {
 		//	    console.log(found_pair);
-		first_cell = found_pair[1];
+		let first_cell = found_pair[1];
 		console.log(first_cell);
-		console.log(Colorize.cell_dependency(first_cell, origin_col, origin_row));
-		last_cell = found_pair[2];
+		let first_vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
+		let last_cell = found_pair[2];
 		console.log(last_cell);
-		console.log(Colorize.cell_dependency(last_cell, origin_col, origin_row));
+		let last_vec = Colorize.cell_dependency(last_cell, origin_col, origin_row);
+
+		// First_vec is the upper-left hand side of a rectangle.
+		// Last_vec is the lower-right hand side of a rectangle.
+		// Compute the appropriate vectors to be added.
+
+		// e.g., [3, 2] --> [5, 5] ==
+		//          [3, 2], [3, 3], [3, 4], [3, 5]
+		//          [4, 2], [4, 3], [4, 4], [4, 5]
+		//          [5, 2], [5, 3], [5, 4], [5, 5]
+		// 
+		// vector to be added is [4 * (3 + 4 + 5), 3 * (2 + 3 + 4 + 5) ]
+		//  = [48, 42]
+
+		let sum_x = 0;
+		let sum_y = 0;
+		let width = last_vec[1] - first_vec[1] + 1;   // 4
+		sum_x = width * ((last_vec[0]*(last_vec[0]+1))/2 - ((first_vec[0]-1)*((first_vec[0]-1)+1))/2);
+		let length = last_vec[0] - first_vec[0] + 1;   // 3
+		sum_y = length * ((last_vec[1]*(last_vec[1]+1))/2 - ((first_vec[1]-1)*((first_vec[1]-1)+1))/2);
+
+		base_vector[0] += sum_x;
+		base_vector[1] += sum_y;
+		
 		// Wipe out the matched contents of range.
 		let newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
 		range = newRange;
@@ -91,18 +114,23 @@ export class Colorize {
 	while (singleton = Colorize.single_dep.exec(range)) {
 	    if (singleton) {
 		//	    console.log(found_pair);
-		first_cell = singleton[1];
+		let first_cell = singleton[1];
 		console.log(first_cell);
-		console.log(Colorize.cell_dependency(first_cell, origin_col, origin_row));
+		let vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
+		base_vector[0] += vec[0];
+		base_vector[1] += vec[1];
 		// Wipe out the matched contents of range.
 		let newRange = range.replace(singleton[0], '_'.repeat(singleton[0].length));
 		range = newRange;
 	    }
 	}
 
+	return base_vector;
+
     }
 
 }
 
-Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10);
+console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
+console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
 
