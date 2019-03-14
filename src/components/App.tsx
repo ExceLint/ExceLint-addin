@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Header } from './Header';
 import { Content } from './Content';
 import Progress from './Progress';
+import { Colorize } from './colorize';
 
 import * as OfficeHelpers from '@microsoft/office-js-helpers';
 
@@ -45,6 +46,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		formulaRanges.format.fill.color = "pink";
 		numericRanges.format.fill.color = "yellow";
 		await context.sync();
+		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
                 console.log(`The range address was ${address}.`);
 //		console.log(`The fudge potato was ${columnIndex}.`);
 		console.log(JSON.stringify(formulas, null, 4));
