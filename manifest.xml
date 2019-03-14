@@ -131,7 +131,7 @@
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
         <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="ExceLint" />
-        <bt:String id="Contoso.Group1Label" DefaultValue="" />
+        <bt:String id="Contoso.Group1Label" DefaultValue="Insights" />
         <bt:String id="Contoso.GetStarted.Title" DefaultValue="Light it up." />
       </bt:ShortStrings>
       <!-- LongStrings max characters==250. -->
