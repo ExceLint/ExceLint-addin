@@ -2,8 +2,8 @@ export class Colorize {
 
     // Matchers for all kinds of Excel expressions.
     private static general_re = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
-    private static sheet_re = '[^\\!]+\\!';
-    private static sheet_plus_range = new RegExp('('+Colorize.sheet_re+')('+Colorize.general_re+'):('+Colorize.general_re+')');
+    private static sheet_re = '[^\\!]+';
+    private static sheet_plus_range = new RegExp('('+Colorize.sheet_re+')\\!('+Colorize.general_re+'):('+Colorize.general_re+')');
     private static single_dep = new RegExp('('+Colorize.general_re+')');
     private static range_pair = new RegExp('('+Colorize.general_re+'):('+Colorize.general_re+')', 'g');
     private static cell_both_relative = new RegExp('^[^\\$]?([A-Z]+)(\\d+)');
@@ -13,6 +13,34 @@ export class Colorize {
 
     private static color_list = ["pink", "blue", "yellow", "green", "skyblue" ]
 
+    public static get_color(hashval: number) : string {
+	return Colorize.color_list[hashval % Colorize.color_list.length];
+    }
+
+    public static process_formulas(formulas: Array<Array<string>>, origin_col : number, origin_row : number) : Array<string> {
+	let output = [];
+	for (let i = 0; i < formulas.length; i++) {
+	    let row = formulas[i];
+	    for (let j = 0; j < row.length; j++) {
+		//	console.log("checking "+row[j]);
+		//	console.log("char 0 = " + row[j][0]);
+		if ((row[j].length > 0) && (row[j][0] === "=")) {
+//		    console.log("FOUND ONE formulas["+i+","+j+"] = " + row[j]);
+		    let vec = Colorize.dependencies(row[j], j + origin_col, i + origin_row);
+		    //console.log(vec);
+		    let hash =Colorize.hash_vector(vec);
+		    //console.log(hash);
+		    let color = Colorize.get_color(hash);
+		    //console.log(color);
+		    let dict = { "format" : { "fill" : { "color" : color } } };
+		    output.push((j + origin_col) +  "," + (i + origin_row) + JSON.stringify(dict));
+		}
+	    }
+	}
+	return output;
+    }
+    
+    
     private static hash(str: string) : number {
 	// From https://github.com/darkskyapp/string-hash
 	var hash = 5381,
@@ -77,7 +105,7 @@ export class Colorize {
     public static cell_dependency(cell: string, origin_col: number, origin_row: number) : Array<number> {
 	let r = Colorize.cell_both_relative.exec(cell);
 	if (r) {
-	    console.log("both_relative");
+//	    console.log("both_relative");
 	    let col = Colorize.column_name_to_index(r[1]);
 	    let row = parseInt(r[2]);
 	    return [col - origin_col, row - origin_row];
@@ -85,7 +113,7 @@ export class Colorize {
 
 	r = Colorize.cell_col_absolute.exec(cell);
 	if (r) {
-	    console.log("col_absolute");
+//	    console.log("col_absolute");
 	    let col = Colorize.column_name_to_index(r[1]);
 	    let row = parseInt(r[2]);
 	    return [col, row - origin_row];
@@ -93,7 +121,7 @@ export class Colorize {
 
 	r = Colorize.cell_row_absolute.exec(cell);
 	if (r) {
-	    console.log("row_absolute");
+//	    console.log("row_absolute");
 	    let col = Colorize.column_name_to_index(r[1]);
 	    let row = parseInt(r[2]);
 	    return [col - origin_col, row];
@@ -101,7 +129,7 @@ export class Colorize {
 	
 	r = Colorize.cell_both_absolute.exec(cell);
 	if (r) {
-	    console.log("both_absolute");
+//	    console.log("both_absolute");
 	    let col = Colorize.column_name_to_index(r[1]);
 	    let row = parseInt(r[2]);
 	    return [col, row];
@@ -117,16 +145,18 @@ export class Colorize {
 	let base_vector = [0, 0];
 	
 	let found_pair = null;
+
+	/// FIX ME - should we count the same range multiple times? Or just once?
 	
 	// First, get all the range pairs out.
 	while (found_pair = Colorize.range_pair.exec(range)) {
 	    if (found_pair) {
 		//	    console.log(found_pair);
 		let first_cell = found_pair[1];
-		console.log(first_cell);
+//		console.log(first_cell);
 		let first_vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
 		let last_cell = found_pair[2];
-		console.log(last_cell);
+//		console.log(last_cell);
 		let last_vec = Colorize.cell_dependency(last_cell, origin_col, origin_row);
 
 		// First_vec is the upper-left hand side of a rectangle.
@@ -163,7 +193,7 @@ export class Colorize {
 	    if (singleton) {
 		//	    console.log(found_pair);
 		let first_cell = singleton[1];
-		console.log(first_cell);
+//		console.log(first_cell);
 		let vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
 		base_vector[0] += vec[0];
 		base_vector[1] += vec[1];

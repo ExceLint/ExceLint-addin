@@ -50,18 +50,19 @@ export default class App extends React.Component<AppProps, AppState> {
 		// For fun, make all formulas pink and all numbers yellow.
 		formulaRanges.format.fill.color = "pink";
 		numericRanges.format.fill.color = "yellow";
-		console.log(JSON.stringify(address, null, 4));
-		console.log(JSON.stringify(formulas, null, 4));
-		console.log(Colorize.extract_sheet_address('Monkey!A1:D34'));
+		//console.log(JSON.stringify(address, null, 4));
+		//console.log(JSON.stringify(formulas, null, 4));
+		console.log(JSON.stringify(formulaRanges, null, 4));
+//		console.log(Colorize.extract_sheet_address(address));
 		await context.sync();
 		
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log("Time elapsed (ms) = " + timeElapsedMS);
-		
+		console.log(Colorize.process_formulas(formulas, 0, 0));
 //		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
-		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);
-                console.log(`The range address was ${address}.`);
+//		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);
+//                console.log(`The range address was ${address}.`);
 //		console.log(`The fudge potato was ${columnIndex}.`);
 //		console.log(JSON.stringify(formulas, null, 4));
 //		console.log(JSON.stringify(values, null, 4));
