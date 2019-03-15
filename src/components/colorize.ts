@@ -1,9 +1,11 @@
 export class Colorize {
 
     // Matchers for all kinds of Excel expressions.
-    private static general_dep = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
-    private static single_dep = new RegExp('('+Colorize.general_dep+')');
-    private static range_pair = new RegExp('('+Colorize.general_dep+'):('+Colorize.general_dep+')', 'g');
+    private static general_re = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
+    private static sheet_re = '[^\\!]+\\!';
+    private static sheet_plus_range = new RegExp('('+Colorize.sheet_re+')('+Colorize.general_re+'):('+Colorize.general_re+')');
+    private static single_dep = new RegExp('('+Colorize.general_re+')');
+    private static range_pair = new RegExp('('+Colorize.general_re+'):('+Colorize.general_re+')', 'g');
     private static cell_both_relative = new RegExp('^[^\\$]?([A-Z]+)(\\d+)');
     private static cell_col_absolute = new RegExp('^\\$([A-Z]+)[^\\$]?(\\d+)');
     private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
@@ -175,6 +177,14 @@ export class Colorize {
 
     }
 
+    public static extract_sheet_address(str: string) : Array<string> {
+	let matched = Colorize.sheet_plus_range.exec(str);
+	if (matched) {
+	    return [matched[1], matched[2], matched[3]];
+	}
+	return ["", "", ""];
+    }
+    
     public static hash_vector(vec: Array<number>) : number {
 	return Colorize.hash(JSON.stringify(vec));
     }
@@ -182,7 +192,7 @@ export class Colorize {
 
 }
 
-console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
-console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
-console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$5', 10, 10)));
-console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$6', 10, 10)));
+//console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
+//console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
+//console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$5', 10, 10)));
+//console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$6', 10, 10)));

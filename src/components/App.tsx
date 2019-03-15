@@ -24,6 +24,8 @@ export default class App extends React.Component<AppProps, AppState> {
     setColor = async () => {
         try {
             await Excel.run(async context => {
+		let startTime = performance.now();
+		
 	    	let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 		let usedRange = currentWorksheet.getUsedRange();
 		let everythingRange = currentWorksheet.getRange();
@@ -32,25 +34,37 @@ export default class App extends React.Component<AppProps, AppState> {
                 usedRange.load(['address', 'formulas', 'values']);
 		await context.sync();
 		let address = usedRange.address;
-		let formulas = usedRange.formulas;
-		let values = usedRange.values;
+//////		let values = usedRange.values;
+		
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCells(Excel.SpecialCellType.formulas);
 		let numericRanges = usedRange.getSpecialCells(Excel.SpecialCellType.constants,
-		    Excel.SpecialCellValueType.numbers);
+							      Excel.SpecialCellValueType.numbers);
+		let formulas = usedRange.formulas;
+//		let formulaAddresses = formulaRanges.address;
 		await context.sync();
+		
 		// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
 		everythingRange.clear(Excel.ClearApplyTo.formats);
 		// For fun, make all formulas pink and all numbers yellow.
 		formulaRanges.format.fill.color = "pink";
 		numericRanges.format.fill.color = "yellow";
+		console.log(JSON.stringify(address, null, 4));
+		console.log(JSON.stringify(formulas, null, 4));
+		console.log(Colorize.extract_sheet_address('Monkey!A1:D34'));
 		await context.sync();
-		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
+		
+		let endTime = performance.now();
+		let timeElapsedMS = endTime - startTime;
+		console.log("Time elapsed (ms) = " + timeElapsedMS);
+		
+//		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
+		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);
                 console.log(`The range address was ${address}.`);
 //		console.log(`The fudge potato was ${columnIndex}.`);
-		console.log(JSON.stringify(formulas, null, 4));
-		console.log(JSON.stringify(values, null, 4));
+//		console.log(JSON.stringify(formulas, null, 4));
+//		console.log(JSON.stringify(values, null, 4));
             });
         } catch (error) {
             OfficeHelpers.UI.notify(error);
