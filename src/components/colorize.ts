@@ -9,6 +9,52 @@ export class Colorize {
     private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('^\\$([A-Z]+)\\$(\\d+)');
 
+    private static color_list = ["pink", "blue", "yellow", "green", "skyblue" ]
+
+    private static hash(str: string) : number {
+	// From https://github.com/darkskyapp/string-hash
+	var hash = 5381,
+	i = str.length;
+	
+	while(i) {
+	    hash = (hash * 33) ^ str.charCodeAt(--i);
+	}
+
+	/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+	 * integers. Since we want the results to be always positive, convert the
+	 * signed int to an unsigned by doing an unsigned bitshift. */
+	return hash >>> 0;
+    }
+    
+    private static rgbFromHSV(h,s,v) : Array<number> {
+	// From https://gist.github.com/mjackson/5311256#gistcomment-2789005
+	/**
+	 * I: An array of three elements hue (h) ∈ [0, 360], and saturation (s) and value (v) which are ∈ [0, 1]
+	 * O: An array of red (r), green (g), blue (b), all ∈ [0, 255]
+	 * Derived from https://en.wikipedia.org/wiki/HSL_and_HSV
+	 * This stackexchange was the clearest derivation I found to reimplement https://cs.stackexchange.com/questions/64549/convert-hsv-to-rgb-colors
+	 */
+
+	let hprime = h / 60;
+	const c = v * s;
+	const x = c * (1 - Math.abs(hprime % 2 - 1)); 
+	const m = v - c;
+	let r, g, b;
+	if (!hprime) {r = 0; g = 0; b = 0; }
+	if (hprime >= 0 && hprime < 1) { r = c; g = x; b = 0}
+	if (hprime >= 1 && hprime < 2) { r = x; g = c; b = 0}
+	if (hprime >= 2 && hprime < 3) { r = 0; g = c; b = x}
+	if (hprime >= 3 && hprime < 4) { r = 0; g = x; b = c}
+	if (hprime >= 4 && hprime < 5) { r = x; g = 0; b = c}
+	if (hprime >= 5 && hprime < 6) { r = c; g = 0; b = x}
+	
+	r = Math.round( (r + m)* 255);
+	g = Math.round( (g + m)* 255);
+	b = Math.round( (b + m)* 255);
+
+	return [r, g, b]
+    }
+    
     
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     public static column_name_to_index(name: string) : number {
@@ -129,8 +175,14 @@ export class Colorize {
 
     }
 
+    public static hash_vector(vec: Array<number>) : number {
+	return Colorize.hash(JSON.stringify(vec));
+    }
+    
+
 }
 
 console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
 console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
-
+console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$5', 10, 10)));
+console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$6', 10, 10)));
