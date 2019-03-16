@@ -65,6 +65,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log("Time elapsed (ms) = " + timeElapsedMS);
+		console.log(Colorize.dependencies('$G8', 12, 9));
+		console.log(Colorize.dependencies('$G9', 12, 10));
+		console.log(Colorize.dependencies('$G10', 12, 11));
 		//		console.log(Colorize.process_formulas(formulas, 0, 0)); // FIXME 0, 0 thang
 //		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
 //		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);

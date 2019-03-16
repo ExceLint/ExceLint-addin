@@ -7,7 +7,7 @@ export class Colorize {
     private static single_dep = new RegExp('('+Colorize.general_re+')');
     private static range_pair = new RegExp('('+Colorize.general_re+'):('+Colorize.general_re+')', 'g');
     private static cell_both_relative = new RegExp('^[^\\$]?([A-Z]+)(\\d+)');
-    private static cell_col_absolute = new RegExp('^\\$([A-Z]+)[^\\$]?(\\d+)');
+    private static cell_col_absolute = new RegExp('^\\$([A-Z]+)[^\\$\\d]?(\\d+)');
     private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('^\\$([A-Z]+)\\$(\\d+)');
 
@@ -17,8 +17,15 @@ export class Colorize {
 	return Colorize.color_list[hashval % Colorize.color_list.length];
     }
 
+/*
+    private static transpose(array) {
+	array[0].map((col, i) => array.map(row => row[i]));
+    }
+*/
+    
     public static process_formulas(formulas: Array<Array<string>>, origin_col : number, origin_row : number) : Array<string> {
 	let output = [];
+	// Build up all of the columns of colors.
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
@@ -34,14 +41,16 @@ export class Colorize {
 		    //console.log(color);
 		    //		    let dict = { "format" : { "fill" : { "color" : color } } };
 		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
+		    //		    output.push([i, j, color]);
 		    output.push([cell, color]);
 		}
 	    }
 	}
+	
 	return output;
     }
-    
-    
+
+
     private static hash(str: string) : number {
 	// From https://github.com/darkskyapp/string-hash
 	var hash = 5381,
@@ -122,9 +131,10 @@ export class Colorize {
 
 	r = Colorize.cell_col_absolute.exec(cell);
 	if (r) {
-//	    console.log("col_absolute");
+	    console.log(JSON.stringify(r));
 	    let col = Colorize.column_name_to_index(r[1]);
 	    let row = parseInt(r[2]);
+	    console.log("absolute col: " + col + ", row: " + row);
 	    return [col, row - origin_row];
 	}
 
@@ -234,4 +244,3 @@ export class Colorize {
 //console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
 //console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
 //console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$5', 10, 10)));
-//console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$6', 10, 10)));
