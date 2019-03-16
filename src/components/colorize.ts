@@ -32,8 +32,9 @@ export class Colorize {
 		    //console.log(hash);
 		    let color = Colorize.get_color(hash);
 		    //console.log(color);
-		    let dict = { "format" : { "fill" : { "color" : color } } };
-		    output.push((j + origin_col) +  "," + (i + origin_row) + JSON.stringify(dict));
+		    //		    let dict = { "format" : { "fill" : { "color" : color } } };
+		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
+		    output.push([cell, color]);
 		}
 	    }
 	}
@@ -100,6 +101,14 @@ export class Colorize {
 	return value;
     }
 
+    public static column_index_to_name(index: number) : string {
+	let str = "";
+	while (index > 0) {
+	    str += String.fromCharCode((index - 1) % 26 + 65); // 65 = 'A'
+	    index = Math.floor(index / 26);
+	}
+	return str.split("").reverse().join("");
+    }
 
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number) : Array<number> {

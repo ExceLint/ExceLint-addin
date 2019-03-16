@@ -48,21 +48,27 @@ export default class App extends React.Component<AppProps, AppState> {
 		// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
 		everythingRange.clear(Excel.ClearApplyTo.formats);
 		// For fun, make all formulas pink and all numbers yellow.
-		formulaRanges.format.fill.color = "pink";
+		//formulaRanges.format.fill.color = "pink";
 		numericRanges.format.fill.color = "yellow";
 		//console.log(JSON.stringify(address, null, 4));
 		//console.log(JSON.stringify(formulas, null, 4));
 		console.log(JSON.stringify(formulaRanges, null, 4));
-//		console.log(Colorize.extract_sheet_address(address));
+		//		console.log(Colorize.extract_sheet_address(address));
+		
+		// FIXME 0,0
+		for (let f of Colorize.process_formulas(formulas, 0, 0)) {
+		    let range = currentWorksheet.getRange(f[0]+":"+f[0]);
+		    range.format.fill.color = f[1];
+		}
 		await context.sync();
 		
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log("Time elapsed (ms) = " + timeElapsedMS);
-		console.log(Colorize.process_formulas(formulas, 0, 0));
+		//		console.log(Colorize.process_formulas(formulas, 0, 0)); // FIXME 0, 0 thang
 //		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
 //		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);
-//                console.log(`The range address was ${address}.`);
+                console.log(`The range address was ${address}.`);
 //		console.log(`The fudge potato was ${columnIndex}.`);
 //		console.log(JSON.stringify(formulas, null, 4));
 //		console.log(JSON.stringify(values, null, 4));
