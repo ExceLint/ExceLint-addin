@@ -23,8 +23,8 @@ export class Colorize {
     }
 */
     
-    public static process_formulas(formulas: Array<Array<string>>, origin_col : number, origin_row : number) : Array<string> {
-	let output = [];
+    public static process_formulas(formulas: Array<Array<string>>, origin_col : number, origin_row : number) : Array<[[number, number], string]> {
+	let output : Array<[[number, number], string]> = [];
 	// Build up all of the columns of colors.
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
@@ -40,9 +40,9 @@ export class Colorize {
 		    let color = Colorize.get_color(hash);
 		    //console.log(color);
 		    //		    let dict = { "format" : { "fill" : { "color" : color } } };
-		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
+//		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
 		    //		    output.push([i, j, color]);
-		    output.push([cell, color]);
+		    output.push([[j + origin_col + 1, i + origin_row + 1], color]);
 		}
 	    }
 	}
@@ -131,10 +131,10 @@ export class Colorize {
 
 	r = Colorize.cell_col_absolute.exec(cell);
 	if (r) {
-	    console.log(JSON.stringify(r));
+//	    console.log(JSON.stringify(r));
 	    let col = Colorize.column_name_to_index(r[1]);
 	    let row = parseInt(r[2]);
-	    console.log("absolute col: " + col + ", row: " + row);
+//	    console.log("absolute col: " + col + ", row: " + row);
 	    return [col, row - origin_row];
 	}
 

@@ -49,7 +49,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		everythingRange.clear(Excel.ClearApplyTo.formats);
 		// For fun, make all formulas pink and all numbers yellow.
 		//formulaRanges.format.fill.color = "pink";
-		numericRanges.format.fill.color = "yellow";
+		numericRanges.format.fill.color = "lightyellow";
 		//console.log(JSON.stringify(address, null, 4));
 		//console.log(JSON.stringify(formulas, null, 4));
 		console.log(JSON.stringify(formulaRanges, null, 4));
@@ -57,9 +57,18 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// FIXME 0,0
 		for (let f of Colorize.process_formulas(formulas, 0, 0)) {
-		    let range = currentWorksheet.getRange(f[0]+":"+f[0]);
-		    range.format.fill.color = f[1];
+		    let cell = currentWorksheet.getCell(f[0][1], f[0][0]);
+//		    let range = currentWorksheet.getRange(f[0]+":"+f[0]);
+		    cell.format.fill.color = f[1];
 		}
+
+		
+/*
+		{
+		    let range = currentWorksheet.getRange("A8:W227");
+		    range.format.fill.color = "purple";
+		}
+*/
 		await context.sync();
 		
 		let endTime = performance.now();
