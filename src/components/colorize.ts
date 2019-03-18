@@ -123,7 +123,7 @@ export class Colorize {
 // Take in a list of [[row, col], color] pairs and group them,
 // sorting them by columns.
 
-    public static identify_ranges<T>(list : Array<[T, string]>, sortfn? : (n1: T, n2: T) => number ) : { [val : string] : [T] }
+    public static identify_ranges<T>(list : Array<[T, string]>, sortfn? : (n1: T, n2: T) => number ) : { [val : string] : Array<T> }
     {
 	let groups = {};
 	for (let r of list) {
@@ -138,7 +138,7 @@ export class Colorize {
 	return groups;
     }
 
-    public static group_ranges<T>(groups : { [val : string] : [T] }) : { [val : string] : [[T]] }
+    public static group_ranges<T>(groups : { [val : string] : Array<T> }) : { [val : string] : Array<Array<T>> }
     {
 	let output = {};
 	for (let k of Object.keys(groups)) {
@@ -146,7 +146,7 @@ export class Colorize {
 	    let prev = groups[k].shift();
 	    let last = prev;
 	    for (let v of groups[k]) {
-		if (v[0] === last[0] + 1) { // same column
+		if ((v[0] === last[0]) && (v[1] === last[1] + 1)) { // same column, adjacent row
 		    last = v;
 		} else {
 		    output[k].push([prev, last]);

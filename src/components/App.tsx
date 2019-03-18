@@ -52,13 +52,37 @@ export default class App extends React.Component<AppProps, AppState> {
 		numericRanges.format.fill.color = "lightyellow";
 		//console.log(JSON.stringify(address, null, 4));
 		//console.log(JSON.stringify(formulas, null, 4));
-		console.log(JSON.stringify(formulaRanges, null, 4));
+//		console.log(JSON.stringify(formulaRanges, null, 4));
 		//		console.log(Colorize.extract_sheet_address(address));
 
 		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
 		let vec = Colorize.cell_dependency(startCell, 0, 0);
-		console.log(Colorize.process_formulas(formulas, vec[0]-1, vec[1]-1));
-
+		let processed_formulas = Colorize.process_formulas(formulas, vec[0]-1, vec[1]-1);
+//		console.log(processed_formulas);
+		// Sort by COLUMNS (first dimension).
+		let identified_ranges = Colorize.identify_ranges(processed_formulas, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
+//		console.log(identified_ranges);
+		// Now group them (by COLUMNS).
+		let grouped_ranges = Colorize.group_ranges(identified_ranges);
+//		console.log("grouped_ranges = " + JSON.stringify(grouped_ranges));
+		// FINALLY, process the ranges.
+		Object.keys(grouped_ranges).forEach(color => {
+		    let v = grouped_ranges[color];
+		    for (let theRange of v) {
+			let r : Array<[number, number]> = theRange;
+			let col0 = Colorize.column_index_to_name(r[0][0]);
+			let row0 = r[0][1];
+			let col1 = Colorize.column_index_to_name(r[1][0]);
+			let row1 = r[1][1];
+			
+			// console.log(col0 + row0 + ":" + col1 + row1);
+			let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
+			range.format.fill.color = color;
+		    }
+		//	let first_cell = v[0];
+		//	let last_cell = v[1];
+		//	console.log(first_cell + " -- " + last_cell);
+		})
 		/*
 
 		// FIXME 0,0
