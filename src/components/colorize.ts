@@ -3,6 +3,7 @@ export class Colorize {
     // Matchers for all kinds of Excel expressions.
     private static general_re = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
     private static sheet_re = '[^\\!]+';
+    private static sheet_plus_cell = new RegExp('('+Colorize.sheet_re+')\\!('+Colorize.general_re+')');
     private static sheet_plus_range = new RegExp('('+Colorize.sheet_re+')\\!('+Colorize.general_re+'):('+Colorize.general_re+')');
     private static single_dep = new RegExp('('+Colorize.general_re+')');
     private static range_pair = new RegExp('('+Colorize.general_re+'):('+Colorize.general_re+')', 'g');
@@ -119,6 +120,46 @@ export class Colorize {
 	return str.split("").reverse().join("");
     }
 
+// Take in a list of [[row, col], color] pairs and group them,
+// sorting them by columns.
+
+    public static identify_ranges<T>(list : Array<[T, string]>, sortfn? : (n1: T, n2: T) => number ) : { [val : string] : [T] }
+    {
+	let groups = {};
+	for (let r of list) {
+	    groups[r[1]] = groups[r[1]] || [];
+	    groups[r[1]].push(r[0]);
+	}
+	for (let k of Object.keys(groups)) {
+	    //	console.log(k);
+	    groups[k].sort(sortfn);
+	    //	console.log(groups[k]);
+	}
+	return groups;
+    }
+
+    public static group_ranges<T>(groups : { [val : string] : [T] }) : { [val : string] : [[T]] }
+    {
+	let output = {};
+	for (let k of Object.keys(groups)) {
+	    output[k] = [];
+	    let prev = groups[k].shift();
+	    let last = prev;
+	    for (let v of groups[k]) {
+		if (v[0] === last[0] + 1) { // same column
+		    last = v;
+		} else {
+		    output[k].push([prev, last]);
+		    prev = v;
+		    last = v;
+		}
+	    }
+	    output[k].push([prev, last]);
+	}
+	return output;
+    }
+    
+
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number) : Array<number> {
 	let r = Colorize.cell_both_relative.exec(cell);
@@ -226,7 +267,15 @@ export class Colorize {
 
     }
 
-    public static extract_sheet_address(str: string) : Array<string> {
+    public static extract_sheet_cell(str: string) : Array<string> {
+	let matched = Colorize.sheet_plus_cell.exec(str);
+	if (matched) {
+	    return [matched[1], matched[2], matched[3]];
+	}
+	return ["", "", ""];
+    }
+    
+    public static extract_sheet_range(str: string) : Array<string> {
 	let matched = Colorize.sheet_plus_range.exec(str);
 	if (matched) {
 	    return [matched[1], matched[2], matched[3]];

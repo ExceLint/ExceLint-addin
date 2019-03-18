@@ -38,8 +38,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
-		let formulaRanges = usedRange.getSpecialCells(Excel.SpecialCellType.formulas);
-		let numericRanges = usedRange.getSpecialCells(Excel.SpecialCellType.constants,
+		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
+		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 							      Excel.SpecialCellValueType.numbers);
 		let formulas = usedRange.formulas;
 //		let formulaAddresses = formulaRanges.address;
@@ -54,13 +54,31 @@ export default class App extends React.Component<AppProps, AppState> {
 		//console.log(JSON.stringify(formulas, null, 4));
 		console.log(JSON.stringify(formulaRanges, null, 4));
 		//		console.log(Colorize.extract_sheet_address(address));
-		
+
+		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
+		let vec = Colorize.cell_dependency(startCell, 0, 0);
+		console.log(Colorize.process_formulas(formulas, vec[0]-1, vec[1]-1));
+
+		/*
+
 		// FIXME 0,0
-		for (let f of Colorize.process_formulas(formulas, 0, 0)) {
-		    let cell = currentWorksheet.getCell(f[0][1], f[0][0]);
-//		    let range = currentWorksheet.getRange(f[0]+":"+f[0]);
-		    cell.format.fill.color = f[1];
+		let f1 = Colorize.process_formulas(formulas, 0, 0);
+		let f2 = Colorize.identify_ranges(f1, (a, b) => { if (a[1] == b[1]) { return a[0] - b[0]; } else { return a[1] - b[1]; }});
+		let f3 = Colorize.group_ranges(f2);
+
+		for (let color of Object.keys(f3)) {
+		    //		    let cell = currentWorksheet.getCell(f[0][1], f[0][0]);
+		    for (let v of f3[color]) {
+			let col0 = Colorize.column_index_to_name(v![0][0]);
+			let row0 = v![0][1];
+			let col1 = Colorize.column_index_to_name(v![1][0]);
+			let row1 = v![1][1];
+			let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
+			range.format.fill.color = color;
+		    }
 		}
+
+*/
 
 		
 /*
@@ -79,7 +97,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log(Colorize.dependencies('$G10', 12, 11));
 		//		console.log(Colorize.process_formulas(formulas, 0, 0)); // FIXME 0, 0 thang
 //		Colorize.dependencies('A11:B$12,$A12:$B$14', 10, 10);
-//		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);
+		//		Colorize.dependencies('A23,A222:B$12,$A12:$B$14', 10, 10);
+		console.log(Colorize.extract_sheet_cell(address));
                 console.log(`The range address was ${address}.`);
 //		console.log(`The fudge potato was ${columnIndex}.`);
 //		console.log(JSON.stringify(formulas, null, 4));
