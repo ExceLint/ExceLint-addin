@@ -52,8 +52,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		//formulaRanges.format.fill.color = "pink";
 		numericRanges.format.fill.color = "lime";
 
-		let all_deps = [];
-		
 		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
 		let vec = Colorize.cell_dependency(startCell, 0, 0);
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0]-1, vec[1]-1);
@@ -66,7 +64,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 //		console.log(JSON.stringify(formula_color));
 		
-
+/*
 		// Generate all references.
 		let refs = {};
 //		let processed_data = Colorize.process_data(values, processed_formulas, vec[0]-1, vec[1]-1);
@@ -90,7 +88,9 @@ export default class App extends React.Component<AppProps, AppState> {
 			}
 		    }
 		}
-
+*/
+		let refs = Colorize.generate_all_references(formulas, vec[0], vec[1]);
+		
 		// Color all references based on the color of their referring formula.
 		for (let refvec of Object.keys(refs)) {
 //		    console.log("refvec = "+refvec);
