@@ -12,7 +12,7 @@ export class Colorize {
     private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('^\\$([A-Z]+)\\$(\\d+)');
 
-    private static color_list = ["pink", "blue", "yellow", "green", "skyblue" ]
+    private static color_list = ["pink", "blue", "yellow", "green", "skyblue", "gray", "orange" ];
 
     public static get_color(hashval: number) : string {
 	return Colorize.color_list[hashval % Colorize.color_list.length];
@@ -45,6 +45,29 @@ export class Colorize {
 		    //		    output.push([i, j, color]);
 		    output.push([[j + origin_col + 1, i + origin_row + 1], color]);
 		}
+	    }
+	}
+	
+	return output;
+    }
+
+      
+    public static process_data(data: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col : number, origin_row : number) : Array<[[number, number], string]> {
+	// Take the processed formulas and convert them into a dict (colors).
+	let output : Array<[[number, number], string]> = [];
+	let colors = {};
+	for (let t of processed_formulas) {
+	    let [vec, color] = t;
+	    colors[JSON.stringify(vec)] = color;
+	}
+	// Now generate references for the data.
+	// For now, this is all just for timing.
+	for (let i = 0; i < data.length; i++) {
+	    let row = data[i];
+	    for (let j = 0; j < row.length; j++) {
+		// We need to process references to this data.
+		// Instead, we will just color everything one color: yellow.
+		output.push([[j + origin_col + 1, i + origin_row + 1], "yellow"]);
 	    }
 	}
 	
@@ -161,7 +184,7 @@ export class Colorize {
     
 
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
-    public static cell_dependency(cell: string, origin_col: number, origin_row: number) : Array<number> {
+    public static cell_dependency(cell: string, origin_col: number, origin_row: number) : [number, number] {
 	let r = Colorize.cell_both_relative.exec(cell);
 	if (r) {
 //	    console.log("both_relative");
@@ -200,6 +223,63 @@ export class Colorize {
     }
 
 
+    public static all_cell_dependencies(range: string, origin_col: number, origin_row: number) : Array<[number, number]> {
+	
+	let found_pair = null;
+	let all_vectors : Array<[number, number]> = [];
+	
+	/// FIX ME - should we count the same range multiple times? Or just once?
+	
+	// First, get all the range pairs out.
+	while (found_pair = Colorize.range_pair.exec(range)) {
+	    if (found_pair) {
+		//	    console.log(found_pair);
+		let first_cell = found_pair[1];
+//		console.log(first_cell);
+		let first_vec = Colorize.cell_dependency(first_cell, 0, 0);
+		let last_cell = found_pair[2];
+//		console.log(last_cell);
+		let last_vec = Colorize.cell_dependency(last_cell, 0, 0);
+
+		// First_vec is the upper-left hand side of a rectangle.
+		// Last_vec is the lower-right hand side of a rectangle.
+
+		// Generate all vectors.
+		let length = last_vec[0] - first_vec[0] + 1;   // 3
+		let width = last_vec[1] - first_vec[1] + 1;   // 4
+		for (let x = 0; x < length; x++) {
+		    for (let y = 0; y < width; y++) {
+			all_vectors.push([x + origin_col, y + origin_row]);
+		    }
+		}
+		
+		// Wipe out the matched contents of range.
+		let newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
+		range = newRange;
+	    }
+	}
+
+	// Now look for singletons.
+	let singleton = null;
+	while (singleton = Colorize.single_dep.exec(range)) {
+	    if (singleton) {
+		console.log("SINGLETON");
+		console.log("singleton[1] = " + singleton[1]);
+		//	    console.log(found_pair);
+		let first_cell = singleton[1];
+//		console.log(first_cell);
+		let vec = Colorize.cell_dependency(first_cell, 0, 0);
+		all_vectors.push(vec);
+		// Wipe out the matched contents of range.
+		let newRange = range.replace(singleton[0], '_'.repeat(singleton[0].length));
+		range = newRange;
+	    }
+	}
+
+	return all_vectors;
+
+    }
+    
     public static dependencies(range: string, origin_col: number, origin_row: number) : Array<number> {
 
 	let base_vector = [0, 0];
