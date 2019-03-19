@@ -64,32 +64,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 //		console.log(JSON.stringify(formula_color));
 		
-/*
-		// Generate all references.
-		let refs = {};
-//		let processed_data = Colorize.process_data(values, processed_formulas, vec[0]-1, vec[1]-1);
-		for (let i = 0; i < formulas.length; i++) {
-		    let row = formulas[i];
-		    for (let j = 0; j < row.length; j++) {
-			all_deps = Colorize.all_cell_dependencies(row[j], vec[0], vec[1]);
-//			console.log("from col: " + (vec[0]+j) + ", row: " + (vec[1]+i) + ":" + JSON.stringify(all_deps));
-			if (all_deps.length > 0) {
-			    console.log(all_deps);
-			    let src = [vec[0]+j, vec[1]+i];
-			    console.log("src = " + src);
-			    for (let dep of all_deps) {
-				let dep2 = dep; // [dep[0]+vec[0], dep[1]+vec[1]];
-//				console.log("dep type = " + typeof(dep));
-//				console.log("dep = "+dep);
-				refs[dep2.join(",")] = refs[dep2.join(",")] || [];
-				refs[dep2.join(",")].push(src);
-				console.log("refs[" + dep2.join(",") + "] = " + JSON.stringify(refs[dep2.join(",")]));
-			    }
-			}
-		    }
-		}
-*/
 		let refs = Colorize.generate_all_references(formulas, vec[0], vec[1]);
+		let processed_data = [];
 		
 		// Color all references based on the color of their referring formula.
 		for (let refvec of Object.keys(refs)) {
@@ -106,10 +82,14 @@ export default class App extends React.Component<AppProps, AppState> {
 			    let row = parseInt(rv[0]);
 			    let col = parseInt(rv[1]);
 			    console.log("Setting " + row + ", " + col + " to " + color);
+			    processed_data.push([[col-1, row-1], Colorize.get_light_color_version(color)]);
 			    currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
 			}
 		    }
 		}
+		
+		console.log(processed_data);
+		console.log(processed_formulas);
 		
 		// Sort by COLUMNS (first dimension).
 		let identified_ranges = Colorize.identify_ranges(processed_formulas, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
