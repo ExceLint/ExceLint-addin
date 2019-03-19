@@ -50,7 +50,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// For fun, make all formulas pink and all numbers yellow.
 		//formulaRanges.format.fill.color = "pink";
-		numericRanges.format.fill.color = "lime";
+		numericRanges.format.fill.color = "yellow";
 
 		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
 		let vec = Colorize.cell_dependency(startCell, 0, 0);
@@ -106,7 +106,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			    let row = parseInt(rv[0]);
 			    let col = parseInt(rv[1]);
 			    console.log("Setting " + row + ", " + col + " to " + color);
-			    currentWorksheet.getCell(col-1, row-1).format.fill.color = color;
+			    currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
 			}
 		    }
 		}

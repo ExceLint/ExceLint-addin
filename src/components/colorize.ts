@@ -12,10 +12,23 @@ export class Colorize {
     private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('^\\$([A-Z]+)\\$(\\d+)');
 
-    private static color_list = ["pink", "blue", "yellow", "green", "skyblue", "gray", "orange" ];
-
+    private static color_list = ["pink", "blue", "seagreen", "green", "skyblue", "gray", "salmon" ];
+    private static light_color_list = ["LightPink", "LightBlue", "LightYellow", "LightGreen", "LightSkyBlue", "LightGray", "LightSalmon" ];
+    private static light_color_dict = { "pink" : "LightPink",
+					"blue" : "LightBlue",
+					"seagreen" : "LightSeaGreen",
+					"green" : "LightGreen",
+					"skyblue" : "LightSkyBlue",
+					"gray" : "LightGray",
+					"salmon" : "LightSalmon" };
+    
     public static get_color(hashval: number) : string {
 	return Colorize.color_list[hashval % Colorize.color_list.length];
+    }
+
+    public static get_light_color_version(color: string) : string {
+	return Colorize.light_color_dict[color];
+//	return Colorize.light_color_list[hashval % Colorize.color_list.length];
     }
 
 /*
