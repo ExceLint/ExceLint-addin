@@ -21,6 +21,32 @@ export default class App extends React.Component<AppProps, AppState> {
         super(props, context);
     }
 
+    process(f, currentWorksheet) {
+	// Sort by COLUMNS (first dimension).
+	let identified_ranges = Colorize.identify_ranges(f, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
+
+	// Now group them (by COLUMNS).
+	let grouped_ranges = Colorize.group_ranges(identified_ranges);
+	console.log(grouped_ranges);
+	// FINALLY, process the ranges.
+	Object.keys(grouped_ranges).forEach(color => {
+	    if (!(color === undefined)) {
+ 		let v = grouped_ranges[color];
+		for (let theRange of v) {
+		    let r = theRange;
+		    let col0 = Colorize.column_index_to_name(r[0][0]);
+		    let row0 = r[0][1];
+		    let col1 = Colorize.column_index_to_name(r[1][0]);
+		    let row1 = r[1][1];
+		    
+		    let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
+		    // console.log("setting " + col0 + row0 + ":" + col1 + row1 + " to " + color);
+		    range.format.fill.color = color;
+		}
+	    }
+	})
+    }
+    
     setColor = async () => {
         try {
             await Excel.run(async context => {
@@ -65,14 +91,15 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log(JSON.stringify(formula_color));
 		
 		let refs = Colorize.generate_all_references(formulas, vec[0], vec[1]);
+		let data_color = {};
 		let processed_data = [];
 		
 		// Color all references based on the color of their referring formula.
 		for (let refvec of Object.keys(refs)) {
 //		    console.log("refvec = "+refvec);
-		    console.log("refvec = " + refvec);
+//		    console.log("refvec = " + refvec);
 		    for (let r of refs[refvec]) {
-			console.log("checking " + r);
+			// console.log("checking " + r);
 			let color = formula_color[r.join(",")];
 			if (!(color === undefined)) {
 			    //		    console.log("color = " + color);
@@ -81,38 +108,23 @@ export default class App extends React.Component<AppProps, AppState> {
 			    //console.log(parseInt(rv[1]));
 			    let row = parseInt(rv[0]);
 			    let col = parseInt(rv[1]);
-			    console.log("Setting " + row + ", " + col + " to " + color);
-			    processed_data.push([[col-1, row-1], Colorize.get_light_color_version(color)]);
-			    currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
+			    if (!([row,col].join(",") in formula_color)) {
+				if (!([row,col].join(",") in data_color)) {
+				    processed_data.push([[row, col], Colorize.get_light_color_version(color)]);
+				    // currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
+				    data_color[[row,col].join(",")] = Colorize.get_light_color_version(color);
+				    
+				}
+			    }
 			}
 		    }
 		}
 		
-		console.log(processed_data);
-		console.log(processed_formulas);
-		
-		// Sort by COLUMNS (first dimension).
-		let identified_ranges = Colorize.identify_ranges(processed_formulas, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
-
-		// Now group them (by COLUMNS).
-		let grouped_ranges = Colorize.group_ranges(identified_ranges);
-		// FINALLY, process the ranges.
-		Object.keys(grouped_ranges).forEach(color => {
-		    let v = grouped_ranges[color];
-		    for (let theRange of v) {
-			let r : Array<[number, number]> = theRange;
-			let col0 = Colorize.column_index_to_name(r[0][0]);
-			let row0 = r[0][1];
-			let col1 = Colorize.column_index_to_name(r[1][0]);
-			let row1 = r[1][1];
-			
-			let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
-			// console.log("setting " + col0 + row0 + ":" + col1 + row1 + " to " + color);
-			if (!(color === undefined)) {
-			    range.format.fill.color = color;
-			}
-		    }
-		})
+		//		console.log(processed_data);
+		//		console.log(processed_formulas);
+		this.process(processed_data, currentWorksheet);
+		this.process(processed_formulas, currentWorksheet);
+	
 		
 		await context.sync();
 		

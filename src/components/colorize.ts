@@ -276,8 +276,8 @@ export class Colorize {
 	let singleton = null;
 	while (singleton = Colorize.single_dep.exec(range)) {
 	    if (singleton) {
-		console.log("SINGLETON");
-		console.log("singleton[1] = " + singleton[1]);
+//		console.log("SINGLETON");
+//		console.log("singleton[1] = " + singleton[1]);
 		//	    console.log(found_pair);
 		let first_cell = singleton[1];
 //		console.log(first_cell);
@@ -368,16 +368,16 @@ export class Colorize {
 	    for (let j = 0; j < row.length; j++) {
 		let all_deps = Colorize.all_cell_dependencies(row[j], origin_col, origin_row);
 		if (all_deps.length > 0) {
-		    console.log(all_deps);
+		    // console.log(all_deps);
 		    let src = [origin_col+j, origin_row+i];
-		    console.log("src = " + src);
+		    // console.log("src = " + src);
 		    for (let dep of all_deps) {
 			let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
 			//				console.log("dep type = " + typeof(dep));
 			//				console.log("dep = "+dep);
 			refs[dep2.join(",")] = refs[dep2.join(",")] || [];
 			refs[dep2.join(",")].push(src);
-			console.log("refs[" + dep2.join(",") + "] = " + JSON.stringify(refs[dep2.join(",")]));
+			// console.log("refs[" + dep2.join(",") + "] = " + JSON.stringify(refs[dep2.join(",")]));
 		    }
 		}
 	    }
