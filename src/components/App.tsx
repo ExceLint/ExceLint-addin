@@ -61,7 +61,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 
 		let address = usedRange.address;
-		
+	
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
@@ -74,9 +74,19 @@ export default class App extends React.Component<AppProps, AppState> {
 		// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
 		everythingRange.clear(Excel.ClearApplyTo.formats);
 		
-		// For fun, make all formulas pink and all numbers yellow.
-		//formulaRanges.format.fill.color = "pink";
+		// Make all numbers yellow; this will be the default value for unreferenced data.
 		numericRanges.format.fill.color = "yellow";
+
+		// Give every numeric data item a dashed border.
+		numericRanges.format.borders.load(['items']);
+		await context.sync();
+		let items = numericRanges.format.borders.items;
+		for (let border of items) {
+		    border.weight = "Thick";
+		    border.style = "Dash";
+		    border.tintAndShade = -1;
+		}
+		
 
 		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
 		let vec = Colorize.cell_dependency(startCell, 0, 0);
