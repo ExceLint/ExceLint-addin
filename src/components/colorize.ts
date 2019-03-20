@@ -17,7 +17,7 @@ export class Colorize {
     private static light_color_dict = { "pink" : "LightPink",
 					"blue" : "LightBlue",
 					"seagreen" : "LightSeaGreen",
-					"green" : "LightGreen",
+					"green" : "PaleGreen",
 					"darkturquoise" : "PaleTurquoise",
 					"darkgray" : "LightGray",
 					"darksalmon" : "LightSalmon",
@@ -88,7 +88,49 @@ export class Colorize {
 	return output;
     }
 
+    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
+	let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
+	let data_color = {};
+	let processed_data = [];
+	
+	// Generate all formula colors (as a dict).
+	let formula_color = {};
+	for (let f of processed_formulas) {
+	    let formula_vec = f[0];
+	    formula_color[formula_vec.join(",")] = f[1];
+	}
+	
+	// Color all references based on the color of their referring formula.
+	for (let refvec of Object.keys(refs)) {
+	    // console.log("refvec = "+refvec);
+	    // console.log("ref loop checking refvec = " + refvec);
+	    for (let r of refs[refvec]) {
+		// console.log("ref loop checking " + r);
+		let color = formula_color[r.join(",")];
+		if (!(color === undefined)) {
+		    //		    console.log("color = " + color);
+		    let rv = JSON.parse("[" + refvec + "]");
+		    //console.log(parseInt(rv[0]));
+		    //console.log(parseInt(rv[1]));
+		    let row = parseInt(rv[0]);
+		    let col = parseInt(rv[1]);
+		    // console.log("Checking "+row+", "+col);
+		    if (!([row,col].join(",") in formula_color)) {
+			if (!([row,col].join(",") in data_color)) {
+			    processed_data.push([[row, col], Colorize.get_light_color_version(color)]);
+			    // currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
+			    data_color[[row,col].join(",")] = Colorize.get_light_color_version(color);
+			    // console.log("Added "+row+", "+col);
+			    
+			}
+		    }
+		}
+	    }
+	}
+	return processed_data;
+    }
 
+    
     private static hash(str: string) : number {
 	// From https://github.com/darkskyapp/string-hash
 	var hash = 5381,

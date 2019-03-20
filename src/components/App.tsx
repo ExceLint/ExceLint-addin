@@ -81,71 +81,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
 		let vec = Colorize.cell_dependency(startCell, 0, 0);
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0]-1, vec[1]-1);
-
-		// Generate all formula colors (as a dict).
-		let formula_color = {};
-		for (let f of processed_formulas) {
-		    let formula_vec = f[0];
-		    formula_color[formula_vec.join(",")] = f[1];
-		}
-		//		console.log(JSON.stringify(formula_color));
+		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0], vec[1]);
 		
-/*		console.log(formulas[5][7]);
-		let general_re = '\\$?[A-Z]+\\$?\\d+';
-		let cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
-		let cell_both_relative = new RegExp('[^\\$]?([A-Z]+)(\\d+)');
-
-		let cbr = new RegExp('('+general_re+'):('+general_re+')', 'g'); // new RegExp('[^\\$]?([A-Z]+)(\\d+)');
-//		let cbr = new RegExp('([A-Z]+)(\\d+)');
-		console.log(cbr.exec("=AVERAGE(L4:L7)"));
-		console.log(cell_col_absolute.exec("=AVERAGE($L4)"));
-		console.log(cell_both_relative.exec("=AVERAGE($L4)"));
-*/		
-		
-		let refs = Colorize.generate_all_references(formulas, vec[0], vec[1]);
-		// console.log(refs);
-		let data_color = {};
-		let processed_data = [];
-		
-		// Color all references based on the color of their referring formula.
-		for (let refvec of Object.keys(refs)) {
-		    // console.log("refvec = "+refvec);
-		    // console.log("ref loop checking refvec = " + refvec);
-		    for (let r of refs[refvec]) {
-			// console.log("ref loop checking " + r);
-			let color = formula_color[r.join(",")];
-			if (!(color === undefined)) {
-			    //		    console.log("color = " + color);
-			    let rv = JSON.parse("[" + refvec + "]");
-			    //console.log(parseInt(rv[0]));
-			    //console.log(parseInt(rv[1]));
-			    let row = parseInt(rv[0]);
-			    let col = parseInt(rv[1]);
-			    // console.log("Checking "+row+", "+col);
-			    if (!([row,col].join(",") in formula_color)) {
-				if (!([row,col].join(",") in data_color)) {
-				    processed_data.push([[row, col], Colorize.get_light_color_version(color)]);
-				    // currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
-				    data_color[[row,col].join(",")] = Colorize.get_light_color_version(color);
-				    // console.log("Added "+row+", "+col);
-				    
-				}
-			    }
-			}
-		    }
-		}
-		
-		//		console.log(processed_data);
-		//		console.log(processed_formulas);
 		this.process(processed_data, currentWorksheet);
 		this.process(processed_formulas, currentWorksheet);
 	
 		
 		await context.sync();
-		
-//		console.log(processed_data);
-//		console.log(all_deps);
-//		console.log(JSON.stringify(refs));
 		
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
