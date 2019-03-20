@@ -7,20 +7,20 @@ export class Colorize {
     private static sheet_plus_range = new RegExp('('+Colorize.sheet_re+')\\!('+Colorize.general_re+'):('+Colorize.general_re+')');
     private static single_dep = new RegExp('('+Colorize.general_re+')');
     private static range_pair = new RegExp('('+Colorize.general_re+'):('+Colorize.general_re+')', 'g');
-    private static cell_both_relative = new RegExp('^[^\\$]?([A-Z]+)(\\d+)');
-    private static cell_col_absolute = new RegExp('^\\$([A-Z]+)[^\\$\\d]?(\\d+)');
-    private static cell_row_absolute = new RegExp('^[^\\$]?([A-Z]+)\\$(\\d+)');
-    private static cell_both_absolute = new RegExp('^\\$([A-Z]+)\\$(\\d+)');
+    private static cell_both_relative = new RegExp('[^\\$]?([A-Z]+)(\\d+)');
+    private static cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
+    private static cell_row_absolute = new RegExp('[^\\$]?([A-Z]+)\\$(\\d+)');
+    private static cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
 
-    private static color_list = ["pink", "blue", "seagreen", "green", "skyblue", "gray", "salmon" ];
+    private static color_list = ["pink", "blue", "seagreen", "green", "darkturquoise", "darkgray", "darksalmon" ];
     private static light_color_list = ["LightPink", "LightBlue", "LightYellow", "LightGreen", "LightSkyBlue", "LightGray", "LightSalmon" ];
     private static light_color_dict = { "pink" : "LightPink",
 					"blue" : "LightBlue",
 					"seagreen" : "LightSeaGreen",
 					"green" : "LightGreen",
-					"skyblue" : "LightSkyBlue",
-					"gray" : "LightGray",
-					"salmon" : "LightSalmon" };
+					"darkturquoise" : "PaleTurquoise",
+					"darkgray" : "LightGray",
+					"darksalmon" : "LightSalmon" };
     
     public static get_color(hashval: number) : string {
 	return Colorize.color_list[hashval % Colorize.color_list.length];
@@ -236,7 +236,7 @@ export class Colorize {
     }
 
 
-    public static all_cell_dependencies(range: string, origin_col: number, origin_row: number) : Array<[number, number]> {
+    public static all_cell_dependencies(range: string) /* , origin_col: number, origin_row: number) */ : Array<[number, number]> {
 	
 	let found_pair = null;
 	let all_vectors : Array<[number, number]> = [];
@@ -246,23 +246,27 @@ export class Colorize {
 	// First, get all the range pairs out.
 	while (found_pair = Colorize.range_pair.exec(range)) {
 	    if (found_pair) {
-		//	    console.log(found_pair);
+		console.log("all_cell_dependencies --> " + found_pair);
 		let first_cell = found_pair[1];
-//		console.log(first_cell);
+		console.log(" first_cell = " + first_cell);
 		let first_vec = Colorize.cell_dependency(first_cell, 0, 0);
+		console.log(" first_vec = " + JSON.stringify(first_vec));
 		let last_cell = found_pair[2];
-//		console.log(last_cell);
+		console.log(" last_cell = " + last_cell);
 		let last_vec = Colorize.cell_dependency(last_cell, 0, 0);
+		console.log(" last_vec = " + JSON.stringify(last_vec));
 
 		// First_vec is the upper-left hand side of a rectangle.
 		// Last_vec is the lower-right hand side of a rectangle.
 
 		// Generate all vectors.
-		let length = last_vec[0] - first_vec[0] + 1;   // 3
-		let width = last_vec[1] - first_vec[1] + 1;   // 4
+		let length = last_vec[0] - first_vec[0] + 1;
+		let width = last_vec[1] - first_vec[1] + 1;
 		for (let x = 0; x < length; x++) {
 		    for (let y = 0; y < width; y++) {
-			all_vectors.push([x + origin_col, y + origin_row]);
+			console.log(" pushing " + (x + first_vec[0]) + ", " + (y + first_vec[1]));
+			console.log(" (x = " + x + ", y = " + y);
+			all_vectors.push([x + first_vec[0], y + first_vec[1]]);
 		    }
 		}
 		
@@ -366,11 +370,12 @@ export class Colorize {
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
-		let all_deps = Colorize.all_cell_dependencies(row[j], origin_col, origin_row);
+		console.log("origin_col = "+origin_col+", origin_row = " + origin_row);
+		let all_deps = Colorize.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
 		if (all_deps.length > 0) {
-		    // console.log(all_deps);
+		    console.log(all_deps);
 		    let src = [origin_col+j, origin_row+i];
-		    // console.log("src = " + src);
+		    console.log("src = " + src);
 		    for (let dep of all_deps) {
 			let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
 			//				console.log("dep type = " + typeof(dep));
