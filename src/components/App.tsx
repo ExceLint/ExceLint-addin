@@ -89,25 +89,30 @@ export default class App extends React.Component<AppProps, AppState> {
 		    formula_color[formula_vec.join(",")] = f[1];
 		}
 		//		console.log(JSON.stringify(formula_color));
-		/*
-		console.log(formulas[5][7]);
+		
+/*		console.log(formulas[5][7]);
 		let general_re = '\\$?[A-Z]+\\$?\\d+';
+		let cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
+		let cell_both_relative = new RegExp('[^\\$]?([A-Z]+)(\\d+)');
+
 		let cbr = new RegExp('('+general_re+'):('+general_re+')', 'g'); // new RegExp('[^\\$]?([A-Z]+)(\\d+)');
 //		let cbr = new RegExp('([A-Z]+)(\\d+)');
 		console.log(cbr.exec("=AVERAGE(L4:L7)"));
-		*/
+		console.log(cell_col_absolute.exec("=AVERAGE($L4)"));
+		console.log(cell_both_relative.exec("=AVERAGE($L4)"));
+*/		
 		
 		let refs = Colorize.generate_all_references(formulas, vec[0], vec[1]);
-		console.log(refs);
+		// console.log(refs);
 		let data_color = {};
 		let processed_data = [];
 		
 		// Color all references based on the color of their referring formula.
 		for (let refvec of Object.keys(refs)) {
-//		    console.log("refvec = "+refvec);
-		    console.log("ref loop checking refvec = " + refvec);
+		    // console.log("refvec = "+refvec);
+		    // console.log("ref loop checking refvec = " + refvec);
 		    for (let r of refs[refvec]) {
-			console.log("ref loop checking " + r);
+			// console.log("ref loop checking " + r);
 			let color = formula_color[r.join(",")];
 			if (!(color === undefined)) {
 			    //		    console.log("color = " + color);
@@ -116,13 +121,13 @@ export default class App extends React.Component<AppProps, AppState> {
 			    //console.log(parseInt(rv[1]));
 			    let row = parseInt(rv[0]);
 			    let col = parseInt(rv[1]);
-			    console.log("Checking "+row+", "+col);
+			    // console.log("Checking "+row+", "+col);
 			    if (!([row,col].join(",") in formula_color)) {
 				if (!([row,col].join(",") in data_color)) {
 				    processed_data.push([[row, col], Colorize.get_light_color_version(color)]);
 				    // currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
 				    data_color[[row,col].join(",")] = Colorize.get_light_color_version(color);
-				    console.log("Added "+row+", "+col);
+				    // console.log("Added "+row+", "+col);
 				    
 				}
 			    }

@@ -12,15 +12,16 @@ export class Colorize {
     private static cell_row_absolute = new RegExp('[^\\$]?([A-Z]+)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
 
-    private static color_list = ["pink", "blue", "seagreen", "green", "darkturquoise", "darkgray", "darksalmon" ];
-    private static light_color_list = ["LightPink", "LightBlue", "LightYellow", "LightGreen", "LightSkyBlue", "LightGray", "LightSalmon" ];
+    private static color_list = ["pink", "blue", "seagreen", "green", "darkturquoise", "darkgray", "darksalmon", "mediumvioletred" ];
+    private static light_color_list = ["LightPink", "LightBlue", "LightYellow", "LightGreen", "LightSkyBlue", "LightGray", "LightSalmon", "PaleVioletRed" ];
     private static light_color_dict = { "pink" : "LightPink",
 					"blue" : "LightBlue",
 					"seagreen" : "LightSeaGreen",
 					"green" : "LightGreen",
 					"darkturquoise" : "PaleTurquoise",
 					"darkgray" : "LightGray",
-					"darksalmon" : "LightSalmon" };
+					"darksalmon" : "LightSalmon",
+				        "mediumvioletred" : "PaleVioletRed" };
     
     public static get_color(hashval: number) : string {
 	return Colorize.color_list[hashval % Colorize.color_list.length];
@@ -198,39 +199,47 @@ export class Colorize {
 
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number) : [number, number] {
-	let r = Colorize.cell_both_relative.exec(cell);
-	if (r) {
-//	    console.log("both_relative");
-	    let col = Colorize.column_name_to_index(r[1]);
-	    let row = parseInt(r[2]);
-	    return [col - origin_col, row - origin_row];
+	{
+	    let r = Colorize.cell_col_absolute.exec(cell);
+	    if (r) {
+		//	    console.log(JSON.stringify(r));
+		let col = Colorize.column_name_to_index(r[1]);
+		let row = parseInt(r[2]);
+		//	    console.log("absolute col: " + col + ", row: " + row);
+		return [col, row - origin_row];
+	    }
 	}
 
-	r = Colorize.cell_col_absolute.exec(cell);
-	if (r) {
-//	    console.log(JSON.stringify(r));
-	    let col = Colorize.column_name_to_index(r[1]);
-	    let row = parseInt(r[2]);
-//	    console.log("absolute col: " + col + ", row: " + row);
-	    return [col, row - origin_row];
+	{
+	    let r = Colorize.cell_both_relative.exec(cell);
+	    if (r) {
+		//	    console.log("both_relative");
+		let col = Colorize.column_name_to_index(r[1]);
+		let row = parseInt(r[2]);
+		return [col - origin_col, row - origin_row];
+	    }
 	}
 
-	r = Colorize.cell_row_absolute.exec(cell);
-	if (r) {
-//	    console.log("row_absolute");
-	    let col = Colorize.column_name_to_index(r[1]);
-	    let row = parseInt(r[2]);
-	    return [col - origin_col, row];
+	{
+	    let r = Colorize.cell_row_absolute.exec(cell);
+	    if (r) {
+		//	    console.log("row_absolute");
+		let col = Colorize.column_name_to_index(r[1]);
+		let row = parseInt(r[2]);
+		return [col - origin_col, row];
+	    }
+	}
+
+	{
+	    let r = Colorize.cell_both_absolute.exec(cell);
+	    if (r) {
+		//	    console.log("both_absolute");
+		let col = Colorize.column_name_to_index(r[1]);
+		let row = parseInt(r[2]);
+		return [col, row];
+	    }
 	}
 	
-	r = Colorize.cell_both_absolute.exec(cell);
-	if (r) {
-//	    console.log("both_absolute");
-	    let col = Colorize.column_name_to_index(r[1]);
-	    let row = parseInt(r[2]);
-	    return [col, row];
-	}
-
 	throw new Error('We should never get here.');
 	return [0, 0];
     }
@@ -246,15 +255,15 @@ export class Colorize {
 	// First, get all the range pairs out.
 	while (found_pair = Colorize.range_pair.exec(range)) {
 	    if (found_pair) {
-		console.log("all_cell_dependencies --> " + found_pair);
+//		console.log("all_cell_dependencies --> " + found_pair);
 		let first_cell = found_pair[1];
-		console.log(" first_cell = " + first_cell);
+//		console.log(" first_cell = " + first_cell);
 		let first_vec = Colorize.cell_dependency(first_cell, 0, 0);
-		console.log(" first_vec = " + JSON.stringify(first_vec));
+//		console.log(" first_vec = " + JSON.stringify(first_vec));
 		let last_cell = found_pair[2];
-		console.log(" last_cell = " + last_cell);
+//		console.log(" last_cell = " + last_cell);
 		let last_vec = Colorize.cell_dependency(last_cell, 0, 0);
-		console.log(" last_vec = " + JSON.stringify(last_vec));
+//		console.log(" last_vec = " + JSON.stringify(last_vec));
 
 		// First_vec is the upper-left hand side of a rectangle.
 		// Last_vec is the lower-right hand side of a rectangle.
@@ -264,8 +273,8 @@ export class Colorize {
 		let width = last_vec[1] - first_vec[1] + 1;
 		for (let x = 0; x < length; x++) {
 		    for (let y = 0; y < width; y++) {
-			console.log(" pushing " + (x + first_vec[0]) + ", " + (y + first_vec[1]));
-			console.log(" (x = " + x + ", y = " + y);
+			// console.log(" pushing " + (x + first_vec[0]) + ", " + (y + first_vec[1]));
+			// console.log(" (x = " + x + ", y = " + y);
 			all_vectors.push([x + first_vec[0], y + first_vec[1]]);
 		    }
 		}
@@ -370,12 +379,12 @@ export class Colorize {
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
-		console.log("origin_col = "+origin_col+", origin_row = " + origin_row);
+		// console.log("origin_col = "+origin_col+", origin_row = " + origin_row);
 		let all_deps = Colorize.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
 		if (all_deps.length > 0) {
-		    console.log(all_deps);
+		    // console.log(all_deps);
 		    let src = [origin_col+j, origin_row+i];
-		    console.log("src = " + src);
+		    // console.log("src = " + src);
 		    for (let dep of all_deps) {
 			let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
 			//				console.log("dep type = " + typeof(dep));

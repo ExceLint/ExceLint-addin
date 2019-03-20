@@ -11,11 +11,9 @@ export class Header extends React.Component<HeaderProps, any> {
 
     render() {
         return (
-            <div id='content-header'>
-                <div className='padding'>
-                    <h1>{this.props.title}</h1>
-                </div>
-            </div>
+		<div className='padding'>
+		<img src='assets/ExceLint.png' height='70' />
+		</div>
         );
     }
 }
