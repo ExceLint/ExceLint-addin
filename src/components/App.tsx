@@ -48,6 +48,29 @@ export default class App extends React.Component<AppProps, AppState> {
 	})
     }
     
+    clearColor = async () => {
+        try {
+            await Excel.run(async context => {
+	    	let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+		let everythingRange = currentWorksheet.getRange();
+		await context.sync();
+		everythingRange.clear(Excel.ClearApplyTo.formats);
+ 		everythingRange.format.borders.load(['items']);
+		await context.sync();
+		let items = everythingRange.format.borders.items;
+		
+		for (let border of items) {
+		    border.set ({ "style" : "None",
+				  "tintAndShade" : 0 });
+		}
+		
+	    });
+	} catch (error) {
+            OfficeHelpers.UI.notify(error);
+            OfficeHelpers.Utilities.log(error);
+        }
+    }
+			    
     setColor = async () => {
         try {
             await Excel.run(async context => {
@@ -69,12 +92,14 @@ export default class App extends React.Component<AppProps, AppState> {
 	
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
-//		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
+		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 							      Excel.SpecialCellValueType.numbers);
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
-		numericRanges.format.borders.load(['items']);
+ 		numericRanges.format.borders.load(['items']);
+		formulaRanges.format.borders.load(['items']);
+		
 
 		/*
 		let chart = currentWorksheet.charts.getItemAt(0);
@@ -119,6 +144,16 @@ export default class App extends React.Component<AppProps, AppState> {
 				  "tintAndShade" : -1 });
 		}
 
+		// Give every formula a solid border.
+		items = formulaRanges.format.borders.items;
+		
+		for (let border of items) {
+		    border.set ({ "weight" : "Thin",
+				  "style" : "Continuous",
+				  "tintAndShade" : -1 });
+		}
+
+		
 		
 		// numericRanges.untrack();
 
@@ -164,7 +199,7 @@ export default class App extends React.Component<AppProps, AppState> {
         return (
             <div className='ms-welcome'>
                 <Header title='ExceLint' />
-                <Content message='Click the button below to reveal the deep structure of this spreadsheet.' buttonLabel='Reveal structure' click={this.setColor} />
+                <Content message1='Click the button below to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor} message2='Click the button below to clear colors and borders.' buttonLabel2='Clear' click2={this.clearColor} />
             </div>
         );
     }

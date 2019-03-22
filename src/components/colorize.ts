@@ -66,28 +66,6 @@ export class Colorize {
     }
 
       
-    public static process_data(data: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col : number, origin_row : number) : Array<[[number, number], string]> {
-	// Take the processed formulas and convert them into a dict (colors).
-	let output : Array<[[number, number], string]> = [];
-	let colors = {};
-	for (let t of processed_formulas) {
-	    let [vec, color] = t;
-	    colors[JSON.stringify(vec)] = color;
-	}
-	// Now generate references for the data.
-	// For now, this is all just for timing.
-	for (let i = 0; i < data.length; i++) {
-	    let row = data[i];
-	    for (let j = 0; j < row.length; j++) {
-		// We need to process references to this data.
-		// Instead, we will just color everything one color: yellow.
-		output.push([[j + origin_col + 1, i + origin_row + 1], "yellow"]);
-	    }
-	}
-	
-	return output;
-    }
-
     public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
 	let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
 	let data_color = {};
@@ -457,9 +435,12 @@ export class Colorize {
 	}
 	return ["", "", ""];
     }
+
     
     public static hash_vector(vec: Array<number>) : number {
-	return Colorize.hash(JSON.stringify(vec));
+	// Return a hash of the given vector.
+	let h = Colorize.hash(JSON.stringify(vec));
+	return h;
     }
     
 
