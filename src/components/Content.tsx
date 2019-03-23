@@ -27,7 +27,7 @@ export class Content extends React.Component<ContentProps, any> {
 		<br />
 		<svg width="300" height="20">
 		<rect x="0" y="0" width="50" height="20" fill="darkgreen" stroke-width="3" stroke="black" />
-		<text x="55" y="13">formulas (dark colors, borders)</text>
+		<text x="55" y="13">formulas (dark colors, solid borders)</text>
 		</svg>
 		<svg width="300" height="20">
 		<rect x="0" y="0" width="50" height="20" fill="lightgreen" stroke-width="1" stroke="black" stroke-dasharray="3,3" />

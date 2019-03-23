@@ -17,11 +17,70 @@ export interface AppState {
 }
 
 export default class App extends React.Component<AppProps, AppState> {
+
+    private savedProperties : any = [];
+    private savedColors : any = [];
+    
     constructor(props, context) {
         super(props, context);
     }
 
-    process(f, currentWorksheet) {
+    
+    private async processRange(context : any, currentWorksheet : any, startCol : number, startRow : number, endCol : number, endRow : number) {
+	let startCell = Colorize.column_index_to_name(startCol) + startRow;
+	let endCell = Colorize.column_index_to_name(endCol) + endRow;
+	let range = currentWorksheet.getRange(startCell + ":" + endCell);
+	// 	    await context.sync();
+	range.format.fill.load(['color']);
+	await context.sync();
+	let color = range.format.fill.color;
+	if (color !== null) {
+	    this.savedColors.push([startCell, endCell, color]);
+	} else {
+	    if ((endCol - startCol >= 0) && (endRow - startRow >= 0)) {
+		let midCol = startCol + Math.floor((endCol - startCol) / 2);
+		let midRow  = startRow + Math.floor((endRow - startRow) / 2);
+		await this.processRange(context, currentWorksheet, startCol, startRow, midCol, midRow);
+		await this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, midRow);
+		await this.processRange(context, currentWorksheet, startCol, midRow + 1, midCol, endRow);
+		await this.processRange(context, currentWorksheet, midCol + 1, midRow + 1, endCol, endRow);
+	    }
+	}
+    }
+    
+    clearColor = async () => {
+	try {
+	    await Excel.run(async context => {
+		this.savedColors = [];
+		// Load up the used range.
+	    	let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+		let usedRange = currentWorksheet.getUsedRange();
+		await context.sync();
+		usedRange.load(['address']);
+ 		usedRange.format.fill.load(['color']);
+		//		let items = usedRange.format.fill;
+		await context.sync();
+		let color = usedRange.format.fill.color;
+		let address = usedRange.address;
+		let [sheetName, startCell, endCell] = Colorize.extract_sheet_range(address);
+		let [startCol, startRow] = Colorize.cell_dependency(startCell, 0, 0);
+		let [endCol, endRow] = Colorize.cell_dependency(endCell, 0, 0);
+		// Are we done? (We got a color)
+		if (color !== null) {
+		    this.savedColors.push([startCell, endCell, color]);
+		} else {
+		    await this.processRange(context, currentWorksheet, startCol, startRow, endCol, endRow);
+		}
+		console.log(this.savedColors);
+	    });
+	} catch (error) {
+            OfficeHelpers.UI.notify(error);
+            OfficeHelpers.Utilities.log(error);
+        }
+	
+    }
+    
+    private process(f, currentWorksheet) {
 	// Sort by COLUMNS (first dimension).
 	let identified_ranges = Colorize.identify_ranges(f, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
 
@@ -40,17 +99,18 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let row1 = r[1][1];
 		    
 		    let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
-		    // console.log("setting " + col0 + row0 + ":" + col1 + row1 + " to " + color);
 		    range.format.fill.color = color;
-//		    range.untrack();
 		}
 	    }
 	})
     }
     
-    clearColor = async () => {
+    OldclearColor = async () => {
         try {
             await Excel.run(async context => {
+
+		// Clear all formats and borders.
+		
 	    	let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 		let everythingRange = currentWorksheet.getRange();
 		await context.sync();
@@ -70,7 +130,7 @@ export default class App extends React.Component<AppProps, AppState> {
             OfficeHelpers.Utilities.log(error);
         }
     }
-			    
+    
     setColor = async () => {
         try {
             await Excel.run(async context => {
@@ -89,42 +149,21 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log("ExceLint: done with sync 1.");
 
 		let address = usedRange.address;
-	
+		
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
-							      Excel.SpecialCellValueType.numbers);
+									  Excel.SpecialCellValueType.numbers);
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
  		numericRanges.format.borders.load(['items']);
 		formulaRanges.format.borders.load(['items']);
 		
 
-		/*
-		let chart = currentWorksheet.charts.getItemAt(0);
-		chart.load(['series']);
-		*/
-
 		await context.sync();
 		console.log("ExceLint: done with sync 2.");
 
-
-// 		console.log(chart.series.getItemAt(0));
-		
-		/*
-		// Extract dependencies from charts.
-		for (let i = 0; i < currentWorksheet.charts.count; i++) {
-		    let chart = currentWorksheet.charts.getItemAt(i);
-		    chart.load(['series']);
-		    await context.sync();
-		    console.log(JSON.stringify(chart));
-//		    console.log(JSON.stringify(chart.series));
-//		    chart.load(['series']);
-//		    await context.sync();
-//		    console.log(JSON.stringify(chart.series));
-		}
-		*/
 		
 		// FIX ME - need a button to restore all formatting.
 		// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
@@ -133,11 +172,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		numericRanges.format.fill.color = "yellow";
 
-//		await context.sync();
-
 		// Give every numeric data item a dashed border.
 		let items = numericRanges.format.borders.items;
-		
 		for (let border of items) {
 		    border.set ({ "weight" : "Thin",
 				  "style" : "Dash",
@@ -146,16 +182,11 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Give every formula a solid border.
 		items = formulaRanges.format.borders.items;
-		
 		for (let border of items) {
 		    border.set ({ "weight" : "Thin",
 				  "style" : "Continuous",
 				  "tintAndShade" : -1 });
 		}
-
-		
-		
-		// numericRanges.untrack();
 
 		let [sheetName, startCell] = Colorize.extract_sheet_cell(address);
 		let vec = Colorize.cell_dependency(startCell, 0, 0);
@@ -165,7 +196,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		this.process(processed_data, currentWorksheet);
 		this.process(processed_formulas, currentWorksheet);
-	
+		
 		
 		await context.sync();
 		console.log("ExceLint: done with sync 3.");
@@ -188,19 +219,19 @@ export default class App extends React.Component<AppProps, AppState> {
 
         if (!isOfficeInitialized) {
             return (
-                <Progress
-                    title={title}
-                    logo='assets/logo-filled.png'
-                    message='Please sideload your addin to see app body.'
-                />
+                    <Progress
+                title={title}
+                logo='assets/logo-filled.png'
+                message='Please sideload your addin to see app body.'
+                    />
             );
         }
 
         return (
-            <div className='ms-welcome'>
+		<div className='ms-welcome'>
                 <Header title='ExceLint' />
                 <Content message1='Click the button below to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor} message2='Click the button below to clear colors and borders.' buttonLabel2='Clear' click2={this.clearColor} />
-            </div>
+		</div>
         );
     }
 }
