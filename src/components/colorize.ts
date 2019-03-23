@@ -213,10 +213,58 @@ export class Colorize {
 	    }
 	    output[k].push([prev, last]);
 	}
+
+	/*
+	let output2 = {};
+
+	// Need to sort here by row... FIXME
+	
+	for (let k of Object.keys(output)) {
+	    output2[k] = [];
+	    let prev = output[k].shift();
+	    let last = prev;
+	    for (let v of output[k]) {
+		if ((v[0] === last[0] + 1) && (v[1] === last[1])) { // same row, adjacent column
+		    last = v;
+		} else {
+		    output2[k].push([prev, last]);
+		    prev = v;
+		    last = v;
+		}
+	    }
+	    output2[k].push([prev, last]);
+	}
+	return output2;*/
 	return output;
     }
-    
 
+    // True if combining A and B would result in a new rectangle.
+    public static merge_friendly(A : [number,number,number,number], B: [number,number,number,number]) : boolean {
+	let [Ax0, Ay0, Ax1, Ay1] = A;
+	let [Bx0, By0, Bx1, By1] = B;
+	if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
+	    if (Ay0 == By1 + 1) {
+		// top
+		return true;
+	    }
+	    if (Ay1 + 1 == By0) {
+		// bottom
+		return true;
+	    }
+	}
+	if ((Ay0 == By0) && (Ay1 == By1)) {
+	    if (Ax0 == Bx1 + 1) {
+		// left
+		return true;
+	    }
+	    if (Ax1 + 1 == Bx0) {
+		// right
+		return true;
+	    }
+	}
+	return false;
+    }
+    
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number) : [number, number] {
 	{
