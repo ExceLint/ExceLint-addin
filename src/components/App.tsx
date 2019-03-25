@@ -117,17 +117,18 @@ export default class App extends React.Component<AppProps, AppState> {
 	
     }
     
-    private process(f, currentWorksheet) {
-	// Sort by COLUMNS (first dimension).
-	let identified_ranges = Colorize.identify_ranges(f, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
-
-	// Now group them (by COLUMNS).
-	let grouped_ranges = Colorize.group_ranges(identified_ranges);
-	// console.log(grouped_ranges);
+    private process(f, currentWorksheet, colorfn) {
+	// Sort and group by COLUMNS (first dimension).
+	let grouped_ranges = Colorize.identify_groups(f, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
+	console.log(JSON.stringify(grouped_ranges));
+	//	console.log(typeof grouped_ranges);
+	let g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
+	console.log(Colorize.mergeable(g));
+//	console.log(grouped_ranges);
 	// FINALLY, process the ranges.
-	Object.keys(grouped_ranges).forEach(color => {
-	    if (!(color === undefined)) {
- 		let v = grouped_ranges[color];
+	Object.keys(grouped_ranges).forEach(hash => {
+	    if (!(hash === undefined)) {
+ 		let v = grouped_ranges[hash];
 		for (let theRange of v) {
 		    let r = theRange;
 		    let col0 = Colorize.column_index_to_name(r[0][0]);
@@ -136,6 +137,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let row1 = r[1][1];
 		    
 		    let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
+		    let color = colorfn(hash); // Colorize.get_color(parseInt(hash));
 		    range.format.fill.color = color;
 		}
 	    }
@@ -170,6 +172,7 @@ export default class App extends React.Component<AppProps, AppState> {
     
     setColor = async () => {
         try {
+//	    OfficeExtension.config.extendedErrorLogging = true;
             await Excel.run(async context => {
 		let app = context.workbook.application;
 		console.log("ExceLint: starting processing.");
@@ -231,8 +234,8 @@ export default class App extends React.Component<AppProps, AppState> {
  		let processed_formulas = Colorize.process_formulas(formulas, vec[0]-1, vec[1]-1);
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0], vec[1]);
 		
-		this.process(processed_data, currentWorksheet);
-		this.process(processed_formulas, currentWorksheet);
+		this.process(processed_data, currentWorksheet, (hash : string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash))); });
+		this.process(processed_formulas, currentWorksheet, (hash : string) => { return Colorize.get_color(parseInt(hash)); });
 		
 		
 		await context.sync();

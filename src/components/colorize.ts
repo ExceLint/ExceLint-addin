@@ -29,14 +29,14 @@ export class Colorize {
 
     public static get_light_color_version(color: string) : string {
 	return Colorize.light_color_dict[color];
-//	return Colorize.light_color_list[hashval % Colorize.color_list.length];
+	//	return Colorize.light_color_list[hashval % Colorize.color_list.length];
     }
 
-/*
-    private static transpose(array) {
-	array[0].map((col, i) => array.map(row => row[i]));
-    }
-*/
+    /*
+      private static transpose(array) {
+      array[0].map((col, i) => array.map(row => row[i]));
+      }
+    */
     
     public static process_formulas(formulas: Array<Array<string>>, origin_col : number, origin_row : number) : Array<[[number, number], string]> {
 	let output : Array<[[number, number], string]> = [];
@@ -47,17 +47,17 @@ export class Colorize {
 		//	console.log("checking "+row[j]);
 		//	console.log("char 0 = " + row[j][0]);
 		if ((row[j].length > 0) && (row[j][0] === "=")) {
-//		    console.log("FOUND ONE formulas["+i+","+j+"] = " + row[j]);
+		    //		    console.log("FOUND ONE formulas["+i+","+j+"] = " + row[j]);
 		    let vec = Colorize.dependencies(row[j], j + origin_col, i + origin_row);
 		    //console.log(vec);
 		    let hash =Colorize.hash_vector(vec);
 		    //console.log(hash);
-		    let color = Colorize.get_color(hash);
+//		    let color = Colorize.get_color(hash);
 		    //console.log(color);
 		    //		    let dict = { "format" : { "fill" : { "color" : color } } };
-//		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
+		    //		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
 		    //		    output.push([i, j, color]);
-		    output.push([[j + origin_col + 1, i + origin_row + 1], color]);
+		    output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
 		}
 	    }
 	}
@@ -65,17 +65,17 @@ export class Colorize {
 	return output;
     }
 
-      
+    
     public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
 	let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
 	let data_color = {};
 	let processed_data = [];
 	
 	// Generate all formula colors (as a dict).
-	let formula_color = {};
+	let formula_hash = {};
 	for (let f of processed_formulas) {
 	    let formula_vec = f[0];
-	    formula_color[formula_vec.join(",")] = f[1];
+	    formula_hash[formula_vec.join(",")] = f[1];
 	}
 	
 	// Color all references based on the color of their referring formula.
@@ -84,8 +84,8 @@ export class Colorize {
 	    // console.log("ref loop checking refvec = " + refvec);
 	    for (let r of refs[refvec]) {
 		// console.log("ref loop checking " + r);
-		let color = formula_color[r.join(",")];
-		if (!(color === undefined)) {
+		let hash = formula_hash[r.join(",")];
+		if (!(hash === undefined)) {
 		    //		    console.log("color = " + color);
 		    let rv = JSON.parse("[" + refvec + "]");
 		    //console.log(parseInt(rv[0]));
@@ -93,13 +93,12 @@ export class Colorize {
 		    let row = parseInt(rv[0]);
 		    let col = parseInt(rv[1]);
 		    // console.log("Checking "+row+", "+col);
-		    if (!([row,col].join(",") in formula_color)) {
+		    if (!([row,col].join(",") in formula_hash)) {
 			if (!([row,col].join(",") in data_color)) {
-			    processed_data.push([[row, col], Colorize.get_light_color_version(color)]);
+			    processed_data.push([[row, col], hash]);
 			    // currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
-			    data_color[[row,col].join(",")] = Colorize.get_light_color_version(color);
+			    data_color[[row,col].join(",")] = hash;
 			    // console.log("Added "+row+", "+col);
-			    
 			}
 		    }
 		}
@@ -177,10 +176,10 @@ export class Colorize {
 	return str.split("").reverse().join("");
     }
 
-// Take in a list of [[row, col], color] pairs and group them,
-// sorting them by columns.
+    // Take in a list of [[row, col], color] pairs and group them,
+    // sorting them by columns.
 
-    public static identify_ranges<T>(list : Array<[T, string]>, sortfn? : (n1: T, n2: T) => number ) : { [val : string] : Array<T> }
+    public static identify_ranges(list : Array<[[number, number], string]>, sortfn? : (n1: [number, number], n2: [number, number]) => number ) : { [val : string] : Array<[number, number]> }
     {
 	let groups = {};
 	for (let r of list) {
@@ -195,7 +194,14 @@ export class Colorize {
 	return groups;
     }
 
-    public static group_ranges<T>(groups : { [val : string] : Array<T> }) : { [val : string] : Array<Array<T>> }
+    public static identify_groups(list : Array<[[number, number], string]>, sortfn? : (n1: [number, number], n2: [number, number]) => number ) : { [val : string] : Array<[[number, number], [number, number]]> }
+    {
+	let id = Colorize.identify_ranges(list, sortfn);
+	let gr = Colorize.group_ranges(id);
+	return gr;
+    }
+    
+    public static group_ranges(groups : { [val : string] : Array<[number, number]> }) : { [val : string] : Array<[[number, number], [number, number]]> }
     {
 	let output = {};
 	for (let k of Object.keys(groups)) {
@@ -215,33 +221,33 @@ export class Colorize {
 	}
 
 	/*
-	let output2 = {};
+	  let output2 = {};
 
-	// Need to sort here by row... FIXME
-	
-	for (let k of Object.keys(output)) {
-	    output2[k] = [];
-	    let prev = output[k].shift();
-	    let last = prev;
-	    for (let v of output[k]) {
-		if ((v[0] === last[0] + 1) && (v[1] === last[1])) { // same row, adjacent column
-		    last = v;
-		} else {
-		    output2[k].push([prev, last]);
-		    prev = v;
-		    last = v;
-		}
-	    }
-	    output2[k].push([prev, last]);
-	}
-	return output2;*/
+	  // Need to sort here by row... FIXME
+	  
+	  for (let k of Object.keys(output)) {
+	  output2[k] = [];
+	  let prev = output[k].shift();
+	  let last = prev;
+	  for (let v of output[k]) {
+	  if ((v[0] === last[0] + 1) && (v[1] === last[1])) { // same row, adjacent column
+	  last = v;
+	  } else {
+	  output2[k].push([prev, last]);
+	  prev = v;
+	  last = v;
+	  }
+	  }
+	  output2[k].push([prev, last]);
+	  }
+	  return output2;*/
 	return output;
     }
 
     // True if combining A and B would result in a new rectangle.
-    public static merge_friendly(A : [number,number,number,number], B: [number,number,number,number]) : boolean {
-	let [Ax0, Ay0, Ax1, Ay1] = A;
-	let [Bx0, By0, Bx1, By1] = B;
+    public static merge_friendly(A : [[number,number], [number,number]], B: [[number,number], [number,number]]) : boolean {
+	let [[Ax0, Ay0], [Ax1, Ay1]] = A;
+	let [[Bx0, By0], [Bx1, By1]] = B;
 	if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
 	    if (Ay0 == By1 + 1) {
 		// top
@@ -263,6 +269,25 @@ export class Colorize {
 	    }
 	}
 	return false;
+    }
+
+    public static mergeable(grouped_ranges: { [val : string] : Array<[[number, number], [number, number]]> }) : { [val: string] : Array<Array<[[number, number], [number, number]]>> }  {
+	// Input comes from group_ranges.
+	let mergeable = {};
+	for (let k of Object.keys(grouped_ranges)) {
+	    mergeable[k] = [];
+	    let r = grouped_ranges[k];
+	    while (r.length > 0) {
+		let head = r.shift();
+		let merge_candidates = r.filter((b) => { return Colorize.merge_friendly(head, b); });
+		if (merge_candidates.length > 0) {
+		    for (let c of merge_candidates) {
+			mergeable[k].push([head, c]);
+		    }
+		}
+	    }
+	}
+	return mergeable;
     }
     
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
@@ -323,15 +348,15 @@ export class Colorize {
 	// First, get all the range pairs out.
 	while (found_pair = Colorize.range_pair.exec(range)) {
 	    if (found_pair) {
-//		console.log("all_cell_dependencies --> " + found_pair);
+		//		console.log("all_cell_dependencies --> " + found_pair);
 		let first_cell = found_pair[1];
-//		console.log(" first_cell = " + first_cell);
+		//		console.log(" first_cell = " + first_cell);
 		let first_vec = Colorize.cell_dependency(first_cell, 0, 0);
-//		console.log(" first_vec = " + JSON.stringify(first_vec));
+		//		console.log(" first_vec = " + JSON.stringify(first_vec));
 		let last_cell = found_pair[2];
-//		console.log(" last_cell = " + last_cell);
+		//		console.log(" last_cell = " + last_cell);
 		let last_vec = Colorize.cell_dependency(last_cell, 0, 0);
-//		console.log(" last_vec = " + JSON.stringify(last_vec));
+		//		console.log(" last_vec = " + JSON.stringify(last_vec));
 
 		// First_vec is the upper-left hand side of a rectangle.
 		// Last_vec is the lower-right hand side of a rectangle.
@@ -357,11 +382,11 @@ export class Colorize {
 	let singleton = null;
 	while (singleton = Colorize.single_dep.exec(range)) {
 	    if (singleton) {
-//		console.log("SINGLETON");
-//		console.log("singleton[1] = " + singleton[1]);
+		//		console.log("SINGLETON");
+		//		console.log("singleton[1] = " + singleton[1]);
 		//	    console.log(found_pair);
 		let first_cell = singleton[1];
-//		console.log(first_cell);
+		//		console.log(first_cell);
 		let vec = Colorize.cell_dependency(first_cell, 0, 0);
 		all_vectors.push(vec);
 		// Wipe out the matched contents of range.
@@ -387,10 +412,10 @@ export class Colorize {
 	    if (found_pair) {
 		//	    console.log(found_pair);
 		let first_cell = found_pair[1];
-//		console.log(first_cell);
+		//		console.log(first_cell);
 		let first_vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
 		let last_cell = found_pair[2];
-//		console.log(last_cell);
+		//		console.log(last_cell);
 		let last_vec = Colorize.cell_dependency(last_cell, origin_col, origin_row);
 
 		// First_vec is the upper-left hand side of a rectangle.
@@ -427,7 +452,7 @@ export class Colorize {
 	    if (singleton) {
 		//	    console.log(found_pair);
 		let first_cell = singleton[1];
-//		console.log(first_cell);
+		//		console.log(first_cell);
 		let vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
 		base_vector[0] += vec[0];
 		base_vector[1] += vec[1];
