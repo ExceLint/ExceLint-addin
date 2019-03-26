@@ -167,6 +167,7 @@ export class Colorize {
 	return value;
     }
 
+    // Convert a column number to a name (as in, 3 => "C").
     public static column_index_to_name(index: number) : string {
 	let str = "";
 	while (index > 0) {
@@ -177,15 +178,18 @@ export class Colorize {
     }
 
     // Take in a list of [[row, col], color] pairs and group them,
-    // sorting them by columns.
-
-    public static identify_ranges(list : Array<[[number, number], string]>, sortfn? : (n1: [number, number], n2: [number, number]) => number ) : { [val : string] : Array<[number, number]> }
+    // sorting them (e.g., by columns).
+    private static identify_ranges(list : Array<[[number, number], string]>,
+				   sortfn? : (n1: [number, number], n2: [number, number]) => number )
+    : { [val : string] : Array<[number, number]> }
     {
+	// Separate into groups based on their string value.
 	let groups = {};
 	for (let r of list) {
 	    groups[r[1]] = groups[r[1]] || [];
 	    groups[r[1]].push(r[0]);
 	}
+	// Now sort them all.
 	for (let k of Object.keys(groups)) {
 	    //	console.log(k);
 	    groups[k].sort(sortfn);
@@ -194,22 +198,24 @@ export class Colorize {
 	return groups;
     }
 
-    public static identify_groups(list : Array<[[number, number], string]>, sortfn? : (n1: [number, number], n2: [number, number]) => number ) : { [val : string] : Array<[[number, number], [number, number]]> }
-    {
-	let id = Colorize.identify_ranges(list, sortfn);
-	let gr = Colorize.group_ranges(id);
-	return gr;
-    }
-    
-    public static group_ranges(groups : { [val : string] : Array<[number, number]> }) : { [val : string] : Array<[[number, number], [number, number]]> }
+    private static group_ranges(groups : { [val : string] : Array<[number, number]> },
+				columnFirst: boolean)
+    : { [val : string] : Array<[[number, number], [number, number]]> }
     {
 	let output = {};
+	let index0 = 0; // column
+	let index1 = 1; // row
+	if (!columnFirst) {
+	    index0 = 1; // row
+	    index1 = 0; // column
+	}
 	for (let k of Object.keys(groups)) {
 	    output[k] = [];
 	    let prev = groups[k].shift();
 	    let last = prev;
 	    for (let v of groups[k]) {
-		if ((v[0] === last[0]) && (v[1] === last[1] + 1)) { // same column, adjacent row
+		// Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
+		if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
 		    last = v;
 		} else {
 		    output[k].push([prev, last]);
@@ -244,6 +250,29 @@ export class Colorize {
 	return output;
     }
 
+    public static identify_groups(list : Array<[[number, number], string]>) : { [val : string] : Array<[[number, number], [number, number]]> }
+    {
+	console.log("start identify_groups");
+	console.log(list);
+	let columnsort = (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }};
+	let id = Colorize.identify_ranges(list, columnsort);
+	let gr = Colorize.group_ranges(id, true); // column-first
+	console.log("group ranges");
+	console.log(gr);
+	// Now try to merge stuff with the same hash.
+	let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
+	let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
+	let mr = Colorize.mergeable(newGr1);
+	console.log("mergeable!");
+	console.log(mr);
+	let mg = Colorize.merge_groups(newGr2, mr);
+	console.log("merge_groups!");
+	console.log(mg);
+	console.log("end identify_groups");
+	return gr;
+    }
+    
+
     // True if combining A and B would result in a new rectangle.
     public static merge_friendly(A : [[number,number], [number,number]], B: [[number,number], [number,number]]) : boolean {
 	let [[Ax0, Ay0], [Ax1, Ay1]] = A;
@@ -271,7 +300,70 @@ export class Colorize {
 	return false;
     }
 
-    public static mergeable(grouped_ranges: { [val : string] : Array<[[number, number], [number, number]]> }) : { [val: string] : Array<Array<[[number, number], [number, number]]>> }  {
+    // Return a merged version (both should be "merge friendly").
+    public static merge_rectangles(A : [[number,number], [number,number]],
+				   B: [[number,number], [number,number]])
+    : [[number, number], [number, number]]
+    {
+	let [[Ax0, Ay0], [Ax1, Ay1]] = A;
+	let [[Bx0, By0], [Bx1, By1]] = B;
+	if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
+	    if (Ay0 == By1 + 1) {
+		// top
+		return [[Bx0, By0], [Ax0, Ay1]];
+	    }
+	    if (Ay1 + 1 == By0) {
+		// bottom
+		return [[Ax0, Ay0], [Bx1, By1]];
+	    }
+	}
+	if ((Ay0 == By0) && (Ay1 == By1)) {
+	    if (Ax0 == Bx1 + 1) {
+		// left
+		return [[Bx0, By0], [Ax1, Ay1]];
+	    }
+	    if (Ax1 + 1 == Bx0) {
+		// right
+		return [[Ax0, Ay0], [Bx1, By1]];
+	    }
+	}
+	return [[-1, -1], [-1, -1]]; //FIXME should throw an exception here
+    }
+
+    public static merge_groups(groups : { [val : string] : Array<[[number, number], [number, number]]> },
+			       merge_candidates : { [val: string] : Array<Array<[[number, number], [number, number]]>> })
+    : { [val : string] : Array<[[number, number], [number, number]]> }
+    {
+	// Groups already passed as input to mergeable.
+	// Merge_candidates generated by mergeable.
+	// Go through all mergeable groups; for each, remove the corresponding two rectangles and add the merged one.
+	let merged_rectangles = {}
+	for (let k of Object.keys(merge_candidates)) {
+	    merged_rectangles[k] = merged_rectangles[k] || [];
+	    let removed = {};
+	    for (let range of merge_candidates[k]) {
+		let first = range[0];
+		let second = range[1];
+		// Add these to be removed later.
+		removed[JSON.stringify(first)] = true;
+		removed[JSON.stringify(second)] = true;
+		let merged = Colorize.merge_rectangles(first, second);
+		merged_rectangles[k].push(merged);
+	    }
+	    let newList = [];
+	    for (let i = 0; i < groups[k].length; i++) {
+		let str = JSON.stringify(groups[k][i]);
+		if (!(str in removed)) {
+		    newList.push(groups[k][i]);
+		}
+	    }
+	    merged_rectangles[k].push(...newList);
+	}
+	return merged_rectangles;
+    }
+    
+    public static mergeable(grouped_ranges: { [val : string] : Array<[[number, number], [number, number]]> })
+    : { [val: string] : Array<Array<[[number, number], [number, number]]>> }  {
 	// Input comes from group_ranges.
 	let mergeable = {};
 	for (let k of Object.keys(grouped_ranges)) {

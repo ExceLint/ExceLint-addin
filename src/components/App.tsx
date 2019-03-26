@@ -119,7 +119,7 @@ export default class App extends React.Component<AppProps, AppState> {
     
     private process(f, currentWorksheet, colorfn) {
 	// Sort and group by COLUMNS (first dimension).
-	let grouped_ranges = Colorize.identify_groups(f, (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }});
+	let grouped_ranges = Colorize.identify_groups(f);
 	console.log(JSON.stringify(grouped_ranges));
 	//	console.log(typeof grouped_ranges);
 	let g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
