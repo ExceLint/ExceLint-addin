@@ -1,0 +1,8 @@
+Install stuff:
+
+https://docs.microsoft.com/en-us/office/dev/add-ins/quickstarts/excel-quickstart-react
+
+npm -install -g yo@latest webpack rimraf webpack-dev-server webpack-cli
+npm run build
+npm start
+
