@@ -23,6 +23,7 @@ export default class App extends React.Component<AppProps, AppState> {
     
     constructor(props, context) {
         super(props, context);
+	Colorize.initialize();
     }
 
     
