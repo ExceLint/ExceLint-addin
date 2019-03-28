@@ -87,7 +87,7 @@ export class Colorize {
         for (let i = 0; i < formulas.length; i++) {
             let row = formulas[i];
             for (let j = 0; j < row.length; j++) {
-                if ((row[j].length > 0) && (row[j][0] === "=")) {
+                if ((row[j].length > 0) && (row[j][0] === '=')) {
                     let vec = Colorize.dependencies(row[j], j + origin_col, i + origin_row);
                     let hash =Colorize.hash_vector(vec);
                     output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
@@ -102,14 +102,14 @@ export class Colorize {
         let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
         let data_color = {};
         let processed_data = [];
-        
+
         // Generate all formula colors (as a dict).
         let formula_hash = {};
         for (let f of processed_formulas) {
             let formula_vec = f[0];
             formula_hash[formula_vec.join(",")] = f[1];
         }
-        
+
         // Color all references based on the color of their referring formula.
         for (let refvec of Object.keys(refs)) {
             for (let r of refs[refvec]) {
@@ -275,8 +275,7 @@ export class Colorize {
     // sorting them (e.g., by columns).
     private static identify_ranges(list : Array<[[number, number], string]>,
                    sortfn? : (n1: [number, number], n2: [number, number]) => number )
-    : { [val : string] : Array<[number, number]> }
-    {
+    : { [val : string] : Array<[number, number]> } {
         // Separate into groups based on their string value.
         let groups = {};
         for (let r of list) {
@@ -294,8 +293,7 @@ export class Colorize {
 
     private static group_ranges(groups : { [val : string] : Array<[number, number]> },
                 columnFirst: boolean)
-    : { [val : string] : Array<[[number, number], [number, number]]> }
-    {
+    : { [val : string] : Array<[[number, number], [number, number]]> } {
         let output = {};
         let index0 = 0; // column
         let index1 = 1; // row
@@ -322,16 +320,18 @@ export class Colorize {
         return output;
     }
 
-    public static identify_groups(list : Array<[[number, number], string]>) : { [val : string] : Array<[[number, number], [number, number]]> }
-    {
+    public static identify_groups(list : Array<[[number, number], string]>) : { [val : string] : Array<[[number, number], [number, number]]> } {
         let columnsort = (a, b) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }};
         let id = Colorize.identify_ranges(list, columnsort);
         let gr = Colorize.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
         let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
+        console.log("group ranges = " + JSON.stringify(newGr1));
         let mr = Colorize.mergeable(newGr1);
+        console.log("mergeable = " + JSON.stringify(mr));
         let mg = Colorize.merge_groups(newGr2, mr);
+        console.log("merge_groups = " + JSON.stringify(mg));
         return mg;
     }
     
@@ -405,33 +405,35 @@ export class Colorize {
         let numIterations = 0;
         while (true) {
             numIterations++;
-    //	    console.log("iterating");
+    	    console.log("iteration " + numIterations);
             previous_merged_rectangles = JSON.parse(JSON.stringify(merged_rectangles));
             for (let k of Object.keys(merge_candidates)) {
-            let to_be_merged_rectangles = [];
-            let removed = {};
-            for (let range of merge_candidates[k]) {
-                let first  : [[number, number], [number, number]] = range[0];
-                let second : [[number, number], [number, number]] = range[1];
-                // Add these to be removed later.
-                removed[JSON.stringify(first)] = true;
-                removed[JSON.stringify(second)] = true;
-                //console.log("1. marking for removal " + JSON.stringify(first));
-                //console.log("2. marking for removal " + JSON.stringify(second));
-                let merged = Colorize.merge_rectangles(first, second);
-                to_be_merged_rectangles.push(merged);
-            }
-
-            let newList = [];
-            for (let i = 0; i < groups[k].length; i++) {
-                let v : [[number, number], [number, number]] = groups[k][i];
-                let str = JSON.stringify(v);
-                if (!(str in removed)) {
-                    newList.push(groups[k][i]);
+                let to_be_merged_rectangles = [];
+                let removed = {};
+                for (let range of merge_candidates[k]) {
+                    let first  : [[number, number], [number, number]] = range[0];
+                    let second : [[number, number], [number, number]] = range[1];
+                    // Add these to be removed later.
+                    removed[JSON.stringify(first)] = true;
+                    removed[JSON.stringify(second)] = true;
+                    console.log("1. marking for removal " + JSON.stringify(first));
+                    console.log("2. marking for removal " + JSON.stringify(second));
+                    let merged = Colorize.merge_rectangles(first, second);
+                    console.log("replacing with " + JSON.stringify(merged));
+                    to_be_merged_rectangles.push(merged);
                 }
-            }
-            merged_rectangles[k] = newList;
-            merged_rectangles[k].push(...to_be_merged_rectangles);
+
+                let newList = [];
+                for (let i = 0; i < merge_candidates[k].length; i++) {
+                    let v : [[number, number], [number, number]] = merge_candidates[k][i];
+                    let str = JSON.stringify(v);
+                    if (!(str in removed)) {
+                        newList.push(v);
+                    }
+                }
+                merged_rectangles[k] = newList;
+                merged_rectangles[k].push(...to_be_merged_rectangles);
+                merge_candidates[k] = JSON.parse(JSON.stringify(merged_rectangles[k]));
             }
             if (JSON.stringify(merged_rectangles) === JSON.stringify(previous_merged_rectangles)) {
                 break;
@@ -513,10 +515,10 @@ export class Colorize {
 
 
     public static all_cell_dependencies(range: string) /* , origin_col: number, origin_row: number) */ : Array<[number, number]> {
-    
+
     let found_pair = null;
     let all_vectors : Array<[number, number]> = [];
-    
+
     /// FIX ME - should we count the same range multiple times? Or just once?
     
     // First, get all the range pairs out.
@@ -613,7 +615,7 @@ export class Colorize {
 
         base_vector[0] += sum_x;
         base_vector[1] += sum_y;
-        
+
         // Wipe out the matched contents of range.
         let newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
         range = newRange;
@@ -656,8 +658,8 @@ export class Colorize {
                 let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
                 //				console.log("dep type = " + typeof(dep));
                 //				console.log("dep = "+dep);
-                refs[dep2.join(",")] = refs[dep2.join(",")] || [];
-                refs[dep2.join(",")].push(src);
+                refs[dep2.join(',')] = refs[dep2.join(',')] || [];
+                refs[dep2.join(',')].push(src);
                 // console.log("refs[" + dep2.join(",") + "] = " + JSON.stringify(refs[dep2.join(",")]));
                 }
             }
