@@ -23,7 +23,6 @@ export default class App extends React.Component<AppProps, AppState> {
     
     constructor(props, context) {
         super(props, context);
-	Colorize.initialize();
     }
 
     
@@ -106,7 +105,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		} else {
 		    await this.processRange(context, currentWorksheet, startCol, startRow, endCol, endRow);
 		}
-		console.log(this.savedColors);
+		//console.log(this.savedColors);
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
  		console.log("Time elapsed (ms) = " + timeElapsedMS);
@@ -121,10 +120,10 @@ export default class App extends React.Component<AppProps, AppState> {
     private process(f, currentWorksheet, colorfn) {
 	// Sort and group by COLUMNS (first dimension).
 	let grouped_ranges = Colorize.identify_groups(f);
-	console.log(JSON.stringify(grouped_ranges));
+	//console.log(JSON.stringify(grouped_ranges));
 	//	console.log(typeof grouped_ranges);
 	let g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
-	console.log(Colorize.mergeable(g));
+	//console.log(Colorize.mergeable(g));
 //	console.log(grouped_ranges);
 	// FINALLY, process the ranges.
 	Object.keys(grouped_ranges).forEach(hash => {
@@ -146,6 +145,8 @@ export default class App extends React.Component<AppProps, AppState> {
     }
     
     clearColor = async () => {
+		Colorize.initialize();
+
         try {
             await Excel.run(async context => {
 
@@ -172,6 +173,8 @@ export default class App extends React.Component<AppProps, AppState> {
     }
     
     setColor = async () => {
+		Colorize.initialize();
+
         try {
 //	    OfficeExtension.config.extendedErrorLogging = true;
             await Excel.run(async context => {
@@ -213,19 +216,19 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		numericRanges.format.fill.color = "yellow";
 
-		// Give every numeric data item a dashed border.
-		let items = numericRanges.format.borders.items;
-		for (let border of items) {
-		    border.set ({ "weight" : "Thin",
-				  "style" : "Dash",
-				  "tintAndShade" : -1 });
-		}
-
 		// Give every formula a solid border.
-		items = formulaRanges.format.borders.items;
+		let items = formulaRanges.format.borders.items;
 		for (let border of items) {
 		    border.set ({ "weight" : "Thin",
 				  "style" : "Continuous",
+				  "tintAndShade" : -1 });
+		}
+
+		// Give every numeric data item a dashed border.
+		items = numericRanges.format.borders.items;
+		for (let border of items) {
+		    border.set ({ "weight" : "Thin",
+				  "style" : "Dash",
 				  "tintAndShade" : -1 });
 		}
 

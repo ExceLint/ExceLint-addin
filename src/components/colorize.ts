@@ -1,3 +1,5 @@
+import { rgb2hex } from "office-ui-fabric-react";
+
 export class Colorize {
 
     // Matchers for all kinds of Excel expressions.
@@ -10,41 +12,74 @@ export class Colorize {
     private static cell_both_relative = new RegExp('[^\\$]?([A-Z]+)(\\d+)');
     private static cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
     private static cell_row_absolute = new RegExp('[^\\$]?([A-Z]+)\\$(\\d+)');
-    private static cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
+	private static cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
+	private static rgb_ex = new RegExp('#([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])');
 
     private static initialized = false;
     private static color_list = [];
     private static light_color_list = [];
-    private static light_color_dict = { "#E75480" : "LightPink",
-					"#FF8C00" : "#FFCC99",
-					"#B784A7" : "#DCD0FF",
-					"#734F96" : "#E6E6FA",
-					"blue" : "LightBlue",
-					"seagreen" : "LightSeaGreen",
-					"green" : "PaleGreen",
-					"darkturquoise" : "#00FFEF",
-					"gray" : "LightGray",
-					"darksalmon" : "LightSalmon",
-				        "mediumvioletred" : "PaleVioletRed",
-					"#014421" : "#00755E" };
-
+	private static light_color_dict1 = 
+				{ "#AA5057" : "",  // dark salmon
+					"#FF33DD" : "", // purple
+					"#8F537E" : "",
+					"#371E30" : "",
+					"#295F5A" : "",
+				 };
+	private static light_color_dict = {};
+ 
     public static initialize() {
-	if (!Colorize.initialized) {
-	    for (let i of Object.keys(Colorize.light_color_dict)) {
-		Colorize.color_list.push(i);
-		Colorize.light_color_list.push(Colorize.light_color_dict[i]);
-	    }
-	    Colorize.initialized = true;
-	}
+		if (!Colorize.initialized) {
+			Colorize.make_light_color_versions();
+			for (let i of Object.keys(Colorize.light_color_dict)) {
+				Colorize.color_list.push(i);
+				Colorize.light_color_list.push(Colorize.light_color_dict[i]);
+			}
+			Colorize.initialized = true;
+		}
     }
     
     public static get_color(hashval: number) : string {
-	return Colorize.color_list[hashval % Colorize.color_list.length];
-    }
+		return Colorize.color_list[hashval % Colorize.color_list.length];
+	}
+	
+	private static make_light_color_versions() {
+//		console.log("YO");
+		for (let i = 0; i < 255; i += 7) {
+			let rgb = Colorize.HSVtoRGB(i / 255.0, .5, .75);
+			let [rs, gs, bs] = rgb.map((x) => { return Math.round(x).toString(16).padStart(2, "0"); });
+			let str = "#" + rs + gs + bs;
+			str = str.toUpperCase();
+			Colorize.light_color_dict[str] = "";
+		}
+		for (let color in Colorize.light_color_dict) {
+			let lightstr = Colorize.adjust_color(color, 2.0);
+			let darkstr = color; // = Colorize.adjust_color(color, 0.25);
+//			console.log(str);
+//			console.log("Old RGB = " + color + ", new = " + str);
+			delete Colorize.light_color_dict[color];
+			Colorize.light_color_dict[darkstr] = lightstr;
+		}
+
+	}
+
+	public static adjust_color(color : string, multiplier : number) : string {
+		let c = Colorize.rgb_ex.exec(color);
+		let [r, g, b] = [parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)];
+		let [h, s, v] = Colorize.RGBtoHSV(r, g, b);
+		v = multiplier * v;
+		if (v <= 0.0) { v = 0.0; }
+		if (v >= 1.0) { v = 0.99; }
+		let rgb = Colorize.HSVtoRGB(h, s, v);
+		let [rs, gs, bs] = rgb.map((x) => { return Math.round(x).toString(16).padStart(2, "0"); });
+		let str = "#" + rs + gs + bs;
+		str = str.toUpperCase();
+		return str;
+	}
+
+
 
     public static get_light_color_version(color: string) : string {
-	return Colorize.light_color_dict[color];
-	//	return Colorize.light_color_list[hashval % Colorize.color_list.length];
+		return Colorize.light_color_dict[color];
     }
 
     /*
@@ -54,142 +89,214 @@ export class Colorize {
     */
     
     public static process_formulas(formulas: Array<Array<string>>, origin_col : number, origin_row : number) : Array<[[number, number], string]> {
-	let output : Array<[[number, number], string]> = [];
-	// Build up all of the columns of colors.
-	for (let i = 0; i < formulas.length; i++) {
-	    let row = formulas[i];
-	    for (let j = 0; j < row.length; j++) {
-		//	console.log("checking "+row[j]);
-		//	console.log("char 0 = " + row[j][0]);
-		if ((row[j].length > 0) && (row[j][0] === "=")) {
-		    //		    console.log("FOUND ONE formulas["+i+","+j+"] = " + row[j]);
-		    let vec = Colorize.dependencies(row[j], j + origin_col, i + origin_row);
-		    //console.log(vec);
-		    let hash =Colorize.hash_vector(vec);
-		    //console.log(hash);
-//		    let color = Colorize.get_color(hash);
-		    //console.log(color);
-		    //		    let dict = { "format" : { "fill" : { "color" : color } } };
-		    //		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
-		    //		    output.push([i, j, color]);
-		    output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
+		let output : Array<[[number, number], string]> = [];
+		// Build up all of the columns of colors.
+		for (let i = 0; i < formulas.length; i++) {
+			let row = formulas[i];
+			for (let j = 0; j < row.length; j++) {
+				//	console.log("checking "+row[j]);
+				//	console.log("char 0 = " + row[j][0]);
+				if ((row[j].length > 0) && (row[j][0] === "=")) {
+					//		    console.log("FOUND ONE formulas["+i+","+j+"] = " + row[j]);
+					let vec = Colorize.dependencies(row[j], j + origin_col, i + origin_row);
+					//console.log(vec);
+					let hash =Colorize.hash_vector(vec);
+					//console.log(hash);
+		//		    let color = Colorize.get_color(hash);
+					//console.log(color);
+					//		    let dict = { "format" : { "fill" : { "color" : color } } };
+					//		    let cell = Colorize.column_index_to_name(j + origin_col + 1)+(i + origin_row + 1);
+					//		    output.push([i, j, color]);
+					output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
+				}
+			}
 		}
-	    }
-	}
-	
-	return output;
+		
+		return output;
     }
 
     
     public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
-	let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
-	let data_color = {};
-	let processed_data = [];
-	
-	// Generate all formula colors (as a dict).
-	let formula_hash = {};
-	for (let f of processed_formulas) {
-	    let formula_vec = f[0];
-	    formula_hash[formula_vec.join(",")] = f[1];
-	}
-	
-	// Color all references based on the color of their referring formula.
-	for (let refvec of Object.keys(refs)) {
-	    // console.log("refvec = "+refvec);
-	    // console.log("ref loop checking refvec = " + refvec);
-	    for (let r of refs[refvec]) {
-		// console.log("ref loop checking " + r);
-		let hash = formula_hash[r.join(",")];
-		if (!(hash === undefined)) {
-		    //		    console.log("color = " + color);
-		    let rv = JSON.parse("[" + refvec + "]");
-		    //console.log(parseInt(rv[0]));
-		    //console.log(parseInt(rv[1]));
-		    let row = parseInt(rv[0]);
-		    let col = parseInt(rv[1]);
-		    // console.log("Checking "+row+", "+col);
-		    if (!([row,col].join(",") in formula_hash)) {
-			if (!([row,col].join(",") in data_color)) {
-			    processed_data.push([[row, col], hash]);
-			    // currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
-			    data_color[[row,col].join(",")] = hash;
-			    // console.log("Added "+row+", "+col);
-			}
-		    }
+		//console.log("color_all_data");
+		let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
+		let data_color = {};
+		let processed_data = [];
+		
+		// Generate all formula colors (as a dict).
+		let formula_hash = {};
+		for (let f of processed_formulas) {
+			let formula_vec = f[0];
+			formula_hash[formula_vec.join(",")] = f[1];
 		}
-	    }
-	}
-	return processed_data;
+		
+		// Color all references based on the color of their referring formula.
+		for (let refvec of Object.keys(refs)) {
+			// console.log("refvec = "+refvec);
+			// console.log("ref loop checking refvec = " + refvec);
+			for (let r of refs[refvec]) {
+				// console.log("ref loop checking " + r);
+				let hash = formula_hash[r.join(",")];
+				if (!(hash === undefined)) {
+					//		    console.log("color = " + color);
+					let rv = JSON.parse("[" + refvec + "]");
+					//console.log(parseInt(rv[0]));
+					//console.log(parseInt(rv[1]));
+					let row = parseInt(rv[0]);
+					let col = parseInt(rv[1]);
+					// console.log("Checking "+row+", "+col);
+					if (!([row,col].join(",") in formula_hash)) {
+						if (!([row,col].join(",") in data_color)) {
+							//console.log("coloring data cell "+ col.toString() + ", " + row.toString());
+							processed_data.push([[row, col], hash]);
+							// currentWorksheet.getCell(col-1, row-1).format.fill.color = Colorize.get_light_color_version(color);
+							data_color[[row,col].join(",")] = hash;
+							// console.log("Added "+row+", "+col);
+						}
+					}
+				}
+			}
+		}
+		return processed_data;
     }
 
     
     private static hash(str: string) : number {
-	// From https://github.com/darkskyapp/string-hash
-	var hash = 5381,
-	i = str.length;
-	
-	while(i) {
-	    hash = (hash * 33) ^ str.charCodeAt(--i);
+		// From https://github.com/darkskyapp/string-hash
+		var hash = 5381,
+		i = str.length;
+		
+		while(i) {
+			hash = (hash * 33) ^ str.charCodeAt(--i);
+		}
+
+		/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+		* integers. Since we want the results to be always positive, convert the
+		* signed int to an unsigned by doing an unsigned bitshift. */
+		return hash >>> 0;
 	}
-
-	/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-	 * integers. Since we want the results to be always positive, convert the
-	 * signed int to an unsigned by doing an unsigned bitshift. */
-	return hash >>> 0;
-    }
-    
-    private static rgbFromHSV(h,s,v) : Array<number> {
-	// From https://gist.github.com/mjackson/5311256#gistcomment-2789005
-	/**
-	 * I: An array of three elements hue (h) ∈ [0, 360], and saturation (s) and value (v) which are ∈ [0, 1]
-	 * O: An array of red (r), green (g), blue (b), all ∈ [0, 255]
-	 * Derived from https://en.wikipedia.org/wiki/HSL_and_HSV
-	 * This stackexchange was the clearest derivation I found to reimplement https://cs.stackexchange.com/questions/64549/convert-hsv-to-rgb-colors
-	 */
-
-	let hprime = h / 60;
-	const c = v * s;
-	const x = c * (1 - Math.abs(hprime % 2 - 1)); 
-	const m = v - c;
-	let r, g, b;
-	if (!hprime) {r = 0; g = 0; b = 0; }
-	if (hprime >= 0 && hprime < 1) { r = c; g = x; b = 0}
-	if (hprime >= 1 && hprime < 2) { r = x; g = c; b = 0}
-	if (hprime >= 2 && hprime < 3) { r = 0; g = c; b = x}
-	if (hprime >= 3 && hprime < 4) { r = 0; g = x; b = c}
-	if (hprime >= 4 && hprime < 5) { r = x; g = 0; b = c}
-	if (hprime >= 5 && hprime < 6) { r = c; g = 0; b = x}
 	
-	r = Math.round( (r + m)* 255);
-	g = Math.round( (g + m)* 255);
-	b = Math.round( (b + m)* 255);
 
-	return [r, g, b]
+	/**
+ * Converts an RGB color value to HSV. Conversion formula
+ * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+ * Assumes r, g, and b are contained in the set [0, 255] and
+ * returns h, s, and v in the set [0, 1].
+ *
+ * @param   Number  r       The red color value
+ * @param   Number  g       The green color value
+ * @param   Number  b       The blue color value
+ * @return  Array           The HSV representation
+ */
+private static RGBtoHSV(r, g, b) : [number, number, number] {
+	r /= 255, g /= 255, b /= 255;
+  
+	var max = Math.max(r, g, b), min = Math.min(r, g, b);
+	var h, s, v = max;
+  
+	var d = max - min;
+	s = max == 0 ? 0 : d / max;
+  
+	if (max == min) {
+	  h = 0; // achromatic
+	} else {
+	  switch (max) {
+		case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+		case g: h = (b - r) / d + 2; break;
+		case b: h = (r - g) / d + 4; break;
+	  }
+  
+	  h /= 6;
+	}
+  
+	return [ h, s, v ];
+  }
+
+	/**
+	 * Converts an HSV color value to RGB. Conversion formula
+	 * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
+	 * Assumes h, s, and v are contained in the set [0, 1] and
+	 * returns r, g, and b in the set [0, 255].
+	 *
+	 * @param   Number  h       The hue
+	 * @param   Number  s       The saturation
+	 * @param   Number  v       The value
+	 * @return  Array           The RGB representation
+	 */
+	private static HSVtoRGB(h, s, v) : [number, number, number] {
+		var r, g, b;
+	
+		var i = Math.floor(h * 6);
+		var f = h * 6 - i;
+		var p = v * (1 - s);
+		var q = v * (1 - f * s);
+		var t = v * (1 - (1 - f) * s);
+	
+		switch (i % 6) {
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q; break;
+		}
+	
+		return [ r * 255, g * 255, b * 255 ];
+	}
+	/**
+		 * I: An array of three elements hue (h) ∈ [0, 360], and saturation (s) and value (v) which are ∈ [0, 1]
+		 * O: An array of red (r), green (g), blue (b), all ∈ [0, 255]
+		 * Derived from https://en.wikipedia.org/wiki/HSL_and_HSV
+		 * This stackexchange was the clearest derivation I found to reimplement https://cs.stackexchange.com/questions/64549/convert-hsv-to-rgb-colors
+		 */
+		private static oldHSVtoRGB(h,s,v) : [number, number, number] {
+		// From https://gist.github.com/mjackson/5311256#gistcomment-2789005
+		
+		let hprime = h / 60;
+		const c = v * s;
+		const x = c * (1 - Math.abs(hprime % 2 - 1)); 
+		const m = v - c;
+		let r, g, b;
+		if (!hprime) {r = 0; g = 0; b = 0; }
+		if (hprime >= 0 && hprime < 1) { r = c; g = x; b = 0}
+		if (hprime >= 1 && hprime < 2) { r = x; g = c; b = 0}
+		if (hprime >= 2 && hprime < 3) { r = 0; g = c; b = x}
+		if (hprime >= 3 && hprime < 4) { r = 0; g = x; b = c}
+		if (hprime >= 4 && hprime < 5) { r = x; g = 0; b = c}
+		if (hprime >= 5 && hprime < 6) { r = c; g = 0; b = x}
+		
+		r = Math.round( (r + m)* 255);
+		g = Math.round( (g + m)* 255);
+		b = Math.round( (b + m)* 255);
+
+		if (r < 0) { console.log("SHITR"); }
+		if (g < 0) { console.log("SHITR"); }
+		if (b < 0) { console.log("SHITR"); }
+		return [r, g, b]
     }
     
     
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     public static column_name_to_index(name: string) : number {
-	if (name.length === 1) { // optimizing for the overwhelmingly common case
-	    return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
-	}
-	let value = 0;
-	let reversed_name = name.split("").reverse();
-	for (let i of reversed_name) {
-	    value *= 26;
-	    value = (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
-	}
-	return value;
+		if (name.length === 1) { // optimizing for the overwhelmingly common case
+			return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+		}
+		let value = 0;
+		let reversed_name = name.split("").reverse();
+		for (let i of reversed_name) {
+			value *= 26;
+			value = (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
+		}
+		return value;
     }
 
     // Convert a column number to a name (as in, 3 => "C").
     public static column_index_to_name(index: number) : string {
-	let str = "";
-	while (index > 0) {
-	    str += String.fromCharCode((index - 1) % 26 + 65); // 65 = 'A'
-	    index = Math.floor(index / 26);
-	}
-	return str.split("").reverse().join("");
+		let str = "";
+		while (index > 0) {
+			str += String.fromCharCode((index - 1) % 26 + 65); // 65 = 'A'
+			index = Math.floor(index / 26);
+		}
+		return str.split("").reverse().join("");
     }
 
     // Take in a list of [[row, col], color] pairs and group them,
@@ -198,215 +305,180 @@ export class Colorize {
 				   sortfn? : (n1: [number, number], n2: [number, number]) => number )
     : { [val : string] : Array<[number, number]> }
     {
-	// Separate into groups based on their string value.
-	let groups = {};
-	for (let r of list) {
-	    groups[r[1]] = groups[r[1]] || [];
-	    groups[r[1]].push(r[0]);
-	}
-	// Now sort them all.
-	for (let k of Object.keys(groups)) {
-	    //	console.log(k);
-	    groups[k].sort(sortfn);
-	    //	console.log(groups[k]);
-	}
-	return groups;
+		// Separate into groups based on their string value.
+		let groups = {};
+		for (let r of list) {
+			groups[r[1]] = groups[r[1]] || [];
+			groups[r[1]].push(r[0]);
+		}
+		// Now sort them all.
+		for (let k of Object.keys(groups)) {
+			//	console.log(k);
+			groups[k].sort(sortfn);
+			//	console.log(groups[k]);
+		}
+		return groups;
     }
 
     private static group_ranges(groups : { [val : string] : Array<[number, number]> },
 				columnFirst: boolean)
     : { [val : string] : Array<[[number, number], [number, number]]> }
     {
-	let output = {};
-	let index0 = 0; // column
-	let index1 = 1; // row
-	if (!columnFirst) {
-	    index0 = 1; // row
-	    index1 = 0; // column
-	}
-	for (let k of Object.keys(groups)) {
-	    output[k] = [];
-	    let prev = groups[k].shift();
-	    let last = prev;
-	    for (let v of groups[k]) {
-		// Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
-		if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
-		    last = v;
-		} else {
-		    output[k].push([prev, last]);
-		    prev = v;
-		    last = v;
+		let output = {};
+		let index0 = 0; // column
+		let index1 = 1; // row
+		if (!columnFirst) {
+			index0 = 1; // row
+			index1 = 0; // column
 		}
-	    }
-	    output[k].push([prev, last]);
-	}
-
-	/*
-	  let output2 = {};
-
-	  // Need to sort here by row... FIXME
-	  
-	  for (let k of Object.keys(output)) {
-	  output2[k] = [];
-	  let prev = output[k].shift();
-	  let last = prev;
-	  for (let v of output[k]) {
-	  if ((v[0] === last[0] + 1) && (v[1] === last[1])) { // same row, adjacent column
-	  last = v;
-	  } else {
-	  output2[k].push([prev, last]);
-	  prev = v;
-	  last = v;
-	  }
-	  }
-	  output2[k].push([prev, last]);
-	  }
-	  return output2;*/
-	return output;
+		for (let k of Object.keys(groups)) {
+			output[k] = [];
+			let prev = groups[k].shift();
+			let last = prev;
+			for (let v of groups[k]) {
+				// Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
+				if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
+					last = v;
+				} else {
+					output[k].push([prev, last]);
+					prev = v;
+					last = v;
+				}
+			}
+			output[k].push([prev, last]);
+		}
+		return output;
     }
 
     public static identify_groups(list : Array<[[number, number], string]>) : { [val : string] : Array<[[number, number], [number, number]]> }
     {
-	console.log("start identify_groups");
-	console.log(list);
-	let columnsort = (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }};
-	let id = Colorize.identify_ranges(list, columnsort);
-	let gr = Colorize.group_ranges(id, true); // column-first
-	console.log("group ranges");
-	console.log(gr);
-	// Now try to merge stuff with the same hash.
-	let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
-	let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-	let mr = Colorize.mergeable(newGr1);
-	console.log("mergeable!");
-	console.log(mr);
-	let mg = Colorize.merge_groups(newGr2, mr);
-	console.log("merge_groups!");
-	console.log(mg);
-	console.log("end identify_groups");
-	return mg;
-    }
+	//	console.log("start identify_groups");
+	//	console.log(list);
+		let columnsort = (a, b) => { if (a[0] == b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; }};
+		let id = Colorize.identify_ranges(list, columnsort);
+		let gr = Colorize.group_ranges(id, true); // column-first
+	//	console.log("group ranges");
+	//	console.log(gr);
+		// Now try to merge stuff with the same hash.
+		let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
+		let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
+		let mr = Colorize.mergeable(newGr1);
+	//	console.log("mergeable!");
+	//	console.log(mr);
+		let mg = Colorize.merge_groups(newGr2, mr);
+	//	console.log("merge_groups!");
+	//	console.log(mg);
+	//	console.log("end identify_groups");
+		return mg;
+		}
     
 
     // True if combining A and B would result in a new rectangle.
     public static merge_friendly(A : [[number,number], [number,number]], B: [[number,number], [number,number]]) : boolean {
-	let [[Ax0, Ay0], [Ax1, Ay1]] = A;
-	let [[Bx0, By0], [Bx1, By1]] = B;
-	if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
-	    if (Ay0 == By1 + 1) {
-		// top
-		return true;
-	    }
-	    if (Ay1 + 1 == By0) {
-		// bottom
-		return true;
-	    }
+		let [[Ax0, Ay0], [Ax1, Ay1]] = A;
+		let [[Bx0, By0], [Bx1, By1]] = B;
+		if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
+			if (Ay0 == By1 + 1) {
+				// top
+				return true;
+			}
+			if (Ay1 + 1 == By0) {
+				// bottom
+				return true;
+			}
+		}
+		if ((Ay0 == By0) && (Ay1 == By1)) {
+			if (Ax0 == Bx1 + 1) {
+				// left
+				return true;
+			}
+			if (Ax1 + 1 == Bx0) {
+				// right
+				return true;
+			}
+		}
+		return false;
 	}
-	if ((Ay0 == By0) && (Ay1 == By1)) {
-	    if (Ax0 == Bx1 + 1) {
-		// left
-		return true;
-	    }
-	    if (Ax1 + 1 == Bx0) {
-		// right
-		return true;
-	    }
-	}
-	return false;
-    }
 
     // Return a merged version (both should be "merge friendly").
     public static merge_rectangles(A : [[number,number], [number,number]],
 				   B: [[number,number], [number,number]])
     : [[number, number], [number, number]]
-    {
-	let [[Ax0, Ay0], [Ax1, Ay1]] = A;
-	let [[Bx0, By0], [Bx1, By1]] = B;
-	if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
-	    if (Ay0 == By1 + 1) {
-		// top
-		return [[Bx0, By0], [Ax0, Ay1]];
-	    }
-	    if (Ay1 + 1 == By0) {
-		// bottom
-		return [[Ax0, Ay0], [Bx1, By1]];
-	    }
+	{
+		let [[Ax0, Ay0], [Ax1, Ay1]] = A;
+		let [[Bx0, By0], [Bx1, By1]] = B;
+		if ((Ax0 == Bx0) && (Ax1 == Bx1)) {
+			if (Ay0 == By1 + 1) {
+				// top
+				return [[Bx0, By0], [Ax0, Ay1]];
+			}
+			if (Ay1 + 1 == By0) {
+				// bottom
+				return [[Ax0, Ay0], [Bx1, By1]];
+			}
+		}
+		if ((Ay0 == By0) && (Ay1 == By1)) {
+			if (Ax0 == Bx1 + 1) {
+				// left
+				return [[Bx0, By0], [Ax1, Ay1]];
+			}
+			if (Ax1 + 1 == Bx0) {
+				// right
+				return [[Ax0, Ay0], [Bx1, By1]];
+			}
+		}
+		return [[-1, -1], [-1, -1]]; //FIXME should throw an exception here
 	}
-	if ((Ay0 == By0) && (Ay1 == By1)) {
-	    if (Ax0 == Bx1 + 1) {
-		// left
-		return [[Bx0, By0], [Ax1, Ay1]];
-	    }
-	    if (Ax1 + 1 == Bx0) {
-		// right
-		return [[Ax0, Ay0], [Bx1, By1]];
-	    }
-	}
-	return [[-1, -1], [-1, -1]]; //FIXME should throw an exception here
-    }
 
     public static merge_groups(groups : { [val : string] : Array<[[number, number], [number, number]]> },
 			       merge_candidates : { [val: string] : Array<Array<[[number, number], [number, number]]>> })
     : { [val : string] : Array<[[number, number], [number, number]]> }
     {
-	// Groups already passed as input to mergeable.
-	// Merge_candidates generated by mergeable.
-	// Go through all mergeable groups; for each, remove the corresponding two rectangles and add the merged one.
-	let merged_rectangles : { [val : string] : Array<[[number, number], [number, number]]> } = {};
-	let previous_merged_rectangles : { [val : string] : Array<[[number, number], [number, number]]> } = {};
-	let numIterations = 0;
-	while (true) {
-	    numIterations++;
-	    console.log("iterating");
-	    previous_merged_rectangles = JSON.parse(JSON.stringify(merged_rectangles));
-	    for (let k of Object.keys(merge_candidates)) {
-		let to_be_merged_rectangles = [];
-		let removed = {};
-		for (let range of merge_candidates[k]) {
-		    let first  : [[number, number], [number, number]] = range[0];
-		    let second : [[number, number], [number, number]] = range[1];
-		    // Add these to be removed later.
-		    removed[JSON.stringify(first)] = true;
-		    removed[JSON.stringify(second)] = true;
-		    console.log("1. marking for removal " + JSON.stringify(first));
-		    console.log("2. marking for removal " + JSON.stringify(second));
-		    let merged = Colorize.merge_rectangles(first, second);
-		    to_be_merged_rectangles.push(merged);
-		}
-		/*		let newMergeCandidates = [];
-				for (let range of merge_candidates[k]) {
-				let first = range[0];
-				let second = range[1];
-				if (!((JSON.stringify(first) in removed) && (JSON.stringify(second) in removed))) {
-				newMergeCandidates.push([first, second]);
+		// Groups already passed as input to mergeable.
+		// Merge_candidates generated by mergeable.
+		// Go through all mergeable groups; for each, remove the corresponding two rectangles and add the merged one.
+		let merged_rectangles : { [val : string] : Array<[[number, number], [number, number]]> } = {};
+		let previous_merged_rectangles : { [val : string] : Array<[[number, number], [number, number]]> } = {};
+		let numIterations = 0;
+		while (true) {
+			numIterations++;
+	//	    console.log("iterating");
+			previous_merged_rectangles = JSON.parse(JSON.stringify(merged_rectangles));
+			for (let k of Object.keys(merge_candidates)) {
+			let to_be_merged_rectangles = [];
+			let removed = {};
+			for (let range of merge_candidates[k]) {
+				let first  : [[number, number], [number, number]] = range[0];
+				let second : [[number, number], [number, number]] = range[1];
+				// Add these to be removed later.
+				removed[JSON.stringify(first)] = true;
+				removed[JSON.stringify(second)] = true;
+				//console.log("1. marking for removal " + JSON.stringify(first));
+				//console.log("2. marking for removal " + JSON.stringify(second));
+				let merged = Colorize.merge_rectangles(first, second);
+				to_be_merged_rectangles.push(merged);
+			}
+		
+			let newList = [];
+			for (let i = 0; i < groups[k].length; i++) {
+				let v : [[number, number], [number, number]] = groups[k][i];
+				let str = JSON.stringify(v);
+				if (!(str in removed)) {
+					newList.push(groups[k][i]);
 				}
+			}
+			merged_rectangles[k] = newList;
+			merged_rectangles[k].push(...to_be_merged_rectangles);
+			}
+			if (JSON.stringify(merged_rectangles) === JSON.stringify(previous_merged_rectangles)) {
+				break;
+			} else {
+			//console.log(JSON.stringify(merged_rectangles));
+			//console.log(JSON.stringify(previous_merged_rectangles));
+			}
 		}
-		merge_candidates[k] = newMergeCandidates;
-		*/	
-		let newList = [];
-		for (let i = 0; i < groups[k].length; i++) {
-		    let v : [[number, number], [number, number]] = groups[k][i];
-		    let str = JSON.stringify(v);
-		    if (!(str in removed)) {
-			newList.push(groups[k][i]);
-		    }
-		}
-		merged_rectangles[k] = newList;
-		merged_rectangles[k].push(...to_be_merged_rectangles);
-	    }
-	    if (JSON.stringify(merged_rectangles) === JSON.stringify(previous_merged_rectangles)) {
-		break;
-	    } else {
-		console.log(JSON.stringify(merged_rectangles));
-		console.log(JSON.stringify(previous_merged_rectangles));
-	    }
-	    if (numIterations > 5) { // FIXME just for debugging
-///		break;
-	    }
-//	    break;
+		return merged_rectangles;
 	}
-	return merged_rectangles;
-    }
     
     public static mergeable(grouped_ranges: { [val : string] : Array<[[number, number], [number, number]]> })
     : { [val: string] : Array<Array<[[number, number], [number, number]]>> }  {
@@ -650,7 +722,7 @@ export class Colorize {
     
     public static hash_vector(vec: Array<number>) : number {
 	// Return a hash of the given vector.
-	let h = Colorize.hash(JSON.stringify(vec));
+	let h = Colorize.hash(JSON.stringify(vec)+"NONCE01");
 	return h;
     }
     
