@@ -1,6 +1,7 @@
 "use strict";
 exports.__esModule = true;
 var colorutils_1 = require("./colorutils");
+var excelutils_1 = require("./excelutils");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
@@ -68,7 +69,7 @@ var Colorize = /** @class */ (function () {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
-                    var vec = Colorize.dependencies(row[j], j + origin_col, i + origin_row);
+                    var vec = excelutils_1.ExcelUtils.dependencies(row[j], j + origin_col, i + origin_row);
                     var hash = Colorize.hash_vector(vec);
                     output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                 }
@@ -120,29 +121,6 @@ var Colorize = /** @class */ (function () {
         * integers. Since we want the results to be always positive, convert the
         * signed int to an unsigned by doing an unsigned bitshift. */
         return hash >>> 0;
-    };
-    // Convert an Excel column name (a string of alphabetical charcaters) into a number.
-    Colorize.column_name_to_index = function (name) {
-        if (name.length === 1) { // optimizing for the overwhelmingly common case
-            return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
-        }
-        var value = 0;
-        var reversed_name = name.split('').reverse();
-        for (var _i = 0, reversed_name_1 = reversed_name; _i < reversed_name_1.length; _i++) {
-            var i = reversed_name_1[_i];
-            value *= 26;
-            value = (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
-        }
-        return value;
-    };
-    // Convert a column number to a name (as in, 3 => 'C').
-    Colorize.column_index_to_name = function (index) {
-        var str = '';
-        while (index > 0) {
-            str += String.fromCharCode((index - 1) % 26 + 65); // 65 = 'A'
-            index = Math.floor(index / 26);
-        }
-        return str.split('').reverse().join('');
     };
     // Take in a list of [[row, col], color] pairs and group them,
     // sorting them (e.g., by columns).
@@ -332,153 +310,6 @@ var Colorize = /** @class */ (function () {
         }
         return mergeable;
     };
-    // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
-    Colorize.cell_dependency = function (cell, origin_col, origin_row) {
-        {
-            var r = Colorize.cell_col_absolute.exec(cell);
-            if (r) {
-                //	    console.log(JSON.stringify(r));
-                var col = Colorize.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
-                //	    console.log('absolute col: ' + col + ', row: ' + row);
-                return [col, row - origin_row];
-            }
-        }
-        {
-            var r = Colorize.cell_both_relative.exec(cell);
-            if (r) {
-                //	    console.log('both_relative');
-                var col = Colorize.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
-                return [col - origin_col, row - origin_row];
-            }
-        }
-        {
-            var r = Colorize.cell_row_absolute.exec(cell);
-            if (r) {
-                //	    console.log('row_absolute');
-                var col = Colorize.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
-                return [col - origin_col, row];
-            }
-        }
-        {
-            var r = Colorize.cell_both_absolute.exec(cell);
-            if (r) {
-                //	    console.log('both_absolute');
-                var col = Colorize.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
-                return [col, row];
-            }
-        }
-        throw new Error('We should never get here.');
-        return [0, 0];
-    };
-    Colorize.all_cell_dependencies = function (range) {
-        var found_pair = null;
-        var all_vectors = [];
-        /// FIX ME - should we count the same range multiple times? Or just once?
-        // First, get all the range pairs out.
-        while (found_pair = Colorize.range_pair.exec(range)) {
-            if (found_pair) {
-                //		console.log('all_cell_dependencies --> ' + found_pair);
-                var first_cell = found_pair[1];
-                //		console.log(' first_cell = ' + first_cell);
-                var first_vec = Colorize.cell_dependency(first_cell, 0, 0);
-                //		console.log(' first_vec = ' + JSON.stringify(first_vec));
-                var last_cell = found_pair[2];
-                //		console.log(' last_cell = ' + last_cell);
-                var last_vec = Colorize.cell_dependency(last_cell, 0, 0);
-                //		console.log(' last_vec = ' + JSON.stringify(last_vec));
-                // First_vec is the upper-left hand side of a rectangle.
-                // Last_vec is the lower-right hand side of a rectangle.
-                // Generate all vectors.
-                var length_1 = last_vec[0] - first_vec[0] + 1;
-                var width = last_vec[1] - first_vec[1] + 1;
-                for (var x = 0; x < length_1; x++) {
-                    for (var y = 0; y < width; y++) {
-                        // console.log(' pushing ' + (x + first_vec[0]) + ', ' + (y + first_vec[1]));
-                        // console.log(' (x = ' + x + ', y = ' + y);
-                        all_vectors.push([x + first_vec[0], y + first_vec[1]]);
-                    }
-                }
-                // Wipe out the matched contents of range.
-                var newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
-                range = newRange;
-            }
-        }
-        // Now look for singletons.
-        var singleton = null;
-        while (singleton = Colorize.single_dep.exec(range)) {
-            if (singleton) {
-                //		console.log('SINGLETON');
-                //		console.log('singleton[1] = ' + singleton[1]);
-                //	    console.log(found_pair);
-                var first_cell = singleton[1];
-                //		console.log(first_cell);
-                var vec = Colorize.cell_dependency(first_cell, 0, 0);
-                all_vectors.push(vec);
-                // Wipe out the matched contents of range.
-                var newRange = range.replace(singleton[0], '_'.repeat(singleton[0].length));
-                range = newRange;
-            }
-        }
-        return all_vectors;
-    };
-    Colorize.dependencies = function (range, origin_col, origin_row) {
-        var base_vector = [0, 0];
-        var found_pair = null;
-        /// FIX ME - should we count the same range multiple times? Or just once?
-        // First, get all the range pairs out.
-        while (found_pair = Colorize.range_pair.exec(range)) {
-            if (found_pair) {
-                //	    console.log(found_pair);
-                var first_cell = found_pair[1];
-                //		console.log(first_cell);
-                var first_vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
-                var last_cell = found_pair[2];
-                //		console.log(last_cell);
-                var last_vec = Colorize.cell_dependency(last_cell, origin_col, origin_row);
-                // First_vec is the upper-left hand side of a rectangle.
-                // Last_vec is the lower-right hand side of a rectangle.
-                // Compute the appropriate vectors to be added.
-                // e.g., [3, 2] --> [5, 5] ===
-                //          [3, 2], [3, 3], [3, 4], [3, 5]
-                //          [4, 2], [4, 3], [4, 4], [4, 5]
-                //          [5, 2], [5, 3], [5, 4], [5, 5]
-                //
-                // vector to be added is [4 * (3 + 4 + 5), 3 * (2 + 3 + 4 + 5) ]
-                //  = [48, 42]
-                var sum_x = 0;
-                var sum_y = 0;
-                var width = last_vec[1] - first_vec[1] + 1; // 4
-                sum_x = width * ((last_vec[0] * (last_vec[0] + 1)) / 2 - ((first_vec[0] - 1) * ((first_vec[0] - 1) + 1)) / 2);
-                var length_2 = last_vec[0] - first_vec[0] + 1; // 3
-                sum_y = length_2 * ((last_vec[1] * (last_vec[1] + 1)) / 2 - ((first_vec[1] - 1) * ((first_vec[1] - 1) + 1)) / 2);
-                base_vector[0] += sum_x;
-                base_vector[1] += sum_y;
-                // Wipe out the matched contents of range.
-                var newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
-                range = newRange;
-            }
-        }
-        // Now look for singletons.
-        var singleton = null;
-        while (singleton = Colorize.single_dep.exec(range)) {
-            if (singleton) {
-                //	    console.log(found_pair);
-                var first_cell = singleton[1];
-                //		console.log(first_cell);
-                var vec = Colorize.cell_dependency(first_cell, origin_col, origin_row);
-                base_vector[0] += vec[0];
-                base_vector[1] += vec[1];
-                // Wipe out the matched contents of range.
-                var newRange = range.replace(singleton[0], '_'.repeat(singleton[0].length));
-                range = newRange;
-            }
-        }
-        return base_vector;
-    };
     Colorize.generate_all_references = function (formulas, origin_col, origin_row) {
         // Generate all references.
         var refs = {};
@@ -486,7 +317,7 @@ var Colorize = /** @class */ (function () {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
                 // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-                var all_deps = Colorize.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
+                var all_deps = excelutils_1.ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
                 if (all_deps.length > 0) {
                     // console.log(all_deps);
                     var src = [origin_col + j, origin_row + i];
@@ -505,36 +336,11 @@ var Colorize = /** @class */ (function () {
         }
         return refs;
     };
-    Colorize.extract_sheet_cell = function (str) {
-        var matched = Colorize.sheet_plus_cell.exec(str);
-        if (matched) {
-            return [matched[1], matched[2], matched[3]];
-        }
-        return ['', '', ''];
-    };
-    Colorize.extract_sheet_range = function (str) {
-        var matched = Colorize.sheet_plus_range.exec(str);
-        if (matched) {
-            return [matched[1], matched[2], matched[3]];
-        }
-        return ['', '', ''];
-    };
     Colorize.hash_vector = function (vec) {
         // Return a hash of the given vector.
         var h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
         return h;
     };
-    // Matchers for all kinds of Excel expressions.
-    Colorize.general_re = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
-    Colorize.sheet_re = '[^\\!]+';
-    Colorize.sheet_plus_cell = new RegExp('(' + Colorize.sheet_re + ')\\!(' + Colorize.general_re + ')');
-    Colorize.sheet_plus_range = new RegExp('(' + Colorize.sheet_re + ')\\!(' + Colorize.general_re + '):(' + Colorize.general_re + ')');
-    Colorize.single_dep = new RegExp('(' + Colorize.general_re + ')');
-    Colorize.range_pair = new RegExp('(' + Colorize.general_re + '):(' + Colorize.general_re + ')', 'g');
-    Colorize.cell_both_relative = new RegExp('[^\\$]?([A-Z]+)(\\d+)');
-    Colorize.cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
-    Colorize.cell_row_absolute = new RegExp('[^\\$]?([A-Z]+)\\$(\\d+)');
-    Colorize.cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
     Colorize.rgb_ex = new RegExp('#([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])');
     Colorize.initialized = false;
     Colorize.color_list = [];
