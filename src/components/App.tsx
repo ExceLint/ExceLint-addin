@@ -26,62 +26,61 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     
-    private async processRange(context : any, currentWorksheet : any, startCol : number, startRow : number, endCol : number, endRow : number) {
- 	if ((endCol - startCol >= 0) && (endRow - startRow >= 0)) {
-	    let startCell = Colorize.column_index_to_name(startCol) + startRow;
-	    let endCell = Colorize.column_index_to_name(endCol) + endRow;
-	    let range = [] as any;
-	    if (startCell === endCell) {
-		range = currentWorksheet.getCell(startRow, startCol);
-	    } else {
-		/* // iterative version
-		for (let c = startCol; c <= endCol; c++) {
-		    for (let r = startRow; r <= endRow; r++) {
-			range = currentWorksheet.getCell(c, r);
+    private async processRange(context : Excel.RequestContext, currentWorksheet : Excel.Worksheet, startCol : number, startRow : number, endCol : number, endRow : number) {
+		let success = false;
+		while (!success) {
+		try {
+				let range = [] as any;
+				let startCell = "";
+				let endCell = "";
+			if ((endCol - startCol >= 0) && (endRow - startRow >= 0)) {
+				startCell = Colorize.column_index_to_name(startCol) + startRow;
+				endCell = Colorize.column_index_to_name(endCol) + endRow;
+				if (startCell === endCell) {
+					range = currentWorksheet.getCell(startRow, startCol);
+				}
+				range = currentWorksheet.getRange(startCell + ":" + endCell);
+			}
+	//	    return;
+			// 	    await context.sync();
 			range.format.fill.load(['color']);
-			console.log("synching for "+c+ " " +r);
+			console.log("synching for "+startCell+" through " + endCell);
 			await context.sync();
 			let color = range.format.fill.color;
-			let startCell = Colorize.column_index_to_name(c) + r;
-			this.savedColors.push([startCell, startCell, color]);
-		    }
+			if (color !== null) {
+				this.savedColors.push([startCell, endCell, color]);
+			} else {
+				/* // column by column
+				if (startCol !== endCol) {
+					let midCol = startCol + Math.floor((endCol - startCol) / 2);		    
+					await this.processRange(context, currentWorksheet, startCol, startRow, midCol, endRow);
+					await this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, endRow);
+				} else {
+					let midRow  = startRow + Math.floor((endRow - startRow) / 2);
+					await this.processRange(context, currentWorksheet, startCol, startRow, endCol, midRow);
+					await this.processRange(context, currentWorksheet, startCol, midRow + 1, endCol, endRow);
+				}
+				*/
+				// binary search
+				let divisor = 2; // (Math.random() * (8 - 2)) + 2.0001;
+				let midCol = startCol + Math.floor((endCol - startCol) / divisor);
+				let midRow  = startRow + Math.floor((endRow - startRow) / divisor);
+				Promise.all([this.processRange(context, currentWorksheet, startCol, startRow, midCol, midRow),
+				this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, midRow),
+				 this.processRange(context, currentWorksheet, startCol, midRow + 1, midCol, endRow),
+				 this.processRange(context, currentWorksheet, midCol + 1, midRow + 1, endCol, endRow)]);
+				 await context.sync();
+			}
+			success = true;
+		} catch (error)
+	{ console.log("dango");
+success = true; }
 		}
-		*/
-		range = currentWorksheet.getRange(startCell + ":" + endCell);
-	    }
-//	    return;
-	    // 	    await context.sync();
-	    range.format.fill.load(['color']);
-	    console.log("synching for "+startCell+" through " + endCell);
-	    await context.sync();
-	    let color = range.format.fill.color;
-	    if (color !== null) {
-		this.savedColors.push([startCell, endCell, color]);
-	    } else {
-		/* // column by column
-		if (startCol !== endCol) {
-		    let midCol = startCol + Math.floor((endCol - startCol) / 2);		    
-		    await this.processRange(context, currentWorksheet, startCol, startRow, midCol, endRow);
-		    await this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, endRow);
-		} else {
-		    let midRow  = startRow + Math.floor((endRow - startRow) / 2);
-		    await this.processRange(context, currentWorksheet, startCol, startRow, endCol, midRow);
-		    await this.processRange(context, currentWorksheet, startCol, midRow + 1, endCol, endRow);
-		}
-		*/
-		// binary search
-		let divisor = 2; // (Math.random() * (8 - 2)) + 2.0001;
- 		let midCol = startCol + Math.floor((endCol - startCol) / divisor);
-		let midRow  = startRow + Math.floor((endRow - startRow) / divisor);
-		await this.processRange(context, currentWorksheet, startCol, startRow, midCol, midRow);
-		await this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, midRow);
-		await this.processRange(context, currentWorksheet, startCol, midRow + 1, midCol, endRow);
-		await this.processRange(context, currentWorksheet, midCol + 1, midRow + 1, endCol, endRow);
-	    }
 	}
-    }
+
     
-    attemptToSaveColor = async () => {
+    clearColor = async () => {
+		Colorize.initialize();
 	try {
 	    await Excel.run(async context => {
 		let startTime = performance.now();
@@ -103,13 +102,14 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (color !== null) {
 		    this.savedColors.push([startCell, endCell, color]);
 		} else {
-		    await this.processRange(context, currentWorksheet, startCol, startRow, endCol, endRow);
+		    this.processRange(context, currentWorksheet, startCol, startRow, endCol, endRow);
 		}
 		//console.log(this.savedColors);
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
+		this.OldclearColor();
  		console.log("Time elapsed (ms) = " + timeElapsedMS);
-	    });
+		});
 	} catch (error) {
             OfficeHelpers.UI.notify(error);
             OfficeHelpers.Utilities.log(error);
@@ -144,7 +144,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	})
     }
     
-    clearColor = async () => {
+    OldclearColor = async () => {
 		Colorize.initialize();
 
         try {
