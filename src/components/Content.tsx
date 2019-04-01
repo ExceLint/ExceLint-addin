@@ -48,7 +48,7 @@ export class Content extends React.Component<ContentProps, any> {
 					<text x="55" y="13">data (light colors, dashed borders)</text>
 				</svg>
 				<svg width="300" height="20">
-					<rect x="0" y="0" width="50" height="20" fill="yellow" stroke-width="1" stroke="black" stroke-dasharray="3,3" />
+					<rect x="0" y="0" width="50" height="20" fill="#eed202" stroke-width="1" stroke="black" stroke-dasharray="3,3" />
 					<text x="55" y="13">unreferenced data</text>
 				</svg>
 				<br />

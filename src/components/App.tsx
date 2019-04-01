@@ -223,7 +223,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				everythingRange.clear(Excel.ClearApplyTo.formats);
 
 				// Make all numbers yellow; this will be the default value for unreferenced data.
-				numericRanges.format.fill.color = 'yellow';
+				numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 
 				// Give every formula a solid border.
 				let items = formulaRanges.format.borders.items;
@@ -259,8 +259,9 @@ export default class App extends React.Component<AppProps, AppState> {
 				console.log(JSON.stringify(this.proposed_fixes));
 				this.current_fix = 0;
 				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-				r.select();
-
+				if (r) {
+					r.select();
+				}
 				await context.sync();
 				console.log('ExceLint: done with sync 3.');
 

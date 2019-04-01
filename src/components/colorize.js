@@ -23,14 +23,14 @@ var Colorize = /** @class */ (function () {
     Colorize.make_light_color_versions = function () {
         //		console.log('YO');
         for (var i = 0; i < 255; i += 7) {
-            var rgb = colorutils_1.ColorUtils.HSVtoRGB(i / 255.0, .5, .75);
+            var rgb = colorutils_1.ColorUtils.HSVtoRGB(i / 255.0, .5, .85);
             var _a = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _a[0], gs = _a[1], bs = _a[2];
             var str = '#' + rs + gs + bs;
             str = str.toUpperCase();
             Colorize.light_color_dict[str] = '';
         }
         for (var color in Colorize.light_color_dict) {
-            var lightstr = colorutils_1.ColorUtils.adjust_brightness(color, 2.0);
+            var lightstr = colorutils_1.ColorUtils.adjust_brightness(color, 4.0);
             var darkstr = color; // = Colorize.adjust_color(color, 0.25);
             //			console.log(str);
             //			console.log('Old RGB = ' + color + ', new = ' + str);

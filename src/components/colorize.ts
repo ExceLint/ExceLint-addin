@@ -29,14 +29,14 @@ export class Colorize {
 	private static make_light_color_versions() {
 		//		console.log('YO');
 		for (let i = 0; i < 255; i += 7) {
-			let rgb = ColorUtils.HSVtoRGB(i / 255.0, .5, .75);
+			let rgb = ColorUtils.HSVtoRGB(i / 255.0, .5, .85);
 			let [rs, gs, bs] = rgb.map((x) => { return Math.round(x).toString(16).padStart(2, '0'); });
 			let str = '#' + rs + gs + bs;
 			str = str.toUpperCase();
 			Colorize.light_color_dict[str] = '';
 		}
 		for (let color in Colorize.light_color_dict) {
-			let lightstr = ColorUtils.adjust_brightness(color, 2.0);
+			let lightstr = ColorUtils.adjust_brightness(color, 4.0);
 			let darkstr = color; // = Colorize.adjust_color(color, 0.25);
 			//			console.log(str);
 			//			console.log('Old RGB = ' + color + ', new = ' + str);
