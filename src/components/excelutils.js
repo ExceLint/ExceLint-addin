@@ -30,39 +30,39 @@ var ExcelUtils = /** @class */ (function () {
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     ExcelUtils.cell_dependency = function (cell, origin_col, origin_row) {
         {
-            var r_1 = ExcelUtils.cell_col_absolute.exec(cell);
-            if (r_1) {
+            var r = ExcelUtils.cell_col_absolute.exec(cell);
+            if (r) {
                 //	    console.log(JSON.stringify(r));
-                var col = ExcelUtils.column_name_to_index(r_1[1]);
-                var row = parseInt(r_1[2], 10);
+                var col = ExcelUtils.column_name_to_index(r[1]);
+                var row = parseInt(r[2], 10);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
                 return [col, row - origin_row];
             }
         }
         {
-            var r_2 = ExcelUtils.cell_both_relative.exec(cell);
-            if (r_2) {
+            var r = ExcelUtils.cell_both_relative.exec(cell);
+            if (r) {
                 //	    console.log('both_relative');
-                var col = ExcelUtils.column_name_to_index(r_2[1]);
-                var row = parseInt(r_2[2], 10);
+                var col = ExcelUtils.column_name_to_index(r[1]);
+                var row = parseInt(r[2], 10);
                 return [col - origin_col, row - origin_row];
             }
         }
         {
-            var r_3 = ExcelUtils.cell_row_absolute.exec(cell);
-            if (r_3) {
+            var r = ExcelUtils.cell_row_absolute.exec(cell);
+            if (r) {
                 //	    console.log('row_absolute');
-                var col = ExcelUtils.column_name_to_index(r_3[1]);
-                var row = parseInt(r_3[2], 10);
+                var col = ExcelUtils.column_name_to_index(r[1]);
+                var row = parseInt(r[2], 10);
                 return [col - origin_col, row];
             }
         }
         {
-            var r_4 = ExcelUtils.cell_both_absolute.exec(cell);
-            if (r_4) {
+            var r = ExcelUtils.cell_both_absolute.exec(cell);
+            if (r) {
                 //	    console.log('both_absolute');
-                var col = ExcelUtils.column_name_to_index(r_4[1]);
-                var row = parseInt(r_4[2], 10);
+                var col = ExcelUtils.column_name_to_index(r[1]);
+                var row = parseInt(r[2], 10);
                 return [col, row];
             }
         }

@@ -77,8 +77,8 @@ var Colorize = /** @class */ (function () {
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
-                var r_1 = _d[_c];
-                var hash = formula_hash[r_1.join(',')];
+                var r = _d[_c];
+                var hash = formula_hash[r.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
@@ -112,9 +112,9 @@ var Colorize = /** @class */ (function () {
         // Separate into groups based on their string value.
         var groups = {};
         for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
-            var r_2 = list_1[_i];
-            groups[r_2[1]] = groups[r_2[1]] || [];
-            groups[r_2[1]].push(r_2[0]);
+            var r = list_1[_i];
+            groups[r[1]] = groups[r[1]] || [];
+            groups[r[1]].push(r[0]);
         }
         // Now sort them all.
         for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {
@@ -175,31 +175,58 @@ var Colorize = /** @class */ (function () {
         //       let mg = Colorize.merge_groups(newGr2, mr);
         //        console.log('new merge groups');
         //        console.log(JSON.stringify(mg));
-        Colorize.generate_proposed_fixes(mg);
+        //Colorize.generate_proposed_fixes(mg);
         return mg;
+    };
+    Colorize.entropy = function (p) {
+        return -p * Math.log2(p);
+    };
+    Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
+        var n_target = rectangleutils_1.RectangleUtils.area(target);
+        var n_merge_with = rectangleutils_1.RectangleUtils.area(merge_with);
+        var n_min = Math.min(n_target, n_merge_with);
+        var n_max = Math.max(n_target, n_merge_with);
+        var norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
+        var norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
+        var fix_distance = Math.abs(norm_max - norm_min);
+        var entropy_drop = Colorize.entropy(n_min / (n_min + n_max));
+        return n_min / (entropy_drop * fix_distance);
     };
     Colorize.generate_proposed_fixes = function (groups) {
         var proposed_fixes = [];
+        var already_proposed_pair = {};
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
             var k1 = _a[_i];
             // Look for possible fixes in OTHER groups.
             for (var i = 0; i < groups[k1].length; i++) {
+                var r1 = groups[k1][i];
+                var sr1 = JSON.stringify(r1);
                 for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
                     var k2 = _c[_b];
                     if (k1 === k2) {
                         continue;
                     }
                     for (var j = 0; j < groups[k2].length; j++) {
-                        if (rectangleutils_1.RectangleUtils.is_mergeable(groups[k1][i], groups[k2][j])) {
-                            console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                            proposed_fixes.push([Math.abs(parseFloat(k2) - parseFloat(k1)), groups[k1][i], groups[k2][j]]);
+                        var r2 = groups[k2][j];
+                        var sr2 = JSON.stringify(r2);
+                        if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+                            if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2)) {
+                                already_proposed_pair[sr1 + sr2] = true;
+                                already_proposed_pair[sr2 + sr1] = true;
+                                // console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+                                var metric = Colorize.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+                                // was Math.abs(parseFloat(k2) - parseFloat(k1))
+                                proposed_fixes.push([metric, r1, r2]);
+                            }
                         }
                     }
                 }
             }
         }
+        // First attribute is the Euclidean norm of the vectors. Differencing corresponds roughly to earth-mover distance.
+        // Other attributes are the rectangles themselves. Sort by biggest entropy reduction first, then norm (?).
         proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
-        console.log(JSON.stringify(proposed_fixes));
+        return proposed_fixes;
     };
     Colorize.merge_groups = function (groups) {
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
