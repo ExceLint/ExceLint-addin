@@ -2,6 +2,7 @@
 exports.__esModule = true;
 var colorutils_1 = require("./colorutils");
 var excelutils_1 = require("./excelutils");
+var rectangleutils_1 = require("./rectangleutils");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
@@ -182,61 +183,77 @@ var Colorize = /** @class */ (function () {
         // Now try to merge stuff with the same hash.
         var newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
         var newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-        var mr = Colorize.mergeable(newGr1);
-        var mg = Colorize.merge_groups(newGr2, mr);
+        console.log('group');
+        console.log(JSON.stringify(newGr1));
+        var mg = Colorize.new_merge_groups(newGr1);
+        //        let mr = Colorize.mergeable(newGr1);
+        //        console.log('mergeable');
+        //       console.log(JSON.stringify(mr));
+        //       let mg = Colorize.merge_groups(newGr2, mr);
+        console.log('new merge groups');
+        console.log(JSON.stringify(mg));
         return mg;
+    };
+    Colorize.new_merge_groups = function (groups) {
+        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
+            var k = _a[_i];
+            groups[k] = Colorize.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
+        }
+        return groups;
+    };
+    Colorize.merge_individual_groups = function (group) {
+        var numIterations = 0;
+        group = group.sort();
+        console.log(JSON.stringify(group));
+        while (true) {
+            console.log("iteration " + numIterations);
+            var merged_one = false;
+            var deleted_rectangles = {};
+            var updated_rectangles = [];
+            var working_group = JSON.parse(JSON.stringify(group));
+            while (working_group.length > 0) {
+                var head = working_group.shift();
+                for (var i = 0; i < working_group.length; i++) {
+                    //                    console.log("comparing " + head + " and " + working_group[i]);
+                    if (Colorize.merge_friendly(head, working_group[i])) {
+                        console.log("friendly!" + head + " -- " + working_group[i]);
+                        updated_rectangles.push(Colorize.merge_rectangles(head, working_group[i]));
+                        deleted_rectangles[JSON.stringify(head)] = true;
+                        deleted_rectangles[JSON.stringify(working_group[i])] = true;
+                        merged_one = true;
+                        break;
+                    }
+                }
+                //                if (!merged_one) {
+                //                    updated_rectangles.push(head);
+                //                }
+            }
+            for (var i = 0; i < group.length; i++) {
+                if (!(JSON.stringify(group[i]) in deleted_rectangles)) {
+                    updated_rectangles.push(group[i]);
+                }
+            }
+            updated_rectangles.sort();
+            //            console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+            //            console.log('group = ' + JSON.stringify(group));
+            if (!merged_one) {
+                console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+                return updated_rectangles;
+            }
+            group = JSON.parse(JSON.stringify(updated_rectangles));
+            numIterations++;
+            if (numIterations > 20) {
+                return [[[-1, -1], [-1, -1]]];
+            }
+        }
     };
     // True if combining A and B would result in a new rectangle.
     Colorize.merge_friendly = function (A, B) {
-        var _a = A[0], Ax0 = _a[0], Ay0 = _a[1], _b = A[1], Ax1 = _b[0], Ay1 = _b[1];
-        var _c = B[0], Bx0 = _c[0], By0 = _c[1], _d = B[1], Bx1 = _d[0], By1 = _d[1];
-        if ((Ax0 === Bx0) && (Ax1 === Bx1)) {
-            if (Ay0 === By1 + 1) {
-                // top
-                return true;
-            }
-            if (Ay1 + 1 === By0) {
-                // bottom
-                return true;
-            }
-        }
-        if ((Ay0 === By0) && (Ay1 === By1)) {
-            if (Ax0 === Bx1 + 1) {
-                // left
-                return true;
-            }
-            if (Ax1 + 1 === Bx0) {
-                // right
-                return true;
-            }
-        }
-        return false;
+        return rectangleutils_1.RectangleUtils.mergeable(A, B);
     };
     // Return a merged version (both should be 'merge friendly').
     Colorize.merge_rectangles = function (A, B) {
-        var _a = A[0], Ax0 = _a[0], Ay0 = _a[1], _b = A[1], Ax1 = _b[0], Ay1 = _b[1];
-        var _c = B[0], Bx0 = _c[0], By0 = _c[1], _d = B[1], Bx1 = _d[0], By1 = _d[1];
-        if ((Ax0 === Bx0) && (Ax1 === Bx1)) {
-            if (Ay0 === By1 + 1) {
-                // top
-                return [[Bx0, By0], [Ax0, Ay1]];
-            }
-            if (Ay1 + 1 === By0) {
-                // bottom
-                return [[Ax0, Ay0], [Bx1, By1]];
-            }
-        }
-        if ((Ay0 === By0) && (Ay1 === By1)) {
-            if (Ax0 === Bx1 + 1) {
-                // left
-                return [[Bx0, By0], [Ax1, Ay1]];
-            }
-            if (Ax1 + 1 === Bx0) {
-                // right
-                return [[Ax0, Ay0], [Bx1, By1]];
-            }
-        }
-        return [[-1, -1], [-1, -1]]; //FIXME should throw an exception here
+        return rectangleutils_1.RectangleUtils.bounding_box(A, B);
     };
     Colorize.merge_groups = function (groups, merge_candidates) {
         var _a;

@@ -1,6 +1,7 @@
-import { rgb2hex } from 'office-ui-fabric-react';
+import { rgb2hex, GroupedList } from 'office-ui-fabric-react';
 import { ColorUtils } from './colorutils';
 import { ExcelUtils } from './excelutils';
+import { RectangleUtils } from './rectangleutils';
 import { ExcelUtilities } from '@microsoft/office-js-helpers';
 
 export class Colorize {
@@ -189,72 +190,92 @@ export class Colorize {
     }
 
     public static identify_groups(list: Array<[[number, number], string]>): { [val: string]: Array<[[number, number], [number, number]]> } {
-        let columnsort = (a, b) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
+        let columnsort = (a: [number, number], b: [number, number]) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
         let id = Colorize.identify_ranges(list, columnsort);
         let gr = Colorize.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
         let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-        let mr = Colorize.mergeable(newGr1);
-        let mg = Colorize.merge_groups(newGr2, mr);
+        console.log('group');
+        console.log(JSON.stringify(newGr1));
+        let mg = Colorize.new_merge_groups(newGr1);
+        //        let mr = Colorize.mergeable(newGr1);
+        //        console.log('mergeable');
+        //       console.log(JSON.stringify(mr));
+        //       let mg = Colorize.merge_groups(newGr2, mr);
+        console.log('new merge groups');
+        console.log(JSON.stringify(mg));
+
         return mg;
     }
 
 
+    public static new_merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
+        : { [val: string]: Array<[[number, number], [number, number]]> } {
+        for (let k of Object.keys(groups)) {
+            groups[k] = Colorize.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
+        }
+        return groups;
+    }
+
+    public static merge_individual_groups(group: Array<[[number, number], [number, number]]>)
+    : Array<[[number, number], [number, number]]> {
+        let numIterations = 0;
+        group = group.sort();
+        console.log(JSON.stringify(group));
+        while (true) {
+	    console.log("iteration "+numIterations);
+            let merged_one = false;
+	    let deleted_rectangles = {};
+            let updated_rectangles = [];
+            let working_group = JSON.parse(JSON.stringify(group));
+            while (working_group.length > 0) {
+                let head = working_group.shift();
+                for (let i = 0; i < working_group.length; i++) {
+//                    console.log("comparing " + head + " and " + working_group[i]);
+                    if (Colorize.merge_friendly(head, working_group[i])) {
+                        console.log("friendly!" + head + " -- " + working_group[i]);
+                        updated_rectangles.push(Colorize.merge_rectangles(head, working_group[i]));
+			deleted_rectangles[JSON.stringify(head)] = true;
+			deleted_rectangles[JSON.stringify(working_group[i])] = true;
+                        merged_one = true;
+                        break;
+                    }
+                }
+//                if (!merged_one) {
+//                    updated_rectangles.push(head);
+//                }
+            }
+	    for (let i = 0; i < group.length; i++) {
+		if (!(JSON.stringify(group[i]) in deleted_rectangles)) {
+		    updated_rectangles.push(group[i]);
+		}
+	    }
+            updated_rectangles.sort();
+//            console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+	    //            console.log('group = ' + JSON.stringify(group));
+	    if (!merged_one) {
+		console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+		return updated_rectangles;
+	    }
+            group = JSON.parse(JSON.stringify(updated_rectangles));
+            numIterations++;
+            if (numIterations > 20) {
+                return [[[-1, -1], [-1, -1]]];
+            }
+        }
+    }
+
     // True if combining A and B would result in a new rectangle.
     public static merge_friendly(A: [[number, number], [number, number]], B: [[number, number], [number, number]]): boolean {
-        let [[Ax0, Ay0], [Ax1, Ay1]] = A;
-        let [[Bx0, By0], [Bx1, By1]] = B;
-        if ((Ax0 === Bx0) && (Ax1 === Bx1)) {
-            if (Ay0 === By1 + 1) {
-                // top
-                return true;
-            }
-            if (Ay1 + 1 === By0) {
-                // bottom
-                return true;
-            }
-        }
-        if ((Ay0 === By0) && (Ay1 === By1)) {
-            if (Ax0 === Bx1 + 1) {
-                // left
-                return true;
-            }
-            if (Ax1 + 1 === Bx0) {
-                // right
-                return true;
-            }
-        }
-        return false;
+	return RectangleUtils.mergeable(A, B);
     }
 
     // Return a merged version (both should be 'merge friendly').
     public static merge_rectangles(A: [[number, number], [number, number]],
         B: [[number, number], [number, number]])
-        : [[number, number], [number, number]] {
-        let [[Ax0, Ay0], [Ax1, Ay1]] = A;
-        let [[Bx0, By0], [Bx1, By1]] = B;
-        if ((Ax0 === Bx0) && (Ax1 === Bx1)) {
-            if (Ay0 === By1 + 1) {
-                // top
-                return [[Bx0, By0], [Ax0, Ay1]];
-            }
-            if (Ay1 + 1 === By0) {
-                // bottom
-                return [[Ax0, Ay0], [Bx1, By1]];
-            }
-        }
-        if ((Ay0 === By0) && (Ay1 === By1)) {
-            if (Ax0 === Bx1 + 1) {
-                // left
-                return [[Bx0, By0], [Ax1, Ay1]];
-            }
-            if (Ax1 + 1 === Bx0) {
-                // right
-                return [[Ax0, Ay0], [Bx1, By1]];
-            }
-        }
-        return [[-1, -1], [-1, -1]]; //FIXME should throw an exception here
+    : [[number, number], [number, number]] {
+	return RectangleUtils.bounding_box(A, B);
     }
 
     public static merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> },
