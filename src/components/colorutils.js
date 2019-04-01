@@ -80,6 +80,24 @@ var ColorUtils = /** @class */ (function () {
         }
         return [r * 255, g * 255, b * 255];
     };
+    ColorUtils.adjust_brightness = function (color, multiplier) {
+        var c = ColorUtils.rgb_ex.exec(color);
+        var _a = [parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)], r = _a[0], g = _a[1], b = _a[2];
+        var _b = ColorUtils.RGBtoHSV(r, g, b), h = _b[0], s = _b[1], v = _b[2];
+        v = multiplier * v;
+        if (v <= 0.0) {
+            v = 0.0;
+        }
+        if (v >= 1.0) {
+            v = 0.99;
+        }
+        var rgb = ColorUtils.HSVtoRGB(h, s, v);
+        var _c = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _c[0], gs = _c[1], bs = _c[2];
+        var str = '#' + rs + gs + bs;
+        str = str.toUpperCase();
+        return str;
+    };
+    ColorUtils.rgb_ex = new RegExp('#([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])');
     return ColorUtils;
 }());
 exports.ColorUtils = ColorUtils;

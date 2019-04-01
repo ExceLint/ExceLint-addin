@@ -30,30 +30,13 @@ var Colorize = /** @class */ (function () {
             Colorize.light_color_dict[str] = '';
         }
         for (var color in Colorize.light_color_dict) {
-            var lightstr = Colorize.adjust_color(color, 2.0);
+            var lightstr = colorutils_1.ColorUtils.adjust_brightness(color, 2.0);
             var darkstr = color; // = Colorize.adjust_color(color, 0.25);
             //			console.log(str);
             //			console.log('Old RGB = ' + color + ', new = ' + str);
             delete Colorize.light_color_dict[color];
             Colorize.light_color_dict[darkstr] = lightstr;
         }
-    };
-    Colorize.adjust_color = function (color, multiplier) {
-        var c = Colorize.rgb_ex.exec(color);
-        var _a = [parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)], r = _a[0], g = _a[1], b = _a[2];
-        var _b = colorutils_1.ColorUtils.RGBtoHSV(r, g, b), h = _b[0], s = _b[1], v = _b[2];
-        v = multiplier * v;
-        if (v <= 0.0) {
-            v = 0.0;
-        }
-        if (v >= 1.0) {
-            v = 0.99;
-        }
-        var rgb = colorutils_1.ColorUtils.HSVtoRGB(h, s, v);
-        var _c = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _c[0], gs = _c[1], bs = _c[2];
-        var str = '#' + rs + gs + bs;
-        str = str.toUpperCase();
-        return str;
     };
     Colorize.get_light_color_version = function (color) {
         return Colorize.light_color_dict[color];
@@ -94,8 +77,8 @@ var Colorize = /** @class */ (function () {
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
-                var r = _d[_c];
-                var hash = formula_hash[r.join(',')];
+                var r_1 = _d[_c];
+                var hash = formula_hash[r_1.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
@@ -129,9 +112,9 @@ var Colorize = /** @class */ (function () {
         // Separate into groups based on their string value.
         var groups = {};
         for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
-            var r = list_1[_i];
-            groups[r[1]] = groups[r[1]] || [];
-            groups[r[1]].push(r[0]);
+            var r_2 = list_1[_i];
+            groups[r_2[1]] = groups[r_2[1]] || [];
+            groups[r_2[1]].push(r_2[0]);
         }
         // Now sort them all.
         for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {
@@ -215,9 +198,9 @@ var Colorize = /** @class */ (function () {
                 var head = working_group.shift();
                 for (var i = 0; i < working_group.length; i++) {
                     //                    console.log("comparing " + head + " and " + working_group[i]);
-                    if (Colorize.merge_friendly(head, working_group[i])) {
+                    if (rectangleutils_1.RectangleUtils.is_mergeable(head, working_group[i])) {
                         //console.log("friendly!" + head + " -- " + working_group[i]);
-                        updated_rectangles.push(Colorize.merge_rectangles(head, working_group[i]));
+                        updated_rectangles.push(rectangleutils_1.RectangleUtils.bounding_box(head, working_group[i]));
                         deleted_rectangles[JSON.stringify(head)] = true;
                         deleted_rectangles[JSON.stringify(working_group[i])] = true;
                         merged_one = true;
@@ -246,37 +229,6 @@ var Colorize = /** @class */ (function () {
                 return [[[-1, -1], [-1, -1]]];
             }
         }
-    };
-    // True if combining A and B would result in a new rectangle.
-    Colorize.merge_friendly = function (A, B) {
-        return rectangleutils_1.RectangleUtils.is_mergeable(A, B);
-    };
-    // Return a merged version (both should be 'merge friendly').
-    Colorize.merge_rectangles = function (A, B) {
-        return rectangleutils_1.RectangleUtils.bounding_box(A, B);
-    };
-    Colorize.mergeable = function (grouped_ranges) {
-        // Input comes from group_ranges.
-        var mergeable = {};
-        for (var _i = 0, _a = Object.keys(grouped_ranges); _i < _a.length; _i++) {
-            var k = _a[_i];
-            mergeable[k] = [];
-            var r = grouped_ranges[k];
-            var _loop_1 = function () {
-                var head = r.shift();
-                var merge_candidates = r.filter(function (b) { return Colorize.merge_friendly(head, b); });
-                if (merge_candidates.length > 0) {
-                    for (var _i = 0, merge_candidates_1 = merge_candidates; _i < merge_candidates_1.length; _i++) {
-                        var c = merge_candidates_1[_i];
-                        mergeable[k].push([head, c]);
-                    }
-                }
-            };
-            while (r.length > 0) {
-                _loop_1();
-            }
-        }
-        return mergeable;
     };
     Colorize.generate_all_references = function (formulas, origin_col, origin_row) {
         // Generate all references.
@@ -309,7 +261,6 @@ var Colorize = /** @class */ (function () {
         var h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
         return h;
     };
-    Colorize.rgb_ex = new RegExp('#([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])');
     Colorize.initialized = false;
     Colorize.color_list = [];
     Colorize.light_color_list = [];

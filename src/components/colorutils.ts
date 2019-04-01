@@ -69,4 +69,20 @@ export class ColorUtils {
     }
 
 
+    private static rgb_ex = new RegExp('#([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])');
+    
+    public static adjust_brightness(color: string, multiplier: number): string {
+        let c = ColorUtils.rgb_ex.exec(color);
+        let [r, g, b] = [parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)];
+        let [h, s, v] = ColorUtils.RGBtoHSV(r, g, b);
+        v = multiplier * v;
+        if (v <= 0.0) { v = 0.0; }
+        if (v >= 1.0) { v = 0.99; }
+        let rgb = ColorUtils.HSVtoRGB(h, s, v);
+        let [rs, gs, bs] = rgb.map((x) => { return Math.round(x).toString(16).padStart(2, '0'); });
+        let str = '#' + rs + gs + bs;
+        str = str.toUpperCase();
+        return str;
+    }
+
 }

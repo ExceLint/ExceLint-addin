@@ -6,8 +6,6 @@ import { ExcelUtilities } from '@microsoft/office-js-helpers';
 
 export class Colorize {
 
-    private static rgb_ex = new RegExp('#([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])([A-Za-z0-9][A-Za-z0-9])');
-
     private static initialized = false;
     private static color_list = [];
     private static light_color_list = [];
@@ -38,7 +36,7 @@ export class Colorize {
             Colorize.light_color_dict[str] = '';
         }
         for (let color in Colorize.light_color_dict) {
-            let lightstr = Colorize.adjust_color(color, 2.0);
+            let lightstr = ColorUtils.adjust_brightness(color, 2.0);
             let darkstr = color; // = Colorize.adjust_color(color, 0.25);
             //			console.log(str);
             //			console.log('Old RGB = ' + color + ', new = ' + str);
@@ -47,22 +45,6 @@ export class Colorize {
         }
 
     }
-
-    public static adjust_color(color: string, multiplier: number): string {
-        let c = Colorize.rgb_ex.exec(color);
-        let [r, g, b] = [parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)];
-        let [h, s, v] = ColorUtils.RGBtoHSV(r, g, b);
-        v = multiplier * v;
-        if (v <= 0.0) { v = 0.0; }
-        if (v >= 1.0) { v = 0.99; }
-        let rgb = ColorUtils.HSVtoRGB(h, s, v);
-        let [rs, gs, bs] = rgb.map((x) => { return Math.round(x).toString(16).padStart(2, '0'); });
-        let str = '#' + rs + gs + bs;
-        str = str.toUpperCase();
-        return str;
-    }
-
-
 
     public static get_light_color_version(color: string): string {
         return Colorize.light_color_dict[color];
@@ -233,9 +215,9 @@ export class Colorize {
                 let head = working_group.shift();
                 for (let i = 0; i < working_group.length; i++) {
 //                    console.log("comparing " + head + " and " + working_group[i]);
-                    if (Colorize.merge_friendly(head, working_group[i])) {
+                    if (RectangleUtils.is_mergeable(head, working_group[i])) {
                         //console.log("friendly!" + head + " -- " + working_group[i]);
-                        updated_rectangles.push(Colorize.merge_rectangles(head, working_group[i]));
+                        updated_rectangles.push(RectangleUtils.bounding_box(head, working_group[i]));
 			deleted_rectangles[JSON.stringify(head)] = true;
 			deleted_rectangles[JSON.stringify(working_group[i])] = true;
                         merged_one = true;
@@ -265,40 +247,7 @@ export class Colorize {
             }
         }
     }
-
-    // True if combining A and B would result in a new rectangle.
-    public static merge_friendly(A: [[number, number], [number, number]], B: [[number, number], [number, number]]): boolean {
-	return RectangleUtils.is_mergeable(A, B);
-    }
-
-    // Return a merged version (both should be 'merge friendly').
-    public static merge_rectangles(A: [[number, number], [number, number]],
-        B: [[number, number], [number, number]])
-    : [[number, number], [number, number]] {
-	return RectangleUtils.bounding_box(A, B);
-    }
-
-
-    public static mergeable(grouped_ranges: { [val: string]: Array<[[number, number], [number, number]]> })
-        : { [val: string]: Array<Array<[[number, number], [number, number]]>> } {
-        // Input comes from group_ranges.
-        let mergeable = {};
-        for (let k of Object.keys(grouped_ranges)) {
-            mergeable[k] = [];
-            let r = grouped_ranges[k];
-            while (r.length > 0) {
-                let head = r.shift();
-                let merge_candidates = r.filter((b) => { return Colorize.merge_friendly(head, b); });
-                if (merge_candidates.length > 0) {
-                    for (let c of merge_candidates) {
-                        mergeable[k].push([head, c]);
-                    }
-                }
-            }
-        }
-        return mergeable;
-    }
-
+ 
     public static generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number]> } {
         // Generate all references.
         let refs = {};
