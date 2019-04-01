@@ -25,6 +25,10 @@ export class Content extends React.Component<ContentProps, any> {
                     <Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
                 </div>
 		<br />
+		Click on <b>Reveal Structure</b> to reveal the underlying structure of the spreadsheet. Different formulas and data are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness. Click on <b>Clear</b> to remove the colors.
+		<br />
+		<br />
+	    
 		<svg width="300" height="20">
 		<rect x="0" y="0" width="50" height="20" fill="darkgreen" stroke-width="3" stroke="black" />
 		<text x="55" y="13">formulas (dark colors, solid borders)</text>
