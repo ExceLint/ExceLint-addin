@@ -182,16 +182,16 @@ var Colorize = /** @class */ (function () {
         var gr = Colorize.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         var newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
-        var newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-        console.log('group');
-        console.log(JSON.stringify(newGr1));
+        //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
+        //        console.log('group');
+        //        console.log(JSON.stringify(newGr1));
         var mg = Colorize.new_merge_groups(newGr1);
         //        let mr = Colorize.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
         //       let mg = Colorize.merge_groups(newGr2, mr);
-        console.log('new merge groups');
-        console.log(JSON.stringify(mg));
+        //        console.log('new merge groups');
+        //        console.log(JSON.stringify(mg));
         return mg;
     };
     Colorize.new_merge_groups = function (groups) {
@@ -204,9 +204,9 @@ var Colorize = /** @class */ (function () {
     Colorize.merge_individual_groups = function (group) {
         var numIterations = 0;
         group = group.sort();
-        console.log(JSON.stringify(group));
+        //        console.log(JSON.stringify(group));
         while (true) {
-            console.log("iteration " + numIterations);
+            // console.log("iteration "+numIterations);
             var merged_one = false;
             var deleted_rectangles = {};
             var updated_rectangles = [];
@@ -216,7 +216,7 @@ var Colorize = /** @class */ (function () {
                 for (var i = 0; i < working_group.length; i++) {
                     //                    console.log("comparing " + head + " and " + working_group[i]);
                     if (Colorize.merge_friendly(head, working_group[i])) {
-                        console.log("friendly!" + head + " -- " + working_group[i]);
+                        //console.log("friendly!" + head + " -- " + working_group[i]);
                         updated_rectangles.push(Colorize.merge_rectangles(head, working_group[i]));
                         deleted_rectangles[JSON.stringify(head)] = true;
                         deleted_rectangles[JSON.stringify(working_group[i])] = true;
@@ -234,10 +234,10 @@ var Colorize = /** @class */ (function () {
                 }
             }
             updated_rectangles.sort();
-            //            console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+            // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
             //            console.log('group = ' + JSON.stringify(group));
             if (!merged_one) {
-                console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+                // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
                 return updated_rectangles;
             }
             group = JSON.parse(JSON.stringify(updated_rectangles));
@@ -249,7 +249,7 @@ var Colorize = /** @class */ (function () {
     };
     // True if combining A and B would result in a new rectangle.
     Colorize.merge_friendly = function (A, B) {
-        return rectangleutils_1.RectangleUtils.mergeable(A, B);
+        return rectangleutils_1.RectangleUtils.is_mergeable(A, B);
     };
     // Return a merged version (both should be 'merge friendly').
     Colorize.merge_rectangles = function (A, B) {

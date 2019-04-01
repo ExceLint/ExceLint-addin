@@ -195,16 +195,16 @@ export class Colorize {
         let gr = Colorize.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
-        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-        console.log('group');
-        console.log(JSON.stringify(newGr1));
+//        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
+//        console.log('group');
+//        console.log(JSON.stringify(newGr1));
         let mg = Colorize.new_merge_groups(newGr1);
         //        let mr = Colorize.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
         //       let mg = Colorize.merge_groups(newGr2, mr);
-        console.log('new merge groups');
-        console.log(JSON.stringify(mg));
+//        console.log('new merge groups');
+//        console.log(JSON.stringify(mg));
 
         return mg;
     }
@@ -222,9 +222,9 @@ export class Colorize {
     : Array<[[number, number], [number, number]]> {
         let numIterations = 0;
         group = group.sort();
-        console.log(JSON.stringify(group));
+//        console.log(JSON.stringify(group));
         while (true) {
-	    console.log("iteration "+numIterations);
+	    // console.log("iteration "+numIterations);
             let merged_one = false;
 	    let deleted_rectangles = {};
             let updated_rectangles = [];
@@ -234,7 +234,7 @@ export class Colorize {
                 for (let i = 0; i < working_group.length; i++) {
 //                    console.log("comparing " + head + " and " + working_group[i]);
                     if (Colorize.merge_friendly(head, working_group[i])) {
-                        console.log("friendly!" + head + " -- " + working_group[i]);
+                        //console.log("friendly!" + head + " -- " + working_group[i]);
                         updated_rectangles.push(Colorize.merge_rectangles(head, working_group[i]));
 			deleted_rectangles[JSON.stringify(head)] = true;
 			deleted_rectangles[JSON.stringify(working_group[i])] = true;
@@ -252,10 +252,10 @@ export class Colorize {
 		}
 	    }
             updated_rectangles.sort();
-//            console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+	    // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
 	    //            console.log('group = ' + JSON.stringify(group));
 	    if (!merged_one) {
-		console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+		// console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
 		return updated_rectangles;
 	    }
             group = JSON.parse(JSON.stringify(updated_rectangles));
@@ -268,7 +268,7 @@ export class Colorize {
 
     // True if combining A and B would result in a new rectangle.
     public static merge_friendly(A: [[number, number], [number, number]], B: [[number, number], [number, number]]): boolean {
-	return RectangleUtils.mergeable(A, B);
+	return RectangleUtils.is_mergeable(A, B);
     }
 
     // Return a merged version (both should be 'merge friendly').
