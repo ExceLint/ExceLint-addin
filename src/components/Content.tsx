@@ -25,7 +25,7 @@ export class Content extends React.Component<ContentProps, any> {
                     <Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
                 </div>
 		<br />
-		Click on <b>Reveal Structure</b> to reveal the underlying structure of the spreadsheet. Different formulas and data are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness. Click on <b>Clear</b> to remove the colors.
+		Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet. Different formulas and data are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness. Click on <a onClick={this.props.click2}><b>Clear</b></a> to remove the colors.
 		<br />
 		<br />
 	    
