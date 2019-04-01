@@ -180,19 +180,41 @@ export class Colorize {
 //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
 //        console.log('group');
 //        console.log(JSON.stringify(newGr1));
-        let mg = Colorize.new_merge_groups(newGr1);
+        let mg = Colorize.merge_groups(newGr1);
         //        let mr = Colorize.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
         //       let mg = Colorize.merge_groups(newGr2, mr);
 //        console.log('new merge groups');
 //        console.log(JSON.stringify(mg));
-
+	Colorize.generate_proposed_fixes(mg);
         return mg;
     }
 
 
-    public static new_merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
+    public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]>}) : void {
+	let proposed_fixes = [];
+	for (let k1 of Object.keys(groups)) {
+	    // Look for possible fixes in OTHER groups.
+	    for (let i = 0; i < groups[k1].length; i++) {
+		for (let k2 of Object.keys(groups)) {
+		    if (k1 === k2) {
+			continue;
+		    }
+		    for (let j = 0; j < groups[k2].length; j++) {
+			if (RectangleUtils.is_mergeable(groups[k1][i], groups[k2][j])) {
+			    console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+			    proposed_fixes.push([Math.abs(parseFloat(k2)-parseFloat(k1)), groups[k1][i], groups[k2][j]]);
+			}
+		    }
+		}
+	    }
+	}
+	proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
+	console.log(JSON.stringify(proposed_fixes));
+    }
+    
+    public static merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
         : { [val: string]: Array<[[number, number], [number, number]]> } {
         for (let k of Object.keys(groups)) {
             groups[k] = Colorize.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
@@ -277,8 +299,11 @@ export class Colorize {
 
     public static hash_vector(vec: Array<number>): number {
         // Return a hash of the given vector.
-        let h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
-        return h;
+	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b;}));
+//	console.log("hash of " + JSON.stringify(vec) + " = " + h);
+	return h;
+//        let h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
+//        return h;
     }
 
 

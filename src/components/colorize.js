@@ -168,16 +168,40 @@ var Colorize = /** @class */ (function () {
         //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        console.log('group');
         //        console.log(JSON.stringify(newGr1));
-        var mg = Colorize.new_merge_groups(newGr1);
+        var mg = Colorize.merge_groups(newGr1);
         //        let mr = Colorize.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
         //       let mg = Colorize.merge_groups(newGr2, mr);
         //        console.log('new merge groups');
         //        console.log(JSON.stringify(mg));
+        Colorize.generate_proposed_fixes(mg);
         return mg;
     };
-    Colorize.new_merge_groups = function (groups) {
+    Colorize.generate_proposed_fixes = function (groups) {
+        var proposed_fixes = [];
+        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
+            var k1 = _a[_i];
+            // Look for possible fixes in OTHER groups.
+            for (var i = 0; i < groups[k1].length; i++) {
+                for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
+                    var k2 = _c[_b];
+                    if (k1 === k2) {
+                        continue;
+                    }
+                    for (var j = 0; j < groups[k2].length; j++) {
+                        if (rectangleutils_1.RectangleUtils.is_mergeable(groups[k1][i], groups[k2][j])) {
+                            console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+                            proposed_fixes.push([Math.abs(parseFloat(k2) - parseFloat(k1)), groups[k1][i], groups[k2][j]]);
+                        }
+                    }
+                }
+            }
+        }
+        proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
+        console.log(JSON.stringify(proposed_fixes));
+    };
+    Colorize.merge_groups = function (groups) {
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
             var k = _a[_i];
             groups[k] = Colorize.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
@@ -258,8 +282,11 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.hash_vector = function (vec) {
         // Return a hash of the given vector.
-        var h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
+        var h = Math.sqrt(vec.map(function (v) { return v * v; }).reduce(function (a, b) { return a + b; }));
+        //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
         return h;
+        //        let h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
+        //        return h;
     };
     Colorize.initialized = false;
     Colorize.color_list = [];
