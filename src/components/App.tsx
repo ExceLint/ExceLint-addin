@@ -24,6 +24,7 @@ export default class App extends React.Component<AppProps, AppState> {
     private savedColors: any = [];
     private proposed_fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
     private current_fix = 0;
+    private savedFormat: any = null;
 
     constructor(props, context) {
         super(props, context);
@@ -161,14 +162,18 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
                 let everythingRange = currentWorksheet.getRange();
+                let usedRange = currentWorksheet.getUsedRangeOrNullObject();
                 currentWorksheet.load(['protection']);
                 await context.sync();
 
-                await context.sync();
                 if (currentWorksheet.protection.protected) {
                     // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
                     return;
                 }
+                console.log("saved format = " + JSON.stringify(this.savedFormat));
+                //usedRange.setCellProperties(this.savedFormat);
+                //await context.sync();
+
 
                 everythingRange.clear(Excel.ClearApplyTo.formats);
                 everythingRange.format.borders.load(['items']);
@@ -205,10 +210,21 @@ export default class App extends React.Component<AppProps, AppState> {
                 let usedRange = currentWorksheet.getUsedRange();
                 let everythingRange = currentWorksheet.getRange();
                 // Now get the addresses, the formulas, and the values.
-                usedRange.load(['address', 'formulas', 'values']);
+                usedRange.load(['address', 'formulas', 'values', 'format']);
                 currentWorksheet.charts.load(['items']);
 
                 await context.sync();
+
+                this.savedFormat = usedRange.getCellProperties({
+                    format: {
+                        fill: {
+                            color: true
+                        }
+                    }
+                });
+                await context.sync();
+                console.log(JSON.stringify(this.savedFormat));
+
                 console.log(currentWorksheet.protection.protected);
                 console.log('ExceLint: done with sync 1.');
                 if (currentWorksheet.protection.protected) {
