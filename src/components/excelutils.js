@@ -132,6 +132,7 @@ var ExcelUtils = /** @class */ (function () {
                 range = newRange;
             }
         }
+        console.log(JSON.stringify(all_vectors));
         return all_vectors;
     };
     ExcelUtils.dependencies = function (range, origin_col, origin_row) {
