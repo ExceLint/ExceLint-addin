@@ -32,7 +32,7 @@ export class ExcelUtils {
         let str = '';
         while (index > 0) {
             str += String.fromCharCode((index - 1) % 26 + 65); // 65 = 'A'
-            index = Math.floor(index / 26);
+            index = Math.floor((index - 1) / 26);
         }
         return str.split('').reverse().join('');
     }
@@ -158,7 +158,7 @@ export class ExcelUtils {
                 range = newRange;
             }
         }
-        console.log(JSON.stringify(all_vectors));
+        //console.log(JSON.stringify(all_vectors));
         return all_vectors;
 
     }
