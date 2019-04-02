@@ -77,8 +77,8 @@ var Colorize = /** @class */ (function () {
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
-                var r = _d[_c];
-                var hash = formula_hash[r.join(',')];
+                var r_1 = _d[_c];
+                var hash = formula_hash[r_1.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
@@ -112,9 +112,9 @@ var Colorize = /** @class */ (function () {
         // Separate into groups based on their string value.
         var groups = {};
         for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
-            var r = list_1[_i];
-            groups[r[1]] = groups[r[1]] || [];
-            groups[r[1]].push(r[0]);
+            var r_2 = list_1[_i];
+            groups[r_2[1]] = groups[r_2[1]] || [];
+            groups[r_2[1]].push(r_2[0]);
         }
         // Now sort them all.
         for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {

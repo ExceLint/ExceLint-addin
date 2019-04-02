@@ -8,22 +8,22 @@ export class ExcelUtils {
 	private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
 	private static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
 	private static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
-	private static cell_both_relative = new RegExp('[^\\$]?([A-Z]+)(\\d+)');
+	private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z]+)(\\d+)');
 	private static cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
-	private static cell_row_absolute = new RegExp('[^\\$]?([A-Z]+)\\$(\\d+)');
+	private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z]+)\\$(\\d+)');
 	private static cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
 
 	// Convert an Excel column name (a string of alphabetical charcaters) into a number.
-	public static column_name_to_index(name: string): number {
+    public static column_name_to_index(name: string): number {
 		if (name.length === 1) { // optimizing for the overwhelmingly common case
 			return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
 		}
 		let value = 0;
-		let reversed_name = name.split('').reverse();
-		for (let i of reversed_name) {
-			value *= 26;
-			value = (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
-		}
+	let split_name = name.split('');
+	for (let i of split_name) {
+	    value *= 26;
+	    value += (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
+	}
 		return value;
 	}
 
@@ -38,24 +38,26 @@ export class ExcelUtils {
 	}
 
 	// Returns a vector (x, y) corresponding to the column and row of the computed dependency.
-	public static cell_dependency(cell: string, origin_col: number, origin_row: number): [number, number] {
+    public static cell_dependency(cell: string, origin_col: number, origin_row: number): [number, number] {
 		{
 			let r = ExcelUtils.cell_col_absolute.exec(cell);
 			if (r) {
 				//	    console.log(JSON.stringify(r));
 				let col = ExcelUtils.column_name_to_index(r[1]);
 				let row = parseInt(r[2], 10);
-				//	    console.log('absolute col: ' + col + ', row: ' + row);
+			    //	    console.log('absolute col: ' + col + ', row: ' + row);
 				return [col, row - origin_row];
 			}
 		}
 
 		{
 			let r = ExcelUtils.cell_both_relative.exec(cell);
-			if (r) {
-				//	    console.log('both_relative');
+		    if (r) {
+//			console.log("r = " + JSON.stringify(r));
+//			    	    console.log('both_relative: r[1] = ' + r[1]);
 				let col = ExcelUtils.column_name_to_index(r[1]);
 				let row = parseInt(r[2], 10);
+//			    	    console.log('both relative col: ' + col + ', row: ' + row);
 				return [col - origin_col, row - origin_row];
 			}
 		}
