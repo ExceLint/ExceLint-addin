@@ -69,7 +69,9 @@ export default class App extends React.Component<AppProps, AppState> {
                 let everythingRange = currentWorksheet.getRange();
                 let usedRange = currentWorksheet.getUsedRangeOrNullObject();
                 currentWorksheet.load(['protection']);
-                usedRange.load(['format']);
+                if (usedRange) {
+                    usedRange.load(['format']);
+                }
                 await context.sync();
 
                 if (!everythingRange) {
@@ -81,24 +83,15 @@ export default class App extends React.Component<AppProps, AppState> {
                     return;
                 }
 
-                console.log("saved format = " + JSON.stringify(this.savedFormat));
+                // console.log("saved format = " + JSON.stringify(this.savedFormat));
                 if (usedRange) {
                     //usedRange.format.borders.load(['items']);
                     //await context.sync();
                     if (this.savedFormat) {
                         //let items = usedRange.format.borders.items;
+                        usedRange.clear('Formats');
                         usedRange.setCellProperties(this.savedFormat.m_value);
                         this.savedFormat = null;
-                        /*
-                        if (items) {
-                            for (let border of items) {
-                                border.set({
-                                    'style': 'None',
-                                    'tintAndShade': 0
-                                });
-                            }
-                        }
-                        */
                         await context.sync();
                     }
                 }
@@ -150,16 +143,64 @@ export default class App extends React.Component<AppProps, AppState> {
                         fill: {
                             color: true
                         },
-                        borders: {
-                            weight: true,
-                            style: true,
-                            tintAndShade: true,
-                            color: true
+                        font: {
+                            bold: true,
+                            color: true,
+                            italic: true,
+                            size: true
                         }
                     }
                 });
                 await context.sync();
-                console.log(JSON.stringify(this.savedFormat));
+
+                let newFormat = JSON.parse(JSON.stringify(this.savedFormat));
+                /*
+                const nullBorder = JSON.stringify({
+                    "@odata.type":
+                        "Microsoft.ExcelServices.CellBorderCollection",
+                    "bottom": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": null, "style": "None", "weight": "Thin" },
+                    "diagonalDown": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": 0, "style": "Continuous", "weight": "Thin" },
+                    "vertical": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": null, "style": "None", "weight": "Thin" },
+                    "diagonalUp": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": 0, "style": "Continuous", "weight": "Thin" },
+                    "horizontal": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": null, "style": "None", "weight": "Thin" },
+                    "top": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": null, "style": "None", "weight": "Thin" },
+                    "left": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": null, "style": "None", "weight": "Thin" },
+                    "right": { "@odata.type": "Microsoft.ExcelServices.CellBorder", "color": "#000000", "tintAndShade": null, "style": "None", "weight": "Thin" }
+                });
+                */
+
+                // Delete fill color when it's white.
+                for (let i = 0; i < this.savedFormat.m_value.length; i++) {
+                    for (let j = 0; j < this.savedFormat.m_value[0].length; j++) {
+                        if (this.savedFormat.m_value[i][j].format.fill.color === "#FFFFFF") {
+                            // It's white. We don't want to save back its color, since we can't currently write back "none".
+                            // We assume that's what the actual color is...
+                            delete this.savedFormat.m_value[i][j].format.fill.color;
+                            // Assume it had no borders for now...
+                            // delete this.savedFormat.m_value[i][j].format.borders;
+                            //delete newFormat.m_value[i][j].format.borders;
+                        } else {
+                            // It ain't white. Make it white.
+                            newFormat.m_value[i][j].format.fill.color = "#FFFFFF";
+                        }
+                        // Assume it had no borders for now...
+                        delete this.savedFormat.m_value[i][j].format.borders;
+
+                        /*
+                        if (this.savedFormat.m_value[i][j].format.borders) {
+                            // We should always get here.
+                            if (JSON.stringify(this.savedFormat.m_value[i][j].format.borders) === nullBorder) {
+                                // It's the default border. Delete it from both saved and new.
+                                delete this.savedFormat.m_value[i][j].format.borders;
+                                delete newFormat.m_value[i][j].format.borders;
+                            }
+                        }
+                        */
+                    }
+                }
+
+                ///console.log(JSON.stringify(this.savedFormat));
+
 
                 console.log(currentWorksheet.protection.protected);
                 console.log('ExceLint: done with sync 1.');
@@ -177,9 +218,12 @@ export default class App extends React.Component<AppProps, AppState> {
                     Excel.SpecialCellValueType.numbers);
                 let formulas = usedRange.formulas;
                 let values = usedRange.values;
-                numericRanges.format.borders.load(['items']);
-                formulaRanges.format.borders.load(['items']);
+                if (false) {
+                    numericRanges.format.borders.load(['items']);
+                    formulaRanges.format.borders.load(['items']);
+                }
 
+                usedRange.setCellProperties(newFormat.m_value);
 
                 await context.sync();
                 console.log('ExceLint: done with sync 2.');
@@ -187,32 +231,34 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 // FIX ME - need a button to restore all formatting.
                 // First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
-                everythingRange.clear(Excel.ClearApplyTo.formats);
+                //everythingRange.clear('Formats'); // Excel.ClearApplyTo.formats);
 
                 // Make all numbers yellow; this will be the default value for unreferenced data.
                 numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 
-                // Give every formula a solid border.
-                let items = formulaRanges.format.borders.items;
-                if (items) {
-                    for (let border of items) {
-                        border.set({
-                            'weight': 'Thin',
-                            'style': 'Continuous',
-                            'tintAndShade': -1
-                        });
+                if (false) {
+                    // Give every formula a solid border.
+                    let items = formulaRanges.format.borders.items;
+                    if (items) {
+                        for (let border of items) {
+                            border.set({
+                                'weight': 'Thin',
+                                'style': 'Continuous',
+                                'tintAndShade': -1
+                            });
+                        }
                     }
-                }
 
-                // Give every numeric data item a dashed border.
-                items = numericRanges.format.borders.items;
-                if (items) {
-                    for (let border of items) {
-                        border.set({
-                            'weight': 'Thin',
-                            'style': 'Dash',
-                            'tintAndShade': -1
-                        });
+                    // Give every numeric data item a dashed border.
+                    items = numericRanges.format.borders.items;
+                    if (items) {
+                        for (let border of items) {
+                            border.set({
+                                'weight': 'Thin',
+                                'style': 'Dash',
+                                'tintAndShade': -1
+                            });
+                        }
                     }
                 }
 
