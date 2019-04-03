@@ -21,108 +21,12 @@ export interface AppState {
 
 export default class App extends React.Component<AppProps, AppState> {
 
-    private savedProperties: any = [];
-    private savedColors: any = [];
     private proposed_fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
     private current_fix = 0;
     private savedFormat: any = null;
 
     constructor(props, context) {
         super(props, context);
-    }
-
-
-    private async processRange(context: Excel.RequestContext, currentWorksheet: Excel.Worksheet, startCol: number, startRow: number, endCol: number, endRow: number) {
-        let success = false;
-        while (!success) {
-            try {
-                let range = [] as any;
-                let startCell = '';
-                let endCell = '';
-                if ((endCol - startCol >= 0) && (endRow - startRow >= 0)) {
-                    startCell = ExcelUtils.column_index_to_name(startCol) + startRow;
-                    endCell = ExcelUtils.column_index_to_name(endCol) + endRow;
-                    if (startCell === endCell) {
-                        range = currentWorksheet.getCell(startRow, startCol);
-                    }
-                    range = currentWorksheet.getRange(startCell + ':' + endCell);
-                }
-                //	    return;
-                await context.sync();
-                range.format.fill.load(['color']);
-                console.log('synching for ' + startCell + ' through ' + endCell);
-                await context.sync();
-                let color = range.format.fill.color;
-                if (color !== null) {
-                    this.savedColors.push([startCell, endCell, color]);
-                } else {
-                    /* // column by column
-					if (startCol !== endCol) {
-						let midCol = startCol + Math.floor((endCol - startCol) / 2);
-						await this.processRange(context, currentWorksheet, startCol, startRow, midCol, endRow);
-						await this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, endRow);
-					} else {
-						let midRow  = startRow + Math.floor((endRow - startRow) / 2);
-						await this.processRange(context, currentWorksheet, startCol, startRow, endCol, midRow);
-						await this.processRange(context, currentWorksheet, startCol, midRow + 1, endCol, endRow);
-					}
-					*/
-                    // binary search
-                    let divisor = 2; // (Math.random() * (8 - 2)) + 2.0001;
-                    let midCol = startCol + Math.floor((endCol - startCol) / divisor);
-                    let midRow = startRow + Math.floor((endRow - startRow) / divisor);
-                    await this.processRange(context, currentWorksheet, startCol, startRow, midCol, midRow);
-                    await this.processRange(context, currentWorksheet, midCol + 1, startRow, endCol, midRow);
-                    await this.processRange(context, currentWorksheet, startCol, midRow + 1, midCol, endRow);
-                    await this.processRange(context, currentWorksheet, midCol + 1, midRow + 1, endCol, endRow);
-                    //				context.trackedObjects.remove(range);
-                    await context.sync();
-                }
-                success = true;
-                await context.sync();
-            } catch (error) {
-                console.log('dango' + error);
-                success = true;
-            }
-        }
-    }
-
-
-    disabledClearColor = async () => {
-        Colorize.initialize();
-        try {
-            await Excel.run(async context => {
-                let startTime = performance.now();
-                this.savedColors = [];
-                // Load up the used range.
-                let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-                let usedRange = currentWorksheet.getUsedRange();
-                await context.sync();
-                usedRange.load(['address']);
-                usedRange.format.fill.load(['color']);
-                //		let items = usedRange.format.fill;
-                await context.sync();
-                let color = usedRange.format.fill.color;
-                let address = usedRange.address;
-                let [sheetName, startCell, endCell] = ExcelUtils.extract_sheet_range(address);
-                let [startCol, startRow] = ExcelUtils.cell_dependency(startCell, 0, 0);
-                let [endCol, endRow] = ExcelUtils.cell_dependency(endCell, 0, 0);
-                // Are we done? (We got a color)
-                if (color !== null) {
-                    this.savedColors.push([startCell, endCell, color]);
-                } else {
-                    await this.processRange(context, currentWorksheet, startCol, startRow, endCol, endRow);
-                }
-                //console.log(this.savedColors);
-                let endTime = performance.now();
-                let timeElapsedMS = endTime - startTime;
-                //this.OldclearColor();
-                console.log('Time elapsed (ms) = ' + timeElapsedMS);
-            });
-        } catch (error) {
-            OfficeHelpers.UI.notify(error);
-            OfficeHelpers.Utilities.log(error);
-        }
     }
 
     private process(f, currentWorksheet, colorfn) {
@@ -165,6 +69,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 let everythingRange = currentWorksheet.getRange();
                 let usedRange = currentWorksheet.getUsedRangeOrNullObject();
                 currentWorksheet.load(['protection']);
+                usedRange.load(['format']);
                 await context.sync();
 
                 if (!everythingRange) {
@@ -175,15 +80,31 @@ export default class App extends React.Component<AppProps, AppState> {
                     // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
                     return;
                 }
+
                 console.log("saved format = " + JSON.stringify(this.savedFormat));
                 if (usedRange) {
+                    //usedRange.format.borders.load(['items']);
+                    //await context.sync();
                     if (this.savedFormat) {
+                        //let items = usedRange.format.borders.items;
                         usedRange.setCellProperties(this.savedFormat.m_value);
+                        this.savedFormat = null;
+                        /*
+                        if (items) {
+                            for (let border of items) {
+                                border.set({
+                                    'style': 'None',
+                                    'tintAndShade': 0
+                                });
+                            }
+                        }
+                        */
                         await context.sync();
                     }
                 }
 
                 // everythingRange.clear(Excel.ClearApplyTo.formats);
+                /*
                 everythingRange.format.borders.load(['items']);
                 await context.sync();
                 let items = everythingRange.format.borders.items;
@@ -194,6 +115,7 @@ export default class App extends React.Component<AppProps, AppState> {
                         'tintAndShade': 0
                     });
                 }
+                */
 
             });
         } catch (error) {
@@ -206,7 +128,7 @@ export default class App extends React.Component<AppProps, AppState> {
         Colorize.initialize();
 
         try {
-            //	    OfficeExtension.config.extendedErrorLogging = true;
+            OfficeExtension.config.extendedErrorLogging = true;
             await Excel.run(async context => {
                 let app = context.workbook.application;
                 console.log('ExceLint: starting processing.');
@@ -226,6 +148,12 @@ export default class App extends React.Component<AppProps, AppState> {
                 this.savedFormat = usedRange.getCellProperties({
                     format: {
                         fill: {
+                            color: true
+                        },
+                        borders: {
+                            weight: true,
+                            style: true,
+                            tintAndShade: true,
                             color: true
                         }
                     }
@@ -266,22 +194,26 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 // Give every formula a solid border.
                 let items = formulaRanges.format.borders.items;
-                for (let border of items) {
-                    border.set({
-                        'weight': 'Thin',
-                        'style': 'Continuous',
-                        'tintAndShade': -1
-                    });
+                if (items) {
+                    for (let border of items) {
+                        border.set({
+                            'weight': 'Thin',
+                            'style': 'Continuous',
+                            'tintAndShade': -1
+                        });
+                    }
                 }
 
                 // Give every numeric data item a dashed border.
                 items = numericRanges.format.borders.items;
-                for (let border of items) {
-                    border.set({
-                        'weight': 'Thin',
-                        'style': 'Dash',
-                        'tintAndShade': -1
-                    });
+                if (items) {
+                    for (let border of items) {
+                        border.set({
+                            'weight': 'Thin',
+                            'style': 'Dash',
+                            'tintAndShade': -1
+                        });
+                    }
                 }
 
                 let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(address);
