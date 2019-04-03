@@ -7,6 +7,7 @@ import Progress from './Progress';
 import { Colorize } from './colorize';
 import { ExcelUtils } from './excelutils';
 import { RectangleUtils } from './rectangleutils';
+//import { OfficeExtension } from '@microsoft/office-js';
 
 import * as OfficeHelpers from '@microsoft/office-js-helpers';
 
@@ -166,16 +167,23 @@ export default class App extends React.Component<AppProps, AppState> {
                 currentWorksheet.load(['protection']);
                 await context.sync();
 
+                if (!everythingRange) {
+                    return;
+                }
+
                 if (currentWorksheet.protection.protected) {
                     // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
                     return;
                 }
                 console.log("saved format = " + JSON.stringify(this.savedFormat));
-                //usedRange.setCellProperties(this.savedFormat);
-                //await context.sync();
+                if (usedRange) {
+                    if (this.savedFormat) {
+                        usedRange.setCellProperties(this.savedFormat.m_value);
+                        await context.sync();
+                    }
+                }
 
-
-                everythingRange.clear(Excel.ClearApplyTo.formats);
+                // everythingRange.clear(Excel.ClearApplyTo.formats);
                 everythingRange.format.borders.load(['items']);
                 await context.sync();
                 let items = everythingRange.format.borders.items;
