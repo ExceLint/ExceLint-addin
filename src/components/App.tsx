@@ -24,6 +24,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	private proposed_fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
 	private current_fix = 0;
 	private savedFormat: any = null;
+	private savedRange: string = null;
 
 	constructor(props, context) {
 		super(props, context);
@@ -90,11 +91,12 @@ export default class App extends React.Component<AppProps, AppState> {
 					//await context.sync();
 					if (this.savedFormat) {
 						//let items = usedRange.format.borders.items;
-						usedRange.clear('Formats');
+						// usedRange.clear('Formats');
 						// usedRange.setCellProperties(this.savedFormat.m_value);
-						this.savedFormat = null;
+						//this.savedFormat = null;
 						console.log("sync 2");
-						await context.sync();
+						await this.restoreFormatsAndColors();
+						// await context.sync();
 						console.log("after sync2");
 					}
 				}
@@ -141,20 +143,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 				await context.sync();
 
-				this.savedFormat = usedRange.getCellProperties({
-					format: {
-						fill: {
-							color: true
-						},
-						font: {
-							bold: true,
-							color: true,
-							italic: true,
-							size: true
-						}
-					}
-				});
-				await context.sync();
+				await this.storeFormatsAndColors();
 
 				let newFormat = JSON.parse(JSON.stringify(this.savedFormat));
                 /*
@@ -229,7 +218,9 @@ export default class App extends React.Component<AppProps, AppState> {
 					numericRanges.format.borders.load(['items']);
 					formulaRanges.format.borders.load(['items']);
 				}
-				usedRange.clear('Formats');
+				numericRanges.clear('Formats');
+				formulaRanges.clear('Formats');
+				// usedRange.clear('Formats');
 				// FIXME -- the below was really slow... 4/3/2019
 				// usedRange.setCellProperties(newFormat.m_value);
 
@@ -318,6 +309,78 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 	}
 
+	storeFormatsAndColors = async () => {
+		OfficeExtension.config.extendedErrorLogging = true;
+
+		try {
+			await Excel.run(async context => {
+				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+				let usedRange = currentWorksheet.getUsedRangeOrNullObject();
+				usedRange.load(['address']);
+				await context.sync();
+				let address = usedRange.address;
+				console.log("address is " + address);
+				this.savedRange = address;
+				this.savedFormat = usedRange.getCellProperties({
+					format: {
+						fill: {
+							color: true
+						},
+						font: {
+							name: true,
+							bold: true,
+							color: true,
+							italic: true,
+							underline: true,
+							size: true
+						}
+					}
+				});
+				await context.sync();
+				console.log("Saved cell properties (get).");
+				console.log(JSON.stringify(this.savedFormat.m_value));
+			});
+
+		} catch (error) {
+			OfficeHelpers.UI.notify(error);
+			OfficeHelpers.Utilities.log(error);
+		}
+	}
+
+	restoreFormatsAndColors = async () => {
+		OfficeExtension.config.extendedErrorLogging = true;
+
+		try {
+			await Excel.run(async context => {
+				if (this.savedFormat) {
+					// FIXME - should save in a dict per sheet UID
+					let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+					//					let usedRange = currentWorksheet.getUsedRangeOrNullObject();
+					let usedRange = currentWorksheet.getUsedRangeOrNullObject();
+
+					if (usedRange) {
+						usedRange.load(['address']);
+						await context.sync();
+						let address = usedRange.address;
+						if (address === this.savedRange) {
+							if (this.savedFormat) {
+								console.log("restoring." + JSON.stringify(this.savedFormat.m_value));
+								usedRange.setCellProperties(this.savedFormat.m_value);
+								this.savedFormat = null;
+								this.savedRange = null;
+								await context.sync();
+								console.log("Restored saved cell properties (set).");
+							}
+						}
+					}
+				}
+			});
+		} catch (error) {
+			OfficeHelpers.UI.notify(error);
+			OfficeHelpers.Utilities.log(error);
+		}
+	}
+
 	previousFix = async () => {
 		console.log("previousFix");
 		try {
@@ -390,7 +453,8 @@ export default class App extends React.Component<AppProps, AppState> {
 			<div className='ms-welcome'>
 				<Header title='ExceLint' />
 				<Content message1='Click the button below to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
-					message2='Click the button below to clear colors and borders.' buttonLabel2='Clear' click2={this.clearColor}
+					message2='Click the button below to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
+					message5='Load' buttonLabel5='StoreStuff' click5={this.storeFormatsAndColors}
 					message3='Click the button below to reveal the deep structure of this spreadsheet.' buttonLabel3='Previous fix' click3={this.previousFix}
 					message4='Click the button below to clear colors and borders.' buttonLabel4='Next fix' click4={this.nextFix} />
 			</div>
