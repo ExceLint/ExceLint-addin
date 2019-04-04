@@ -7,18 +7,18 @@ var Colorize = /** @class */ (function () {
     function Colorize() {
     }
     Colorize.initialize = function () {
-        if (!Colorize.initialized) {
-            Colorize.make_light_color_versions();
-            for (var _i = 0, _a = Object.keys(Colorize.light_color_dict); _i < _a.length; _i++) {
+        if (!this.initialized) {
+            this.make_light_color_versions();
+            for (var _i = 0, _a = Object.keys(this.light_color_dict); _i < _a.length; _i++) {
                 var i = _a[_i];
-                Colorize.color_list.push(i);
-                Colorize.light_color_list.push(Colorize.light_color_dict[i]);
+                this.color_list.push(i);
+                this.light_color_list.push(this.light_color_dict[i]);
             }
-            Colorize.initialized = true;
+            this.initialized = true;
         }
     };
     Colorize.get_color = function (hashval) {
-        return Colorize.color_list[hashval % Colorize.color_list.length];
+        return this.color_list[hashval % this.color_list.length];
     };
     Colorize.make_light_color_versions = function () {
         //		console.log('YO');
@@ -27,19 +27,19 @@ var Colorize = /** @class */ (function () {
             var _a = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _a[0], gs = _a[1], bs = _a[2];
             var str = '#' + rs + gs + bs;
             str = str.toUpperCase();
-            Colorize.light_color_dict[str] = '';
+            this.light_color_dict[str] = '';
         }
-        for (var color in Colorize.light_color_dict) {
+        for (var color in this.light_color_dict) {
             var lightstr = colorutils_1.ColorUtils.adjust_brightness(color, 4.0);
-            var darkstr = color; // = Colorize.adjust_color(color, 0.25);
+            var darkstr = color; // = this.adjust_color(color, 0.25);
             //			console.log(str);
             //			console.log('Old RGB = ' + color + ', new = ' + str);
-            delete Colorize.light_color_dict[color];
-            Colorize.light_color_dict[darkstr] = lightstr;
+            delete this.light_color_dict[color];
+            this.light_color_dict[darkstr] = lightstr;
         }
     };
     Colorize.get_light_color_version = function (color) {
-        return Colorize.light_color_dict[color];
+        return this.light_color_dict[color];
     };
     /*
       private static transpose(array) {
@@ -54,7 +54,7 @@ var Colorize = /** @class */ (function () {
             for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     var vec = excelutils_1.ExcelUtils.dependencies(row[j], j + origin_col, i + origin_row);
-                    var hash = Colorize.hash_vector(vec);
+                    var hash = this.hash_vector(vec);
                     output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                 }
             }
@@ -63,7 +63,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
         //console.log('color_all_data');
-        var refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
+        var refs = this.generate_all_references(formulas, origin_col, origin_row);
         var data_color = {};
         var processed_data = [];
         // Generate all formula colors (as a dict).
@@ -161,25 +161,30 @@ var Colorize = /** @class */ (function () {
         else {
             return a[0] - b[0];
         } };
-        var id = Colorize.identify_ranges(list, columnsort);
-        var gr = Colorize.group_ranges(id, true); // column-first
+        var id = this.identify_ranges(list, columnsort);
+        var gr = this.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         var newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        console.log('group');
         //        console.log(JSON.stringify(newGr1));
-        var mg = Colorize.merge_groups(newGr1);
-        //        let mr = Colorize.mergeable(newGr1);
+        var mg = this.merge_groups(newGr1);
+        //        let mr = this.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
-        //       let mg = Colorize.merge_groups(newGr2, mr);
+        //       let mg = this.merge_groups(newGr2, mr);
         //        console.log('new merge groups');
         //        console.log(JSON.stringify(mg));
-        //Colorize.generate_proposed_fixes(mg);
+        //this.generate_proposed_fixes(mg);
         return mg;
     };
     Colorize.entropy = function (p) {
         return -p * Math.log2(p);
+    };
+    Colorize.entropydiff = function (oldcount1, oldcount2) {
+        var prevEntropy = this.entropy(oldcount1) + this.entropy(oldcount2);
+        var newEntropy = this.entropy(oldcount1 + oldcount2);
+        return newEntropy - prevEntropy;
     };
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
         var n_target = rectangleutils_1.RectangleUtils.area(target);
@@ -189,7 +194,7 @@ var Colorize = /** @class */ (function () {
         var norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
         var norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
         var fix_distance = Math.abs(norm_max - norm_min);
-        var entropy_drop = Colorize.entropy(n_min / (n_min + n_max));
+        var entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
         return n_min / (entropy_drop * fix_distance);
     };
     Colorize.generate_proposed_fixes = function (groups) {
@@ -214,7 +219,7 @@ var Colorize = /** @class */ (function () {
                                 already_proposed_pair[sr1 + sr2] = true;
                                 already_proposed_pair[sr2 + sr1] = true;
                                 // console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                                var metric = Colorize.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+                                var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
                                 // was Math.abs(parseFloat(k2) - parseFloat(k1))
                                 proposed_fixes.push([metric, r1, r2]);
                             }
@@ -231,7 +236,7 @@ var Colorize = /** @class */ (function () {
     Colorize.merge_groups = function (groups) {
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
             var k = _a[_i];
-            groups[k] = Colorize.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
+            groups[k] = this.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
         }
         return groups;
     };
@@ -312,7 +317,7 @@ var Colorize = /** @class */ (function () {
         var h = Math.sqrt(vec.map(function (v) { return v * v; }).reduce(function (a, b) { return a + b; }));
         //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
         return h;
-        //        let h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
+        //        let h = this.hash(JSON.stringify(vec) + 'NONCE01');
         //        return h;
     };
     Colorize.initialized = false;
@@ -322,6 +327,6 @@ var Colorize = /** @class */ (function () {
     return Colorize;
 }());
 exports.Colorize = Colorize;
-//console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
-//console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
-//console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$5', 10, 10)));
+//console.log(this.dependencies('$C$2:$E$5', 10, 10));
+//console.log(this.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
+//console.log(this.hash_vector(this.dependencies('$C$2:$E$5', 10, 10)));

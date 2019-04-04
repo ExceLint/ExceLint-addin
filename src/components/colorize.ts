@@ -12,18 +12,18 @@ export class Colorize {
     private static light_color_dict = {};
 
     public static initialize() {
-        if (!Colorize.initialized) {
-            Colorize.make_light_color_versions();
-            for (let i of Object.keys(Colorize.light_color_dict)) {
-                Colorize.color_list.push(i);
-                Colorize.light_color_list.push(Colorize.light_color_dict[i]);
+        if (!this.initialized) {
+            this.make_light_color_versions();
+            for (let i of Object.keys(this.light_color_dict)) {
+                this.color_list.push(i);
+                this.light_color_list.push(this.light_color_dict[i]);
             }
-            Colorize.initialized = true;
+            this.initialized = true;
         }
     }
 
     public static get_color(hashval: number): string {
-        return Colorize.color_list[hashval % Colorize.color_list.length];
+        return this.color_list[hashval % this.color_list.length];
     }
 
     private static make_light_color_versions() {
@@ -33,21 +33,21 @@ export class Colorize {
             let [rs, gs, bs] = rgb.map((x) => { return Math.round(x).toString(16).padStart(2, '0'); });
             let str = '#' + rs + gs + bs;
             str = str.toUpperCase();
-            Colorize.light_color_dict[str] = '';
+            this.light_color_dict[str] = '';
         }
-        for (let color in Colorize.light_color_dict) {
+        for (let color in this.light_color_dict) {
             let lightstr = ColorUtils.adjust_brightness(color, 4.0);
-            let darkstr = color; // = Colorize.adjust_color(color, 0.25);
+            let darkstr = color; // = this.adjust_color(color, 0.25);
             //			console.log(str);
             //			console.log('Old RGB = ' + color + ', new = ' + str);
-            delete Colorize.light_color_dict[color];
-            Colorize.light_color_dict[darkstr] = lightstr;
+            delete this.light_color_dict[color];
+            this.light_color_dict[darkstr] = lightstr;
         }
 
     }
 
     public static get_light_color_version(color: string): string {
-        return Colorize.light_color_dict[color];
+        return this.light_color_dict[color];
     }
 
     /*
@@ -64,7 +64,7 @@ export class Colorize {
             for (let j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     let vec = ExcelUtils.dependencies(row[j], j + origin_col, i + origin_row);
-                    let hash = Colorize.hash_vector(vec);
+                    let hash = this.hash_vector(vec);
                     output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                 }
             }
@@ -74,7 +74,7 @@ export class Colorize {
 
     public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
         //console.log('color_all_data');
-        let refs = Colorize.generate_all_references(formulas, origin_col, origin_row);
+        let refs = this.generate_all_references(formulas, origin_col, origin_row);
         let data_color = {};
         let processed_data = [];
 
@@ -173,26 +173,32 @@ export class Colorize {
 
     public static identify_groups(list: Array<[[number, number], string]>): { [val: string]: Array<[[number, number], [number, number]]> } {
         let columnsort = (a: [number, number], b: [number, number]) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
-        let id = Colorize.identify_ranges(list, columnsort);
-        let gr = Colorize.group_ranges(id, true); // column-first
+        let id = this.identify_ranges(list, columnsort);
+        let gr = this.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        console.log('group');
         //        console.log(JSON.stringify(newGr1));
-        let mg = Colorize.merge_groups(newGr1);
-        //        let mr = Colorize.mergeable(newGr1);
+        let mg = this.merge_groups(newGr1);
+        //        let mr = this.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
-        //       let mg = Colorize.merge_groups(newGr2, mr);
+        //       let mg = this.merge_groups(newGr2, mr);
         //        console.log('new merge groups');
         //        console.log(JSON.stringify(mg));
-        //Colorize.generate_proposed_fixes(mg);
+        //this.generate_proposed_fixes(mg);
         return mg;
     }
 
     public static entropy(p: number): number {
         return -p * Math.log2(p);
+    }
+
+    public static entropydiff(oldcount1, oldcount2) {
+        const prevEntropy = this.entropy(oldcount1) + this.entropy(oldcount2);
+        const newEntropy = this.entropy(oldcount1 + oldcount2);
+        return newEntropy - prevEntropy;
     }
 
     public static fix_metric(target_norm: number,
@@ -207,7 +213,7 @@ export class Colorize {
         let norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
         let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
         let fix_distance = Math.abs(norm_max - norm_min);
-        let entropy_drop = Colorize.entropy(n_min / (n_min + n_max));
+        let entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
         return n_min / (entropy_drop * fix_distance);
     }
 
@@ -233,7 +239,7 @@ export class Colorize {
                                 already_proposed_pair[sr1 + sr2] = true;
                                 already_proposed_pair[sr2 + sr1] = true;
                                 // console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                                let metric = Colorize.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+                                let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
                                 // was Math.abs(parseFloat(k2) - parseFloat(k1))
                                 proposed_fixes.push([metric, r1, r2]);
                             }
@@ -253,7 +259,7 @@ export class Colorize {
     public static merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
         : { [val: string]: Array<[[number, number], [number, number]]> } {
         for (let k of Object.keys(groups)) {
-            groups[k] = Colorize.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
+            groups[k] = this.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
         }
         return groups;
     }
@@ -338,13 +344,13 @@ export class Colorize {
         let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
         //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
         return h;
-        //        let h = Colorize.hash(JSON.stringify(vec) + 'NONCE01');
+        //        let h = this.hash(JSON.stringify(vec) + 'NONCE01');
         //        return h;
     }
 
 
 }
 
-//console.log(Colorize.dependencies('$C$2:$E$5', 10, 10));
-//console.log(Colorize.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
-//console.log(Colorize.hash_vector(Colorize.dependencies('$C$2:$E$5', 10, 10)));
+//console.log(this.dependencies('$C$2:$E$5', 10, 10));
+//console.log(this.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
+//console.log(this.hash_vector(this.dependencies('$C$2:$E$5', 10, 10)));

@@ -72,6 +72,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 if (usedRange) {
                     usedRange.load(['format']);
                 }
+                console.log("sync 1");
                 await context.sync();
 
                 if (!everythingRange) {
@@ -92,7 +93,9 @@ export default class App extends React.Component<AppProps, AppState> {
                         usedRange.clear('Formats');
                         usedRange.setCellProperties(this.savedFormat.m_value);
                         this.savedFormat = null;
+                        console.log("sync 2");
                         await context.sync();
+                        console.log("after sync2");
                     }
                 }
 
@@ -222,8 +225,9 @@ export default class App extends React.Component<AppProps, AppState> {
                     numericRanges.format.borders.load(['items']);
                     formulaRanges.format.borders.load(['items']);
                 }
-
-                usedRange.setCellProperties(newFormat.m_value);
+                usedRange.clear('Formats');
+                // FIXME -- the below was really slow... 4/3/2019
+                //                usedRange.setCellProperties(newFormat.m_value);
 
                 await context.sync();
                 console.log('ExceLint: done with sync 2.');
@@ -273,6 +277,9 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 // For now, select the very first proposed fix.
                 this.proposed_fixes = Colorize.generate_proposed_fixes(formula_groups);
+                // Only present up to 5% (threshold from paper).
+                let max_proposed_fixes = Math.round(0.05 * formulas.length);
+                this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
                 console.log(JSON.stringify(this.proposed_fixes));
                 this.current_fix = 0;
                 let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
