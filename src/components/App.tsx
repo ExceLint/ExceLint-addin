@@ -91,7 +91,7 @@ export default class App extends React.Component<AppProps, AppState> {
                     if (this.savedFormat) {
                         //let items = usedRange.format.borders.items;
                         usedRange.clear('Formats');
-                        usedRange.setCellProperties(this.savedFormat.m_value);
+                        // usedRange.setCellProperties(this.savedFormat.m_value);
                         this.savedFormat = null;
                         console.log("sync 2");
                         await context.sync();
@@ -173,32 +173,35 @@ export default class App extends React.Component<AppProps, AppState> {
                 */
 
                 // Delete fill color when it's white.
-                for (let i = 0; i < this.savedFormat.m_value.length; i++) {
-                    for (let j = 0; j < this.savedFormat.m_value[0].length; j++) {
-                        if (this.savedFormat.m_value[i][j].format.fill.color === "#FFFFFF") {
-                            // It's white. We don't want to save back its color, since we can't currently write back "none".
-                            // We assume that's what the actual color is...
-                            delete this.savedFormat.m_value[i][j].format.fill.color;
-                            // Assume it had no borders for now...
-                            // delete this.savedFormat.m_value[i][j].format.borders;
-                            //delete newFormat.m_value[i][j].format.borders;
-                        } else {
-                            // It ain't white. Make it white.
-                            newFormat.m_value[i][j].format.fill.color = "#FFFFFF";
-                        }
-                        // Assume it had no borders for now...
-                        delete this.savedFormat.m_value[i][j].format.borders;
 
-                        /*
-                        if (this.savedFormat.m_value[i][j].format.borders) {
-                            // We should always get here.
-                            if (JSON.stringify(this.savedFormat.m_value[i][j].format.borders) === nullBorder) {
-                                // It's the default border. Delete it from both saved and new.
-                                delete this.savedFormat.m_value[i][j].format.borders;
-                                delete newFormat.m_value[i][j].format.borders;
+                if (false) {
+                    for (let i = 0; i < this.savedFormat.m_value.length; i++) {
+                        for (let j = 0; j < this.savedFormat.m_value[0].length; j++) {
+                            if (this.savedFormat.m_value[i][j].format.fill.color === "#FFFFFF") {
+                                // It's white. We don't want to save back its color, since we can't currently write back "none".
+                                // We assume that's what the actual color is...
+                                delete this.savedFormat.m_value[i][j].format.fill.color;
+                                // Assume it had no borders for now...
+                                // delete this.savedFormat.m_value[i][j].format.borders;
+                                //delete newFormat.m_value[i][j].format.borders;
+                            } else {
+                                // It ain't white. Make it white.
+                                newFormat.m_value[i][j].format.fill.color = "#FFFFFF";
                             }
+                            // Assume it had no borders for now...
+                            delete this.savedFormat.m_value[i][j].format.borders;
+
+                            /*
+                            if (this.savedFormat.m_value[i][j].format.borders) {
+                                // We should always get here.
+                                if (JSON.stringify(this.savedFormat.m_value[i][j].format.borders) === nullBorder) {
+                                    // It's the default border. Delete it from both saved and new.
+                                    delete this.savedFormat.m_value[i][j].format.borders;
+                                    delete newFormat.m_value[i][j].format.borders;
+                                }
+                            }
+                            */
                         }
-                        */
                     }
                 }
 
@@ -208,6 +211,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 console.log(currentWorksheet.protection.protected);
                 console.log('ExceLint: done with sync 1.');
                 if (currentWorksheet.protection.protected) {
+                    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
                     // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
                     return;
                 }
@@ -227,7 +231,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 }
                 usedRange.clear('Formats');
                 // FIXME -- the below was really slow... 4/3/2019
-                //                usedRange.setCellProperties(newFormat.m_value);
+                // usedRange.setCellProperties(newFormat.m_value);
 
                 await context.sync();
                 console.log('ExceLint: done with sync 2.');
