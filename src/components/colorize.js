@@ -20,10 +20,41 @@ var Colorize = /** @class */ (function () {
     Colorize.get_color = function (hashval) {
         return this.color_list[hashval % this.color_list.length];
     };
+    Colorize.is_banned_color = function (h, s, v) {
+        var ban_it = false;
+        var _a = colorutils_1.ColorUtils.HSVtoRGB(h, s, v), r = _a[0], g = _a[1], b = _a[2];
+        if ((r > 128) && (g < 128) && (b < 128)) {
+            // Too red.
+            ban_it = true;
+        }
+        if ((r < 192) && (g > 128) && (b < 192)) {
+            // Too green.
+            ban_it = true;
+        }
+        // Also avoid colors near '#eed202', safety yellow.
+        var safety_r = 238;
+        var safety_g = 210;
+        var safety_b = 2;
+        var threshold = 128;
+        if ((Math.abs(r - safety_r) < threshold) && (Math.abs(g - safety_g) < threshold) && (Math.abs(b - safety_b) < threshold)) {
+            console.log("too close to safety yellow.");
+            ban_it = true;
+        }
+        if (ban_it) {
+            console.log("Banned a color: " + r + ", " + g + ", " + b);
+        }
+        return ban_it;
+    };
     Colorize.make_light_color_versions = function () {
-        //		console.log('YO');
+        console.log('building color map (make_light_color_versions)');
         for (var i = 0; i < 255; i += 7) {
-            var rgb = colorutils_1.ColorUtils.HSVtoRGB(i / 255.0, .5, .85);
+            var h = i / 255.0;
+            var s = 0.5;
+            var v = 0.85;
+            if (this.is_banned_color(h, s, v)) {
+                continue;
+            }
+            var rgb = colorutils_1.ColorUtils.HSVtoRGB(h, s, v);
             var _a = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _a[0], gs = _a[1], bs = _a[2];
             var str = '#' + rs + gs + bs;
             str = str.toUpperCase();
@@ -77,8 +108,8 @@ var Colorize = /** @class */ (function () {
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
-                var r_1 = _d[_c];
-                var hash = formula_hash[r_1.join(',')];
+                var r = _d[_c];
+                var hash = formula_hash[r.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
@@ -112,9 +143,9 @@ var Colorize = /** @class */ (function () {
         // Separate into groups based on their string value.
         var groups = {};
         for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
-            var r_2 = list_1[_i];
-            groups[r_2[1]] = groups[r_2[1]] || [];
-            groups[r_2[1]].push(r_2[0]);
+            var r = list_1[_i];
+            groups[r[1]] = groups[r[1]] || [];
+            groups[r[1]].push(r[0]);
         }
         // Now sort them all.
         for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {
