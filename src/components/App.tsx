@@ -218,13 +218,22 @@ export default class App extends React.Component<AppProps, AppState> {
 					numericRanges.format.borders.load(['items']);
 					formulaRanges.format.borders.load(['items']);
 				}
-				numericRanges.clear('Formats');
-				formulaRanges.clear('Formats');
+			    try {
+				if (numericRanges) {
+				    numericRanges.clear('Formats');
+				}
+			    
+				if (formulaRanges) {
+				    formulaRanges.clear('Formats');
+				}
 				// usedRange.clear('Formats');
 				// FIXME -- the below was really slow... 4/3/2019
 				// usedRange.setCellProperties(newFormat.m_value);
 
 				await context.sync();
+			    } catch (error) {
+				console.log("ExceLint: encountered an error in saveFormatsAndColors; ignoring.");
+			    }
 				console.log('ExceLint: done with sync 2.');
 
 
@@ -232,8 +241,10 @@ export default class App extends React.Component<AppProps, AppState> {
 				// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
 				//everythingRange.clear('Formats'); // Excel.ClearApplyTo.formats);
 
-				// Make all numbers yellow; this will be the default value for unreferenced data.
+			    // Make all numbers yellow; this will be the default value for unreferenced data.
+			    if (numericRanges) {
 				numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+			    }
 
 				if (false) {
 					// Give every formula a solid border.
@@ -364,11 +375,17 @@ export default class App extends React.Component<AppProps, AppState> {
 						let address = usedRange.address;
 						if (address === this.savedRange) {
 							if (this.savedFormat) {
-								console.log("restoring." + JSON.stringify(this.savedFormat.m_value));
+							    console.log("restoring."); //  + JSON.stringify(this.savedFormat.m_value));
+							    try {
 								usedRange.setCellProperties(this.savedFormat.m_value);
 								this.savedFormat = null;
 								this.savedRange = null;
 								await context.sync();
+							    } catch (error) {
+								console.log("ExceLint encountered an error but whatever.");
+							    }
+								this.savedFormat = null;
+								this.savedRange = null;
 								console.log("Restored saved cell properties (set).");
 							}
 						}
