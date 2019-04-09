@@ -4,6 +4,7 @@
     "author": "",
     "version": "1.0.0",
     "scripts": {
+	"preinstall": "npm install webpack webpack-dev-server office-toolbox rimraf",
         "clean": "rimraf dist && rimraf .awcache",
         "lint": "tslint --project tsconfig.json",
         "start": "webpack-dev-server --inline --mode development --config config/webpack.dev.js --progress",
