@@ -135,7 +135,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 				currentWorksheet.load(['protection']);
 
-				let usedRange = currentWorksheet.getUsedRange();
+				let usedRange = currentWorksheet.getUsedRange() as any;
 				let everythingRange = currentWorksheet.getRange();
 				// Now get the addresses, the formulas, and the values.
 				usedRange.load(['address', 'formulas', 'values', 'format']);
@@ -326,7 +326,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		try {
 			await Excel.run(async context => {
 				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-				let usedRange = currentWorksheet.getUsedRangeOrNullObject();
+				let usedRange = currentWorksheet.getUsedRangeOrNullObject() as any;
 				usedRange.load(['address']);
 				await context.sync();
 				let address = usedRange.address;
@@ -367,7 +367,7 @@ export default class App extends React.Component<AppProps, AppState> {
 					// FIXME - should save in a dict per sheet UID
 					let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 					//					let usedRange = currentWorksheet.getUsedRangeOrNullObject();
-					let usedRange = currentWorksheet.getUsedRangeOrNullObject();
+					let usedRange = currentWorksheet.getUsedRangeOrNullObject() as any;
 
 					if (usedRange) {
 						usedRange.load(['address']);
