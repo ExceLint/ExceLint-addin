@@ -20,7 +20,6 @@
         "xregexp": "^4.2.4"
     },
     "devDependencies": {
-        "@types/office-js": "0.0.155",
         "@types/office-js-preview": "0.0.33",
         "@types/react": "^16.8.2",
         "@types/react-dom": "^16.8.0",
