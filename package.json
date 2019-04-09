@@ -17,7 +17,8 @@
         "office-ui-fabric-react": "^6.138.1",
         "react": "^16.8.1",
         "react-dom": "^16.8.1",
-        "xregexp": "^4.2.4"
+        "xregexp": "^4.2.4",
+        "yargs": "^13.2.2"
     },
     "devDependencies": {
         "@types/office-js-preview": "0.0.33",
