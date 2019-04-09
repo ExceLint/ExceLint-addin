@@ -1,3 +1,7 @@
+1.1.1 / 2019-04-06
+=================
+  * [Fix] exclude deprecated Firefox keys (#53)
+
 1.1.0 / 2019-02-10
 =================
   * [New] [Refactor] move full implementation to `implementation` entry point
