@@ -39,7 +39,7 @@
     <Host Name="Workbook" />
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://excelint.azurewebsites.net/index.html" />
+    <SourceLocation DefaultValue="https://excelint-addin.azurewebsites.net/index.html" />
   </DefaultSettings>
   <!-- End TaskPane Mode integration.  -->
 
@@ -124,9 +124,9 @@
         <bt:Image id="Contoso.tpicon_80x80" DefaultValue="https://github.com/plasma-umass/ExceLint-addin/blob/master/assets/icon-80.png?raw=true" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Contoso.Taskpane.Url" DefaultValue="https://excelint.azurewebsites.net/index.html" />
+        <bt:Url id="Contoso.Taskpane.Url" DefaultValue="https://excelint-addin.azurewebsites.net/index.html" />
         <bt:Url id="Contoso.GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812" />
-        <bt:Url id="Contoso.DesktopFunctionFile.Url" DefaultValue="https://excelint.azurewebsites.net/function-file/function-file.html" />
+        <bt:Url id="Contoso.DesktopFunctionFile.Url" DefaultValue="https://excelint-addin.azurewebsites.net/function-file/function-file.html" />
       </bt:Urls>
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
