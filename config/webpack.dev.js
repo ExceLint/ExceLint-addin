@@ -10,7 +10,11 @@ module.exports = webpackMerge(commonConfig, {
         publicPath: '/',
         contentBase: path.resolve('dist'),
         hot: true,
-	http2: false,
+        https: {
+            key: fs.readFileSync('./certs/server.key'),
+            cert: fs.readFileSync('./certs/server.crt'),
+            cacert: fs.readFileSync('./certs/ca.crt')
+        },
         compress: true,
         overlay: {
             warnings: false,
