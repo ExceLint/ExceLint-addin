@@ -168,6 +168,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	await context.sync();
 	// Try to restore the format from the hidden sheet.
 	let currentWorksheet = worksheets.getActiveWorksheet();
+	currentWorksheet.protection.unprotect();
 	await context.sync();
 	currentWorksheet.load(['name']);
 	await context.sync();
@@ -200,6 +201,15 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log('ExceLint: starting processing 2');
 		currentWorksheet.load(['protection']);
 		await context.sync(); // FOR DEBUGGING
+
+ 		console.log(currentWorksheet.protection.protected);
+		console.log('ExceLint: done with sync.');
+		if (currentWorksheet.protection.protected) {
+		    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
+		    // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
+		    return;
+		}
+
 		console.log('ExceLint: starting processing 3');
 		
 		let usedRange = currentWorksheet.getUsedRange() as any;
@@ -232,14 +242,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log('ExceLint: starting processing 8');
 		///console.log(JSON.stringify(this.savedFormat));
 		
- 		console.log(currentWorksheet.protection.protected);
-		console.log('ExceLint: done with sync 1.');
-		if (currentWorksheet.protection.protected) {
-		    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
-		    // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-		    return;
-		}
-		
+		// First, try to restore the saved format.
+//		await this.restoreFormats(context);
+
+		// Now save them.
 		await this.saveFormats();
 		let address = usedRange.address;
 		
@@ -303,6 +309,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 		await context.sync();
 		console.log('ExceLint: done with sync 3.');
+		currentWorksheet.protection.protect();
 		
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
