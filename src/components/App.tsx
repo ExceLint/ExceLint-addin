@@ -26,7 +26,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	private savedFormat: any = null;
     private savedRange: string = null;
     private sheetSuffix : string = "_EL";
-
+    private startRange = "A1";
+    private endRange = "AA32767";
 	constructor(props, context) {
 		super(props, context);
 	}
@@ -138,17 +139,24 @@ export default class App extends React.Component<AppProps, AppState> {
 		try {
 		    console.log("ATTEMPT DELETE.");
 		    let newSheet = worksheets.getItem(newName);
+		    newSheet.visibility = Excel.SheetVisibility.hidden;
 		    newSheet.delete();
 		    await context.sync();
 		} catch (error) { console.log("Sheet not found. " + error); }
 	    }
-	    worksheets.add(newName);
+	    console.log("E");
+	    try {
+		worksheets.add(newName);
+	    } catch(error) { console.log("Already added. " + error); }
+	    console.log("F");
 	    let newSheet = worksheets.getItem(newName);
+	    console.log("G");
 	    newSheet.visibility = Excel.SheetVisibility.veryHidden;
+	    console.log("H");
 	    await context.sync();
 	    // Finally, copy the formats!
 	    let destRange = newSheet.getRange("A1") as any;
-	    destRange.copyFrom(currentWorksheet.name + "!" + "A1:" + currentWorksheet.name + "!" + "AA32767", Excel.RangeCopyType.formats);
+	    destRange.copyFrom(currentWorksheet.name + "!" + this.startRange + ":" + currentWorksheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
 	});
     }
@@ -171,7 +179,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let destRange = currentWorksheet.getRange("A1") as any;
 	    newSheet.load(['name', 'format', 'address']);
 	    await context.sync();
-	    destRange.copyFrom(newSheet.name + "!" + "A1:" + newSheet.name + "!" + "AA32767", Excel.RangeCopyType.formats);
+	    destRange.copyFrom(newSheet.name + "!" + this.startRange + ":" + newSheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
 	} catch(error) { console.log("Nothing to restore: " + error); }
 	await context.sync();
