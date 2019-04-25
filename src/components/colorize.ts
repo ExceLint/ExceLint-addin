@@ -139,7 +139,7 @@ export class Colorize {
 	}
 
 
-	private static hash(str: string): number {
+	public static hash(str: string): number {
 		// From https://github.com/darkskyapp/string-hash
 		let hash = 5381,
 			i = str.length;
