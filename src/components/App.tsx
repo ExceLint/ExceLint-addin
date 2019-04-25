@@ -132,6 +132,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	    currentWorksheet.load(['name']);
 	    await context.sync();
 	    console.log("C");
+	    console.log(currentWorksheet.id);
+//	    let newName = currentWorksheet.id.replace(/[-{}]/g, '_') + this.sheetSuffix;
 	    let newName = currentWorksheet.name + this.sheetSuffix;
 	    console.log("D");
 	    if (true) {
@@ -173,7 +175,10 @@ export default class App extends React.Component<AppProps, AppState> {
 	currentWorksheet.load(['name']);
 	await context.sync();
 	console.log("got here.");
+	console.log(currentWorksheet.id);
 	let newName = currentWorksheet.name + this.sheetSuffix;
+	//	let newName = currentWorksheet.id.replace(/[-{}]/g, '_') + this.sheetSuffix;
+	console.log(Colorize.hash(currentWorksheet.id));
 	// If it's there already, restore it. //  then delete it.
 	try {
 	    let newSheet = worksheets.getItem(newName);
@@ -301,6 +306,15 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash, 10))); });
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(parseInt(hash, 10)); });
+
+/*
+		for (let i = 0; i < this.proposed_fixes.length; i++) {
+		    let r = this.getRange(currentWorksheet, this.proposed_fixes, i);
+		    r.load(['format']);
+		    await context.sync();
+		    r.border.set({ 'weight': 'Thin', 'style' : 'Continuous', 'tintAndShade' : -1});
+		}
+*/
 		
 		this.current_fix = 0;
 		let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
@@ -310,7 +324,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		console.log('ExceLint: done with sync 3.');
 		currentWorksheet.protection.protect();
-		
+/*		let currName = currentWorksheet.name;
+		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log('Time elapsed (ms) = ' + timeElapsedMS);
