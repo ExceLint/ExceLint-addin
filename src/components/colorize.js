@@ -37,11 +37,11 @@ var Colorize = /** @class */ (function () {
         var safety_b = 2;
         var threshold = 128;
         if ((Math.abs(r - safety_r) < threshold) && (Math.abs(g - safety_g) < threshold) && (Math.abs(b - safety_b) < threshold)) {
-            console.log("too close to safety yellow.");
+            ///			console.log("too close to safety yellow.");
             ban_it = true;
         }
         if (ban_it) {
-            console.log("Banned a color: " + r + ", " + g + ", " + b);
+            ///			console.log("Banned a color: " + r + ", " + g + ", " + b);
         }
         return ban_it;
     };
@@ -108,8 +108,8 @@ var Colorize = /** @class */ (function () {
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
-                var r_1 = _d[_c];
-                var hash = formula_hash[r_1.join(',')];
+                var r = _d[_c];
+                var hash = formula_hash[r.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
@@ -143,9 +143,9 @@ var Colorize = /** @class */ (function () {
         // Separate into groups based on their string value.
         var groups = {};
         for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
-            var r_2 = list_1[_i];
-            groups[r_2[1]] = groups[r_2[1]] || [];
-            groups[r_2[1]].push(r_2[0]);
+            var r = list_1[_i];
+            groups[r[1]] = groups[r[1]] || [];
+            groups[r[1]].push(r[0]);
         }
         // Now sort them all.
         for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {

@@ -43,11 +43,11 @@ export class Colorize {
 		const safety_b = 2;
 		const threshold = 128;
 		if ((Math.abs(r - safety_r) < threshold) && (Math.abs(g - safety_g) < threshold) && (Math.abs(b - safety_b) < threshold)) {
-			console.log("too close to safety yellow.");
+///			console.log("too close to safety yellow.");
 			ban_it = true;
 		}
 		if (ban_it) {
-			console.log("Banned a color: " + r + ", " + g + ", " + b);
+///			console.log("Banned a color: " + r + ", " + g + ", " + b);
 		}
 		return ban_it;
 	}
