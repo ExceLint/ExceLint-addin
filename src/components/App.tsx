@@ -133,8 +133,9 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 	    console.log("C");
 	    console.log(currentWorksheet.id);
-//	    let newName = currentWorksheet.id.replace(/[-{}]/g, '_') + this.sheetSuffix;
-	    let newName = currentWorksheet.name + this.sheetSuffix;
+//	    let newName = currentWorksheet.id.replace(/[-{}\s]/g, '_') + this.sheetSuffix;
+	    let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
+	    console.log(newName);
 	    console.log("D");
 	    if (true) {
 		// If it's there already, delete it.
@@ -158,7 +159,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 	    // Finally, copy the formats!
 	    let destRange = newSheet.getRange("A1") as any;
-	    destRange.copyFrom(currentWorksheet.name + "!" + this.startRange + ":" + currentWorksheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
+	    destRange.copyFrom(this.startRange + ":" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
 	});
     }
@@ -176,8 +177,9 @@ export default class App extends React.Component<AppProps, AppState> {
 	await context.sync();
 	console.log("got here.");
 	console.log(currentWorksheet.id);
-	let newName = currentWorksheet.name + this.sheetSuffix;
-	//	let newName = currentWorksheet.id.replace(/[-{}]/g, '_') + this.sheetSuffix;
+	let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
+	//	let newName = currentWorksheet.id.replace(/[-{}\s]/g, '_') + this.sheetSuffix;
+	console.log(newName);
 	console.log(Colorize.hash(currentWorksheet.id));
 	// If it's there already, restore it. //  then delete it.
 	try {
