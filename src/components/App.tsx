@@ -305,8 +305,14 @@ export default class App extends React.Component<AppProps, AppState> {
 		let max_proposed_fixes = Math.round(0.05 * formulas.length);
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
 		console.log(JSON.stringify(this.proposed_fixes));
-		
-		this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash, 10))); });
+
+		if (true) {
+		    // Just color referenced data white.
+		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; });
+		} else {
+		    // Color referenced data based on its formula's color.
+		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash, 10))); });
+		}
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(parseInt(hash, 10)); });
 
 /*
