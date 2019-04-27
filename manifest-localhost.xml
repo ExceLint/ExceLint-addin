@@ -16,7 +16,7 @@
   <ProviderName>Emery Berger</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <!-- The display name of your add-in. Used on the store and various places of the Office UI such as the add-ins dialog. -->
-  <DisplayName DefaultValue="" /> <!-- was "ExceLint" -->
+  <DisplayName DefaultValue="ExceLint" /> <!-- was "ExceLint" -->
   <Description DefaultValue="ExceLint is Excellent"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
