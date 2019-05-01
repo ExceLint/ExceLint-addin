@@ -1,8 +1,10 @@
+const devCerts = require("office-addin-dev-certs");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require("webpack");
 
-module.exports = {
-    devtool: 'source-map',
+module.exports = async (env, options) => {
+    const config = {
+	devtool: 'source-map',
     entry: {
         app: './src/index.ts',
         'function-file': './function-file/function-file.ts'
@@ -28,6 +30,13 @@ module.exports = {
             }
         ]
     },
+    devServer: {
+      headers: {
+        "Access-Control-Allow-Origin": "*"
+      },
+      https: await devCerts.getHttpsServerOptions(),
+      port: 3000
+    },
     plugins: [
         new HtmlWebpackPlugin({
             template: './index.html',
@@ -42,4 +51,8 @@ module.exports = {
             Promise: ["es6-promise", "Promise"]
         })
     ]
+    };
+
+    return config;
 };
+

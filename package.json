@@ -9,7 +9,7 @@
     "lint": "tslint --project tsconfig.json",
     "start": "webpack-dev-server --inline --port 3000 --mode production --config config/webpack.dev.js --progress",
     "sideload": "office-toolbox sideload -m manifest.xml -a Excel",
-    "build": "npm run clean && webpack --mode production --config config/webpack.prod.js --colors --progress --bail",
+    "build": "npm run clean && webpack --mode production --config config/webpack.dev.js --colors --progress --bail",
     "validate": "office-toolbox validate -m manifest.xml"
   },
   "dependencies": {
@@ -45,6 +45,8 @@
     "neo-async": "^2.6.0",
     "node": "^11.13.0",
     "npx": "^10.2.0",
+    "office-addin-debugging": "^2.1.13",
+    "office-addin-dev-certs": "^0.1.1",
     "office-toolbox": "^0.1.1",
     "office-ui-fabric-react": "^6.167.1",
     "path": "^0.12.7",
