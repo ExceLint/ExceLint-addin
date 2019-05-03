@@ -1,12 +1,10 @@
-const devCerts = require("office-addin-dev-certs");
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const webpackMerge = require('webpack-merge');
 const commonConfig = require('./webpack.common.js');
 
-module.exports = async(env, options) => {
-    return webpackMerge(commonConfig, {
+module.exports = webpackMerge(commonConfig, {
     devtool: 'eval-source-map',
     devServer: {
         publicPath: '/',
@@ -17,12 +15,17 @@ module.exports = async(env, options) => {
             warnings: false,
             errors: true
         },
-        port: 3000,
-	https: await devCerts.getHttpsServerOptions(),
-        historyApiFallback: true
+          https: {
+            key: fs.readFileSync('./certs/server.key'),
+            cert: fs.readFileSync('./certs/server.crt'),
+            cacert: fs.readFileSync('./certs/ca.crt')
+        },
+        historyApiFallback: true,
+	allowedHosts: [
+            '.amazonaws.com'
+        ]
     },
     plugins: [
         new webpack.HotModuleReplacementPlugin()
     ]
-    });
-}
+});
