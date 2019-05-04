@@ -249,7 +249,7 @@ var Colorize = /** @class */ (function () {
                             if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2)) {
                                 already_proposed_pair[sr1 + sr2] = true;
                                 already_proposed_pair[sr2 + sr1] = true;
-                                // console.log("could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+                                console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
                                 var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
                                 // was Math.abs(parseFloat(k2) - parseFloat(k1))
                                 proposed_fixes.push([metric, r1, r2]);
