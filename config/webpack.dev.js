@@ -21,7 +21,11 @@ module.exports = async (env, options) => {
 	headers: {
             "Access-Control-Allow-Origin": "*"
 	},
-	https: await devCerts.getHttpsServerOptions(),
+	https: {
+            key: fs.readFileSync('./certs/server.key'),
+            cert: fs.readFileSync('./certs/server.crt'),
+            cacert: fs.readFileSync('./certs/ca.crt')
+        },
 	port: 3000,
 	allowedHosts: [
             '.amazonaws.com', 'azure.com'
