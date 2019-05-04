@@ -225,7 +225,7 @@ var Colorize = /** @class */ (function () {
         var n_merge_with = rectangleutils_1.RectangleUtils.area(merge_with);
         if (n_merge_with + n_target < 3) {
             // Penalize merging two cells.
-            return 0;
+            return 100000;
         }
         var n_min = Math.min(n_target, n_merge_with);
         var n_max = Math.max(n_target, n_merge_with);

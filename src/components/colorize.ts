@@ -245,7 +245,7 @@ export class Colorize {
 		    let n_merge_with = RectangleUtils.area(merge_with);
 		    if (n_merge_with + n_target < 3) {
 			// Penalize merging two cells.
-			return 0;
+			return 100000;
 		    }
 		let n_min = Math.min(n_target, n_merge_with);
 		let n_max = Math.max(n_target, n_merge_with);
