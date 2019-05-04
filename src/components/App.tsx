@@ -299,6 +299,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		let grouped_data = Colorize.identify_groups(processed_data);
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
+		console.log("Grouped formulas: ");
+		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 		// Only present up to 5% (threshold from paper).
