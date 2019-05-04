@@ -28,7 +28,7 @@ module.exports = async (env, options) => {
         },
 	port: 3000,
 	allowedHosts: [
-            '.amazonaws.com', 'azure.com'
+            '.amazonaws.com', '.azure.com'
         ]
     },
     plugins: [
