@@ -229,8 +229,8 @@ var Colorize = /** @class */ (function () {
         var norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
         var fix_distance = Math.abs(norm_max - norm_min);
         var entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-        //		return n_min / (entropy_drop * fix_distance);
-        return fix_distance * n_min / entropy_drop;
+        console.log("fix_metric: " + entropy_drop + ", " + fix_distance + ", " + n_min);
+        return n_min / (entropy_drop * fix_distance);
     };
     Colorize.generate_proposed_fixes = function (groups) {
         var proposed_fixes = [];
