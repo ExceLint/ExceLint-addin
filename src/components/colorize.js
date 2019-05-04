@@ -223,6 +223,10 @@ var Colorize = /** @class */ (function () {
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
         var n_target = rectangleutils_1.RectangleUtils.area(target);
         var n_merge_with = rectangleutils_1.RectangleUtils.area(merge_with);
+        if (n_merge_with + n_target < 3) {
+            // Penalize merging two cells.
+            return 0;
+        }
         var n_min = Math.min(n_target, n_merge_with);
         var n_max = Math.max(n_target, n_merge_with);
         var norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
