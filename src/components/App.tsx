@@ -424,12 +424,13 @@ export default class App extends React.Component<AppProps, AppState> {
 
 				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 				currentWorksheet.load(['protection']);
-				await context.sync();
+			    await context.sync();
+			    /*
 				if (currentWorksheet.protection.protected) {
 					// Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
 					return;
 				}
-
+			    */
 				this.current_fix -= 1;
 				if (this.current_fix < 0) {
 					this.current_fix = 0;
@@ -451,10 +452,6 @@ export default class App extends React.Component<AppProps, AppState> {
 				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 				currentWorksheet.load(['protection']);
 				await context.sync();
-				if (currentWorksheet.protection.protected) {
-					//                    Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-					return;
-				}
 				this.current_fix++;
 				if (this.current_fix >= this.proposed_fixes.length) {
 					this.current_fix = this.proposed_fixes.length - 1;
