@@ -45,6 +45,7 @@
     "neo-async": "^2.6.0",
     "node": "^11.13.0",
     "npx": "^10.2.0",
+    "office-addin-dev-certs": "^1.0.1",
     "office-toolbox": "^0.1.1",
     "office-ui-fabric-react": "^6.167.1",
     "path": "^0.12.7",
