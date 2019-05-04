@@ -249,7 +249,8 @@ export class Colorize {
 		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
 		let fix_distance = Math.abs(norm_max - norm_min);
 		let entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-		return n_min / (entropy_drop * fix_distance);
+//		return n_min / (entropy_drop * fix_distance);
+		    return fix_distance * n_min / entropy_drop;
 	}
 
 	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):

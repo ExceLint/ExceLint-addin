@@ -304,7 +304,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 		// Only present up to 5% (threshold from paper).
-		let max_proposed_fixes = Math.round(0.05 * formulas.length);
+		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
 		console.log(JSON.stringify(this.proposed_fixes));
 
