@@ -84,6 +84,7 @@ var Colorize = /** @class */ (function () {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
+                    console.log("process_formulas: row = " + JSON.stringify(row[j]));
                     var vec = excelutils_1.ExcelUtils.dependencies(row[j], j + origin_col, i + origin_row);
                     console.log("process_formulas: " + JSON.stringify(vec));
                     var hash = this.hash_vector(vec);

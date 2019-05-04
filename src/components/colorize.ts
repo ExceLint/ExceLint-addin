@@ -95,6 +95,7 @@ export class Colorize {
 			let row = formulas[i];
 			for (let j = 0; j < row.length; j++) {
 				if ((row[j].length > 0) && (row[j][0] === '=')) {
+				    console.log("process_formulas: row = " + JSON.stringify(row[j]));
 				    let vec = ExcelUtils.dependencies(row[j], j + origin_col, i + origin_row);
 				    console.log("process_formulas: " + JSON.stringify(vec));
 					let hash = this.hash_vector(vec);
