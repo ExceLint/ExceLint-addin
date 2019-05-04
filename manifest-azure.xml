@@ -40,7 +40,7 @@
   </Hosts>
   <DefaultSettings>
     
-    <SourceLocation DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com/index.html" />
+    <SourceLocation DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com:3000/index.html" />
   </DefaultSettings>
   <!-- End TaskPane Mode integration.  -->
 
@@ -125,9 +125,9 @@
         <bt:Image id="Contoso.tpicon_80x80" DefaultValue="https://github.com/plasma-umass/ExceLint-addin/blob/master/assets/icon-80.png?raw=true" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Contoso.Taskpane.Url" DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com/index.html" />
+        <bt:Url id="Contoso.Taskpane.Url" DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com:3000/index.html" />
         <bt:Url id="Contoso.GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812" />
-        <bt:Url id="Contoso.DesktopFunctionFile.Url" DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com/function-file/function-file.html" />
+        <bt:Url id="Contoso.DesktopFunctionFile.Url" DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com:3000/function-file/function-file.html" />
       </bt:Urls>
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
