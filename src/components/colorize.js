@@ -223,18 +223,16 @@ var Colorize = /** @class */ (function () {
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
         var n_target = rectangleutils_1.RectangleUtils.area(target);
         var n_merge_with = rectangleutils_1.RectangleUtils.area(merge_with);
-        if (n_merge_with + n_target < 3) {
-            // Penalize merging two cells.
-            return 100000;
-        }
         var n_min = Math.min(n_target, n_merge_with);
         var n_max = Math.max(n_target, n_merge_with);
-        var norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
-        var norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
+        //		let norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
+        // 		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
+        var norm_min = Math.min(merge_with_norm, target_norm);
+        var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min);
         var entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
         console.log("fix_metric: " + entropy_drop + ", " + fix_distance + ", " + n_min);
-        return entropy_drop / fix_distance;
+        return (n_merge_with * n_target) * entropy_drop / fix_distance;
     };
     Colorize.generate_proposed_fixes = function (groups) {
         var proposed_fixes = [];

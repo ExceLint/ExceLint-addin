@@ -243,18 +243,16 @@ export class Colorize {
 
 		let n_target = RectangleUtils.area(target);
 		    let n_merge_with = RectangleUtils.area(merge_with);
-		    if (n_merge_with + n_target < 3) {
-			// Penalize merging two cells.
-			return 100000;
-		    }
 		let n_min = Math.min(n_target, n_merge_with);
 		let n_max = Math.max(n_target, n_merge_with);
-		let norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
-		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
+//		let norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
+// 		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
+		let norm_min = Math.min(merge_with_norm, target_norm);
+ 		let norm_max = Math.max(merge_with_norm, target_norm);
 		let fix_distance = Math.abs(norm_max - norm_min);
 		    let entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
 		    console.log("fix_metric: "+entropy_drop+ ", " + fix_distance + ", " + n_min);
-		    return entropy_drop / fix_distance;
+		    return (n_merge_with * n_target) * entropy_drop / fix_distance;
 	}
 
 	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
