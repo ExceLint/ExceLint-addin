@@ -25,12 +25,21 @@ export default class App extends React.Component<AppProps, AppState> {
 	private current_fix = 0;
 	private savedFormat: any = null;
     private savedRange: string = null;
-    private sheetSuffix : string = "_EL";
+    private originalSheetSuffix : string = "_EL";
+    private colorizedSheetSuffix : string = "_LE";
     private startRange = "A1";
     private endRange = "AA32767";
 	constructor(props, context) {
 		super(props, context);
 	}
+
+    private saved_original_sheetname(id: string) : string {
+	return ExcelUtils.hash_sheet(id, 28) + this.originalSheetSuffix;
+    }
+
+    private saved_colorized_sheetname(id: string) : string {
+	return ExcelUtils.hash_sheet(id, 28) + this.colorizedSheetSuffix;
+    }
 
     private process(grouped_ranges, currentWorksheet, colorfn) {
 		// Sort and group by COLUMNS (first dimension).
@@ -133,8 +142,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 	    console.log("C");
 	    console.log(currentWorksheet.id);
-//	    let newName = currentWorksheet.id.replace(/[-{}\s]/g, '_') + this.sheetSuffix;
-	    let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
+	    let newName = this.saved_original_sheetname(currentWorksheet.id);
+	    //	    let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
 	    console.log(newName);
 	    console.log("D");
 	    if (true) {
@@ -177,7 +186,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	await context.sync();
 	console.log("got here.");
 	console.log(currentWorksheet.id);
-	let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
+	let newName = this.saved_original_sheetname(currentWorksheet.id);
+	//let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
 	//	let newName = currentWorksheet.id.replace(/[-{}\s]/g, '_') + this.sheetSuffix;
 	console.log(newName);
 	console.log(Colorize.hash(currentWorksheet.id));

@@ -1,9 +1,16 @@
 "use strict";
 // excel-utils
 exports.__esModule = true;
+var sjcl = require("sjcl");
 var ExcelUtils = /** @class */ (function () {
     function ExcelUtils() {
     }
+    // Convert the UID string into a hashed version using SHA256, truncated to a max length.
+    ExcelUtils.hash_sheet = function (uid, maxlen) {
+        if (maxlen === void 0) { maxlen = 31; }
+        // We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
+        return (sjcl.codec.base32.fromBits(sjcl.hash.sha256.hash(uid)).slice(0, maxlen));
+    };
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     ExcelUtils.column_name_to_index = function (name) {
         if (name.length === 1) { // optimizing for the overwhelmingly common case

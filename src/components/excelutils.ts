@@ -1,5 +1,7 @@
 // excel-utils
 
+import * as sjcl from 'sjcl';
+
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
     private static general_re = '\\$?[A-Z]+\\$?\\d+'; // column and row number, optionally with $
@@ -12,6 +14,13 @@ export class ExcelUtils {
     private static cell_col_absolute = new RegExp('\\$([A-Z]+)[^\\$\\d]?(\\d+)');
     private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z]+)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('\\$([A-Z]+)\\$(\\d+)');
+
+    // Convert the UID string into a hashed version using SHA256, truncated to a max length.
+    public static hash_sheet(uid: string, maxlen: number = 31) : string {
+	// We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
+	return (sjcl.codec.base32.fromBits(sjcl.hash.sha256.hash(uid)).slice(0,maxlen));
+    }
+    
 
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     public static column_name_to_index(name: string): number {
