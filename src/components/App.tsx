@@ -224,9 +224,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; }); // was FFFFFF FIXME
 		} else {
 		    // Color referenced data based on its formula's color.
-		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash, 10))); });
+		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); });
 		}
-		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(parseInt(hash, 10)); });
+		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
 
 /*
 		for (let i = 0; i < this.proposed_fixes.length; i++) {

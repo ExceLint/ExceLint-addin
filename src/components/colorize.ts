@@ -22,9 +22,11 @@ export class Colorize {
 		}
 	}
 
-	public static get_color(hashval: number): string {
-		return this.color_list[hashval % this.color_list.length];
-	}
+    public static get_color(hashval: number): string {
+	let color = this.color_list[(hashval * 7919) % this.color_list.length];
+	console.log("get_color " + hashval + ", " + (hashval * 7919) + " = " + color);
+	return color;
+    }
 
 	private static is_banned_color(h: number, s: number, v: number): boolean {
 		let ban_it = false;
@@ -389,11 +391,18 @@ export class Colorize {
 	}
 
 
-	public static hash_vector(vec: Array<number>): number {
-		// Return a hash of the given vector.
-		let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
+    public static hash_vector(vec: Array<number>): number {
+	let baseX = 7;
+	let baseY = 3;
+	let v0 = vec[0] - baseX;
+	v0 = v0 * v0;
+	let v1 = vec[1] - baseY;
+	v1 = v1 * v1;
+	return Math.sqrt(v0 + v1);
+	// Return a hash of the given vector.
+//	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
 		//	console.log("hash of " + JSON.stringify(vec) + " = " + h);
-		return h;
+//		return h;
 		//        let h = this.hash(JSON.stringify(vec) + 'NONCE01');
 		//        return h;
 	}

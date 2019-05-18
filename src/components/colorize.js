@@ -18,7 +18,9 @@ var Colorize = /** @class */ (function () {
         }
     };
     Colorize.get_color = function (hashval) {
-        return this.color_list[hashval % this.color_list.length];
+        var color = this.color_list[(hashval * 7919) % this.color_list.length];
+        console.log("get_color " + hashval + ", " + (hashval * 7919) + " = " + color);
+        return color;
     };
     Colorize.is_banned_color = function (h, s, v) {
         var ban_it = false;
@@ -362,10 +364,17 @@ var Colorize = /** @class */ (function () {
         return refs;
     };
     Colorize.hash_vector = function (vec) {
+        var baseX = 7;
+        var baseY = 3;
+        var v0 = vec[0] - baseX;
+        v0 = v0 * v0;
+        var v1 = vec[1] - baseY;
+        v1 = v1 * v1;
+        return Math.sqrt(v0 + v1);
         // Return a hash of the given vector.
-        var h = Math.sqrt(vec.map(function (v) { return v * v; }).reduce(function (a, b) { return a + b; }));
+        //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
         //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
-        return h;
+        //		return h;
         //        let h = this.hash(JSON.stringify(vec) + 'NONCE01');
         //        return h;
     };
