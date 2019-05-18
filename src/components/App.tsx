@@ -69,64 +69,6 @@ export default class App extends React.Component<AppProps, AppState> {
 //		return grouped_ranges;
 	}
 
-	clearColor = async () => {
-		Colorize.initialize();
-
-		try {
-		    await Excel.run(async context => {
-
-			// Clear all formats and borders.
-			
-			let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-			let everythingRange = currentWorksheet.getRange();
-			let usedRange = currentWorksheet.getUsedRangeOrNullObject();
-			currentWorksheet.load(['protection']);
-			if (usedRange) {
-			    usedRange.load(['format']);
-			}
-			console.log("sync 1");
-			await context.sync();
-			
-			if (!everythingRange) {
-			    return;
-			}
-			
-			if (currentWorksheet.protection.protected) {
-			    // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-			    return;
-			}
-			
-			// console.log("saved format = " + JSON.stringify(this.savedFormat));
-			if (usedRange) {
-			    //usedRange.format.borders.load(['items']);
-			    //await context.sync();
-			    if (false) { // this.savedFormat) {
-				//let items = usedRange.format.borders.items;
-				// usedRange.clear('Formats');
-				// usedRange.setCellProperties(this.savedFormat.m_value);
-				//this.savedFormat = null;
-				console.log("sync 2");
-				await this.restoreFormatsAndColors();
-				// await context.sync();
-				console.log("after sync2");
-			    }
-			}
-			
-		    });
-		} catch (error) {
-		    OfficeHelpers.UI.notify(error);
-		    OfficeHelpers.Utilities.log(error);
-		}
-	}
-    
-/*
-    public changeHandler(event) {
-	await Excel.run(async context => {
-	    await context.sync();
-	    console.log("EVENT: " + JSON.stringify(event));
-	});
-    }
-*/
     
     saveFormats = async() => {
 	Colorize.initialize();
@@ -135,63 +77,45 @@ export default class App extends React.Component<AppProps, AppState> {
 	    //	    await context.sync();
 	    let worksheets = context.workbook.worksheets;
 	    // Make a new sheet corresponding to the current sheet (+ a suffix).
-	    console.log("A");
+	    console.log("saveFormats: loading current worksheet name");
 	    let currentWorksheet = worksheets.getActiveWorksheet();
-	    console.log("B");
 	    currentWorksheet.load(['name']);
 	    await context.sync();
-	    console.log("C");
-	    console.log(currentWorksheet.id);
 	    let newName = this.saved_original_sheetname(currentWorksheet.id);
-	    //	    let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
-	    console.log(newName);
-	    console.log("D");
-	    if (true) {
-		// If it's there already, delete it.
-		try {
-		    console.log("ATTEMPT DELETE.");
-		    let newSheet = worksheets.getItem(newName);
-		    newSheet.visibility = Excel.SheetVisibility.hidden;
-		    newSheet.delete();
-		    await context.sync();
-		} catch (error) { console.log("Sheet not found. " + error); }
-	    }
-	    console.log("E");
+	    // If it's there already, delete it.
+	    try {
+		console.log("saveFormats: attempt to delete saved format sheet");
+		let newSheet = worksheets.getItem(newName);
+		newSheet.visibility = Excel.SheetVisibility.hidden;
+		newSheet.delete();
+		await context.sync();
+	    } catch (error) { console.log("saveFormats: Sheet not found. " + error); }
+	    console.log("saveFormats: deleted saved format sheet, if one existed");
 	    try {
 		worksheets.add(newName);
 	    } catch(error) { console.log("Already added. " + error); }
-	    console.log("F");
 	    let newSheet = worksheets.getItem(newName);
-	    console.log("G");
 	    newSheet.visibility = Excel.SheetVisibility.veryHidden;
-	    console.log("H");
 	    await context.sync();
+	    console.log("saveFormats: got the new sheet to hold formats");
 	    // Finally, copy the formats!
 	    let destRange = newSheet.getRange("A1") as any;
 	    destRange.copyFrom(this.startRange + ":" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
+	    console.log("saveFormats: copied out the formats");
 	});
     }
     
     restoreFormats = async(context) => {
 	Colorize.initialize();
-//	await Excel.run(async context => {
 	let worksheets = context.workbook.worksheets;
 	await context.sync();
 	// Try to restore the format from the hidden sheet.
 	let currentWorksheet = worksheets.getActiveWorksheet();
 	currentWorksheet.protection.unprotect();
 	await context.sync();
-	currentWorksheet.load(['name']);
-	await context.sync();
-	console.log("got here.");
-	console.log(currentWorksheet.id);
 	let newName = this.saved_original_sheetname(currentWorksheet.id);
-	//let newName = currentWorksheet.name.replace(/[-{}\s]/g, 'X') + this.sheetSuffix;
-	//	let newName = currentWorksheet.id.replace(/[-{}\s]/g, '_') + this.sheetSuffix;
-	console.log(newName);
-	console.log(Colorize.hash(currentWorksheet.id));
-	// If it's there already, restore it. //  then delete it.
+	// If it's there already, restore it.
 	try {
 	    let newSheet = worksheets.getItem(newName);
 	    let destRange = currentWorksheet.getRange("A1") as any;
@@ -199,7 +123,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 	    destRange.copyFrom(newSheet.name + "!" + this.startRange + ":" + newSheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
-	} catch(error) { console.log("Nothing to restore: " + error); }
+	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
 	await context.sync();
     }
     
@@ -227,70 +151,66 @@ export default class App extends React.Component<AppProps, AppState> {
 		    return;
 		}
 
-		console.log('ExceLint: starting processing 3');
+		console.log('setColor: starting processing 3');
 		
 		let usedRange = currentWorksheet.getUsedRange() as any;
 		await context.sync(); // FOR DEBUGGING
-		console.log('ExceLint: starting processing 4');
+		console.log('setColor: loaded used range');
 		let everythingRange = currentWorksheet.getRange();
 		await context.sync(); // FOR DEBUGGING
-		console.log('ExceLint: starting processing 5');
+		console.log('setColor: loaded everything range');
 		// Now get the addresses, the formulas, and the values.
 //		usedRange.load(['address', 'formulas', 'values', 'format']);
 		usedRange.load(['address']);
-		console.log("addresses.");
 		await context.sync(); // FOR DEBUGGING
+		console.log("setColor: loadied addresses from used range");
 		usedRange.load(['formulas']);
-		console.log("formulas.");
 		await context.sync(); // FOR DEBUGGING
+		console.log("setColor: loadied formulas from used range");
 		usedRange.load(['values']);
-		console.log("values.");
 		await context.sync(); // FOR DEBUGGING
+		console.log("setColor: loadied values from used range");
 		usedRange.load(['format']);
-		console.log("format.");
 		await context.sync(); // FOR DEBUGGING
+		console.log("setColor: loadied formats from used range");
 		
-		console.log('ExceLint: starting processing 6');
-		currentWorksheet.charts.load(['items']);
-		console.log('ExceLint: starting processing 7');
 		
-		await context.sync();
-		
-		console.log('ExceLint: starting processing 8');
-		///console.log(JSON.stringify(this.savedFormat));
-		
-		// First, try to restore the saved format.
-//		await this.restoreFormats(context);
-
-		// Now save them.
+		// Save the current format.
 		await this.saveFormats();
-		let address = usedRange.address;
+		let usedRangeAddress = usedRange.address;
+		console.log("setColor: usedRangeAddress = " + JSON.stringify(usedRangeAddress));
 		
+		let rangeFill = usedRange.format.fill;
+		rangeFill.clear();
+
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
+		
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
-		try {
-		    if (numericRanges) {
-			numericRanges.clear('Formats');
-		    }
-		    
-		    if (formulaRanges) {
-			formulaRanges.clear('Formats');
-		    }
-		    // usedRange.clear('Formats');
-		    // FIXME -- the below was really slow... 4/3/2019
-		    // usedRange.setCellProperties(newFormat.m_value);
-		    
-		    await context.sync();
-		} catch (error) {
-		    console.log("ExceLint: encountered an error in saveFormatsAndColors; ignoring.");
-		}
-		console.log('ExceLint: done with sync 2.');
 		
+		if (false) {
+		    try {
+			if (numericRanges) {
+			    numericRanges.clear('Formats');
+			}
+			
+			if (formulaRanges) {
+			    formulaRanges.clear('Formats');
+			}
+			// usedRange.clear('Formats');
+			// FIXME -- the below was really slow... 4/3/2019
+			// usedRange.setCellProperties(newFormat.m_value);
+			
+			await context.sync();
+			console.log("setColor: cleared formats from formulas and numeric ranges");
+		    } catch (error) {
+			console.log("ExceLint: encountered an error in saveFormatsAndColors; ignoring.");
+		    }
+		}		
 		
 		// FIX ME - need a button to restore all formatting.
 		// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
@@ -300,10 +220,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
-		
-		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(address);
+
+		console.log("setColor: usedRangeAddress = " + JSON.stringify(usedRangeAddress));
+		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
-		
+		console.log("setColor: cell dependency = " + vec);
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0], vec[1]);
 		
@@ -320,7 +241,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		if (true) {
 		    // Just color referenced data white.
-		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; });
+		    // this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; });
 		} else {
 		    // Color referenced data based on its formula's color.
 		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash, 10))); });
@@ -382,9 +303,9 @@ export default class App extends React.Component<AppProps, AppState> {
 				let usedRange = currentWorksheet.getUsedRangeOrNullObject() as any;
 				usedRange.load(['address']);
 				await context.sync();
-				let address = usedRange.address;
-				console.log("address is " + address);
-				this.savedRange = address;
+				let usedRangeAddress = usedRange.address;
+				console.log("address is " + usedRangeAddress);
+				this.savedRange = usedRangeAddress;
 				this.savedFormat = usedRange.getCellProperties({
 					format: {
 						fill: {
@@ -417,9 +338,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		await Excel.run(async context => {
 		    let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 		    currentWorksheet.load(['name']);
-		    console.log("name loading");
 		    await context.sync();
-		    console.log("restore formats call");
+		    console.log("restoreFormatsAndColors: loaded names from current worksheet");
 		    await this.restoreFormats(context);
 		});
 	    } catch (error) {

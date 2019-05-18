@@ -82,13 +82,17 @@ var Colorize = /** @class */ (function () {
         // Build up all of the columns of colors.
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
+            console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
             for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
-                    console.log("process_formulas: row = " + JSON.stringify(row[j]));
-                    var vec = excelutils_1.ExcelUtils.dependencies(row[j], j + origin_col, i + origin_row);
-                    console.log("process_formulas: " + JSON.stringify(vec));
+                    var cell = row[j];
+                    console.log("process_formulas: i = " + i + ", j = " + j);
+                    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
+                    console.log("process_formulas: row = " + JSON.stringify(cell));
+                    var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col, i + origin_row);
+                    console.log("process_formulas: vector = " + JSON.stringify(vec));
                     var hash = this.hash_vector(vec);
-                    console.log("process_formulas hash = " + hash);
+                    console.log("process_formulas: hash of this vector = " + hash);
                     output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                 }
             }
