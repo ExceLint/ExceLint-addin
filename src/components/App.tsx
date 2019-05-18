@@ -103,7 +103,11 @@ export default class App extends React.Component<AppProps, AppState> {
 	    console.log("saveFormats: got the new sheet to hold formats");
 	    // Finally, copy the formats!
 	    let destRange = newSheet.getRange("A1") as any;
-	    destRange.copyFrom(this.startRange + ":" + this.endRange, Excel.RangeCopyType.formats);
+	    let usedRange = currentWorksheet.getUsedRange() as any;
+	    await context.sync(); // FOR DEBUGGING
+
+//	    destRange.copyFrom(this.startRange + ":" + this.endRange, Excel.RangeCopyType.formats);
+	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
 	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
 	});
