@@ -100,7 +100,7 @@ export class Colorize {
 				    console.log("process_formulas: i = " + i + ", j = " + j);
 				    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
 				    console.log("process_formulas: row = " + JSON.stringify(cell));
-				    let vec = ExcelUtils.dependencies(cell, j + origin_col, i + origin_row);
+				    let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
 				    console.log("process_formulas: vector = " + JSON.stringify(vec));
 				    let hash = this.hash_vector(vec);
 				    console.log("process_formulas: hash of this vector = " + hash);
@@ -113,36 +113,44 @@ export class Colorize {
 
 	public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
 		//console.log('color_all_data');
-		let refs = this.generate_all_references(formulas, origin_col, origin_row);
-		let data_color = {};
-		let processed_data = [];
-
-		// Generate all formula colors (as a dict).
-		let formula_hash = {};
-		for (let f of processed_formulas) {
-			let formula_vec = f[0];
-			formula_hash[formula_vec.join(',')] = f[1];
-		}
+	    let refs = this.generate_all_references(formulas, origin_col, origin_row);
+	    console.log("color_all_data: refs = " + JSON.stringify(refs));
+	    let data_color = {};
+	    let processed_data = [];
+	    
+	    // Generate all formula colors (as a dict).
+	    let formula_hash = {};
+	    for (let f of processed_formulas) {
+		let formula_vec = f[0];
+		formula_hash[formula_vec.join(',')] = f[1];
+	    }
+	    console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
 
 		// Color all references based on the color of their referring formula.
-		for (let refvec of Object.keys(refs)) {
-			for (let r of refs[refvec]) {
-				let hash = formula_hash[r.join(',')];
-				if (!(hash === undefined)) {
-					let rv = JSON.parse('[' + refvec + ']');
-					let row = parseInt(rv[0], 10);
-					let col = parseInt(rv[1], 10);
-					let rj = [row, col].join(',');
-					if (!(rj in formula_hash)) {
-						if (!(rj in data_color)) {
-							processed_data.push([[row, col], hash]);
-							data_color[rj] = hash;
-						}
-					}
-				}
+	    for (let refvec of Object.keys(refs)) {
+		console.log("color_all_data: refvec = " + refvec);
+		for (let r of refs[refvec]) {
+		    console.log("color_all_data: r = " + r);
+		    let r1 = [r[0] + 1, r[1] + 1];
+		    console.log("color_all_data: r1 = " + r1);
+		    let hash = formula_hash[r1.join(',')];
+		    if (!(hash === undefined)) {
+			let rv = JSON.parse('[' + refvec + ']');
+			let row = parseInt(rv[0], 10);
+			let col = parseInt(rv[1], 10);
+			console.log("color_all_data: row = " + (row) + ", col = " + (col));
+			let rj = [row, col].join(',');
+			if (!(rj in formula_hash)) {
+			    if (!(rj in data_color)) {
+				processed_data.push([[row, col], hash]);
+				data_color[rj] = hash;
+			    }
 			}
+		    }
 		}
-		return processed_data;
+	    }
+	    console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
+	    return processed_data;
 	}
 
 

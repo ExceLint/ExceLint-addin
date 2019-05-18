@@ -7,7 +7,6 @@ import Progress from './Progress';
 import { Colorize } from './colorize';
 import { ExcelUtils } from './excelutils';
 import { RectangleUtils } from './rectangleutils';
-//import { OfficeExtension } from '@microsoft/office-js';
 
 import * as OfficeHelpers from '@microsoft/office-js-helpers';
 
@@ -61,8 +60,12 @@ export default class App extends React.Component<AppProps, AppState> {
 					let row1 = r[1][1];
 
 					let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
-					let color = colorfn(hash); // Colorize.get_color(parseInt(hash));
+				    let color = colorfn(hash); // Colorize.get_color(parseInt(hash));
+				    if (color == '#FFFFFF') {
+					range.format.fill.clear();
+				    } else {
 					range.format.fill.color = color;
+				    }
 				}
 			}
 		});
@@ -105,7 +108,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	    console.log("saveFormats: copied out the formats");
 	});
     }
-    
+
+    /// Restore formats from the saved hidden sheet corresponding to the active sheet's ID.
     restoreFormats = async(context) => {
 	Colorize.initialize();
 	let worksheets = context.workbook.worksheets;
@@ -127,7 +131,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	await context.sync();
     }
     
-    
+
+    /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
     setColor = async () => {
 	Colorize.initialize();
 
@@ -135,16 +140,15 @@ export default class App extends React.Component<AppProps, AppState> {
 	    OfficeExtension.config.extendedErrorLogging = true;
 	    await Excel.run(async context => {
 		let app = context.workbook.application;
-		console.log('ExceLint: starting processing.');
+		console.log('setColor: starting processing.');
 		let startTime = performance.now();
-		console.log('ExceLint: starting processing 1');
+		console.log('setColor: starting processing 1');
 		let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-		console.log('ExceLint: starting processing 2');
+		console.log('setColor: starting processing 2');
 		currentWorksheet.load(['protection']);
 		await context.sync(); // FOR DEBUGGING
 
- 		console.log(currentWorksheet.protection.protected);
-		console.log('ExceLint: done with sync.');
+ 		console.log('setColor: protection status = ' + currentWorksheet.protection.protected);
 		if (currentWorksheet.protection.protected) {
 		    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
 		    // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
@@ -163,23 +167,23 @@ export default class App extends React.Component<AppProps, AppState> {
 //		usedRange.load(['address', 'formulas', 'values', 'format']);
 		usedRange.load(['address']);
 		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loadied addresses from used range");
+		console.log("setColor: loaded addresses from used range");
 		usedRange.load(['formulas']);
 		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loadied formulas from used range");
+		console.log("setColor: loaded formulas from used range");
 		usedRange.load(['values']);
 		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loadied values from used range");
+		console.log("setColor: loaded values from used range");
 		usedRange.load(['format']);
 		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loadied formats from used range");
-		
-		
-		// Save the current format.
+		console.log("setColor: loaded formats from used range");
+
+		/// Save the formats so they can later be restored.
 		await this.saveFormats();
-		let usedRangeAddress = usedRange.address;
-		console.log("setColor: usedRangeAddress = " + JSON.stringify(usedRangeAddress));
-		
+
+		// Now start colorizing.
+
+		// Remove the background color from all cells.
 		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 
@@ -192,56 +196,32 @@ export default class App extends React.Component<AppProps, AppState> {
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
 		
-		if (false) {
-		    try {
-			if (numericRanges) {
-			    numericRanges.clear('Formats');
-			}
-			
-			if (formulaRanges) {
-			    formulaRanges.clear('Formats');
-			}
-			// usedRange.clear('Formats');
-			// FIXME -- the below was really slow... 4/3/2019
-			// usedRange.setCellProperties(newFormat.m_value);
-			
-			await context.sync();
-			console.log("setColor: cleared formats from formulas and numeric ranges");
-		    } catch (error) {
-			console.log("ExceLint: encountered an error in saveFormatsAndColors; ignoring.");
-		    }
-		}		
-		
-		// FIX ME - need a button to restore all formatting.
-		// First, clear all formatting. Really we want to just clear colors but fine for now (FIXME later)
-		//everythingRange.clear('Formats'); // Excel.ClearApplyTo.formats);
-		
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
-		console.log("setColor: usedRangeAddress = " + JSON.stringify(usedRangeAddress));
+		let usedRangeAddress = usedRange.address;
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
 		console.log("setColor: cell dependency = " + vec);
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
-		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0], vec[1]);
+		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0] - 1, vec[1] - 1);
 		
 		let grouped_data = Colorize.identify_groups(processed_data);
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
-		console.log("Grouped formulas: ");
+		console.log("setColor: Grouped formulas: ");
 		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 		// Only present up to 5% (threshold from paper).
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
-		console.log(JSON.stringify(this.proposed_fixes));
+		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
 
 		if (true) {
 		    // Just color referenced data white.
-		    // this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; });
+		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; }); // was FFFFFF FIXME
 		} else {
 		    // Color referenced data based on its formula's color.
 		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(parseInt(hash, 10))); });
@@ -272,8 +252,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log('Time elapsed (ms) = ' + timeElapsedMS);
 	    });
 	} catch (error) {
-	    OfficeHelpers.UI.notify(error);
-	    OfficeHelpers.Utilities.log(error);
+	    console.log("Error: " + error);
+	    if (error instanceof OfficeExtension.Error) { 
+		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+	    }
 	}
     }
 
@@ -327,8 +309,10 @@ export default class App extends React.Component<AppProps, AppState> {
 			});
 
 		} catch (error) {
-			OfficeHelpers.UI.notify(error);
-			OfficeHelpers.Utilities.log(error);
+		    console.log("Error: " + error);
+		    if (error instanceof OfficeExtension.Error) { 
+			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+		    }
 		}
 	}
 
@@ -343,8 +327,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		    await this.restoreFormats(context);
 		});
 	    } catch (error) {
-		OfficeHelpers.UI.notify(error);
-		OfficeHelpers.Utilities.log(error);
+		console.log("Error: " + error);
+		if (error instanceof OfficeExtension.Error) { 
+		    console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+		}
 	    }
 	}
 
@@ -371,8 +357,10 @@ export default class App extends React.Component<AppProps, AppState> {
 				r.select();
 			});
 		} catch (error) {
-			OfficeHelpers.UI.notify(error);
-			OfficeHelpers.Utilities.log(error);
+		    console.log("Error: " + error);
+		    if (error instanceof OfficeExtension.Error) { 
+			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+		    }
 		}
 	}
 
@@ -392,8 +380,10 @@ export default class App extends React.Component<AppProps, AppState> {
 				r.select();
 			});
 		} catch (error) {
-			OfficeHelpers.UI.notify(error);
-			OfficeHelpers.Utilities.log(error);
+		    console.log("Error: " + error);
+		    if (error instanceof OfficeExtension.Error) { 
+			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+		    }
 		}
 	}
 

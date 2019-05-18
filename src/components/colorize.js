@@ -89,7 +89,7 @@ var Colorize = /** @class */ (function () {
                     console.log("process_formulas: i = " + i + ", j = " + j);
                     console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
                     console.log("process_formulas: row = " + JSON.stringify(cell));
-                    var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col, i + origin_row);
+                    var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
                     console.log("process_formulas: vector = " + JSON.stringify(vec));
                     var hash = this.hash_vector(vec);
                     console.log("process_formulas: hash of this vector = " + hash);
@@ -102,6 +102,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
         //console.log('color_all_data');
         var refs = this.generate_all_references(formulas, origin_col, origin_row);
+        console.log("color_all_data: refs = " + JSON.stringify(refs));
         var data_color = {};
         var processed_data = [];
         // Generate all formula colors (as a dict).
@@ -111,16 +112,22 @@ var Colorize = /** @class */ (function () {
             var formula_vec = f[0];
             formula_hash[formula_vec.join(',')] = f[1];
         }
+        console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
         // Color all references based on the color of their referring formula.
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
+            console.log("color_all_data: refvec = " + refvec);
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
                 var r = _d[_c];
-                var hash = formula_hash[r.join(',')];
+                console.log("color_all_data: r = " + r);
+                var r1 = [r[0] + 1, r[1] + 1];
+                console.log("color_all_data: r1 = " + r1);
+                var hash = formula_hash[r1.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
                     var col = parseInt(rv[1], 10);
+                    console.log("color_all_data: row = " + (row) + ", col = " + (col));
                     var rj = [row, col].join(',');
                     if (!(rj in formula_hash)) {
                         if (!(rj in data_color)) {
@@ -131,6 +138,7 @@ var Colorize = /** @class */ (function () {
                 }
             }
         }
+        console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
         return processed_data;
     };
     Colorize.hash = function (str) {
