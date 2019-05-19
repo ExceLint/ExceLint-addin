@@ -99,12 +99,12 @@ export default class App extends React.Component<AppProps, AppState> {
 	    } catch(error) { console.log("Already added. " + error); }
 	    let newSheet = worksheets.getItem(newName);
 	    newSheet.visibility = Excel.SheetVisibility.veryHidden;
-	    await context.sync();
+//	    await context.sync();
 	    console.log("saveFormats: got the new sheet to hold formats");
 	    // Finally, copy the formats!
 	    let destRange = newSheet.getRange("A1") as any;
 	    let usedRange = currentWorksheet.getUsedRange() as any;
-	    await context.sync(); // FOR DEBUGGING
+////	    await context.sync(); // FOR DEBUGGING
 
 //	    destRange.copyFrom(this.startRange + ":" + this.endRange, Excel.RangeCopyType.formats);
 	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
@@ -128,14 +128,14 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let newSheet = worksheets.getItem(newName);
 	    let destRange = currentWorksheet.getRange("A1") as any;
 	    newSheet.load(['name', 'format', 'address']);
-	    await context.sync();
+////	    await context.sync();
 	    let usedRange = newSheet.getUsedRange() as any;
 	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
 	    
 //	    destRange.copyFrom(newSheet.name + "!" + this.startRange + ":" + newSheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
-	await context.sync();
+	//await context.sync();
     }
     
 
@@ -165,13 +165,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log('setColor: starting processing 3');
 		
 		let usedRange = currentWorksheet.getUsedRange() as any;
-		await context.sync(); // FOR DEBUGGING
-		console.log('setColor: loaded used range');
-		let everythingRange = currentWorksheet.getRange();
-		await context.sync(); // FOR DEBUGGING
-		console.log('setColor: loaded everything range');
+//		await context.sync(); // FOR DEBUGGING
+//		console.log('setColor: loaded used range');
 		// Now get the addresses, the formulas, and the values.
-//		usedRange.load(['address', 'formulas', 'values', 'format']);
+		usedRange.load(['address', 'formulas', 'values', 'format']);
+		await context.sync();
+		/*
 		usedRange.load(['address']);
 		await context.sync(); // FOR DEBUGGING
 		console.log("setColor: loaded addresses from used range");
@@ -184,6 +183,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		usedRange.load(['format']);
 		await context.sync(); // FOR DEBUGGING
 		console.log("setColor: loaded formats from used range");
+*/
 
 		/// Save the formats so they can later be restored.
 		await this.saveFormats();
@@ -249,9 +249,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (r) {
 		    r.select();
 		}
+		currentWorksheet.protection.protect();
 		await context.sync();
 		console.log('ExceLint: done with sync 3.');
-		currentWorksheet.protection.protect();
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
 		let endTime = performance.now();
