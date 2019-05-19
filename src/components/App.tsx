@@ -64,6 +64,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     
     saveFormats = async() => {
+	OfficeExtension.config.extendedErrorLogging = true;
 	await Excel.run(async context => {
 	    let worksheets = context.workbook.worksheets;
 	    // Make a new sheet corresponding to the current sheet (+ a suffix).
@@ -73,28 +74,34 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 	    
 	    let newName = this.saved_original_sheetname(currentWorksheet.id);
+	    let newSheet = worksheets.getItemOrNullObject(newName);
+	    await context.sync();
 	    
-	    // If it's there already, delete it.
-	    try {
-		console.log("saveFormats: attempt to delete saved format sheet");
-		let newSheet = worksheets.getItem(newName);
+	    if (newSheet) {
+		// Delete the sheet. Note that we first have to set its visibility to "hidden".
 		newSheet.visibility = Excel.SheetVisibility.hidden;
 		newSheet.delete();
-	    } catch (error) { console.log("saveFormats: Sheet not found. " + error); }
-	    console.log("saveFormats: deleted saved format sheet, if one existed");
+		await context.sync();
+		newSheet = null;
+	    }
+	    // Now add the sheet (which we may have just deleted).
+	    worksheets.add(newName);
+	    await context.sync();
+	    newSheet = worksheets.getItemOrNullObject(newName);
+ 	    newSheet.visibility = Excel.SheetVisibility.veryHidden;
+ 	    await context.sync(); // dbg
 	    
-	    try {
-		worksheets.add(newName);
-	    } catch(error) { console.log("Already added. " + error); }
-	    let newSheet = worksheets.getItem(newName);
-	    newSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    console.log("saveFormats: got the new sheet to hold formats");
 	    // Finally, copy the formats!
 	    let destRange = newSheet.getRange("A1") as any;
 	    let usedRange = currentWorksheet.getUsedRange() as any;
+	    usedRange.load(['address']);
+ 	    await context.sync();
+	    
+	    console.log("copying out " + JSON.stringify(usedRange.address));
 	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
 	    
-	    await context.sync();
+ 	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
 	});
     }
@@ -109,12 +116,20 @@ export default class App extends React.Component<AppProps, AppState> {
 	let newName = this.saved_original_sheetname(currentWorksheet.id);
 	// If it's there already, restore it.
 	try {
-	    let newSheet = worksheets.getItem(newName);
-	    let destRange = currentWorksheet.getRange("A1") as any;
-	    newSheet.load(['format', 'address']);
-	    let usedRange = newSheet.getUsedRange() as any;
-	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
-	    await context.sync();
+	    let newSheet = worksheets.getItemOrNullObject(newName);
+	    if (newSheet) {
+		let destRange = currentWorksheet.getRange("A1") as any;
+		newSheet.load(['format', 'address']);
+		let usedRange = newSheet.getUsedRange() as any;
+		usedRange.load(['address']);
+ 		await context.sync();
+		
+		console.log("copying out " + JSON.stringify(usedRange.address));
+		destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
+ 		await context.sync();
+	    } else {
+		console.log("didn't find the sheet " + newName);
+	    }
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
     }
     

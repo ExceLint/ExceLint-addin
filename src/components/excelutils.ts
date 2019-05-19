@@ -51,7 +51,7 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_col_absolute.exec(cell);
             if (r) {
-                console.log(JSON.stringify(r));
+//                console.log(JSON.stringify(r));
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
@@ -62,10 +62,10 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_both_relative.exec(cell);
             if (r) {
-                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
+//                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
-                console.log('both relative col: ' + col + ', row: ' + row);
+//		console.log('both relative col: ' + col + ', row: ' + row);
                 return [col - origin_col, row - origin_row];
             }
         }
@@ -73,7 +73,7 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_row_absolute.exec(cell);
             if (r) {
-                console.log('row_absolute');
+//                console.log('row_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
                 return [col - origin_col, row];
@@ -83,7 +83,7 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
-                console.log('both_absolute');
+//                console.log('both_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
                 return [col, row];
@@ -224,9 +224,9 @@ export class ExcelUtils {
             if (singleton) {
                 //	    console.log(found_pair);
                 let first_cell = singleton[1];
-                console.log("dependencies: first cell = " + JSON.stringify(first_cell) + ", origin col = " + origin_col + ", origin_row = " + origin_row);
+//                console.log("dependencies: first cell = " + JSON.stringify(first_cell) + ", origin col = " + origin_col + ", origin_row = " + origin_row);
                 let vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
-		console.log("dependencies: vec = " + vec[0] + ", " + vec[1]);
+//		console.log("dependencies: vec = " + vec[0] + ", " + vec[1]);
                 base_vector[0] += vec[0];
                 base_vector[1] += vec[1];
                 // Wipe out the matched contents of range.
