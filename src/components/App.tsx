@@ -129,7 +129,10 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let destRange = currentWorksheet.getRange("A1") as any;
 	    newSheet.load(['name', 'format', 'address']);
 	    await context.sync();
-	    destRange.copyFrom(newSheet.name + "!" + this.startRange + ":" + newSheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
+	    let usedRange = newSheet.getUsedRange() as any;
+	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
+	    
+//	    destRange.copyFrom(newSheet.name + "!" + this.startRange + ":" + newSheet.name + "!" + this.endRange, Excel.RangeCopyType.formats);
 	    await context.sync();
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
 	await context.sync();
