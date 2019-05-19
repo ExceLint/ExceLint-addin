@@ -18,8 +18,8 @@ var Colorize = /** @class */ (function () {
         }
     };
     Colorize.get_color = function (hashval) {
-        var color = this.color_list[(hashval * 7919) % this.color_list.length];
-        console.log("get_color " + hashval + ", " + (hashval * 7919) + " = " + color);
+        var color = this.color_list[(hashval * 1) % this.color_list.length];
+        console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
         return color;
     };
     Colorize.is_banned_color = function (h, s, v) {
@@ -84,17 +84,17 @@ var Colorize = /** @class */ (function () {
         // Build up all of the columns of colors.
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
-            console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
+            //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
             for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     var cell = row[j];
-                    console.log("process_formulas: i = " + i + ", j = " + j);
-                    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
-                    console.log("process_formulas: row = " + JSON.stringify(cell));
+                    //				    console.log("process_formulas: i = " + i + ", j = " + j);
+                    //				    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
+                    //				    console.log("process_formulas: row = " + JSON.stringify(cell));
                     var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
-                    console.log("process_formulas: vector = " + JSON.stringify(vec));
+                    //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
                     var hash = this.hash_vector(vec);
-                    console.log("process_formulas: hash of this vector = " + hash);
+                    //				    console.log("process_formulas: hash of this vector = " + hash);
                     output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                 }
             }
@@ -104,7 +104,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
         //console.log('color_all_data');
         var refs = this.generate_all_references(formulas, origin_col, origin_row);
-        console.log("color_all_data: refs = " + JSON.stringify(refs));
+        //console.log("color_all_data: refs = " + JSON.stringify(refs));
         var data_color = {};
         var processed_data = [];
         // Generate all formula colors (as a dict).
@@ -114,22 +114,22 @@ var Colorize = /** @class */ (function () {
             var formula_vec = f[0];
             formula_hash[formula_vec.join(',')] = f[1];
         }
-        console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
+        //	    console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
         // Color all references based on the color of their referring formula.
         for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
             var refvec = _b[_a];
-            console.log("color_all_data: refvec = " + refvec);
+            //		console.log("color_all_data: refvec = " + refvec);
             for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
                 var r = _d[_c];
-                console.log("color_all_data: r = " + r);
+                //		    console.log("color_all_data: r = " + r);
                 var r1 = [r[0] + 1, r[1] + 1];
-                console.log("color_all_data: r1 = " + r1);
+                //		    console.log("color_all_data: r1 = " + r1);
                 var hash = formula_hash[r1.join(',')];
                 if (!(hash === undefined)) {
                     var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
                     var col = parseInt(rv[1], 10);
-                    console.log("color_all_data: row = " + (row) + ", col = " + (col));
+                    //			console.log("color_all_data: row = " + (row) + ", col = " + (col));
                     var rj = [row, col].join(',');
                     if (!(rj in formula_hash)) {
                         if (!(rj in data_color)) {
@@ -140,19 +140,8 @@ var Colorize = /** @class */ (function () {
                 }
             }
         }
-        console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
+        //	    console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
         return processed_data;
-    };
-    Colorize.hash = function (str) {
-        // From https://github.com/darkskyapp/string-hash
-        var hash = 5381, i = str.length;
-        while (i) {
-            hash = (hash * 33) ^ str.charCodeAt(--i);
-        }
-        /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-        * integers. Since we want the results to be always positive, convert the
-        * signed int to an unsigned by doing an unsigned bitshift. */
-        return hash >>> 0;
     };
     // Take in a list of [[row, col], color] pairs and group them,
     // sorting them (e.g., by columns).
@@ -370,7 +359,7 @@ var Colorize = /** @class */ (function () {
         v0 = v0 * v0;
         var v1 = vec[1] - baseY;
         v1 = v1 * v1;
-        return Math.sqrt(v0 + v1);
+        return 104729.0 * Math.sqrt(v0 + v1);
         // Return a hash of the given vector.
         //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
         //	console.log("hash of " + JSON.stringify(vec) + " = " + h);

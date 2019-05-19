@@ -15,9 +15,9 @@ export interface ContentProps {
 	message4: string;
 	buttonLabel4: string;
 	click4: any;
-	message5: string;
-	buttonLabel5: string;
-	click5: any;
+//	message5: string;
+//	buttonLabel5: string;
+//	click5: any;
 }
 
 export class Content extends React.Component<ContentProps, any> {
