@@ -19,7 +19,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.get_color = function (hashval) {
         var color = this.color_list[(hashval * 1) % this.color_list.length];
-        console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
+        //	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
         return color;
     };
     Colorize.is_banned_color = function (h, s, v) {

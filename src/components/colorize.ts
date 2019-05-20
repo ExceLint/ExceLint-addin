@@ -24,7 +24,7 @@ export class Colorize {
 
     public static get_color(hashval: number): string {
 	let color = this.color_list[(hashval * 1) % this.color_list.length];
-	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
+//	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
 	return color;
     }
 

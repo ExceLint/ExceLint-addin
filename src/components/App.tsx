@@ -160,6 +160,20 @@ export default class App extends React.Component<AppProps, AppState> {
 		usedRange.load(['address']);
 		await context.sync();
 		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
+
+		/*
+		let condFormats = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.conditionalFormats);
+		await context.sync();
+		if (condFormats) {
+		    condFormats.load(['cellValue']);
+		    await context.sync();
+		    
+		    condFormats.cellValue.load(['format']);
+		    await context.sync();
+		    condFormats.cellValue.format.clear();
+		    
+                }
+		*/
 		
 //		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
