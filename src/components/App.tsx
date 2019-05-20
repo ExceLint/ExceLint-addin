@@ -157,25 +157,31 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log('setColor: starting processing 3');
 		
 		let usedRange = currentWorksheet.getUsedRange(false) as any;
-//		await context.sync(); // FOR DEBUGGING
-//		console.log('setColor: loaded used range');
-		// Now get the addresses, the formulas, and the values.
-		usedRange.load(['address', 'formulas', 'values', 'format']);
-		await context.sync();
-		/*
 		usedRange.load(['address']);
-		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loaded addresses from used range");
-		usedRange.load(['formulas']);
-		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loaded formulas from used range");
-		usedRange.load(['values']);
-		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loaded values from used range");
-		usedRange.load(['format']);
-		await context.sync(); // FOR DEBUGGING
-		console.log("setColor: loaded formats from used range");
-*/
+		await context.sync();
+		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
+		
+//		await context.sync(); // FOR DEBUGGING
+		//		console.log('setColor: loaded used range');
+		if (false) {
+		    usedRange.load(['address', 'formulas', 'values', 'format']);
+		    await context.sync();
+		} else {
+		    usedRange.load(['formulas']);
+		    await context.sync(); // FOR DEBUGGING
+		    
+		    console.log("setColor: loaded formulas from used range");
+		    
+		    usedRange.load(['values']);
+		    await context.sync(); // FOR DEBUGGING
+		    
+		    console.log("setColor: loaded values from used range");
+		    
+		    usedRange.load(['format']);
+		    await context.sync(); // FOR DEBUGGING
+		    
+		    console.log("setColor: loaded formats from used range");
+		}
 
 		/// Save the formats so they can later be restored.
 		await this.saveFormats();
