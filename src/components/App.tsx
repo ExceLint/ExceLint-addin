@@ -70,57 +70,51 @@ export default class App extends React.Component<AppProps, AppState> {
 	    // Make a new sheet corresponding to the current sheet (+ a suffix).
 	    console.log("saveFormats: loading current worksheet name");
 	    let currentWorksheet = worksheets.getActiveWorksheet();
-	    currentWorksheet.load(['name']);
+	    currentWorksheet.load(['name', 'id']);
+	    await context.sync();
+
+	    // Delete any old sheet corresponding to this name.
+	    let backupName = this.saved_original_sheetname(currentWorksheet.id);
+	    let backupSheet = worksheets.getItemOrNullObject(backupName);
 	    await context.sync();
 	    
-	    let newName = this.saved_original_sheetname(currentWorksheet.id);
-	    let newSheet = worksheets.getItemOrNullObject(newName);
-	    await context.sync();
-	    
-	    if (newSheet) {
+	    if (backupSheet) {
 		// Delete the sheet. Note that we first have to set its visibility to "hidden".
-		newSheet.visibility = Excel.SheetVisibility.hidden;
-		newSheet.delete();
+		backupSheet.visibility = Excel.SheetVisibility.hidden;
+		backupSheet.delete();
 		await context.sync();
-		newSheet = null;
+		backupSheet = null;
 	    }
-	    // Now add the sheet (which we may have just deleted).
-	    worksheets.add(newName);
-	    await context.sync();
-	    newSheet = worksheets.getItemOrNullObject(newName);
- 	    newSheet.visibility = Excel.SheetVisibility.veryHidden;
+
+	    backupSheet = currentWorksheet.copy("End");
+	    backupSheet.load(['name']);
+	    backupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
+	    backupSheet.visibility = Excel.SheetVisibility.veryHidden;
+	    
  	    await context.sync(); // dbg
 	    
-	    console.log("saveFormats: got the new sheet to hold formats");
-	    // Finally, copy the formats!
-	    let destRange = newSheet.getRange("A1") as any;
-	    let usedRange = currentWorksheet.getUsedRange() as any;
-	    usedRange.load(['address']);
- 	    await context.sync();
-	    
-	    console.log("copying out " + JSON.stringify(usedRange.address));
-	    destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
-	    
- 	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
 	});
     }
 
     /// Restore formats from the saved hidden sheet corresponding to the active sheet's ID.
     restoreFormats = async(context) => {
+	console.log("restoreFormats: begin");
+	let startTime = performance.now();
+	
 	let worksheets = context.workbook.worksheets;
 	// Try to restore the format from the hidden sheet.
 	let currentWorksheet = worksheets.getActiveWorksheet();
 	currentWorksheet.protection.unprotect();
 	await context.sync();
-	let newName = this.saved_original_sheetname(currentWorksheet.id);
+	let backupName = this.saved_original_sheetname(currentWorksheet.id);
 	// If it's there already, restore it.
 	try {
-	    let newSheet = worksheets.getItemOrNullObject(newName);
-	    if (newSheet) {
+	    let backupSheet = worksheets.getItemOrNullObject(backupName);
+	    if (backupSheet) {
 		let destRange = currentWorksheet.getRange("A1") as any;
-		newSheet.load(['format', 'address']);
-		let usedRange = newSheet.getUsedRange() as any;
+		backupSheet.load(['format', 'address']);
+		let usedRange = backupSheet.getUsedRange(false) as any;
 		usedRange.load(['address']);
  		await context.sync();
 		
@@ -128,9 +122,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
  		await context.sync();
 	    } else {
-		console.log("didn't find the sheet " + newName);
+		console.log("restoreFormats: didn't find the sheet " + backupName);
 	    }
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
+	console.log("restoreFormats: end");
+	let endTime = performance.now();
+	let timeElapsedMS = endTime - startTime;
+	console.log('Time elapsed (ms) = ' + timeElapsedMS);
     }
     
 
@@ -158,7 +156,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		console.log('setColor: starting processing 3');
 		
-		let usedRange = currentWorksheet.getUsedRange() as any;
+		let usedRange = currentWorksheet.getUsedRange(false) as any;
 //		await context.sync(); // FOR DEBUGGING
 //		console.log('setColor: loaded used range');
 		// Now get the addresses, the formulas, and the values.
