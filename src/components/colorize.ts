@@ -9,7 +9,8 @@ export class Colorize {
 	private static initialized = false;
 	private static color_list = [];
 	private static light_color_list = [];
-	private static light_color_dict = {};
+    private static light_color_dict = {};
+    private static Multiplier = 103038;
 
 	public static initialize() {
 		if (!this.initialized) {
@@ -241,17 +242,17 @@ export class Colorize {
 		merge_with: [[number, number], [number, number]]): number {
 
 		let n_target = RectangleUtils.area(target);
-		    let n_merge_with = RectangleUtils.area(merge_with);
+ 	        let n_merge_with = RectangleUtils.area(merge_with);
 		let n_min = Math.min(n_target, n_merge_with);
 		let n_max = Math.max(n_target, n_merge_with);
 //		let norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
 // 		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
 		let norm_min = Math.min(merge_with_norm, target_norm);
  		let norm_max = Math.max(merge_with_norm, target_norm);
-		let fix_distance = Math.abs(norm_max - norm_min);
-		    let entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-		    console.log("fix_metric: "+entropy_drop+ ", " + fix_distance + ", " + n_min);
-		    return (n_merge_with * n_target) * entropy_drop / fix_distance;
+		let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
+		let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
+		console.log("fix_metric: "+entropy_drop+ ", " + fix_distance + ", " + n_min);
+		return (n_merge_with * n_target) * entropy_drop / fix_distance;
 	}
 
 	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
@@ -383,7 +384,7 @@ export class Colorize {
 	v0 = v0 * v0;
 	let v1 = vec[1] - baseY;
 	v1 = v1 * v1;
-	return 104729.0 * Math.sqrt(v0 + v1);
+	return this.Multiplier * Math.sqrt(v0 + v1);
 	// Return a hash of the given vector.
 //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
 		//	console.log("hash of " + JSON.stringify(vec) + " = " + h);

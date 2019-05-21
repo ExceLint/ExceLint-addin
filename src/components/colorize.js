@@ -232,8 +232,8 @@ var Colorize = /** @class */ (function () {
         // 		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
         var norm_min = Math.min(merge_with_norm, target_norm);
         var norm_max = Math.max(merge_with_norm, target_norm);
-        var fix_distance = Math.abs(norm_max - norm_min);
-        var entropy_drop = -this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
+        var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
+        var entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
         console.log("fix_metric: " + entropy_drop + ", " + fix_distance + ", " + n_min);
         return (n_merge_with * n_target) * entropy_drop / fix_distance;
     };
@@ -359,7 +359,7 @@ var Colorize = /** @class */ (function () {
         v0 = v0 * v0;
         var v1 = vec[1] - baseY;
         v1 = v1 * v1;
-        return 104729.0 * Math.sqrt(v0 + v1);
+        return this.Multiplier * Math.sqrt(v0 + v1);
         // Return a hash of the given vector.
         //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
         //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
@@ -371,6 +371,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
+    Colorize.Multiplier = 103038;
     return Colorize;
 }());
 exports.Colorize = Colorize;
