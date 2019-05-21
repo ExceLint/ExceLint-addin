@@ -39,19 +39,20 @@ export class Content extends React.Component<ContentProps, any> {
 				</div>
 				<br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
-				Different formulas and data are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
-				 Click on <a onClick={this.props.click2}><b>Clear</b></a> to remove the colors.
+				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
 		<br />
 				<br />
 
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="darkgreen" />
 					<text x="55" y="13">formulas (dark colors)</text>
-				</svg>
+			</svg>
+			/*
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="lightgreen" />
 					<text x="55" y="13">data (light colors)</text>
 				</svg>
+			*/
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#eed202" />
 					<text x="55" y="13">unreferenced data</text>
