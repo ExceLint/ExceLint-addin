@@ -26,7 +26,6 @@ module.exports = async (env, options) => {
             cert: fs.readFileSync('./certs/server.crt'),
             cacert: fs.readFileSync('./certs/ca.crt')
         },
-	port: 3000,
 	allowedHosts: [
             '.amazonaws.com', '.azure.com'
         ]
