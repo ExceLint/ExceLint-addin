@@ -49,7 +49,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let row0 = r[0][1];
 		    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
 		    let row1 = r[1][1];
-		    
+
+		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash);
 		    if (color == '#FFFFFF') {
