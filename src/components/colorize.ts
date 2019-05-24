@@ -100,7 +100,7 @@ export class Colorize {
 			for (let j = 0; j < row.length; j++) {
 			    if ((row[j].length > 0) && (row[j][0] === '=')) {
 				let cell = row[j];
-//				cell = cell.replace(/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|IMLOG2|IMLOG10/g,''); // kind of a hack for now
+				cell = cell.replace(/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|IMLOG2|IMLOG10/g,''); // kind of a hack for now
 				
 				
 //				    console.log("process_formulas: i = " + i + ", j = " + j);
