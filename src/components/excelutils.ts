@@ -4,16 +4,16 @@ import * as sjcl from 'sjcl';
 
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
-    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+[^\\(]'; // column and row number, optionally with $
+    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
     private static sheet_re = '[^\\!]+';
     private static sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     private static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     private static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
-    private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)[^\\(]');
-    private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)[^\\(]');
-    private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)[^\\(]');
-    private static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)[^\\(]');
+    private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
+    private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
+    private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
+    private static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
 
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     public static hash_sheet(uid: string, maxlen: number = 31) : string {
@@ -115,6 +115,9 @@ export class ExcelUtils {
         let found_pair = null;
         let all_vectors: Array<[number, number]> = [];
 
+	// Filter out formulas with numbers.
+	range = range.replace('IMLOG2','IMLOG'); // kind of a hack for now
+	
         /// FIX ME - should we count the same range multiple times? Or just once?
 
         // First, get all the range pairs out.

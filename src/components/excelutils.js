@@ -94,6 +94,8 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.all_cell_dependencies = function (range) {
         var found_pair = null;
         var all_vectors = [];
+        // Filter out formulas with numbers.
+        range = range.replace('IMLOG2', 'IMLOG'); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
@@ -199,16 +201,16 @@ var ExcelUtils = /** @class */ (function () {
         return base_vector;
     };
     // Matchers for all kinds of Excel expressions.
-    ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?\\d+[^\\(]'; // column and row number, optionally with $
+    ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
     ExcelUtils.sheet_re = '[^\\!]+';
     ExcelUtils.sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     ExcelUtils.sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     ExcelUtils.single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     ExcelUtils.range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
-    ExcelUtils.cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)[^\\(]');
-    ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)[^\\(]');
-    ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)[^\\(]');
-    ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)[^\\(]');
+    ExcelUtils.cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
+    ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
+    ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
+    ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
     return ExcelUtils;
 }());
 exports.ExcelUtils = ExcelUtils;
