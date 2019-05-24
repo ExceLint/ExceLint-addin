@@ -96,6 +96,7 @@ var ExcelUtils = /** @class */ (function () {
         var all_vectors = [];
         // Filter out formulas with numbers.
         console.log('range is of type ' + typeof (range));
+        console.log('range is ' + JSON.stringify(range));
         range = range.replace('IMLOG2', 'IMLOG'); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
