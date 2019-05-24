@@ -97,6 +97,7 @@ var ExcelUtils = /** @class */ (function () {
         if (typeof (range) !== 'string') {
             return null;
         }
+        range = range.replace('ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|IMLOG2|IMLOG10', ''); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {

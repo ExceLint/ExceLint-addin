@@ -119,6 +119,7 @@ export class ExcelUtils {
 	    return null;
 	}
 
+	range = range.replace('ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|IMLOG2|IMLOG10',''); // kind of a hack for now
     
         /// FIX ME - should we count the same range multiple times? Or just once?
 
