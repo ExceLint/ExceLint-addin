@@ -254,7 +254,7 @@ export class Colorize {
  		let norm_max = Math.max(merge_with_norm, target_norm);
 		let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
 		let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-		    console.log("fix_metric: "+entropy_drop+ ", " + fix_distance + ", " + n_min);
+//		    console.log("fix_metric: "+entropy_drop+ ", " + fix_distance + ", " + n_min);
 		    let ranking = entropy_drop / (fix_distance * n_min);
 		    return ranking;
 //		return (n_merge_with * n_target) * entropy_drop / fix_distance;

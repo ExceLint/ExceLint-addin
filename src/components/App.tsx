@@ -94,8 +94,6 @@ export default class App extends React.Component<AppProps, AppState> {
 	    backupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
 	    backupSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    
- 	    await context.sync(); // dbg
-	    
 	    console.log("saveFormats: copied out the formats");
 	});
     }
@@ -162,7 +160,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let usedRange = currentWorksheet.getUsedRange(false) as any;
 		usedRange.load(['address']);
 		await context.sync();
-		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
+//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
 
 		/*
 		let condFormats = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.conditionalFormats);
@@ -226,13 +224,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		let usedRangeAddress = usedRange.address;
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
-		console.log("setColor: cell dependency = " + vec);
+//		console.log("setColor: cell dependency = " + vec);
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0] - 1, vec[1] - 1);
 		
 		let grouped_data = Colorize.identify_groups(processed_data);
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
-		console.log("setColor: Grouped formulas: ");
+//		console.log("setColor: Grouped formulas: ");
 		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
@@ -240,23 +238,20 @@ export default class App extends React.Component<AppProps, AppState> {
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
 		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
- 		await context.sync(); // DEBUG
-		console.log("done with proposed fixes (" + formulas.length + ")");
+//		console.log("done with proposed fixes (" + formulas.length + ")");
 		
 		if (true) {
 		    // Just color referenced data white.
 		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; }); // was FFFFFF FIXME
- 		    await context.sync(); // DEBUG
-		    console.log("YADA");
+//		    console.log("YADA");
 		} else {
 		    // Color referenced data based on its formula's color.
 		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); });
 		}
- 		await context.sync(); // DEBUG
-		console.log("processed data.");
+//		console.log("processed data.");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
- 		await context.sync(); // DEBUG
-		console.log("processed formulas.");
+// 		await context.sync(); // DEBUG
+//		console.log("processed formulas.");
 
 /*
 		for (let i = 0; i < this.proposed_fixes.length; i++) {
