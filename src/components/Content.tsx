@@ -52,7 +52,11 @@ export class Content extends React.Component<ContentProps, any> {
 					<text x="55" y="13">unreferenced data</text>
 				</svg>
 				<br />
-				<br />
+			<br />
+			<div className='ExceLint-scrollbar'>
+			<em>placeholder</em>
+			</div>
+
 				<br />
 				<small>For more information, see <a href="https://excelint.org">excelint.org</a>.
                 </small>
