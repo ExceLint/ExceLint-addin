@@ -50,10 +50,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
 		    let row1 = r[1][1];
 
-		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
+//		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash);
-		    console.log("color to set = " + color);
+//		    console.log("color to set = " + color);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
 		    } else {
@@ -231,7 +231,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let grouped_data = Colorize.identify_groups(processed_data);
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
 //		console.log("setColor: Grouped formulas: ");
-		console.log(JSON.stringify(grouped_formulas));
+//		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 		// Only present up to 5% (threshold from paper).
