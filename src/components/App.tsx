@@ -238,6 +238,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
 ///		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
 
+		console.log("done with proposed fixes (" + formulas.length + ")");
+		
 		if (true) {
 		    // Just color referenced data white.
 		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; }); // was FFFFFF FIXME
