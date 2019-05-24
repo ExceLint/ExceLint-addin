@@ -236,7 +236,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Only present up to 5% (threshold from paper).
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
-		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
+///		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
 
 		if (true) {
 		    // Just color referenced data white.
@@ -265,7 +265,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (r) {
 		    r.select();
 		}
- 		await context.sync(); // DEBUG
+		await context.sync(); // DEBUG
+		console.log("setColor: got range to select.");
 		currentWorksheet.protection.protect();
  		await context.sync();
 		console.log('ExceLint: done with sync 3.');
