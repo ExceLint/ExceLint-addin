@@ -100,6 +100,8 @@ export class Colorize {
 			for (let j = 0; j < row.length; j++) {
 			    if ((row[j].length > 0) && (row[j][0] === '=')) {
 				let cell = row[j];
+				cell = cell.replace('IMLOG2',''); // kind of a hack for now
+				
 //				    console.log("process_formulas: i = " + i + ", j = " + j);
 //				    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
 //				    console.log("process_formulas: row = " + JSON.stringify(cell));

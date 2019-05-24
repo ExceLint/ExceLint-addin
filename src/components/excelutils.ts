@@ -181,6 +181,7 @@ export class ExcelUtils {
         let base_vector = [0, 0];
 
         let found_pair = null;
+	range = range.replace('IMLOG2',''); // kind of a hack for now
 
         /// FIX ME - should we count the same range multiple times? Or just once?
 
