@@ -4,7 +4,7 @@ import * as sjcl from 'sjcl';
 
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
-    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
+    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+[^\\(]'; // column and row number, optionally with $
     private static sheet_re = '[^\\!]+';
     private static sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
