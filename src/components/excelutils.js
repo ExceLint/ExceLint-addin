@@ -97,7 +97,6 @@ var ExcelUtils = /** @class */ (function () {
         if (typeof (range) !== 'string') {
             return null;
         }
-        range = range.replace('IMLOG2', ''); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
@@ -150,7 +149,6 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.dependencies = function (range, origin_col, origin_row) {
         var base_vector = [0, 0];
         var found_pair = null;
-        range = range.replace('IMLOG2', ''); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
