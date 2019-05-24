@@ -398,7 +398,10 @@ export default class App extends React.Component<AppProps, AppState> {
 					message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
 
 					message3='Click to reveal the deep structure of this spreadsheet.' buttonLabel3='Previous fix' click3={this.previousFix}
-					message4='Click to clear colors and borders.' buttonLabel4='Next fix' click4={this.nextFix} />
+		    message4='Click to clear colors and borders.' buttonLabel4='Next fix' click4={this.nextFix} />
+			<div className='ExceLint-scrollbar'>
+			<em>placeholder</em>
+			</div>
 			</div>
 		);
 	}
