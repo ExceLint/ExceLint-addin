@@ -116,6 +116,7 @@ export class ExcelUtils {
         let all_vectors: Array<[number, number]> = [];
 
 	// Filter out formulas with numbers.
+	console.log('range is of type '+typeof(range));
 	range = range.replace('IMLOG2','IMLOG'); // kind of a hack for now
 	
         /// FIX ME - should we count the same range multiple times? Or just once?
