@@ -245,7 +245,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // Color referenced data based on its formula's color.
 		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); });
 		}
+ 		await context.sync(); // DEBUG
+		console.log("processed data.");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
+ 		await context.sync(); // DEBUG
+		console.log("processed formulas.");
 
 /*
 		for (let i = 0; i < this.proposed_fixes.length; i++) {
@@ -261,8 +265,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (r) {
 		    r.select();
 		}
+ 		await context.sync(); // DEBUG
 		currentWorksheet.protection.protect();
-		await context.sync();
+ 		await context.sync();
 		console.log('ExceLint: done with sync 3.');
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
@@ -285,7 +290,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
 			let row0 = r[0][1];
 			let col1 = ExcelUtils.column_index_to_name(r[1][0]);
-			let row1 = r[1][1];
+	    let row1 = r[1][1];
+	    console.log("range = " + col0 + row0 + ":" + col1 + row1);
 			let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
 			return range;
 		} else {
