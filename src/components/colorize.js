@@ -333,19 +333,21 @@ var Colorize = /** @class */ (function () {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
                 // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-                var all_deps = excelutils_1.ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
-                if (all_deps.length > 0) {
-                    // console.log(all_deps);
-                    var src = [origin_col + j, origin_row + i];
-                    // console.log('src = ' + src);
-                    for (var _i = 0, all_deps_1 = all_deps; _i < all_deps_1.length; _i++) {
-                        var dep = all_deps_1[_i];
-                        var dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
-                        //				console.log('dep type = ' + typeof(dep));
-                        //				console.log('dep = '+dep);
-                        refs[dep2.join(',')] = refs[dep2.join(',')] || [];
-                        refs[dep2.join(',')].push(src);
-                        // console.log('refs[' + dep2.join(',') + '] = ' + JSON.stringify(refs[dep2.join(',')]));
+                if (row[j][0] === '=') {
+                    var all_deps = excelutils_1.ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
+                    if (all_deps.length > 0) {
+                        // console.log(all_deps);
+                        var src = [origin_col + j, origin_row + i];
+                        // console.log('src = ' + src);
+                        for (var _i = 0, all_deps_1 = all_deps; _i < all_deps_1.length; _i++) {
+                            var dep = all_deps_1[_i];
+                            var dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
+                            //				console.log('dep type = ' + typeof(dep));
+                            //				console.log('dep = '+dep);
+                            refs[dep2.join(',')] = refs[dep2.join(',')] || [];
+                            refs[dep2.join(',')].push(src);
+                            // console.log('refs[' + dep2.join(',') + '] = ' + JSON.stringify(refs[dep2.join(',')]));
+                        }
                     }
                 }
             }

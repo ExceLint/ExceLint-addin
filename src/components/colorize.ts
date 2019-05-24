@@ -355,8 +355,9 @@ export class Colorize {
 		let refs = {};
 		for (let i = 0; i < formulas.length; i++) {
 			let row = formulas[i];
-			for (let j = 0; j < row.length; j++) {
-				// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+		    for (let j = 0; j < row.length; j++) {
+			    // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+			    if (row[j][0] === '=') {
 				let all_deps = ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
 				if (all_deps.length > 0) {
 					// console.log(all_deps);
@@ -371,7 +372,8 @@ export class Colorize {
 						// console.log('refs[' + dep2.join(',') + '] = ' + JSON.stringify(refs[dep2.join(',')]));
 					}
 				}
-			}
+			    }
+		    }
 		}
 		return refs;
 	}
