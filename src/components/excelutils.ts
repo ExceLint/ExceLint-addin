@@ -119,7 +119,7 @@ export class ExcelUtils {
 	    return null;
 	}
 
-	range = range.replace('IMLOG2','IMLOG'); // kind of a hack for now
+	range = range.replace('IMLOG2',''); // kind of a hack for now
 	    
         /// FIX ME - should we count the same range multiple times? Or just once?
 
