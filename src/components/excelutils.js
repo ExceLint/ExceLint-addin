@@ -199,7 +199,7 @@ var ExcelUtils = /** @class */ (function () {
         return base_vector;
     };
     // Matchers for all kinds of Excel expressions.
-    ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
+    ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?\\d+[^\\(]'; // column and row number, optionally with $
     ExcelUtils.sheet_re = '[^\\!]+';
     ExcelUtils.sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     ExcelUtils.sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
