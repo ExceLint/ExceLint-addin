@@ -115,11 +115,12 @@ export class ExcelUtils {
         let found_pair = null;
         let all_vectors: Array<[number, number]> = [];
 
-	// Filter out formulas with numbers.
-	console.log('range is of type '+typeof(range));
-	console.log('range is ' + JSON.stringify(range));
+	if (typeof(range) !== 'string') {
+	    return null;
+	}
+
 	range = range.replace('IMLOG2','IMLOG'); // kind of a hack for now
-	
+	    
         /// FIX ME - should we count the same range multiple times? Or just once?
 
         // First, get all the range pairs out.
@@ -173,7 +174,6 @@ export class ExcelUtils {
         }
         //console.log(JSON.stringify(all_vectors));
         return all_vectors;
-
     }
 
     public static dependencies(range: string, origin_col: number, origin_row: number): Array<number> {
