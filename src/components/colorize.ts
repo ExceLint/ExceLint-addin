@@ -25,7 +25,7 @@ export class Colorize {
 
     public static get_color(hashval: number): string {
 	let color = this.color_list[(hashval * 1) % this.color_list.length];
-//	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
+	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
 	return color;
     }
 
@@ -57,7 +57,7 @@ export class Colorize {
 
 	private static make_light_color_versions() {
 		console.log('building color map (make_light_color_versions)');
-		for (let i = 0; i < 255; i += 7) {
+		for (let i = 0; i < 255; i += 3) {
 			let h = i / 255.0;
 			let s = 0.5;
 			let v = 0.85;

@@ -19,7 +19,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.get_color = function (hashval) {
         var color = this.color_list[(hashval * 1) % this.color_list.length];
-        //	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
+        console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
         return color;
     };
     Colorize.is_banned_color = function (h, s, v) {
@@ -49,7 +49,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.make_light_color_versions = function () {
         console.log('building color map (make_light_color_versions)');
-        for (var i = 0; i < 255; i += 7) {
+        for (var i = 0; i < 255; i += 3) {
             var h = i / 255.0;
             var s = 0.5;
             var v = 0.85;
