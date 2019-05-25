@@ -53,7 +53,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash);
-		    console.log("color to set = " + color);
+		    console.log("color to set = " + color + " for hash = " + hash);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
 		    } else {
