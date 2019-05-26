@@ -48,6 +48,11 @@ export class Content extends React.Component<ContentProps, any> {
 					<text x="55" y="13">formulas (dark colors)</text>
 			</svg>
 				<svg width="300" height="20">
+					<rect x="0" y="0" width="50" height="20" fill="#d3d3d3" />
+					<text x="55" y="13">referenced data</text>
+				</svg>
+				<br />
+				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#eed202" />
 					<text x="55" y="13">unreferenced data</text>
 				</svg>

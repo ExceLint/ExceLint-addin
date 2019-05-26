@@ -241,8 +241,8 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("done with proposed fixes (" + formulas.length + ")");
 		
 		if (true) {
-		    // Just color referenced data white.
-		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#FFFFFF'; }); // was FFFFFF FIXME
+		    // Just color referenced data white. (now gray!)
+		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }); // was FFFFFF FIXME
 //		    console.log("YADA");
 		} else {
 		    // Color referenced data based on its formula's color.
