@@ -106,11 +106,15 @@ export class Colorize {
 //				    console.log("process_formulas: i = " + i + ", j = " + j);
 //				    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
 //				    console.log("process_formulas: row = " + JSON.stringify(cell));
-				    let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
+				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
+				if (vec.join(',') === '0,0') {
+				    // No dependencies! Don't add as a formula.
+				} else {
 //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
 				    let hash = this.hash_vector(vec);
 //				    console.log("process_formulas: hash of this vector = " + hash);
 				    output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
+				}
 				}
 			}
 		}
