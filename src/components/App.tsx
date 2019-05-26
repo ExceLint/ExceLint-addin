@@ -110,11 +110,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    currentWorksheet.protection.unprotect();
 	    await context.sync();
 	} catch(error) {
-	    console.log("Error: " + error);
-	    if (error instanceof OfficeExtension.Error) { 
-		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
-	    }
-	    // Could not unprotect sheet: bail.
+	    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
 	    return;
 	}
 	
