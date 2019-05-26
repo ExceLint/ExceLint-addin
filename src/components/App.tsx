@@ -106,8 +106,18 @@ export default class App extends React.Component<AppProps, AppState> {
 	let worksheets = context.workbook.worksheets;
 	// Try to restore the format from the hidden sheet.
 	let currentWorksheet = worksheets.getActiveWorksheet();
-	currentWorksheet.protection.unprotect();
-	await context.sync();
+	try {
+	    currentWorksheet.protection.unprotect();
+	    await context.sync();
+	} catch(error) {
+	    console.log("Error: " + error);
+	    if (error instanceof OfficeExtension.Error) { 
+		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+	    }
+	    // Could not unprotect sheet: bail.
+	    return;
+	}
+	
 	let backupName = this.saved_original_sheetname(currentWorksheet.id);
 	// If it's there already, restore it.
 	try {
