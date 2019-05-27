@@ -215,6 +215,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 
+   		console.log("cleared background color");
+
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
@@ -229,16 +231,20 @@ export default class App extends React.Component<AppProps, AppState> {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
+   		console.log("set numbers to yellow");
+		
 		let usedRangeAddress = usedRange.address;
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
-//		console.log("setColor: cell dependency = " + vec);
+		console.log("setColor: cell dependency = " + vec);
+		
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0] - 1, vec[1] - 1);
 		
 		let grouped_data = Colorize.identify_groups(processed_data);
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
-//		console.log("setColor: Grouped formulas: ");
+		console.log("setColor: Grouped formulas: ");
+		
 //		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
