@@ -276,7 +276,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    r.select();
 		}
 		await context.sync(); // DEBUG
-		console.log("setColor: got range to select.");
+//		console.log("setColor: got range to select.");
 		currentWorksheet.protection.protect();
  		await context.sync();
 		console.log('ExceLint: done with sync 3.');
@@ -302,7 +302,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			let row0 = r[0][1];
 			let col1 = ExcelUtils.column_index_to_name(r[1][0]);
 	    let row1 = r[1][1];
-	    console.log("range = " + col0 + row0 + ":" + col1 + row1);
+//	    console.log("range = " + col0 + row0 + ":" + col1 + row1);
 			let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
 			return range;
 		} else {
