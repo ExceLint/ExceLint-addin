@@ -184,7 +184,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 }
 		*/
 		
-//		await context.sync(); // FOR DEBUGGING
+		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
 		if (false) {
 		    usedRange.load(['address', 'formulas', 'values', 'format']);
@@ -264,7 +264,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 //		console.log("processed data.");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
-// 		await context.sync(); // DEBUG
+ 		await context.sync(); // DEBUG
 //		console.log("processed formulas.");
 
 /*
