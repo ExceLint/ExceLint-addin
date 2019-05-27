@@ -96,6 +96,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    backupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
 	    backupSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    
+	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
 	});
     }
@@ -215,6 +216,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 
+		await context.sync();
    		console.log("cleared background color");
 
 		// Now we can get the formula ranges (all cells with formulas),
@@ -223,6 +225,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
 		
+		await context.sync();
+
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
 		
