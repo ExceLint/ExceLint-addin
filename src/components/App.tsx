@@ -40,6 +40,7 @@ export default class App extends React.Component<AppProps, AppState> {
     private process(grouped_ranges, currentWorksheet, colorfn) {
 	let g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
 	// Process the ranges.
+	let hash_index = 0;
 	Object.keys(grouped_ranges).forEach(hash => {
 	    if (!(hash === undefined)) {
 		let v = grouped_ranges[hash];
@@ -52,7 +53,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
-		    let color = colorfn(hash);
+		    let color = colorfn(hash_index);
 		    console.log("color to set = " + color + " for hash = " + hash);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
@@ -60,6 +61,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			range.format.fill.color = color;
 		    }
 		}
+		hash_index += 1;
 	    }
 	});
 	console.log("done processing.");
