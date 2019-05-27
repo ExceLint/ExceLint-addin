@@ -97,7 +97,7 @@ var ExcelUtils = /** @class */ (function () {
         if (typeof (range) !== 'string') {
             return null;
         }
-        range = range.replace(/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|IMLOG2|IMLOG10/g, ''); // kind of a hack for now
+        range = range.replace(this.formulas_with_numbers, ''); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
@@ -150,6 +150,7 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.dependencies = function (range, origin_col, origin_row) {
         var base_vector = [0, 0];
         var found_pair = null;
+        range = range.replace(this.formulas_with_numbers, ''); // kind of a hack for now
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
@@ -213,6 +214,7 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
     ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
     ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
+    ExcelUtils.formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
     return ExcelUtils;
 }());
 exports.ExcelUtils = ExcelUtils;
