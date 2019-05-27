@@ -56,7 +56,13 @@ export class Colorize {
 	}
 
 	private static make_light_color_versions() {
-		console.log('building color map (make_light_color_versions)');
+	    console.log('building color map (make_light_color_versions)');
+	    let arr = ['#8E0152','#C51B7D','#D01C8B','#DE77AE','#E9A3C9','#F1B6DA','#FDE0EF','#F7F7F7','#E6F5D0','#B8E186','#A1D76A','#7FBC41','#4DAC26','#4D9221','#276419'];
+	    for (let i = 0; i < arr.length; i++) {
+		this.light_color_dict[arr[i]] = '';
+	    }
+	    return;
+	    
 		for (let i = 0; i < 255; i += 9) {
 			let h = i / 255.0;
 			let s = 0.5;
