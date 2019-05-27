@@ -49,7 +49,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.make_light_color_versions = function () {
         console.log('building color map (make_light_color_versions)');
-        for (var i = 0; i < 255; i += 3) {
+        for (var i = 0; i < 255; i += 5) {
             var h = i / 255.0;
             var s = 0.5;
             var v = 0.85;
