@@ -14,7 +14,11 @@ export class ExcelUtils {
     private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
     private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
     private static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
+
+    // We need to filter out all formulas with numbers so they don't mess with our dependency regexps.
     private static formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
+    // Same with named ranges (which we should really look up, but for now, hack. FIX ME eventually.)
+    private static formulas_with_named_ranges = new RegExp("'[^\']*'\!", 'g');
 
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     public static hash_sheet(uid: string, maxlen: number = 31) : string {
@@ -121,6 +125,7 @@ export class ExcelUtils {
 	}
 
 	range = range.replace(this.formulas_with_numbers,''); // kind of a hack for now
+	range = range.replace(this.formulas_with_named_ranges,''); // kind of a hack for now
     
         /// FIX ME - should we count the same range multiple times? Or just once?
 
@@ -184,6 +189,7 @@ export class ExcelUtils {
         let found_pair = null;
 
 	range = range.replace(this.formulas_with_numbers,''); // kind of a hack for now
+	range = range.replace(this.formulas_with_named_ranges,''); // kind of a hack for now
 	
         /// FIX ME - should we count the same range multiple times? Or just once?
 
