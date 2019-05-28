@@ -59,7 +59,6 @@ export class Content extends React.Component<ContentProps, any> {
 				<br />
 			<br />
 			<div className='ExceLint-scrollbar'>
-			<em>placeholder</em>
 			</div>
 
 				<br />
