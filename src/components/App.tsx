@@ -166,7 +166,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		console.log('setColor: starting processing 3');
 		
-		let usedRange = currentWorksheet.getUsedRange(true) as any; // FIXME was false! testing for perf
+		let usedRange = currentWorksheet.getUsedRange(false) as any; // FIXME was false! testing for perf
 		usedRange.load(['address']);
 		await context.sync();
 //		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
