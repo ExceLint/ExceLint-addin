@@ -45,16 +45,16 @@ export class Content extends React.Component<ContentProps, any> {
 
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="darkgreen" />
-					<text x="55" y="13">formulas (dark colors)</text>
+					<text x="55" y="13">formulas (pastel colors)</text>
 			</svg>
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#d3d3d3" />
-					<text x="55" y="13">referenced data</text>
+			<text x="55" y="13">data used by some formula (gray)</text>
 				</svg>
 				<br />
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#eed202" />
-					<text x="55" y="13">unreferenced data</text>
+			<text x="55" y="13">data not used by ANY formula (yellow)</text>
 				</svg>
 				<br />
 			<br />
