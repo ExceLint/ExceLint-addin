@@ -46,9 +46,9 @@ function makeTable(arr, selector, current) : any {
     if (arr) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
-	    let r = ExcelUtils.getRectangle(arr, i);
+	    let r = ExcelUtils.get_rectangle(arr, i);
 	    if (r) {
-		let [ col0, row0, col1, row1 ] = ExcelUtils.getRectangle(arr, i);
+		let [ col0, row0, col1, row1 ] = r;
 		let score = Math.round(-arr[i][0]*10*100)/100;
 		if (current === i) {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td>(<em>score: {score}</em>)</td></tr>);

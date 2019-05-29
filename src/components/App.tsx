@@ -321,7 +321,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     getRange(currentWorksheet, proposed_fixes, current_fix) {
 	if (proposed_fixes.length > 0) {
-	    let [ col0, row0, col1, row1 ] = ExcelUtils.getRectangle(proposed_fixes, current_fix);
+	    let [ col0, row0, col1, row1 ] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
 	    let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
 	    return range;
 	} else {

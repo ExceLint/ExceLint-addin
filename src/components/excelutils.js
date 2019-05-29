@@ -12,7 +12,7 @@ var ExcelUtils = /** @class */ (function () {
         // We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
         return (sjcl.codec.base32.fromBits(sjcl.hash.sha256.hash(uid)).slice(0, maxlen));
     };
-    ExcelUtils.getRectangle = function (proposed_fixes, current_fix) {
+    ExcelUtils.get_rectangle = function (proposed_fixes, current_fix) {
         if (!proposed_fixes) {
             return null;
         }

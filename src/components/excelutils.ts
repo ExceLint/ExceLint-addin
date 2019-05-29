@@ -28,7 +28,7 @@ export class ExcelUtils {
     }
     
 
-    public static getRectangle(proposed_fixes: any, current_fix: number) : any {
+    public static get_rectangle(proposed_fixes: any, current_fix: number) : any {
 	if (!proposed_fixes) {
 	    return null;
 	}
