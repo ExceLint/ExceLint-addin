@@ -1,6 +1,7 @@
 // excel-utils
 
 import * as sjcl from 'sjcl';
+import { RectangleUtils } from './rectangleutils.js';
 
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
@@ -26,6 +27,26 @@ export class ExcelUtils {
 	return (sjcl.codec.base32.fromBits(sjcl.hash.sha256.hash(uid)).slice(0,maxlen));
     }
     
+
+    public static getRectangle(proposed_fixes: any, current_fix: number) : any {
+	if (!proposed_fixes) {
+	    return null;
+	}
+	if (proposed_fixes.length > 0) {
+	    console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
+	    console.log("current fix = " + current_fix);
+	    let r = RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
+	    console.log("r = " + JSON.stringify(r));
+	    // convert to sheet notation
+	    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
+	    let row0 = r[0][1].toString();
+	    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
+	    let row1 = r[1][1].toString();
+	    return [col0, row0, col1, row1];
+	} else {
+	    return null;
+	}
+    }
 
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     public static column_name_to_index(name: string): number {

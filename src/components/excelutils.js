@@ -2,6 +2,7 @@
 // excel-utils
 exports.__esModule = true;
 var sjcl = require("sjcl");
+var rectangleutils_js_1 = require("./rectangleutils.js");
 var ExcelUtils = /** @class */ (function () {
     function ExcelUtils() {
     }
@@ -10,6 +11,26 @@ var ExcelUtils = /** @class */ (function () {
         if (maxlen === void 0) { maxlen = 31; }
         // We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
         return (sjcl.codec.base32.fromBits(sjcl.hash.sha256.hash(uid)).slice(0, maxlen));
+    };
+    ExcelUtils.getRectangle = function (proposed_fixes, current_fix) {
+        if (!proposed_fixes) {
+            return null;
+        }
+        if (proposed_fixes.length > 0) {
+            console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
+            console.log("current fix = " + current_fix);
+            var r = rectangleutils_js_1.RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
+            console.log("r = " + JSON.stringify(r));
+            // convert to sheet notation
+            var col0 = ExcelUtils.column_index_to_name(r[0][0]);
+            var row0 = r[0][1].toString();
+            var col1 = ExcelUtils.column_index_to_name(r[1][0]);
+            var row1 = r[1][1].toString();
+            return [col0, row0, col1, row1];
+        }
+        else {
+            return null;
+        }
     };
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     ExcelUtils.column_name_to_index = function (name) {

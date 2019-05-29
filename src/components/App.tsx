@@ -22,13 +22,18 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private proposed_fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
     private current_fix = 0;
+    private total_fixes = -1;
     private savedFormat: any = null;
     private savedRange: string = null;
     private originalSheetSuffix : string = "_EL";
+    public state = {};
+    private contentElement : any = null;
     
     constructor(props, context) {
 	super(props, context);
 	Colorize.initialize();
+	this.state = {};
+	this.contentElement = React.createRef();
     }
 
     /// Get the saved formats for this sheet (by its unique identifier).
@@ -135,6 +140,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log("restoreFormats: didn't find the sheet " + backupName);
 	    }
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
+	this.proposed_fixes = [];
+	this.total_fixes = -1;
+	this.contentElement.current.setState({ currentFix: this.current_fix,
+					       totalFixes: this.proposed_fixes.length,
+					       themFixes : this.proposed_fixes });
 	console.log("restoreFormats: end");
 	let endTime = performance.now();
 	let timeElapsedMS = endTime - startTime;
@@ -254,6 +264,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 		// Only present up to 5% (threshold from paper).
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
+		this.total_fixes = max_proposed_fixes;
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
 		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
 //		console.log("done with proposed fixes (" + formulas.length + ")");
@@ -295,6 +306,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log('Time elapsed (ms) = ' + timeElapsedMS);
+		this.contentElement.current.setState({ currentFix: this.current_fix,
+						       totalFixes: this.proposed_fixes.length,
+						       themFixes : this.proposed_fixes });
+
 	    });
 	} catch (error) {
 	    console.log("Error: " + error);
@@ -306,20 +321,14 @@ export default class App extends React.Component<AppProps, AppState> {
 
     getRange(currentWorksheet, proposed_fixes, current_fix) {
 	if (proposed_fixes.length > 0) {
-	    let r = RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
-	    // convert to sheet notation
-	    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
-			let row0 = r[0][1];
-			let col1 = ExcelUtils.column_index_to_name(r[1][0]);
-	    let row1 = r[1][1];
-//	    console.log("range = " + col0 + row0 + ":" + col1 + row1);
-			let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
-			return range;
-		} else {
-			return null;
-		}
+	    let [ col0, row0, col1, row1 ] = ExcelUtils.getRectangle(proposed_fixes, current_fix);
+	    let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
+	    return range;
+	} else {
+	    return null;
 	}
-
+    }
+    
 	restoreFormatsAndColors = async () => {
 //	    OfficeExtension.config.extendedErrorLogging = true;
 	    try {
@@ -344,6 +353,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log("previousFix");
 		try {
 			await Excel.run(async context => {
+			    if (this.total_fixes == -1) {
+				await this.restoreFormatsAndColors();
+				await this.setColor();
+ 			    }
 				let app = context.workbook.application;
 
 				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
@@ -356,11 +369,14 @@ export default class App extends React.Component<AppProps, AppState> {
 				}
 			    */
 				this.current_fix -= 1;
-				if (this.current_fix < 0) {
+				if (this.current_fix <= 0) {
 					this.current_fix = 0;
 				}
 				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-				r.select();
+			    r.select();
+		this.contentElement.current.setState({ currentFix: this.current_fix,
+						       totalFixes: this.proposed_fixes.length,
+						       themFixes : this.proposed_fixes });
 			});
 		} catch (error) {
 		    console.log("Error: " + error);
@@ -370,20 +386,63 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 	}
 
+
+	selectFix = async (currentFix) => {
+		console.log("selectFix " + currentFix);
+		try {
+			await Excel.run(async context => {
+			    if (this.total_fixes == -1) {
+				await this.restoreFormatsAndColors();
+				await this.setColor();
+ 			    }
+				let app = context.workbook.application;
+
+				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+				currentWorksheet.load(['protection']);
+			    await context.sync();
+			    /*
+				if (currentWorksheet.protection.protected) {
+					// Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
+					return;
+				}
+			    */
+				let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
+			    r.select();
+		this.contentElement.current.setState({ currentFix: currentFix,
+						       totalFixes: this.proposed_fixes.length,
+						       themFixes : this.proposed_fixes });
+			});
+		} catch (error) {
+		    console.log("Error: " + error);
+		    if (error instanceof OfficeExtension.Error) { 
+			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+		    }
+		}
+	}
+    
+    
+
 	nextFix = async () => {
 		console.log("nextFix");
 		try {
-			await Excel.run(async context => {
+		    await Excel.run(async context => {
+			if (this.total_fixes == -1) {
+			    await this.restoreFormatsAndColors();
+			    await this.setColor();
+ 			}
 				let app = context.workbook.application;
 				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
 				currentWorksheet.load(['protection']);
 				await context.sync();
 				this.current_fix++;
-				if (this.current_fix >= this.proposed_fixes.length) {
-					this.current_fix = this.proposed_fixes.length - 1;
+				if (this.current_fix >= this.proposed_fixes.length-1) {
+					this.current_fix = this.proposed_fixes.length-1;
 				}
 				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-				r.select();
+			    r.select();
+		this.contentElement.current.setState({ currentFix: this.current_fix,
+						       totalFixes: this.proposed_fixes.length,
+						       themFixes : this.proposed_fixes });
 			});
 		} catch (error) {
 		    console.log("Error: " + error);
@@ -412,11 +471,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		return (
 			<div className='ms-welcome'>
 				<Header title='ExceLint' />
-				<Content message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
+			<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
 					message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
-
-					message3='Click to reveal the deep structure of this spreadsheet.' buttonLabel3='Previous fix' click3={this.previousFix}
-		    message4='Click to clear colors and borders.' buttonLabel4='Next fix' click4={this.nextFix} />
+		    currentFix={this.current_fix} totalFixes={this.proposed_fixes.length} themFixes={this.proposed_fixes} selector={this.selectFix} />
+		
 			</div>
 		);
 	}
