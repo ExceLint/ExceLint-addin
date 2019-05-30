@@ -51,7 +51,7 @@ function makeTable(arr, selector, current) : any {
 		let [ col0, row0, col1, row1 ] = r;
 		let score = Math.round(-arr[i][0]*10*100)/100;
 		if (current === i) {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td>(<em>score: {score}</em>)</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: red}}>(<em>score: {score}</em>)</td></tr>);
 		} else {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td>(<em>score: {score}</em>)</td></tr>);
 		}
