@@ -65,12 +65,8 @@ function makeTable(arr, selector, current) : any {
 }
 
 function DisplayFixes(props) {
-    if (props.totalFixes > 0) {
-	const table = makeTable(props.themFixes, props.selector, props.currentFix);
-	return <div>{table}</div>;
-    } else {
-	return <div></div>;
-    }
+    const table = makeTable(props.themFixes, props.selector, props.currentFix);
+    return <div>{table}</div>;
 }
 
 
