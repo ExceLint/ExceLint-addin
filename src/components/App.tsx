@@ -356,108 +356,41 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 	}
 
-	previousFix = async () => {
-		console.log("previousFix");
-		try {
-			await Excel.run(async context => {
-			    if (this.total_fixes == -1) {
-				await this.restoreFormatsAndColors();
-				await this.setColor();
- 			    }
-				let app = context.workbook.application;
-
-				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-				currentWorksheet.load(['protection']);
-			    await context.sync();
-			    /*
-				if (currentWorksheet.protection.protected) {
-					// Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-					return;
-				}
-			    */
-				this.current_fix -= 1;
-				if (this.current_fix <= 0) {
-					this.current_fix = 0;
-				}
-				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-			    r.select();
-		this.contentElement.current.setState({ currentFix: this.current_fix,
-						       totalFixes: this.total_fixes,
-						       themFixes : this.proposed_fixes });
-			});
-		} catch (error) {
-		    console.log("Error: " + error);
-		    if (error instanceof OfficeExtension.Error) { 
-			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
-		    }
-		}
-	}
-
-
 	selectFix = async (currentFix) => {
-		console.log("selectFix " + currentFix);
-		try {
-			await Excel.run(async context => {
-			    if (this.total_fixes == -1) {
-				await this.restoreFormatsAndColors();
-				await this.setColor();
- 			    }
-				let app = context.workbook.application;
-
-				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-				currentWorksheet.load(['protection']);
-			    await context.sync();
-			    /*
-				if (currentWorksheet.protection.protected) {
-					// Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-					return;
-				}
-			    */
-				let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
-			    r.select();
-		this.contentElement.current.setState({ currentFix: currentFix,
-						       totalFixes: this.total_fixes,
-						       themFixes : this.proposed_fixes });
-			});
-		} catch (error) {
-		    console.log("Error: " + error);
-		    if (error instanceof OfficeExtension.Error) { 
-			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
-		    }
+	    console.log("selectFix " + currentFix);
+	    try {
+		await Excel.run(async context => {
+		    if (this.total_fixes == -1) {
+			await this.restoreFormatsAndColors();
+			await this.setColor();
+ 		    }
+		    let app = context.workbook.application;
+		    
+		    let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+		    currentWorksheet.load(['protection']);
+		    await context.sync();
+		    /*
+		      if (currentWorksheet.protection.protected) {
+		      // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
+		      return;
+		      }
+		    */
+		    let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
+		    r.select();
+		    this.contentElement.current.setState({ currentFix: currentFix,
+							   totalFixes: this.total_fixes,
+							   themFixes : this.proposed_fixes });
+		});
+	    } catch (error) {
+		console.log("Error: " + error);
+		if (error instanceof OfficeExtension.Error) { 
+		    console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
 		}
+	    }
 	}
     
     
 
-	nextFix = async () => {
-		console.log("nextFix");
-		try {
-		    await Excel.run(async context => {
-			if (this.total_fixes == -1) {
-			    await this.restoreFormatsAndColors();
-			    await this.setColor();
- 			}
-				let app = context.workbook.application;
-				let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-				currentWorksheet.load(['protection']);
-				await context.sync();
-				this.current_fix++;
-				if (this.current_fix >= this.proposed_fixes.length-1) {
-					this.current_fix = this.proposed_fixes.length-1;
-				}
-				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-			    r.select();
-		this.contentElement.current.setState({ currentFix: this.current_fix,
-						       totalFixes: this.total_fixes,
-						       themFixes : this.proposed_fixes });
-			});
-		} catch (error) {
-		    console.log("Error: " + error);
-		    if (error instanceof OfficeExtension.Error) { 
-			console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
-		    }
-		}
-	}
 
 	render() {
 		const {
