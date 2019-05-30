@@ -15,22 +15,7 @@ export interface ContentProps {
     totalFixes : number;
     themFixes : any;
     selector : any;
-//	message5: string;
-//	buttonLabel5: string;
-//	click5: any;
 }
-
-/*
-
-for testing only:
-
-function hepMe(num: number, event: any) {
-    event.preventDefault();
-    console.log("HEPME: ", num);
-//    alert(event.currentTarget.tagName); // alerts BUTTON
-//    console.log("HEPME.");
-}
-*/
 
 function makeTable(arr, selector, current) : any {
     const divStyle : any = {
@@ -49,6 +34,10 @@ function makeTable(arr, selector, current) : any {
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
 		let score = Math.round(-arr[i][0]*10*100)/100;
+		// Always put up *something*.
+		if (score < 1) {
+		    score = 1;
+		}
 		if (current === i) {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td></tr>);
 		} else {
