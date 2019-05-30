@@ -38,7 +38,6 @@ function makeTable(arr, selector, current) : any {
 	overflowY: 'scroll'
     };
     const lineStyle : any = {
-	width: '100px',
 	color: 'blue',
 	textAlign: 'left',
 	verticalAlign: 'middle'
@@ -51,14 +50,14 @@ function makeTable(arr, selector, current) : any {
 		let [ col0, row0, col1, row1 ] = r;
 		let score = Math.round(-arr[i][0]*10*100)/100;
 		if (current === i) {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: red}}>(<em>score: {score}</em>)</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td></tr>);
 		} else {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td>(<em>score: {score}</em>)</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td></tr>);
 		}
 	    }
 	}
 	let table = [];
-	table.push(<div>Click to jump to suspicious formulas:<br /><div style={divStyle}><table>{children}</table></div></div>);
+	table.push(<div>Click to jump to suspicious formulas:<br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
 	return table;
     } else {
 	return <div>No suspicious formulas found.</div>;
