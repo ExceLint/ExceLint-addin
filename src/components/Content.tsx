@@ -42,7 +42,7 @@ function makeTable(arr, selector, current) : any {
 	textAlign: 'left',
 	verticalAlign: 'middle'
     };
-    if (arr) {
+    if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
 	    let r = ExcelUtils.get_rectangle(arr, i);
