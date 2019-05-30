@@ -17,10 +17,10 @@ var ExcelUtils = /** @class */ (function () {
             return null;
         }
         if (proposed_fixes.length > 0) {
-            console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
-            console.log("current fix = " + current_fix);
+            // console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
+            // console.log("current fix = " + current_fix);
             var r = rectangleutils_js_1.RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
-            console.log("r = " + JSON.stringify(r));
+            // console.log("r = " + JSON.stringify(r));
             // convert to sheet notation
             var col0 = ExcelUtils.column_index_to_name(r[0][0]);
             var row0 = r[0][1].toString();

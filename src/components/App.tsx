@@ -232,17 +232,24 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
 		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
-		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
+ 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
-		
+ 		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
+									  Excel.SpecialCellValueType.numbers);
 		await context.sync();
 
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
-		
+
+		// usedRange.format.fill.color = '#eed202';
+
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		}
+		    
+		if (numericFormulaRanges) {
+		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
    		console.log("set numbers to yellow");

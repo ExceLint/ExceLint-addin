@@ -33,10 +33,10 @@ export class ExcelUtils {
 	    return null;
 	}
 	if (proposed_fixes.length > 0) {
-	    console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
-	    console.log("current fix = " + current_fix);
+	    // console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
+	    // console.log("current fix = " + current_fix);
 	    let r = RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
-	    console.log("r = " + JSON.stringify(r));
+	    // console.log("r = " + JSON.stringify(r));
 	    // convert to sheet notation
 	    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
 	    let row0 = r[0][1].toString();
