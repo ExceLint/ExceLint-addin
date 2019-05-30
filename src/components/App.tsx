@@ -143,7 +143,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	this.proposed_fixes = [];
 	this.total_fixes = -1;
 	this.contentElement.current.setState({ currentFix: this.current_fix,
-					       totalFixes: this.total_fixes;
+					       totalFixes: this.total_fixes,
 					       themFixes : this.proposed_fixes });
 	console.log("restoreFormats: end");
 	let endTime = performance.now();
