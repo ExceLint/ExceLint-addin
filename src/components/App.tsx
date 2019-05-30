@@ -143,7 +143,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	this.proposed_fixes = [];
 	this.total_fixes = -1;
 	this.contentElement.current.setState({ currentFix: this.current_fix,
-					       totalFixes: this.proposed_fixes.length,
+					       totalFixes: this.total_fixes;
 					       themFixes : this.proposed_fixes });
 	console.log("restoreFormats: end");
 	let endTime = performance.now();
@@ -314,7 +314,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let timeElapsedMS = endTime - startTime;
 		console.log('Time elapsed (ms) = ' + timeElapsedMS);
 		this.contentElement.current.setState({ currentFix: this.current_fix,
-						       totalFixes: this.proposed_fixes.length,
+						       totalFixes: this.total_fixes,
 						       themFixes : this.proposed_fixes });
 
 	    });
@@ -382,7 +382,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
 			    r.select();
 		this.contentElement.current.setState({ currentFix: this.current_fix,
-						       totalFixes: this.proposed_fixes.length,
+						       totalFixes: this.total_fixes,
 						       themFixes : this.proposed_fixes });
 			});
 		} catch (error) {
@@ -416,7 +416,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
 			    r.select();
 		this.contentElement.current.setState({ currentFix: currentFix,
-						       totalFixes: this.proposed_fixes.length,
+						       totalFixes: this.total_fixes,
 						       themFixes : this.proposed_fixes });
 			});
 		} catch (error) {
@@ -448,7 +448,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
 			    r.select();
 		this.contentElement.current.setState({ currentFix: this.current_fix,
-						       totalFixes: this.proposed_fixes.length,
+						       totalFixes: this.total_fixes,
 						       themFixes : this.proposed_fixes });
 			});
 		} catch (error) {
@@ -480,7 +480,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				<Header title='ExceLint' />
 			<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
 					message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
-		    currentFix={this.current_fix} totalFixes={this.proposed_fixes.length} themFixes={this.proposed_fixes} selector={this.selectFix} />
+		    currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} />
 		
 			</div>
 		);
