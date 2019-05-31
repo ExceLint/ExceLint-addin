@@ -109,8 +109,8 @@ export class Colorize {
 				let cell = row[j];
 				
 				
-//				    console.log("process_formulas: i = " + i + ", j = " + j);
-//				    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
+				console.log("process_formulas: i = " + i + ", j = " + j);
+				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
 //				    console.log("process_formulas: row = " + JSON.stringify(cell));
 				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
 				if (vec.join(',') === '0,0') {
