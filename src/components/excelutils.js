@@ -60,7 +60,7 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_col_absolute.exec(cell);
             if (r) {
-                //                console.log(JSON.stringify(r));
+                console.log("cell col absolute only " + JSON.stringify(r));
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
@@ -70,7 +70,7 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_both_relative.exec(cell);
             if (r) {
-                //                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
+                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
                 //		console.log('both relative col: ' + col + ', row: ' + row);
@@ -80,7 +80,7 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_row_absolute.exec(cell);
             if (r) {
-                //                console.log('row_absolute');
+                console.log('row_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
                 return [col - origin_col, row];
