@@ -168,13 +168,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 
 // 		console.log('setColor: protection status = ' + currentWorksheet.protection.protected);
-	try {
-	    currentWorksheet.protection.unprotect();
-	    await context.sync();
-	} catch(error) {
-	    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
-	    return;
-	}
+		if (currentWorksheet.protection.protected) {
+		    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
+		    return;
+		}
 
 		console.log('setColor: starting processing 3');
 		
