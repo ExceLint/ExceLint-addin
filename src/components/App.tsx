@@ -305,7 +305,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 		await context.sync(); // DEBUG
 //		console.log("setColor: got range to select.");
-		currentWorksheet.protection.protect();
+		currentWorksheet.protection.protect({selectionMode: "Unlocked",
+						     allowEditObjects: true});
  		await context.sync();
 		console.log('ExceLint: done with sync 3.');
 /*		let currName = currentWorksheet.name;
