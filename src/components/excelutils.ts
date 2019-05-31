@@ -109,9 +109,10 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
-//                console.log('both_absolute');
+                console.log('both_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
+		console.log("parsed " + JSON.stringify([col, row]));
                 return [col, row];
             }
         }
@@ -138,6 +139,7 @@ export class ExcelUtils {
 
     public static all_cell_dependencies(range: string) /* , origin_col: number, origin_row: number) */: Array<[number, number]> {
 
+	console.log("looking for dependencies in " + range);
         let found_pair = null;
         let all_vectors: Array<[number, number]> = [];
 
@@ -191,7 +193,7 @@ export class ExcelUtils {
                 //		console.log('singleton[1] = ' + singleton[1]);
                 //	    console.log(found_pair);
                 let first_cell = singleton[1];
-                //		console.log(first_cell);
+                console.log(first_cell);
                 let vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.

@@ -89,9 +89,10 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
-                //                console.log('both_absolute');
+                console.log('both_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
+                console.log("parsed " + JSON.stringify([col, row]));
                 return [col, row];
             }
         }
@@ -113,6 +114,7 @@ var ExcelUtils = /** @class */ (function () {
         return ['', '', ''];
     };
     ExcelUtils.all_cell_dependencies = function (range) {
+        console.log("looking for dependencies in " + range);
         var found_pair = null;
         var all_vectors = [];
         if (typeof (range) !== 'string') {
@@ -158,7 +160,7 @@ var ExcelUtils = /** @class */ (function () {
                 //		console.log('singleton[1] = ' + singleton[1]);
                 //	    console.log(found_pair);
                 var first_cell = singleton[1];
-                //		console.log(first_cell);
+                console.log(first_cell);
                 var vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.
