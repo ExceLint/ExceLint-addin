@@ -7,7 +7,8 @@
     "preinstall": "npm install webpack webpack-dev-server office-toolbox rimraf yargs npx",
     "clean": "rimraf dist && rimraf .awcache",
     "lint": "tslint --project tsconfig.json",
-    "start": "webpack-dev-server --inline --host 0.0.0.0 --port 3000 --mode production --config config/webpack.dev.js --progress",
+    "start": "webpack-dev-server --inline --host 0.0.0.0 --port 443 --mode production --config config/webpack.dev.js --progress",
+    "start-local": "webpack-dev-server --inline --host 0.0.0.0 --port 3000 --mode production --config config/webpack.dev-local.js --progress",
     "sideload": "office-toolbox sideload -m manifest.xml -a Excel",
     "build": "npm run clean && webpack --mode production --config config/webpack.prod.js --colors --progress --bail",
     "validate": "office-toolbox validate -m manifest.xml"

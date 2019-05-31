@@ -102,9 +102,9 @@ var Colorize = /** @class */ (function () {
                         // No dependencies! Don't add as a formula.
                     }
                     else {
-                        //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
+                        console.log("process_formulas: vector = " + JSON.stringify(vec));
                         var hash = this.hash_vector(vec);
-                        //				    console.log("process_formulas: hash of this vector = " + hash);
+                        console.log("process_formulas: hash of this vector = " + hash);
                         output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                     }
                 }
