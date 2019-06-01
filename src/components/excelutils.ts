@@ -75,6 +75,17 @@ export class ExcelUtils {
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number): [number, number] {
         {
+            let r = ExcelUtils.cell_both_absolute.exec(cell);
+            if (r) {
+                console.log('both_absolute');
+                let col = ExcelUtils.column_name_to_index(r[1]);
+                let row = parseInt(r[2], 10);
+		console.log("parsed " + JSON.stringify([col, row]));
+                return [col, row];
+            }
+	}
+	
+        {
             let r = ExcelUtils.cell_col_absolute.exec(cell);
             if (r) {
                 console.log("cell col absolute only " + JSON.stringify(r));
@@ -82,17 +93,6 @@ export class ExcelUtils {
                 let row = parseInt(r[2], 10);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
                 return [col, row - origin_row];
-            }
-        }
-
-        {
-            let r = ExcelUtils.cell_both_relative.exec(cell);
-            if (r) {
-                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
-                let col = ExcelUtils.column_name_to_index(r[1]);
-                let row = parseInt(r[2], 10);
-//		console.log('both relative col: ' + col + ', row: ' + row);
-                return [col - origin_col, row - origin_row];
             }
         }
 
@@ -107,13 +107,13 @@ export class ExcelUtils {
         }
 
         {
-            let r = ExcelUtils.cell_both_absolute.exec(cell);
+            let r = ExcelUtils.cell_both_relative.exec(cell);
             if (r) {
-                console.log('both_absolute');
+                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
-		console.log("parsed " + JSON.stringify([col, row]));
-                return [col, row];
+//		console.log('both relative col: ' + col + ', row: ' + row);
+                return [col - origin_col, row - origin_row];
             }
         }
 
