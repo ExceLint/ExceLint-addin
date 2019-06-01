@@ -91,6 +91,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
 	    let newbackupSheet = currentWorksheet.copy("End");
+	    // Ensure that we remain on the current worksheet.
+	    // This addresses an apparent bug in the client product.
+	    currentWorksheet.activate();
+	    
 	    newbackupSheet.load(['name']);
 	    newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    await context.sync();
@@ -314,8 +318,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Protect the sheet against changes.
 		currentWorksheet.protection.protect();
-		// Ensure that we remain on the current worksheet.
-		currentWorksheet.activate();
  		await context.sync();
 		
 		console.log('ExceLint: done with sync 3.');
