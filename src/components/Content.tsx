@@ -79,7 +79,7 @@ export class Content extends React.Component<ContentProps, any> {
     render() {
 		return (
 			<div id='content-main'>
-			<div id='padding'>
+			<div className='padding'>
 					<Button className='normal-button' buttonType={ButtonType.hero} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>
 					<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 				</div>
