@@ -49,7 +49,7 @@ function makeTable(arr, selector, current) : any {
 	    }
 	}
 	let table = [];
-	table.push(<div>Click to jump to suspicious formulas:<br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
+	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table><br /><br /></div></div>);
 	return table;
     } else {
 	return <div style={notSuspiciousStyle}>No suspicious formulas found.<br /><br /></div>;
