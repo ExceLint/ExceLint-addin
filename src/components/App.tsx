@@ -300,7 +300,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		this.current_fix = 0;
 		let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-		if (r) {
+		// Only select if the range is non-null and the number of total fixes is more than 0
+		// (In principle, those checks should be redundant.)
+		if (r && this.total_fixes > 0) {
 		    r.select();
 		}
 		await context.sync(); // DEBUG
