@@ -11,7 +11,7 @@ export class Header extends React.Component<HeaderProps, any> {
 
     render() {
         return (
-		<div>
+		<div className='padding-header'>
 		<img src='assets/ExceLint.png' height='70' />
 		</div>
         );
