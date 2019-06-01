@@ -76,30 +76,34 @@ export default class App extends React.Component<AppProps, AppState> {
     saveFormats = async() => {
 	OfficeExtension.config.extendedErrorLogging = true;
 	await Excel.run(async context => {
+	    // First, load the current worksheet's name and id.
 	    let worksheets = context.workbook.worksheets;
 	    // Make a new sheet corresponding to the current sheet (+ a suffix).
-	    console.log("saveFormats: loading current worksheet name");
+//	    console.log("saveFormats: loading current worksheet name");
 	    let currentWorksheet = worksheets.getActiveWorksheet();
 	    currentWorksheet.load(['name', 'id']);
 	    await context.sync();
 
-	    // Delete any old sheet corresponding to this name.
-	    let backupName = this.saved_original_sheetname(currentWorksheet.id);
-	    let backupSheet = worksheets.getItemOrNullObject(backupName);
+	    // Find any old backup sheet corresponding to this id.
+	    let oldBackupName = this.saved_original_sheetname(currentWorksheet.id);
+	    let oldBackupSheet = worksheets.getItemOrNullObject(oldBackupName);
 	    await context.sync();
-	    
+
+	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
 	    let newbackupSheet = currentWorksheet.copy("End");
 	    newbackupSheet.load(['name']);
 	    newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
+	    await context.sync();
 
-	    if (backupSheet) {
-		// Delete the sheet. Note that we first have to set its visibility to "hidden".
-		backupSheet.visibility = Excel.SheetVisibility.hidden;
-		backupSheet.delete();
+	    if (oldBackupSheet) {
+		// There was an old backup sheet, which we now delete.
+		// Note that we first have to set its visibility to "hidden" or else we can't delete it!
+		oldBackupSheet.visibility = Excel.SheetVisibility.hidden;
+		oldBackupSheet.delete();
 		await context.sync();
-		backupSheet = null;
 	    }
 
+	    // Finally, rename the backup sheet.
  	    newbackupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
 	    
 	    await context.sync();
