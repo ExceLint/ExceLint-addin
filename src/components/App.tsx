@@ -139,7 +139,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	try {
 	    let backupSheet = worksheets.getItemOrNullObject(backupName);
 	    if (backupSheet) {
-		let destRange = currentWorksheet.getUsedRange(false) as any;
+		let destRange = currentWorksheet.getUsedRange(true) as any;
 //		let destRange = currentWorksheet.getRange("A1") as any;
 		backupSheet.load(['format', 'address']);
 		let usedRange = backupSheet.getUsedRange(false) as any;
