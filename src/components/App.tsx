@@ -88,6 +88,10 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let backupSheet = worksheets.getItemOrNullObject(backupName);
 	    await context.sync();
 	    
+	    let newbackupSheet = currentWorksheet.copy("End");
+	    newbackupSheet.load(['name']);
+	    newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
+
 	    if (backupSheet) {
 		// Delete the sheet. Note that we first have to set its visibility to "hidden".
 		backupSheet.visibility = Excel.SheetVisibility.hidden;
@@ -96,10 +100,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		backupSheet = null;
 	    }
 
-	    backupSheet = currentWorksheet.copy("End");
-	    backupSheet.load(['name']);
-	    backupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
-	    backupSheet.visibility = Excel.SheetVisibility.veryHidden;
+ 	    newbackupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
 	    
 	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
