@@ -27,6 +27,9 @@ function makeTable(arr, selector, current) : any {
 	textAlign: 'left',
 	verticalAlign: 'middle'
     };
+    const notSuspiciousStyle : any = {
+	color : 'red'
+    };
     if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
@@ -49,7 +52,7 @@ function makeTable(arr, selector, current) : any {
 	table.push(<div>Click to jump to suspicious formulas:<br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
 	return table;
     } else {
-	return <div>No suspicious formulas found.<br /></div>;
+	return <div style={notSuspiciousStyle}>No suspicious formulas found.<br /><br /></div>;
     }
 }
 
