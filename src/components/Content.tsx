@@ -81,9 +81,10 @@ export class Content extends React.Component<ContentProps, any> {
 			<div id='content-main'>
 			<div className='padding'>
 					<Button className='normal-button' buttonType={ButtonType.hero} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>
-					<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
+			<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
+			</div>
 			<DisplayFixes currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} />
-			<br />
+			<div className='padding'>
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
 		<br />
