@@ -90,7 +90,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 
 	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
-	    let newbackupSheet = currentWorksheet.copy("None");
+	    let newbackupSheet = currentWorksheet.copy("Before");
 	    newbackupSheet.load(['name']);
 	    newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    await context.sync();
