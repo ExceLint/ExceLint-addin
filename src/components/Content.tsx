@@ -76,10 +76,11 @@ export class Content extends React.Component<ContentProps, any> {
 
     
     
-	render() {
+    render() {
+	const paddingStyle : any = { padding: '15px' };
 		return (
 			<div id='content-main'>
-				<div className='padding'>
+			<div className='padding' style={paddingStyle}>
 					<Button className='normal-button' buttonType={ButtonType.hero} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>
 					<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 				</div>
