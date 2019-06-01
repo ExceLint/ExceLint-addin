@@ -5,7 +5,7 @@ import { RectangleUtils } from './rectangleutils.js';
 
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
-    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
+    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+' ; // column and row number, optionally with $
     private static sheet_re = '[^\\!]+';
     private static sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
@@ -19,7 +19,7 @@ export class ExcelUtils {
     // We need to filter out all formulas with numbers so they don't mess with our dependency regexps.
     private static formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
     // Same with sheet name references.
-    private static formulas_with_sheetnames = new RegExp("'[^\']*'\!", 'g');
+    private static formulas_with_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
 
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     public static hash_sheet(uid: string, maxlen: number = 31) : string {

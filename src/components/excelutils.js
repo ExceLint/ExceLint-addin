@@ -242,7 +242,7 @@ var ExcelUtils = /** @class */ (function () {
     // We need to filter out all formulas with numbers so they don't mess with our dependency regexps.
     ExcelUtils.formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
     // Same with sheet name references.
-    ExcelUtils.formulas_with_sheetnames = new RegExp("'[^\']*'\!", 'g');
+    ExcelUtils.formulas_with_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
     return ExcelUtils;
 }());
 exports.ExcelUtils = ExcelUtils;
