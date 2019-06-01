@@ -376,7 +376,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		      }
 		    */
 		    let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
-		    r.select();
+		    if (r) {
+			r.select();
+		    }
 		    this.contentElement.current.setState({ currentFix: currentFix,
 							   totalFixes: this.total_fixes,
 							   themFixes : this.proposed_fixes });
