@@ -105,7 +105,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	    // Finally, rename the backup sheet.
  	    newbackupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
-	    
+
 	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
 	});
@@ -310,9 +310,14 @@ export default class App extends React.Component<AppProps, AppState> {
 		    r.select();
 		}
 		await context.sync(); // DEBUG
-//		console.log("setColor: got range to select.");
+		//		console.log("setColor: got range to select.");
+		
+		// Protect the sheet against changes.
 		currentWorksheet.protection.protect();
+		// Ensure that we remain on the current worksheet.
+		currentWorksheet.activate();
  		await context.sync();
+		
 		console.log('ExceLint: done with sync 3.');
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
