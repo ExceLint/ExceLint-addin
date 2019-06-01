@@ -77,10 +77,9 @@ export class Content extends React.Component<ContentProps, any> {
     
     
     render() {
-	const paddingStyle : any = { margin-left: '15px', padding: '15px' };
 		return (
 			<div id='content-main'>
-			<div style={paddingStyle}>
+			<div id='padding'>
 					<Button className='normal-button' buttonType={ButtonType.hero} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>
 					<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 				</div>
@@ -115,5 +114,5 @@ export class Content extends React.Component<ContentProps, any> {
 				<br />
 			</div>
 		);
-	}
+    }
 }
