@@ -44,8 +44,7 @@ function makeTable(arr, selector, current) : any {
 //		    score = 1;
 		}
 		if (score < 1) {
-		    break;
-//		    score = 1;
+		    score = 1;
 		}
 		if (current === i) {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: 100-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
