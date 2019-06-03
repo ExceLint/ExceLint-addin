@@ -37,7 +37,7 @@ function makeTable(arr, selector, current) : any {
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
 		// Sort from largest to smallest (by making negative).
-		let score = Math.round(-arr[i][0]*10*100)/100;
+		let score = -Math.round(arr[i][0]*100*100)/100;
 		// Always put up *something*.
 		if (score < 1) {
 		    score = 1;
