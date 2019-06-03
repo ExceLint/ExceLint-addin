@@ -265,9 +265,9 @@ export class Colorize {
 	let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
 	let ranking = entropy_drop / (fix_distance * n_min);
 	// Was this:
-	return ranking;
-	// return NORMALIZED ranking
-	//return ranking / Math.log2(n_min + n_max);
+	//return ranking;
+	return NORMALIZED ranking
+	return ranking / Math.log2(n_min + n_max);
     }
 
 	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
