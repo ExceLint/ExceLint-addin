@@ -36,7 +36,8 @@ function makeTable(arr, selector, current) : any {
 	    let r = ExcelUtils.get_rectangle(arr, i);
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
-		let score = Math.round(arr[i][0]*10*100)/100;
+		// Sort from largest to smallest (by making negative).
+		let score = Math.round(-arr[i][0]*10*100)/100;
 		// Always put up *something*.
 		if (score < 1) {
 		    score = 1;
