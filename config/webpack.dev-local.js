@@ -20,7 +20,14 @@ module.exports = async (env, options) => {
         historyApiFallback: true,
 	headers: {
             "Access-Control-Allow-Origin": "*"
-	}
+	},
+	https: {
+            key: fs.readFileSync('/etc/letsencrypt/live/excelint-addin.westus2.cloudapp.azure.com/privkey.pem'),
+            cert: fs.readFileSync('/etc/letsencrypt/live/excelint-addin.westus2.cloudapp.azure.com/fullchain.pem'),
+        },
+	allowedHosts: [
+            '.amazonaws.com', '.azure.com', 'localhost', '0.0.0.0'
+        ]
     },
     plugins: [
         new webpack.HotModuleReplacementPlugin()
