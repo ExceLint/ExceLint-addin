@@ -245,9 +245,9 @@ var Colorize = /** @class */ (function () {
         var entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
         var ranking = entropy_drop / (fix_distance * n_min);
         // Was this:
-        // return ranking;
+        return ranking;
         // return NORMALIZED ranking
-        return ranking / Math.log2(n_min + n_max);
+        //return ranking / Math.log2(n_min + n_max);
     };
     Colorize.generate_proposed_fixes = function (groups) {
         var proposed_fixes = [];
