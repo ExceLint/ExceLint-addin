@@ -36,6 +36,12 @@ export default class App extends React.Component<AppProps, AppState> {
 	this.contentElement = React.createRef();
     }
 
+    private updateContent() : void {
+	this.contentElement.current.setState({ currentFix: this.current_fix,
+					       totalFixes: this.total_fixes,
+					       themFixes : this.proposed_fixes });
+    }
+    
     /// Get the saved formats for this sheet (by its unique identifier).
     private saved_original_sheetname(id: string) : string {
 	return ExcelUtils.hash_sheet(id, 28) + this.originalSheetSuffix;
@@ -155,9 +161,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
 	this.proposed_fixes = [];
 	this.total_fixes = -1;
-	this.contentElement.current.setState({ currentFix: this.current_fix,
-					       totalFixes: this.total_fixes,
-					       themFixes : this.proposed_fixes });
+	this.updateContent();
 	console.log("restoreFormats: end");
 	let endTime = performance.now();
 	let timeElapsedMS = endTime - startTime;
@@ -330,9 +334,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log('Time elapsed (ms) = ' + timeElapsedMS);
-		this.contentElement.current.setState({ currentFix: this.current_fix,
-						       totalFixes: this.total_fixes,
-						       themFixes : this.proposed_fixes });
+		this.updateContent();
 
 	    });
 	} catch (error) {
@@ -396,9 +398,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		    if (r) {
 			r.select();
 		    }
-		    this.contentElement.current.setState({ currentFix: currentFix,
-							   totalFixes: this.total_fixes,
-							   themFixes : this.proposed_fixes });
+		    this.current_fix = currentFix;
+		    this.updateContent();
+		    /*
+		      this.contentElement.current.setState({ currentFix: currentFix,
+		      totalFixes: this.total_fixes,
+		      themFixes : this.proposed_fixes });
+		    */
 		});
 	    } catch (error) {
 		console.log("Error: " + error);
