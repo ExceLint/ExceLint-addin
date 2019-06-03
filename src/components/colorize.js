@@ -246,8 +246,7 @@ var Colorize = /** @class */ (function () {
         var ranking = entropy_drop / (fix_distance * n_min);
         // Was this:
         //return ranking;
-        return NORMALIZED;
-        ranking;
+        //	return NORMALIZED ranking
         return ranking / Math.log2(n_min + n_max);
     };
     Colorize.generate_proposed_fixes = function (groups) {
