@@ -249,26 +249,26 @@ export class Colorize {
 		return newEntropy - prevEntropy;
 	}
 
-	public static fix_metric(target_norm: number,
-		target: [[number, number], [number, number]],
-		merge_with_norm: number,
-		merge_with: [[number, number], [number, number]]): number {
-
-		let n_target = RectangleUtils.area(target);
- 	        let n_merge_with = RectangleUtils.area(merge_with);
-		let n_min = Math.min(n_target, n_merge_with);
-		let n_max = Math.max(n_target, n_merge_with);
-//		let norm_min = Math.min(merge_with_norm * n_merge_with, target_norm * n_target);
-// 		let norm_max = Math.max(merge_with_norm * n_merge_with, target_norm * n_target);
-		let norm_min = Math.min(merge_with_norm, target_norm);
- 		let norm_max = Math.max(merge_with_norm, target_norm);
-		let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
-		let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-//		    console.log("fix_metric: "+entropy_drop+ ", " + fix_distance + ", " + n_min);
-		    let ranking = entropy_drop / (fix_distance * n_min);
-		    return ranking;
-//		return (n_merge_with * n_target) * entropy_drop / fix_distance;
-	}
+    public static fix_metric(target_norm: number,
+			     target: [[number, number], [number, number]],
+			     merge_with_norm: number,
+			     merge_with: [[number, number], [number, number]]): number
+    {
+	
+	let n_target = RectangleUtils.area(target);
+ 	let n_merge_with = RectangleUtils.area(merge_with);
+	let n_min = Math.min(n_target, n_merge_with);
+	let n_max = Math.max(n_target, n_merge_with);
+	let norm_min = Math.min(merge_with_norm, target_norm);
+ 	let norm_max = Math.max(merge_with_norm, target_norm);
+	let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
+	let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
+	let ranking = entropy_drop / (fix_distance * n_min);
+	// Was this:
+	// return ranking;
+	// return NORMALIZED ranking
+	return ranking / Math.log2(n_min + n_max);
+    }
 
 	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
 		Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> {
