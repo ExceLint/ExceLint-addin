@@ -276,7 +276,7 @@ var Colorize = /** @class */ (function () {
                         var r2 = groups[k2][j];
                         var sr2 = JSON.stringify(r2);
                         if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
-                            if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2)) {
+                            if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
                                 already_proposed_pair[sr1 + sr2] = true;
                                 already_proposed_pair[sr2 + sr1] = true;
                                 ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
