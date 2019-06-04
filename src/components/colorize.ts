@@ -270,6 +270,17 @@ export class Colorize {
 	return ranking / Math.log2(n_min + n_max);
     }
 
+    public static count_proposed_fixes(fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>) : number
+    {
+	let count = 0;
+	for (let k in fixes) {
+//	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
+	    count += RectangleUtils.area(fixes[k][1]);
+	    count += RectangleUtils.area(fixes[k][2]);
+	}
+	return count;
+    }
+    
 	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
 		Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> {
 		let proposed_fixes = [];

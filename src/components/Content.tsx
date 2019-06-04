@@ -13,11 +13,12 @@ export interface ContentProps {
 	click2: any;
     currentFix : number;
     totalFixes : number;
-    themFixes : any;
+    themFixes : Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>;
+    numFixes : number;
     selector : any;
 }
 
-function makeTable(arr, selector, current) : any {
+function makeTable(arr, selector, current, numFixes : number) : any {
     const divStyle : any = {
 	height: '100px',
 	overflowY: 'scroll'
@@ -30,6 +31,7 @@ function makeTable(arr, selector, current) : any {
     const notSuspiciousStyle : any = {
 	color : 'red'
     };
+    const barWidth = 80;
     if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
@@ -37,7 +39,11 @@ function makeTable(arr, selector, current) : any {
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
 		// Sort from largest to smallest (by making negative).
-		let score = Math.round(-arr[i][0]*10*100)/100;
+		if (numFixes === 0) {
+		    numFixes = 1;
+		}
+		let score = Math.round(-arr[i][0]*barWidth*100)/(100 * Math.log2(numFixes));
+		console.log("score = " + score);
 		// Always put up *something*.
 		if (score < 0) {
 		    score = -score;
@@ -48,9 +54,9 @@ function makeTable(arr, selector, current) : any {
 //		    score = 1;
 		}
 		if (current === i) {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: 100-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
 		} else {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: 100-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
 		}
 	    }
 	}
@@ -65,7 +71,7 @@ function makeTable(arr, selector, current) : any {
 function DisplayFixes(props) {
     console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
     if (props.totalFixes > 0) {
-	const table = makeTable(props.themFixes, props.selector, props.currentFix);
+	const table = makeTable(props.themFixes, props.selector, props.currentFix, props.numFixes);
 	return <div>{table}</div>;
     } else {
 	return <div></div>;
@@ -79,7 +85,8 @@ export class Content extends React.Component<ContentProps, any> {
 	    super(props, context);
 	    this.state = { currentFix: props.currentFix,
 			   totalFixes: props.totalFixes,
-			   themFixes : props.themFixes };
+			   themFixes : props.themFixes,
+			   numFixes : props.numFixes };
 	}
 	// <p>{this.props.message}</p>
 
@@ -93,7 +100,7 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<br />
 			<br />
-			<DisplayFixes currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} />
+			<DisplayFixes currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} />
 			<br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.

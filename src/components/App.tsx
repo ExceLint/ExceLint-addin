@@ -21,6 +21,7 @@ export interface AppState {
 export default class App extends React.Component<AppProps, AppState> {
 
     private proposed_fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
+    private proposed_fixes_length = 0;
     private current_fix = 0;
     private total_fixes = -1;
     private savedFormat: any = null;
@@ -39,7 +40,8 @@ export default class App extends React.Component<AppProps, AppState> {
     private updateContent() : void {
 	this.contentElement.current.setState({ currentFix: this.current_fix,
 					       totalFixes: this.total_fixes,
-					       themFixes : this.proposed_fixes });
+					       themFixes : this.proposed_fixes,
+					       numFixes : this.proposed_fixes_length });
     }
     
     /// Get the saved formats for this sheet (by its unique identifier).
@@ -290,6 +292,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.total_fixes = max_proposed_fixes;
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
 		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
+		this.proposed_fixes_length = Colorize.count_proposed_fixes(this.proposed_fixes);
+		console.log("setColor: length = " + this.proposed_fixes_length);
 //		console.log("done with proposed fixes (" + formulas.length + ")");
 		
 		if (true) {
@@ -438,7 +442,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				<Header title='ExceLint' />
 			<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
 					message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
-		    currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} />
+		    currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} />
 		
 			</div>
 		);

@@ -249,6 +249,15 @@ var Colorize = /** @class */ (function () {
         //	return NORMALIZED ranking
         return ranking / Math.log2(n_min + n_max);
     };
+    Colorize.count_proposed_fixes = function (fixes) {
+        var count = 0;
+        for (var k in fixes) {
+            //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
+            count += rectangleutils_1.RectangleUtils.area(fixes[k][1]);
+            count += rectangleutils_1.RectangleUtils.area(fixes[k][2]);
+        }
+        return count;
+    };
     Colorize.generate_proposed_fixes = function (groups) {
         var proposed_fixes = [];
         var already_proposed_pair = {};
