@@ -26,6 +26,9 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
+    overflow: hidden;
+    overflow-y: hidden;
+    overflow-x: hidden;
 }
 
 #container {
@@ -47,8 +50,9 @@ body {
 
     min-height: 500px;
     min-width: 200px; // 320px;
-    overflow: auto;
+    overflow: hidden;
     overflow-x: hidden;
+    overflow-y: hidden;
 
     &__progress,
     &__header {
@@ -138,6 +142,8 @@ body {
     width: 100%;
     height: 80px; 
     overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
     font-family: Arial;
     padding-top: 25px;
 }
@@ -149,7 +155,8 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    overflow: auto; 
+    overflow-x: hidden;
+    overflow-y: auto;
     font-family: Arial;
 }
 
@@ -164,6 +171,9 @@ body {
 
 .padding-header {
     padding: 15px;
+    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 .normal-button {
