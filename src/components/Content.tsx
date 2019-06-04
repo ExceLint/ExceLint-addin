@@ -21,7 +21,8 @@ export interface ContentProps {
 function makeTable(arr, selector, current, numFixes : number) : any {
     const divStyle : any = {
 	height: '100px',
-	overflowY: 'scroll'
+	overflowY: 'scroll',
+	overflowX: 'hidden'
     };
     const lineStyle : any = {
 	color: 'blue',
