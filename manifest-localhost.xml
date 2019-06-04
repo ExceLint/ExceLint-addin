@@ -16,8 +16,8 @@
   <ProviderName>Emery Berger</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <!-- The display name of your add-in. Used on the store and various places of the Office UI such as the add-ins dialog. -->
-  <DisplayName DefaultValue="ExceLint Local" /> <!-- was "ExceLint" -->
-  <Description DefaultValue="ExceLint is Excellent"/>
+  <DisplayName DefaultValue="Exce-Lint Local" /> <!-- was "Exce-Lint" -->
+  <Description DefaultValue="Exce-Lint is Excellent"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
@@ -43,7 +43,13 @@
   </DefaultSettings>
   <!-- End TaskPane Mode integration.  -->
 
-  <Permissions>ReadWriteDocument</Permissions>
+  <Requirements>
+   <Methods>
+      <Method Name="Application.suspendScreenUpdatingUntilNextSync"/>
+   </Methods>
+  </Requirements>
+ 
+     <Permissions>ReadWriteDocument</Permissions>
 
   <!-- Begin Add-in Commands Mode integration. -->
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -130,13 +136,13 @@
       </bt:Urls>
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
-        <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="ExceLint (local)" />
+        <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="Exce-Lint (local)" />
         <bt:String id="Contoso.Group1Label" DefaultValue="Insights" />
-        <bt:String id="Contoso.GetStarted.Title" DefaultValue="ExceLint (local)" />
+        <bt:String id="Contoso.GetStarted.Title" DefaultValue="Exce-Lint (local)" />
       </bt:ShortStrings>
       <!-- LongStrings max characters==250. -->
       <bt:LongStrings>
-        <bt:String id="Contoso.TaskpaneButton.Tooltip" DefaultValue="ExceLint (local)" />
+        <bt:String id="Contoso.TaskpaneButton.Tooltip" DefaultValue="Exce-Lint (local)" />
         <bt:String id="Contoso.GetStarted.Description" DefaultValue="Automatically Finds Formula Errors" />
       </bt:LongStrings>
     </Resources>

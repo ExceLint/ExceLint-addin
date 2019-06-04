@@ -16,8 +16,8 @@
   <ProviderName>Emery Berger</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <!-- The display name of your add-in. Used on the store and various places of the Office UI such as the add-ins dialog. -->
-  <DisplayName DefaultValue="ExceLint" /> <!-- was "ExceLint" -->
-  <Description DefaultValue="ExceLint is Excellent"/>
+  <DisplayName DefaultValue="Exce-Lint" />
+  <Description DefaultValue="Exce-Lint is Excellent"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
   <IconUrl DefaultValue="https://github.com/plasma-umass/ExceLint-addin/blob/master/assets/icon-32.png?raw=true" />
@@ -38,7 +38,15 @@
   <Hosts>
     <Host Name="Workbook" />
   </Hosts>
+  <Requirements>
+    <Sets DefaultMinVersion="1.8">
+      <Set Name="ExcelApi" />
+    </Sets>
+  </Requirements>
+ 
+  
   <DefaultSettings>
+
     
     <SourceLocation DefaultValue="https://excelint-addin.westus2.cloudapp.azure.com/index.html" />
   </DefaultSettings>
@@ -131,13 +139,13 @@
       </bt:Urls>
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
-        <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="ExceLint" />
+        <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="Exce-Lint" />
         <bt:String id="Contoso.Group1Label" DefaultValue="Insights" />
-        <bt:String id="Contoso.GetStarted.Title" DefaultValue="ExceLint" />
+        <bt:String id="Contoso.GetStarted.Title" DefaultValue="Exce-Lint" />
       </bt:ShortStrings>
       <!-- LongStrings max characters==250. -->
       <bt:LongStrings>
-        <bt:String id="Contoso.TaskpaneButton.Tooltip" DefaultValue="ExceLint" />
+        <bt:String id="Contoso.TaskpaneButton.Tooltip" DefaultValue="Exce-Lint" />
         <bt:String id="Contoso.GetStarted.Description" DefaultValue="Automatically Finds Formula Errors" />
       </bt:LongStrings>
     </Resources>
