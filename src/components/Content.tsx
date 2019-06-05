@@ -21,7 +21,7 @@ export interface ContentProps {
 function makeTable(arr, selector, current, numFixes : number) : any {
     const divStyle : any = {
 	height: '100px',
-	overflowY: 'scroll',
+	overflowY: 'auto',
 	overflowX: 'hidden'
     };
     const lineStyle : any = {
@@ -62,7 +62,7 @@ function makeTable(arr, selector, current, numFixes : number) : any {
 	    }
 	}
 	let table = [];
-	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table><br /><br /></div></div>);
+	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
 	return table;
     } else {
 	return <div style={notSuspiciousStyle}>No suspicious formulas found.<br /><br /></div>;
