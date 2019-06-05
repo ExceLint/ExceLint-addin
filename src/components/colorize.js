@@ -275,7 +275,9 @@ var Colorize = /** @class */ (function () {
                     for (var j = 0; j < groups[k2].length; j++) {
                         var r2 = groups[k2][j];
                         var sr2 = JSON.stringify(r2);
+                        // Only add these if we have not already added them.
                         if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+                            // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
                             if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
                                 already_proposed_pair[sr1 + sr2] = true;
                                 already_proposed_pair[sr2 + sr1] = true;
@@ -290,7 +292,7 @@ var Colorize = /** @class */ (function () {
             }
         }
         // First attribute is the Euclidean norm of the vectors. Differencing corresponds roughly to earth-mover distance.
-        // Other attributes are the rectangles themselves. Sort by biggest entropy reduction first, then norm (?).
+        // Other attributes are the rectangles themselves. Sort by biggest entropy reduction first.
         proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
         return proposed_fixes;
     };

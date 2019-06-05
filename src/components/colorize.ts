@@ -281,44 +281,45 @@ export class Colorize {
 	return count;
     }
     
-	public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
-		Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> {
-		let proposed_fixes = [];
-		let already_proposed_pair = {};
-
-		for (let k1 of Object.keys(groups)) {
-			// Look for possible fixes in OTHER groups.
-			for (let i = 0; i < groups[k1].length; i++) {
-				let r1 = groups[k1][i];
-				let sr1 = JSON.stringify(r1);
-				for (let k2 of Object.keys(groups)) {
-					if (k1 === k2) {
-						continue;
-					}
-					for (let j = 0; j < groups[k2].length; j++) {
-						let r2 = groups[k2][j];
-						let sr2 = JSON.stringify(r2);
-						if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
-						    if (RectangleUtils.is_mergeable(r1, r2) && (RectangleUtils.area(r1) + RectangleUtils.area(r2) > 2)) {
-								already_proposed_pair[sr1 + sr2] = true;
-								already_proposed_pair[sr2 + sr1] = true;
-///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-								let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
-								// was Math.abs(parseFloat(k2) - parseFloat(k1))
-								proposed_fixes.push([metric, r1, r2]);
-							}
-						}
-					}
-				}
+    public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
+    Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> {
+	let proposed_fixes = [];
+	let already_proposed_pair = {};
+	
+	for (let k1 of Object.keys(groups)) {
+	    // Look for possible fixes in OTHER groups.
+	    for (let i = 0; i < groups[k1].length; i++) {
+		let r1 = groups[k1][i];
+		let sr1 = JSON.stringify(r1);
+		for (let k2 of Object.keys(groups)) {
+		    if (k1 === k2) {
+			continue;
+		    }
+		    for (let j = 0; j < groups[k2].length; j++) {
+			let r2 = groups[k2][j];
+			let sr2 = JSON.stringify(r2);
+			// Only add these if we have not already added them.
+			if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+			    // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
+			    if (RectangleUtils.is_mergeable(r1, r2) && (RectangleUtils.area(r1) + RectangleUtils.area(r2) > 2)) {
+				already_proposed_pair[sr1 + sr2] = true;
+				already_proposed_pair[sr2 + sr1] = true;
+				///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+				// was Math.abs(parseFloat(k2) - parseFloat(k1))
+				proposed_fixes.push([metric, r1, r2]);
+			    }
 			}
+		    }
 		}
-		// First attribute is the Euclidean norm of the vectors. Differencing corresponds roughly to earth-mover distance.
-		// Other attributes are the rectangles themselves. Sort by biggest entropy reduction first, then norm (?).
-
-		proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
-
-		return proposed_fixes;
+	    }
 	}
+	// First attribute is the Euclidean norm of the vectors. Differencing corresponds roughly to earth-mover distance.
+	// Other attributes are the rectangles themselves. Sort by biggest entropy reduction first.
+	proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
+	
+	return proposed_fixes;
+    }
 
 	public static merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
 		: { [val: string]: Array<[[number, number], [number, number]]> } {
