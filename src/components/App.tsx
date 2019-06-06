@@ -318,13 +318,15 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 */
 		
-		this.current_fix = 0;
+		this.current_fix = -1;
+		/*
 		let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
 		// Only select if the range is non-null and the number of total fixes is more than 0
 		// (In principle, those checks should be redundant.)
 		if (r && this.total_fixes > 0) {
 		    r.select();
 		}
+		*/
 		await context.sync(); // DEBUG
 		//		console.log("setColor: got range to select.");
 		
@@ -387,6 +389,11 @@ export default class App extends React.Component<AppProps, AppState> {
 			await this.restoreFormatsAndColors();
 			await this.setColor();
  		    }
+		    if (currentFix == -1) {
+			this.current_fix = -1;
+			this.updateContent();
+			return;
+		    }
 		    let app = context.workbook.application;
 		    
 		    let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
