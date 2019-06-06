@@ -130,7 +130,10 @@ export class Colorize {
 
 	public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
 	    //console.log('color_all_data');
+	    console.log("formula length = " + formulas.length);
+	    console.log("processed formulas length = " + processed_formulas.length);
 	    let refs = this.generate_all_references(formulas, origin_col, origin_row);
+	    console.log("generated all references.");
 	    //console.log("color_all_data: refs = " + JSON.stringify(refs));
 	    let data_color = {};
 	    let processed_data = [];

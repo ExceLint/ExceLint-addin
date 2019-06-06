@@ -115,7 +115,10 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
         //console.log('color_all_data');
+        console.log("formula length = " + formulas.length);
+        console.log("processed formulas length = " + processed_formulas.length);
         var refs = this.generate_all_references(formulas, origin_col, origin_row);
+        console.log("generated all references.");
         //console.log("color_all_data: refs = " + JSON.stringify(refs));
         var data_color = {};
         var processed_data = [];
