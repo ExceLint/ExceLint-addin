@@ -114,7 +114,8 @@ export class Colorize {
 //				    console.log("process_formulas: row = " + JSON.stringify(cell));
 				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
 				if (vec.join(',') === '0,0') {
-				    // No dependencies! Don't add as a formula.
+				    // No dependencies! Use a distinguished "0" value (always the same color?).
+				    output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
 				} else {
 				    console.log("process_formulas: vector = " + JSON.stringify(vec));
 				    let hash = this.hash_vector(vec);
