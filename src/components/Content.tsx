@@ -129,9 +129,11 @@ export class Content extends React.Component<ContentProps, any> {
 			<div className='ExceLint-scrollbar'>
 			</div>
 
-				<br />
-				<small>For more information, see <a href="https://excelint.org">excelint.org</a>.
-                </small>
+			<br />
+			<small>
+			<a target="_blank" href="https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=enhancement&template=feature_request.md&title=">Feedback</a> | <a target="_blank" href="https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=bug&template=bug_report.md&title=">bug reports</a>.<br />
+			For more information, see <a href="https://excelint.org">excelint.org</a>.
+			</small>
 			<br />
 			</div>
 			</div>
