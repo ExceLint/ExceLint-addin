@@ -188,11 +188,11 @@ export default class App extends React.Component<AppProps, AppState> {
 //	    OfficeExtension.config.extendedErrorLogging = true;
 	    await Excel.run(async context => {
 		let app = context.workbook.application;
-//		console.log('setColor: starting processing.');
+		console.log('setColor: starting processing.');
 		let startTime = performance.now();
-//		console.log('setColor: starting processing 1');
+		console.log('setColor: starting processing 1');
 		let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-//		console.log('setColor: starting processing 2');
+		console.log('setColor: starting processing 2');
 		currentWorksheet.load(['protection']);
 		await context.sync();
 
@@ -228,6 +228,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (true) {
 		    usedRange.load(['formulas', 'values', 'format']);
 		    await context.sync();
+		    console.log("setColor: loaded everything from used range");
 		} else {
 		    usedRange.load(['formulas']);
 		    await context.sync(); // FOR DEBUGGING
@@ -402,7 +403,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    try {
 		await Excel.run(async context => {
 		    if (this.total_fixes == -1) {
-			await this.restoreFormatsAndColors();
+			await this.restoreFormats(context);
 			await this.setColor();
  		    }
 		    if (currentFix == -1) {
