@@ -5,12 +5,13 @@ import { ExcelUtils } from './excelutils';
 // Checkbox
 
 export interface ContentProps {
-	message1: string;
-	buttonLabel1: string;
-	click1: any;
-	message2: string;
-	buttonLabel2: string;
-	click2: any;
+    message1: string;
+    buttonLabel1: string;
+    click1: any;
+    message2: string;
+    buttonLabel2: string;
+    click2: any;
+    sheetName : string;
     currentFix : number;
     totalFixes : number;
     themFixes : Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>;
@@ -18,7 +19,7 @@ export interface ContentProps {
     selector : any;
 }
 
-function makeTable(arr, selector, current, numFixes : number) : any {
+function makeTable(sheetName: string, arr, selector, current: number, numFixes : number) : any {
     const divStyle : any = {
 	height: '100px',
 	overflowY: 'auto',
@@ -62,17 +63,17 @@ function makeTable(arr, selector, current, numFixes : number) : any {
 	    }
 	}
 	let table = [];
-	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
+	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
 	return table;
     } else {
-	return <div style={notSuspiciousStyle}>No suspicious formulas found.<br /><br /></div>;
+	return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
     }
 }
 
 function DisplayFixes(props) {
     console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
     if (props.totalFixes > 0) {
-	const table = makeTable(props.themFixes, props.selector, props.currentFix, props.numFixes);
+	const table = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
 	return <div>{table}</div>;
     } else {
 	return <div></div>;
@@ -84,7 +85,8 @@ function DisplayFixes(props) {
 export class Content extends React.Component<ContentProps, any> {
 	constructor(props, context) {
 	    super(props, context);
-	    this.state = { currentFix: props.currentFix,
+	    this.state = { sheetName: props.sheetName,
+			   currentFix: props.currentFix,
 			   totalFixes: props.totalFixes,
 			   themFixes : props.themFixes,
 			   numFixes : props.numFixes };
@@ -101,7 +103,7 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<br />
 			<br />
-			<DisplayFixes currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} />
+			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} />
 			<br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.

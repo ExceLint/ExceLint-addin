@@ -29,6 +29,7 @@ export default class App extends React.Component<AppProps, AppState> {
     private originalSheetSuffix : string = "_EL";
     public state = {};
     private contentElement : any = null;
+    private sheetName : string = "";
     
     constructor(props, context) {
 	super(props, context);
@@ -38,7 +39,9 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     private updateContent() : void {
-	this.contentElement.current.setState({ currentFix: this.current_fix,
+	
+	this.contentElement.current.setState({ sheetName: this.sheetName,
+					       currentFix: this.current_fix,
 					       totalFixes: this.total_fixes,
 					       themFixes : this.proposed_fixes,
 					       numFixes : this.proposed_fixes_length });
@@ -91,6 +94,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let currentWorksheet = worksheets.getActiveWorksheet();
 	    currentWorksheet.load(['name', 'id']);
 	    await context.sync();
+	    this.sheetName = currentWorksheet.name;
 
 	    // Find any old backup sheet corresponding to this id.
 	    let oldBackupName = this.saved_original_sheetname(currentWorksheet.id);
@@ -134,6 +138,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	let worksheets = context.workbook.worksheets;
 	// Try to restore the format from the hidden sheet.
 	let currentWorksheet = worksheets.getActiveWorksheet();
+	this.sheetName = "";
 	try {
 	    currentWorksheet.protection.unprotect();
 	    await context.sync();
@@ -449,7 +454,7 @@ export default class App extends React.Component<AppProps, AppState> {
 				<Header title='ExceLint' />
 			<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
 					message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
-		    currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} />
+		    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} />
 		
 			</div>
 		);
