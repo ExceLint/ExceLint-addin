@@ -116,6 +116,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    currentWorksheet.activate();
 	    
 	    await context.sync();
+	    app.suspendScreenUpdatingUntilNextSync();
 
 	    if (oldBackupSheet) {
 		// There was an old backup sheet, which we now delete.
@@ -222,10 +223,10 @@ export default class App extends React.Component<AppProps, AppState> {
                 }
 		*/
 		
-		await context.sync(); // FOR DEBUGGING
+//		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
-		if (false) {
-		    usedRange.load(['address', 'formulas', 'values', 'format']);
+		if (true) {
+		    usedRange.load(['formulas', 'values', 'format']);
 		    await context.sync();
 		} else {
 		    usedRange.load(['formulas']);
@@ -250,11 +251,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Now start colorizing.
 
 		// Remove the background color from all cells.
+		app.suspendScreenUpdatingUntilNextSync();
+		
 		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 
-		await context.sync();
-   		console.log("cleared background color");
+//		await context.sync();
+//  		console.log("cleared background color");
 
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
@@ -264,6 +267,7 @@ export default class App extends React.Component<AppProps, AppState> {
  		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
 									  Excel.SpecialCellValueType.numbers);
 		await context.sync();
+		app.suspendScreenUpdatingUntilNextSync();
 
 		let formulas = usedRange.formulas;
 		let values = usedRange.values;
@@ -336,7 +340,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    r.select();
 		}
 		*/
-		await context.sync(); // DEBUG
+//		await context.sync(); // DEBUG
 		//		console.log("setColor: got range to select.");
 		
 		// Protect the sheet against changes.

@@ -100,8 +100,8 @@ export class Content extends React.Component<ContentProps, any> {
 		return (
 			<div id='content-main'>
 			<div className='padding'>
-					<Button className='normal-button' buttonType={ButtonType.hero} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>
-			<Button className='ms-button' buttonType={ButtonType.hero} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
+			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>&nbsp;
+			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<br />
 			<br />
 			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} />
@@ -131,7 +131,7 @@ export class Content extends React.Component<ContentProps, any> {
 
 			<br />
 			<small>
-			<a target="_blank" href="https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=enhancement&template=feature_request.md&title=">Send feedback</a> | <a target="_blank" href="https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=bug&template=bug_report.md&title=">report bugs</a><br />
+			<a target="_blank" href="https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=enhancement&template=feature_request.md&title=">Send feedback</a> | <a target="_blank" href="https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=bug&template=bug_report.md&title=">Report bugs</a><br />
 			For more information, see <a href="https://excelint.org">excelint.org</a>.
 			</small>
 			<br />
