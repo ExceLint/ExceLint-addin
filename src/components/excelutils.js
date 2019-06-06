@@ -60,17 +60,17 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
-                console.log('both_absolute');
+                //console.log('both_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
-                console.log("parsed " + JSON.stringify([col, row]));
+                //console.log("parsed " + JSON.stringify([col, row]));
                 return [col, row];
             }
         }
         {
             var r = ExcelUtils.cell_col_absolute.exec(cell);
             if (r) {
-                console.log("cell col absolute only " + JSON.stringify(r));
+                //console.log("cell col absolute only " + JSON.stringify(r));
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
@@ -80,7 +80,7 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_row_absolute.exec(cell);
             if (r) {
-                console.log('row_absolute');
+                //console.log('row_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
                 return [col - origin_col, row];
@@ -89,7 +89,7 @@ var ExcelUtils = /** @class */ (function () {
         {
             var r = ExcelUtils.cell_both_relative.exec(cell);
             if (r) {
-                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
+                //console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = parseInt(r[2], 10);
                 //		console.log('both relative col: ' + col + ', row: ' + row);
@@ -114,7 +114,7 @@ var ExcelUtils = /** @class */ (function () {
         return ['', '', ''];
     };
     ExcelUtils.all_cell_dependencies = function (range) {
-        console.log("looking for dependencies in " + range);
+        //	console.log("looking for dependencies in " + range);
         var found_pair = null;
         var all_vectors = [];
         if (typeof (range) !== 'string') {
@@ -160,7 +160,7 @@ var ExcelUtils = /** @class */ (function () {
                 //		console.log('singleton[1] = ' + singleton[1]);
                 //	    console.log(found_pair);
                 var first_cell = singleton[1];
-                console.log(first_cell);
+                //                console.log(first_cell);
                 var vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.

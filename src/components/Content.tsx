@@ -72,7 +72,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 }
 
 function DisplayFixes(props) {
-    console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
+//    console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
     if (props.totalFixes > 0) {
 	const table = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
 	return <div>{table}</div>;

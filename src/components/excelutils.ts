@@ -77,10 +77,10 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
-                console.log('both_absolute');
+                //console.log('both_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
-		console.log("parsed " + JSON.stringify([col, row]));
+		//console.log("parsed " + JSON.stringify([col, row]));
                 return [col, row];
             }
 	}
@@ -88,7 +88,7 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_col_absolute.exec(cell);
             if (r) {
-                console.log("cell col absolute only " + JSON.stringify(r));
+                //console.log("cell col absolute only " + JSON.stringify(r));
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
@@ -99,7 +99,7 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_row_absolute.exec(cell);
             if (r) {
-                console.log('row_absolute');
+                //console.log('row_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
                 return [col - origin_col, row];
@@ -109,7 +109,7 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_both_relative.exec(cell);
             if (r) {
-                console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
+                //console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = parseInt(r[2], 10);
 //		console.log('both relative col: ' + col + ', row: ' + row);
@@ -139,7 +139,7 @@ export class ExcelUtils {
 
     public static all_cell_dependencies(range: string) /* , origin_col: number, origin_row: number) */: Array<[number, number]> {
 
-	console.log("looking for dependencies in " + range);
+//	console.log("looking for dependencies in " + range);
         let found_pair = null;
         let all_vectors: Array<[number, number]> = [];
 
@@ -193,7 +193,7 @@ export class ExcelUtils {
                 //		console.log('singleton[1] = ' + singleton[1]);
                 //	    console.log(found_pair);
                 let first_cell = singleton[1];
-                console.log(first_cell);
+//                console.log(first_cell);
                 let vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.

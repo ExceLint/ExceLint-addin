@@ -67,10 +67,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
 		    let row1 = r[1][1];
 
-		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
+//		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash_index);
-		    console.log("color to set = " + color + " for hash = " + hash);
+//		    console.log("color to set = " + color + " for hash = " + hash);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
 		    } else {
@@ -267,6 +267,7 @@ export default class App extends React.Component<AppProps, AppState> {
  		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
 									  Excel.SpecialCellValueType.numbers);
 		await context.sync();
+		console.log("got all ranges.");
 		app.suspendScreenUpdatingUntilNextSync();
 
 		let formulas = usedRange.formulas;
@@ -304,9 +305,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
 		this.total_fixes = max_proposed_fixes;
 		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
-		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
+//		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
 		this.proposed_fixes_length = Colorize.count_proposed_fixes(this.proposed_fixes);
-		console.log("setColor: length = " + this.proposed_fixes_length);
+//		console.log("setColor: length = " + this.proposed_fixes_length);
 //		console.log("done with proposed fixes (" + formulas.length + ")");
 		
 		if (true) {

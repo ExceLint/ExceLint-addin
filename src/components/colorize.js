@@ -19,7 +19,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.get_color = function (hashval) {
         var color = this.color_list[(hashval * 1) % this.color_list.length];
-        console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
+        //	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
         return color;
     };
     Colorize.is_banned_color = function (h, s, v) {
@@ -48,7 +48,7 @@ var Colorize = /** @class */ (function () {
         return ban_it;
     };
     Colorize.make_light_color_versions = function () {
-        console.log('building color map (make_light_color_versions)');
+        //	    console.log('building color map (make_light_color_versions)');
         var arr = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
         //	    let arr = ['#8E0152','#C51B7D','#D01C8B','#DE77AE','#E9A3C9','#F1B6DA','#FDE0EF','#F7F7F7','#E6F5D0','#B8E186','#A1D76A','#7FBC41','#4DAC26','#4D9221','#276419'];
         for (var i = 0; i < arr.length; i++) {
@@ -94,8 +94,8 @@ var Colorize = /** @class */ (function () {
             for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     var cell = row[j];
-                    console.log("process_formulas: i = " + i + ", j = " + j);
-                    console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
+                    //				console.log("process_formulas: i = " + i + ", j = " + j);
+                    //				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
                     //				    console.log("process_formulas: row = " + JSON.stringify(cell));
                     var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
                     if (vec.join(',') === '0,0') {
@@ -103,9 +103,9 @@ var Colorize = /** @class */ (function () {
                         output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
                     }
                     else {
-                        console.log("process_formulas: vector = " + JSON.stringify(vec));
+                        //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
                         var hash = this.hash_vector(vec);
-                        console.log("process_formulas: hash of this vector = " + hash);
+                        //				    console.log("process_formulas: hash of this vector = " + hash);
                         output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
                     }
                 }
