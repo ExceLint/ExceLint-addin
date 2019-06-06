@@ -63,7 +63,8 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	    }
 	}
 	let table = [];
-	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{children}</table></div></div>);
+	let header = <tr><th align="left">Range</th><th align="left">Suspiciousness</th></tr>;
+	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{header}{children}</table></div></div>);
 	return table;
     } else {
 	return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
