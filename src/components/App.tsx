@@ -103,8 +103,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	    // Don't show the copied sheet.
 	    // FIXME? Disabled to test to see if it resolves slow updating issue on Excel (Windows).
-	    //	    let app = context.workbook.application;
-	    //	    app.suspendScreenUpdatingUntilNextSync();
+	    let app = context.workbook.application;
+	    app.suspendScreenUpdatingUntilNextSync();
 
 	    
 	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
@@ -172,6 +172,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	this.proposed_fixes = [];
 	this.total_fixes = -1;
 	this.updateContent();
+	await context.sync();
 	console.log("restoreFormats: end");
 	let endTime = performance.now();
 	let timeElapsedMS = endTime - startTime;
@@ -343,12 +344,14 @@ export default class App extends React.Component<AppProps, AppState> {
  		await context.sync();
 		
 		console.log('ExceLint: done with sync 3.');
+		this.updateContent();
+		await context.sync();
+		
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
 		let endTime = performance.now();
 		let timeElapsedMS = endTime - startTime;
 		console.log('Time elapsed (ms) = ' + timeElapsedMS);
-		this.updateContent();
 
 	    });
 	} catch (error) {
