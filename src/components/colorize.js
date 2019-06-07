@@ -113,7 +113,7 @@ var Colorize = /** @class */ (function () {
         }
         return output;
     };
-    Colorize.color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
+    Colorize.old_color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
         //console.log('color_all_data');
         console.log("formula length = " + formulas.length);
         console.log("processed formulas length = " + processed_formulas.length);
@@ -144,6 +144,7 @@ var Colorize = /** @class */ (function () {
         for (var _c = 0, _d = Object.keys(refs); _c < _d.length; _c++) {
             var refvec = _d[_c];
             //		console.log("color_all_data: refvec = " + refvec);
+            var rv = JSON.parse('[' + refvec + ']');
             for (var _e = 0, _f = refs[refvec]; _e < _f.length; _e++) {
                 var r = _f[_e];
                 counter += 1;
@@ -155,7 +156,6 @@ var Colorize = /** @class */ (function () {
                 //		    console.log("color_all_data: r1 = " + r1);
                 var hash = formula_hash[r1.join(',')];
                 if (!(hash === undefined)) {
-                    var rv = JSON.parse('[' + refvec + ']');
                     var row = parseInt(rv[0], 10);
                     var col = parseInt(rv[1], 10);
                     //			console.log("color_all_data: row = " + (row) + ", col = " + (col));
@@ -166,6 +166,52 @@ var Colorize = /** @class */ (function () {
                             data_color[rj] = hash;
                         }
                     }
+                }
+            }
+        }
+        //	    console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
+        return processed_data;
+    };
+    Colorize.color_all_data = function (formulas, processed_formulas, origin_col, origin_row) {
+        //console.log('color_all_data');
+        console.log("formula length = " + formulas.length);
+        console.log("processed formulas length = " + processed_formulas.length);
+        var refs = this.generate_all_references(formulas, origin_col, origin_row);
+        console.log("generated all references: length = " + Object.keys(refs).length);
+        {
+            // Compute full length of refs.
+            var l = 0;
+            for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
+                var k = _a[_i];
+                l += refs[k].length;
+            }
+            console.log("full length of references = " + l);
+        }
+        //console.log("color_all_data: refs = " + JSON.stringify(refs));
+        var data_color = {};
+        var processed_data = [];
+        var counter = 0;
+        // Color all references based on the color of their referring formula.
+        for (var _b = 0, _c = Object.keys(refs); _b < _c.length; _b++) {
+            var refvec = _c[_b];
+            //		console.log("color_all_data: refvec = " + refvec);
+            var rv = JSON.parse('[' + refvec + ']');
+            for (var _d = 0, _e = refs[refvec]; _d < _e.length; _d++) {
+                var r = _e[_d];
+                counter += 1;
+                if (counter % 1000 == 0) {
+                    console.log("count = " + counter);
+                }
+                //		    console.log("color_all_data: r = " + r);
+                //		    let r1 = [r[0] + 1, r[1] + 1];
+                //		    console.log("color_all_data: r1 = " + r1);
+                var row = parseInt(rv[0], 10);
+                var col = parseInt(rv[1], 10);
+                //			console.log("color_all_data: row = " + (row) + ", col = " + (col));
+                var rj = [row, col].join(',');
+                if (!(rj in data_color)) {
+                    processed_data.push([[row, col], 1]);
+                    data_color[rj] = 1;
                 }
             }
         }

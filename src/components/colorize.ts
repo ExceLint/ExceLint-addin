@@ -128,7 +128,7 @@ export class Colorize {
 		return output;
 	}
 
-	public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
+	public static old_color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
 	    //console.log('color_all_data');
 	    console.log("formula length = " + formulas.length);
 	    console.log("processed formulas length = " + processed_formulas.length);
@@ -158,6 +158,7 @@ export class Colorize {
 		// Color all references based on the color of their referring formula.
 	    for (let refvec of Object.keys(refs)) {
 //		console.log("color_all_data: refvec = " + refvec);
+		let rv = JSON.parse('[' + refvec + ']');
 		for (let r of refs[refvec]) {
 		    counter += 1;
 		    if (counter % 1000 == 0) {
@@ -168,7 +169,6 @@ export class Colorize {
 //		    console.log("color_all_data: r1 = " + r1);
 		    let hash = formula_hash[r1.join(',')];
 		    if (!(hash === undefined)) {
-			let rv = JSON.parse('[' + refvec + ']');
 			let row = parseInt(rv[0], 10);
 			let col = parseInt(rv[1], 10);
 //			console.log("color_all_data: row = " + (row) + ", col = " + (col));
@@ -179,6 +179,52 @@ export class Colorize {
 				data_color[rj] = hash;
 			    }
 			}
+		    }
+		}
+	    }
+//	    console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
+	    return processed_data;
+	}
+
+
+    	public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
+	    //console.log('color_all_data');
+	    console.log("formula length = " + formulas.length);
+	    console.log("processed formulas length = " + processed_formulas.length);
+	    let refs = this.generate_all_references(formulas, origin_col, origin_row);
+	    console.log("generated all references: length = " + Object.keys(refs).length);
+	    {
+		// Compute full length of refs.
+		let l = 0;
+		for (let k of Object.keys(refs)) {
+		    l += refs[k].length;
+		}
+		console.log("full length of references = " + l);
+	    }
+	    //console.log("color_all_data: refs = " + JSON.stringify(refs));
+	    let data_color = {};
+	    let processed_data = [];
+	    
+	    let counter = 0;
+		// Color all references based on the color of their referring formula.
+	    for (let refvec of Object.keys(refs)) {
+//		console.log("color_all_data: refvec = " + refvec);
+		let rv = JSON.parse('[' + refvec + ']');
+		for (let r of refs[refvec]) {
+		    counter += 1;
+		    if (counter % 1000 == 0) {
+			console.log("count = " + counter);
+		    }
+//		    console.log("color_all_data: r = " + r);
+//		    let r1 = [r[0] + 1, r[1] + 1];
+//		    console.log("color_all_data: r1 = " + r1);
+		    let row = parseInt(rv[0], 10);
+		    let col = parseInt(rv[1], 10);
+		    //			console.log("color_all_data: row = " + (row) + ", col = " + (col));
+		    let rj = [row, col].join(',');
+		    if (!(rj in data_color)) {
+			processed_data.push([[row, col], 1]);
+			data_color[rj] = 1;
 		    }
 		}
 	    }
