@@ -134,6 +134,14 @@ export class Colorize {
 	    console.log("processed formulas length = " + processed_formulas.length);
 	    let refs = this.generate_all_references(formulas, origin_col, origin_row);
 	    console.log("generated all references: length = " + Object.keys(refs).length);
+	    {
+		// Compute full length of refs.
+		let l = 0;
+		for (let k of Object.keys(refs)) {
+		    l += refs[k].length;
+		}
+		console.log("full length of references = " + l);
+	    }
 	    //console.log("color_all_data: refs = " + JSON.stringify(refs));
 	    let data_color = {};
 	    let processed_data = [];

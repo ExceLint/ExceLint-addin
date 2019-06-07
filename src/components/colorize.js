@@ -119,23 +119,32 @@ var Colorize = /** @class */ (function () {
         console.log("processed formulas length = " + processed_formulas.length);
         var refs = this.generate_all_references(formulas, origin_col, origin_row);
         console.log("generated all references: length = " + Object.keys(refs).length);
+        {
+            // Compute full length of refs.
+            var l = 0;
+            for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
+                var k = _a[_i];
+                l += refs[k].length;
+            }
+            console.log("full length of references = " + l);
+        }
         //console.log("color_all_data: refs = " + JSON.stringify(refs));
         var data_color = {};
         var processed_data = [];
         // Generate all formula colors (as a dict).
         var formula_hash = {};
-        for (var _i = 0, processed_formulas_1 = processed_formulas; _i < processed_formulas_1.length; _i++) {
-            var f = processed_formulas_1[_i];
+        for (var _b = 0, processed_formulas_1 = processed_formulas; _b < processed_formulas_1.length; _b++) {
+            var f = processed_formulas_1[_b];
             var formula_vec = f[0];
             formula_hash[formula_vec.join(',')] = f[1];
         }
         //	    console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
         // Color all references based on the color of their referring formula.
-        for (var _a = 0, _b = Object.keys(refs); _a < _b.length; _a++) {
-            var refvec = _b[_a];
+        for (var _c = 0, _d = Object.keys(refs); _c < _d.length; _c++) {
+            var refvec = _d[_c];
             //		console.log("color_all_data: refvec = " + refvec);
-            for (var _c = 0, _d = refs[refvec]; _c < _d.length; _c++) {
-                var r = _d[_c];
+            for (var _e = 0, _f = refs[refvec]; _e < _f.length; _e++) {
+                var r = _f[_e];
                 //		    console.log("color_all_data: r = " + r);
                 var r1 = [r[0] + 1, r[1] + 1];
                 //		    console.log("color_all_data: r1 = " + r1);
