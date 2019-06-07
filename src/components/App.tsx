@@ -187,7 +187,6 @@ export default class App extends React.Component<AppProps, AppState> {
 	try {
 //	    OfficeExtension.config.extendedErrorLogging = true;
 	    await Excel.run(async context => {
-		let app = context.workbook.application;
 		console.log('setColor: starting processing.');
 		let startTime = performance.now();
 		console.log('setColor: starting processing 1');
@@ -201,6 +200,14 @@ export default class App extends React.Component<AppProps, AppState> {
 		    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
 		    return;
 		}
+
+		// Disable calculation for now.
+		let app = context.workbook.application;
+		app.load(['calculationMode']);
+		await context.sync();
+		
+		let originalCalculationMode = app.calculationMode;
+		app.calculationMode = 'Manual';
 
 		console.log('setColor: starting processing 3');
 		
@@ -356,7 +363,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log('ExceLint: done with sync 3.');
 		this.updateContent();
 		await context.sync();
-		
+
+		// Restore original calculation mode.
+//		app.calculationMode = 'Automatic';
+		app.calculationMode = originalCalculationMode;
+
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
 		let endTime = performance.now();
