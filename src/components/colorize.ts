@@ -154,10 +154,15 @@ export class Colorize {
 	    }
 //	    console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
 
+	    let counter = 0;
 		// Color all references based on the color of their referring formula.
 	    for (let refvec of Object.keys(refs)) {
 //		console.log("color_all_data: refvec = " + refvec);
 		for (let r of refs[refvec]) {
+		    counter += 1;
+		    if (counter % 1000 == 0) {
+			console.log("count = " + counter);
+		    }
 //		    console.log("color_all_data: r = " + r);
 		    let r1 = [r[0] + 1, r[1] + 1];
 //		    console.log("color_all_data: r1 = " + r1);

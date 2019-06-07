@@ -139,12 +139,17 @@ var Colorize = /** @class */ (function () {
             formula_hash[formula_vec.join(',')] = f[1];
         }
         //	    console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
+        var counter = 0;
         // Color all references based on the color of their referring formula.
         for (var _c = 0, _d = Object.keys(refs); _c < _d.length; _c++) {
             var refvec = _d[_c];
             //		console.log("color_all_data: refvec = " + refvec);
             for (var _e = 0, _f = refs[refvec]; _e < _f.length; _e++) {
                 var r = _f[_e];
+                counter += 1;
+                if (counter % 1000 == 0) {
+                    console.log("count = " + counter);
+                }
                 //		    console.log("color_all_data: r = " + r);
                 var r1 = [r[0] + 1, r[1] + 1];
                 //		    console.log("color_all_data: r1 = " + r1);
