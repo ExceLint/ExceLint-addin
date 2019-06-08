@@ -303,9 +303,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log("processed formulas.");
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0] - 1, vec[1] - 1);
 		console.log("processed data.");
-		
+//		console.log(" = " + JSON.stringify(processed_data));
+
 		let grouped_data = Colorize.identify_groups(processed_data);
 		console.log("identified groups.");
+//		console.log("identified groups." + JSON.stringify(grouped_data));
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
 		console.log("setColor: Grouped formulas: ");
 		

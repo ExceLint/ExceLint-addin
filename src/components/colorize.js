@@ -179,7 +179,7 @@ var Colorize = /** @class */ (function () {
         console.log("processed formulas length = " + processed_formulas.length);
         var refs = this.generate_all_references(formulas, origin_col, origin_row);
         console.log("generated all references: length = " + Object.keys(refs).length);
-        console.log("all refs = " + JSON.stringify(refs));
+        //	console.log("all refs = " + JSON.stringify(refs));
         var processed_data = [];
         for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
             var refvec = _a[_i];
@@ -189,7 +189,7 @@ var Colorize = /** @class */ (function () {
             var col = parseInt(rv[1], 10);
             processed_data.push([[row, col], 1]);
         }
-        console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
+        //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
         return processed_data;
     };
     // Take in a list of [[row, col], color] pairs and group them,

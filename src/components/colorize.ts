@@ -194,7 +194,7 @@ export class Colorize {
 	console.log("processed formulas length = " + processed_formulas.length);
 	let refs = this.generate_all_references(formulas, origin_col, origin_row);
 	console.log("generated all references: length = " + Object.keys(refs).length);
-	console.log("all refs = " + JSON.stringify(refs));
+//	console.log("all refs = " + JSON.stringify(refs));
 	let processed_data = [];
 	for (let refvec of Object.keys(refs)) {
 //	    let rv = JSON.parse('[' + refvec + ']');
@@ -203,7 +203,7 @@ export class Colorize {
 	    let col = parseInt(rv[1], 10);
 	    processed_data.push([[row,col], 1]);
 	}
-	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
+//	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
 	return processed_data;
     }
 
