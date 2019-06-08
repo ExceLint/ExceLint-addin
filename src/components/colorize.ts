@@ -128,71 +128,12 @@ export class Colorize {
 		return output;
 	}
 
-	public static old_color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
-	    //console.log('color_all_data');
-	    console.log("formula length = " + formulas.length);
-	    console.log("processed formulas length = " + processed_formulas.length);
-	    let refs = this.generate_all_references(formulas, origin_col, origin_row);
-	    console.log("generated all references: length = " + Object.keys(refs).length);
-	    {
-		// Compute full length of refs.
-		let l = 0;
-		for (let k of Object.keys(refs)) {
-		    l += refs[k].length;
-		}
-		console.log("full length of references = " + l);
-	    }
-	    //console.log("color_all_data: refs = " + JSON.stringify(refs));
-	    let data_color = {};
-	    let processed_data = [];
-	    
-	    // Generate all formula colors (as a dict).
-	    let formula_hash = {};
-	    for (let f of processed_formulas) {
-		let formula_vec = f[0];
-		formula_hash[formula_vec.join(',')] = f[1];
-	    }
-//	    console.log("color_all_data: formula_hash = " + JSON.stringify(formula_hash));
 
-	    let counter = 0;
-		// Color all references based on the color of their referring formula.
-	    for (let refvec of Object.keys(refs)) {
-//		console.log("color_all_data: refvec = " + refvec);
-		//let rv = JSON.parse('[' + refvec + ']');
-		let rv = refvec.split(',');
-		for (let r of refs[refvec]) {
-		    counter += 1;
-		    if (counter % 1000 == 0) {
-			console.log("count = " + counter);
-		    }
-//		    console.log("color_all_data: r = " + r);
-		    let r1 = [r[0] + 1, r[1] + 1];
-//		    console.log("color_all_data: r1 = " + r1);
-		    let hash = formula_hash[r1.join(',')];
-		    if (!(hash === undefined)) {
-			let row = parseInt(rv[0], 10);
-			let col = parseInt(rv[1], 10);
-//			console.log("color_all_data: row = " + (row) + ", col = " + (col));
-			let rj = [row, col].join(',');
-			if (!(rj in formula_hash)) {
-			    if (!(rj in data_color)) {
-				processed_data.push([[row, col], hash]);
-				data_color[rj] = hash;
-			    }
-			}
-		    }
-		}
-	    }
-//	    console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
-	    return processed_data;
-	}
-
-
-    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>, origin_col: number, origin_row: number) {
+    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
 	//console.log('color_all_data');
 	console.log("formula length = " + formulas.length);
 	console.log("processed formulas length = " + processed_formulas.length);
-	let refs = this.generate_all_references(formulas, origin_col, origin_row);
+	let refs = this.generate_all_references(formulas);
 	console.log("generated all references: length = " + Object.keys(refs).length);
 //	console.log("all refs = " + JSON.stringify(refs));
 	let processed_data = [];
@@ -416,35 +357,7 @@ export class Colorize {
 		}
 	}
 
-	public static old_generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number]> } {
-		// Generate all references.
-		let refs = {};
-		for (let i = 0; i < formulas.length; i++) {
-			let row = formulas[i];
-		    for (let j = 0; j < row.length; j++) {
-			    // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-			    if (row[j][0] === '=') {
-				let all_deps = ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
-				if (all_deps.length > 0) {
-					// console.log(all_deps);
-					let src = [origin_col + j, origin_row + i];
-					// console.log('src = ' + src);
-					for (let dep of all_deps) {
-						let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
-						//				console.log('dep type = ' + typeof(dep));
-						//				console.log('dep = '+dep);
-						refs[dep2.join(',')] = refs[dep2.join(',')] || [];
-						refs[dep2.join(',')].push(src);
-						// console.log('refs[' + dep2.join(',') + '] = ' + JSON.stringify(refs[dep2.join(',')]));
-					}
-				}
-			    }
-		    }
-		}
-		return refs;
-	}
-
-    	public static generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number]> } {
+    public static generate_all_references(formulas: Array<Array<string>>): { [dep: string]: Array<[number, number]> } {
 		// Generate all references.
 		let refs = {};
 		for (let i = 0; i < formulas.length; i++) {

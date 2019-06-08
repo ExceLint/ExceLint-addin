@@ -7,6 +7,7 @@ import Progress from './Progress';
 import { Colorize } from './colorize';
 import { ExcelUtils } from './excelutils';
 import { RectangleUtils } from './rectangleutils';
+import { Timer } from './timer';
 
 import * as OfficeHelpers from '@microsoft/office-js-helpers';
 
@@ -137,7 +138,7 @@ export default class App extends React.Component<AppProps, AppState> {
     /// Restore formats from the saved hidden sheet corresponding to the active sheet's ID.
     restoreFormats = async(context) => {
 	console.log("restoreFormats: begin");
-	let startTime = performance.now();
+	let t = new Timer("restoreFormats");
 	
 	let worksheets = context.workbook.worksheets;
 	// Try to restore the format from the hidden sheet.
@@ -174,10 +175,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	this.total_fixes = -1;
 	this.updateContent();
 	await context.sync();
-	console.log("restoreFormats: end");
-	let endTime = performance.now();
-	let timeElapsedMS = endTime - startTime;
-	console.log('Time elapsed (ms) = ' + timeElapsedMS);
+	t.split("end");
     }
     
 
@@ -301,7 +299,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		console.log("processed formulas.");
-		let processed_data = Colorize.color_all_data(formulas, processed_formulas, vec[0] - 1, vec[1] - 1);
+		let processed_data = Colorize.color_all_data(formulas, processed_formulas);
 		console.log("processed data.");
 //		console.log(" = " + JSON.stringify(processed_data));
 
