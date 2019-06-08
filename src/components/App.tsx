@@ -186,12 +186,11 @@ export default class App extends React.Component<AppProps, AppState> {
 //	    OfficeExtension.config.extendedErrorLogging = true;
 	    await Excel.run(async context => {
 		console.log('setColor: starting processing.');
-		let startTime = performance.now();
-		console.log('setColor: starting processing 1');
+		let t = new Timer("setColor");
 		let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-		console.log('setColor: starting processing 2');
 		currentWorksheet.load(['protection']);
 		await context.sync();
+		t.split("got protection");
 
 // 		console.log('setColor: protection status = ' + currentWorksheet.protection.protected);
 		if (currentWorksheet.protection.protected) {
@@ -203,15 +202,16 @@ export default class App extends React.Component<AppProps, AppState> {
 		let app = context.workbook.application;
 		app.load(['calculationMode']);
 		await context.sync();
+		t.split("got calc mode");
 		
 		let originalCalculationMode = app.calculationMode;
 		app.calculationMode = 'Manual';
 
-		console.log('setColor: starting processing 3');
-		
 		let usedRange = currentWorksheet.getUsedRange(false) as any; // FIXME was false! testing for perf
 		usedRange.load(['address']);
 		await context.sync();
+		t.split("got address");
+		
 //		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
 
 		/*
@@ -233,7 +233,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (true) {
 		    usedRange.load(['formulas', 'values', 'format']);
 		    await context.sync();
-		    console.log("setColor: loaded everything from used range");
+		    t.split("load from used range = " + usedRange.address);
 		} else {
 		    usedRange.load(['formulas']);
 		    await context.sync(); // FOR DEBUGGING
@@ -253,7 +253,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		/// Save the formats so they can later be restored.
 		await this.saveFormats();
-
+		t.split("saved formats");
+		
 		// Now start colorizing.
 
 		// Remove the background color from all cells.
@@ -273,7 +274,7 @@ export default class App extends React.Component<AppProps, AppState> {
  		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
 									  Excel.SpecialCellValueType.numbers);
 		await context.sync();
-		console.log("got all ranges.");
+		t.split("got all ranges");
 		app.suspendScreenUpdatingUntilNextSync();
 
 		let formulas = usedRange.formulas;
@@ -290,29 +291,30 @@ export default class App extends React.Component<AppProps, AppState> {
 		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
-   		console.log("set numbers to yellow");
+		t.split("set numbers to yellow");
 		
 		let usedRangeAddress = usedRange.address;
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
- 		console.log("setColor: cell dependency = " + vec);
+ 		// console.log("setColor: cell dependency = " + vec);
+		t.split("computed cell dependencies");
 
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
-		console.log("processed formulas.");
+		t.split("processed formulas");
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas);
-		console.log("processed data.");
+		t.split("processed data");
 //		console.log(" = " + JSON.stringify(processed_data));
 
 		let grouped_data = Colorize.identify_groups(processed_data);
-		console.log("identified groups.");
+		t.split("identified groups");
 //		console.log("identified groups." + JSON.stringify(grouped_data));
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
-		console.log("setColor: Grouped formulas: ");
+		t.split("grouped formulas");
 		
 //		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
-		console.log("generated fixes.");
+		t.split("generated fixes");
 		// Only present up to 5% (threshold from paper).
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
 		this.total_fixes = max_proposed_fixes;
@@ -333,6 +335,7 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("processed data.");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
  		await context.sync(); // DEBUG
+		t.split("processed formulas");
 //		console.log("processed formulas.");
 
 /*
@@ -359,8 +362,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Protect the sheet against changes.
 		currentWorksheet.protection.protect();
  		await context.sync();
+		t.split("done with sync 3");
 		
-		console.log('ExceLint: done with sync 3.');
 		this.updateContent();
 		await context.sync();
 
@@ -370,9 +373,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
-		let endTime = performance.now();
-		let timeElapsedMS = endTime - startTime;
-		console.log('Time elapsed (ms) = ' + timeElapsedMS);
+		t.split("done");
 
 	    });
 	} catch (error) {
