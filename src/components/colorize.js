@@ -337,7 +337,8 @@ var Colorize = /** @class */ (function () {
     Colorize.merge_groups = function (groups) {
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
             var k = _a[_i];
-            groups[k] = this.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
+            var g = groups[k].slice();
+            groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
         }
         return groups;
     };
@@ -350,7 +351,7 @@ var Colorize = /** @class */ (function () {
             var merged_one = false;
             var deleted_rectangles = {};
             var updated_rectangles = [];
-            var working_group = JSON.parse(JSON.stringify(group));
+            var working_group = group.slice(); // JSON.parse(JSON.stringify(group));
             while (working_group.length > 0) {
                 var head = working_group.shift();
                 for (var i = 0; i < working_group.length; i++) {
@@ -380,7 +381,7 @@ var Colorize = /** @class */ (function () {
                 // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
                 return updated_rectangles;
             }
-            group = JSON.parse(JSON.stringify(updated_rectangles));
+            group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
             numIterations++;
             if (numIterations > 20) {
                 return [[[-1, -1], [-1, -1]]];

@@ -261,7 +261,7 @@ export class Colorize {
 		let columnsort = (a: [number, number], b: [number, number]) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
 		let id = this.identify_ranges(list, columnsort);
 		let gr = this.group_ranges(id, true); // column-first
-		// Now try to merge stuff with the same hash.
+	    // Now try to merge stuff with the same hash.
 		let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
 		//        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
 		//        console.log('group');
@@ -361,8 +361,9 @@ export class Colorize {
 
 	public static merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
 		: { [val: string]: Array<[[number, number], [number, number]]> } {
-		for (let k of Object.keys(groups)) {
-			groups[k] = this.merge_individual_groups(JSON.parse(JSON.stringify(groups[k])));
+		    for (let k of Object.keys(groups)) {
+			let g = groups[k].slice();
+			groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
 		}
 		return groups;
 	}
@@ -377,7 +378,7 @@ export class Colorize {
 			let merged_one = false;
 			let deleted_rectangles = {};
 			let updated_rectangles = [];
-			let working_group = JSON.parse(JSON.stringify(group));
+		    let working_group = group.slice(); // JSON.parse(JSON.stringify(group));
 			while (working_group.length > 0) {
 				let head = working_group.shift();
 				for (let i = 0; i < working_group.length; i++) {
@@ -407,7 +408,7 @@ export class Colorize {
 				// console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
 				return updated_rectangles;
 			}
-			group = JSON.parse(JSON.stringify(updated_rectangles));
+		    group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
 			numIterations++;
 			if (numIterations > 20) {
 				return [[[-1, -1], [-1, -1]]];
