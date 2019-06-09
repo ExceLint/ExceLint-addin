@@ -231,7 +231,7 @@ export default class App extends React.Component<AppProps, AppState> {
 //		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
 		if (true) {
-		    usedRange.load(['formulas', 'values', 'format']);
+		    usedRange.load(['formulas', 'format']);
 		    await context.sync();
 		    t.split("load from used range = " + usedRange.address);
 		} else {
@@ -239,11 +239,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		    await context.sync(); // FOR DEBUGGING
 		    
 		    console.log("setColor: loaded formulas from used range");
-		    
-		    usedRange.load(['values']);
-		    await context.sync(); // FOR DEBUGGING
-		    
-		    console.log("setColor: loaded values from used range");
 		    
 		    usedRange.load(['format']);
 		    await context.sync(); // FOR DEBUGGING
@@ -260,9 +255,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Remove the background color from all cells.
 		app.suspendScreenUpdatingUntilNextSync();
 		
-		let rangeFill = usedRange.format.fill;
-		rangeFill.clear();
-
 //		await context.sync();
 //  		console.log("cleared background color");
 
@@ -277,8 +269,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("got all ranges");
 		app.suspendScreenUpdatingUntilNextSync();
 
-		let formulas = usedRange.formulas;
-		let values = usedRange.values;
+ 		let rangeFill = usedRange.format.fill;
+		rangeFill.clear();
 
 		// usedRange.format.fill.color = '#eed202';
 
@@ -292,6 +284,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 
 		t.split("set numbers to yellow");
+
+
 		
 		let usedRangeAddress = usedRange.address;
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
@@ -299,6 +293,7 @@ export default class App extends React.Component<AppProps, AppState> {
  		// console.log("setColor: cell dependency = " + vec);
 		t.split("computed cell dependencies");
 
+		let formulas = usedRange.formulas;
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("processed formulas");
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas);
