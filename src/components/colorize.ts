@@ -3,6 +3,7 @@ import { ColorUtils } from './colorutils';
 import { ExcelUtils } from './excelutils';
 import { RectangleUtils } from './rectangleutils';
 import { ExcelUtilities } from '@microsoft/office-js-helpers';
+import { Timer } from './timer';
 
 export class Colorize {
 
@@ -139,10 +140,12 @@ export class Colorize {
 
 
     public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
+	let t = new Timer("color_all_data");
 	//console.log('color_all_data');
 	console.log("formula length = " + formulas.length);
 	console.log("processed formulas length = " + processed_formulas.length);
 	let refs = this.generate_all_references(formulas);
+	t.split("generated all references");
 	console.log("generated all references: length = " + Object.keys(refs).length);
 //	console.log("all refs = " + JSON.stringify(refs));
 	let processed_data = [];
@@ -153,6 +156,7 @@ export class Colorize {
 	    let col = Number(rv[1]);
 	    processed_data.push([[row,col], 1]);
 	}
+	t.split("processed all data");
 //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
 	return processed_data;
     }

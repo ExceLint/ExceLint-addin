@@ -3,6 +3,7 @@ exports.__esModule = true;
 var colorutils_1 = require("./colorutils");
 var excelutils_1 = require("./excelutils");
 var rectangleutils_1 = require("./rectangleutils");
+var timer_1 = require("./timer");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
@@ -124,10 +125,12 @@ var Colorize = /** @class */ (function () {
         return output;
     };
     Colorize.color_all_data = function (formulas, processed_formulas) {
+        var t = new timer_1.Timer("color_all_data");
         //console.log('color_all_data');
         console.log("formula length = " + formulas.length);
         console.log("processed formulas length = " + processed_formulas.length);
         var refs = this.generate_all_references(formulas);
+        t.split("generated all references");
         console.log("generated all references: length = " + Object.keys(refs).length);
         //	console.log("all refs = " + JSON.stringify(refs));
         var processed_data = [];
@@ -139,6 +142,7 @@ var Colorize = /** @class */ (function () {
             var col = Number(rv[1]);
             processed_data.push([[row, col], 1]);
         }
+        t.split("processed all data");
         //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
         return processed_data;
     };
