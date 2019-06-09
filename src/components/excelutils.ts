@@ -209,8 +209,8 @@ export class ExcelUtils {
 
         let found_pair = null;
 
-	range = range.replace(this.formulas_with_numbers,''); // kind of a hack for now
-	range = range.replace(this.formulas_with_sheetnames,''); // kind of a hack for now
+	range = range.replace(this.formulas_with_numbers,'_'); // kind of a hack for now
+	range = range.replace(this.formulas_with_sheetnames,'_'); // kind of a hack for now
 	
         /// FIX ME - should we count the same range multiple times? Or just once?
 
@@ -248,8 +248,7 @@ export class ExcelUtils {
                 base_vector[1] += sum_y;
 
                 // Wipe out the matched contents of range.
-                let newRange = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
-                range = newRange;
+                range = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
             }
         }
 
@@ -265,8 +264,7 @@ export class ExcelUtils {
                 base_vector[0] += vec[0];
                 base_vector[1] += vec[1];
                 // Wipe out the matched contents of range.
-                let newRange = range.replace(singleton[0], '_'.repeat(singleton[0].length));
-                range = newRange;
+                range = range.replace(singleton[0], '_'.repeat(singleton[0].length));
             }
         }
 
