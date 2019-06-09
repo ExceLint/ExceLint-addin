@@ -124,7 +124,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Note that we first have to set its visibility to "hidden" or else we can't delete it!
 		oldBackupSheet.visibility = Excel.SheetVisibility.hidden;
 		oldBackupSheet.delete();
-		await context.sync();
+//		await context.sync();
 	    }
 
 	    // Finally, rename the backup sheet.
