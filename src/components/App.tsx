@@ -252,8 +252,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Now start colorizing.
 
-		// Remove the background color from all cells.
-		app.suspendScreenUpdatingUntilNextSync();
+//		app.suspendScreenUpdatingUntilNextSync();
 		
 //		await context.sync();
 //  		console.log("cleared background color");
@@ -269,6 +268,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("got all ranges");
 		app.suspendScreenUpdatingUntilNextSync();
 
+		// Remove the background color from all cells.
  		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 
@@ -282,12 +282,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (numericFormulaRanges) {
 		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
-
-		t.split("set numbers to yellow");
-
-
-		
+	
 		let usedRangeAddress = usedRange.address;
+
+		t.split("set numbers to yellow, etc.");
+
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
  		// console.log("setColor: cell dependency = " + vec);
@@ -318,7 +317,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.proposed_fixes_length = Colorize.count_proposed_fixes(this.proposed_fixes);
 //		console.log("setColor: length = " + this.proposed_fixes_length);
 //		console.log("done with proposed fixes (" + formulas.length + ")");
-		
 		if (true) {
 		    // Just color referenced data white. (now gray!)
 		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }); // was FFFFFF FIXME
@@ -327,10 +325,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // Color referenced data based on its formula's color.
 		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); });
 		}
-//		console.log("processed data.");
+		//		console.log("processed data.");
+		t.split("processed data");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
- 		await context.sync(); // DEBUG
 		t.split("processed formulas");
+ 		await context.sync(); // DEBUG
+		t.split("synched and processed everything");
 //		console.log("processed formulas.");
 
 /*
@@ -356,16 +356,16 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Protect the sheet against changes.
 		currentWorksheet.protection.protect();
- 		await context.sync();
-		t.split("done with sync 3");
+// 		await context.sync();
+//		t.split("done with sync 3");
 		
 		this.updateContent();
-		await context.sync();
 
 		// Restore original calculation mode.
 //		app.calculationMode = 'Automatic';
 		app.calculationMode = originalCalculationMode;
 
+		await context.sync();
 /*		let currName = currentWorksheet.name;
 		currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
 		t.split("done");
