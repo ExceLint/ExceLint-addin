@@ -86,7 +86,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     
     saveFormats = async() => {
-	OfficeExtension.config.extendedErrorLogging = true;
+//	OfficeExtension.config.extendedErrorLogging = true;
 	await Excel.run(async context => {
 	    // First, load the current worksheet's name and id.
 	    let worksheets = context.workbook.worksheets;
@@ -232,6 +232,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		//		console.log('setColor: loaded used range');
 		if (true) {
 		    usedRange.load(['formulas', 'format']);
+		    // usedRange.load(['formulas', 'format', 'formulasR1C1']);
 		    await context.sync();
 		    t.split("load from used range = " + usedRange.address);
 		} else {
@@ -248,6 +249,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		/// Save the formats so they can later be restored.
 		await this.saveFormats();
+//		console.log(JSON.stringify(usedRange.formulasR1C1));
 		t.split("saved formats");
 		
 		// Now start colorizing.
@@ -259,10 +261,13 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
-//		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
+//		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas); 
+// 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
+		//									  Excel.SpecialCellValueType.numbers);
+//		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
  		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
- 		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
+		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
 									  Excel.SpecialCellValueType.numbers);
 		await context.sync();
 		t.split("got all ranges");
@@ -272,7 +277,6 @@ export default class App extends React.Component<AppProps, AppState> {
  		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 
-		// usedRange.format.fill.color = '#eed202';
 
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
@@ -290,7 +294,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
  		// console.log("setColor: cell dependency = " + vec);
-		t.split("computed cell dependencies");
+		t.split("computed cell dependency for start");
 
 		let formulas = usedRange.formulas;
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
