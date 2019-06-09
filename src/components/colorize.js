@@ -86,6 +86,8 @@ var Colorize = /** @class */ (function () {
       }
     */
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
+        var lastHash = 0;
+        var lastHashString = lastHash.toString();
         var output = [];
         // Build up all of the columns of colors.
         for (var i = 0; i < formulas.length; i++) {
@@ -105,8 +107,16 @@ var Colorize = /** @class */ (function () {
                     else {
                         //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
                         var hash = this.hash_vector(vec);
+                        var str = "";
+                        if (hash == lastHash) {
+                        }
+                        else {
+                            lastHash = hash;
+                            lastHashString = hash.toString();
+                        }
+                        str = lastHashString;
                         //				    console.log("process_formulas: hash of this vector = " + hash);
-                        output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
+                        output.push([[j + origin_col + 1, i + origin_row + 1], str]);
                     }
                 }
             }

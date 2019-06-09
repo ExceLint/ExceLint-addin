@@ -98,7 +98,9 @@ export class Colorize {
       }
     */
 
-	public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number], string]> {
+    public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number], string]> {
+	let lastHash = 0;
+	let lastHashString = lastHash.toString();
 		let output: Array<[[number, number], string]> = [];
 		// Build up all of the columns of colors.
 		for (let i = 0; i < formulas.length; i++) {
@@ -119,8 +121,15 @@ export class Colorize {
 				} else {
 //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
 				    let hash = this.hash_vector(vec);
+				    let str = "";
+				    if (hash == lastHash) {
+				    } else {
+					lastHash = hash;
+					lastHashString = hash.toString();
+				    }
+				    str = lastHashString;
 //				    console.log("process_formulas: hash of this vector = " + hash);
-				    output.push([[j + origin_col + 1, i + origin_row + 1], hash.toString()]);
+				    output.push([[j + origin_col + 1, i + origin_row + 1], str]);
 				}
 				}
 			}
