@@ -135,8 +135,8 @@ var Colorize = /** @class */ (function () {
             var refvec = _a[_i];
             //	    let rv = JSON.parse('[' + refvec + ']');
             var rv = refvec.split(',');
-            var row = parseInt(rv[0], 10);
-            var col = parseInt(rv[1], 10);
+            var row = Number(rv[0]);
+            var col = Number(rv[1]);
             processed_data.push([[row, col], 1]);
         }
         //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
@@ -353,10 +353,10 @@ var Colorize = /** @class */ (function () {
                         // console.log('src = ' + src);
                         for (var _i = 0, all_deps_1 = all_deps; _i < all_deps_1.length; _i++) {
                             var dep = all_deps_1[_i];
-                            var dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
+                            // let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
                             //				console.log('dep type = ' + typeof(dep));
                             //				console.log('dep = '+dep);
-                            var key = dep2.join(',');
+                            var key = dep.join(',');
                             refs[key] = true; // refs[key] || [];
                             //					    refs[key].push(key);
                             // NOTE: we are disabling pushing the src onto the list because we don't need it.

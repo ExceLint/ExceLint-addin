@@ -149,8 +149,8 @@ export class Colorize {
 	for (let refvec of Object.keys(refs)) {
 //	    let rv = JSON.parse('[' + refvec + ']');
 	    let rv = refvec.split(',');
-	    let row = parseInt(rv[0], 10);
-	    let col = parseInt(rv[1], 10);
+	    let row = Number(rv[0]);
+	    let col = Number(rv[1]);
 	    processed_data.push([[row,col], 1]);
 	}
 //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
@@ -380,10 +380,10 @@ export class Colorize {
 //					let src = [origin_col + j, origin_row + i];
 					// console.log('src = ' + src);
 					for (let dep of all_deps) {
-						let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
+					    // let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
 						//				console.log('dep type = ' + typeof(dep));
 					    //				console.log('dep = '+dep);
-					    let key = dep2.join(',');
+					    let key = dep.join(',');
 					    refs[key] = true; // refs[key] || [];
 //					    refs[key].push(key);
 					    // NOTE: we are disabling pushing the src onto the list because we don't need it.
