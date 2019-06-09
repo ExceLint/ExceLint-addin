@@ -252,7 +252,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Now start colorizing.
 
-//		app.suspendScreenUpdatingUntilNextSync();
+// 		app.suspendScreenUpdatingUntilNextSync();
 		
 //		await context.sync();
 //  		console.log("cleared background color");
@@ -329,8 +329,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("processed data");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
 		t.split("processed formulas");
- 		await context.sync(); // DEBUG
-		t.split("synched and processed everything");
+// 		await context.sync(); // DEBUG
+//		t.split("synched and processed everything");
 //		console.log("processed formulas.");
 
 /*
