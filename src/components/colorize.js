@@ -347,7 +347,7 @@ var Colorize = /** @class */ (function () {
                             //				console.log('dep type = ' + typeof(dep));
                             //				console.log('dep = '+dep);
                             var key = dep2.join(',');
-                            refs[key] = refs[key] || [];
+                            refs[key] = true; // refs[key] || [];
                             //					    refs[key].push(key);
                             // NOTE: we are disabling pushing the src onto the list because we don't need it.
                             //						refs[dep2.join(',')].push(src);
