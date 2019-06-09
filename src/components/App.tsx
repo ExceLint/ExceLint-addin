@@ -268,7 +268,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Now we can get the formula ranges (all cells with formulas),
 		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
-		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
+//		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas);
  		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
  		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
