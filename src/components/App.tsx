@@ -109,15 +109,15 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	    
 	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
-	    let newbackupSheet = currentWorksheet.copy("End");
+	    let newbackupSheet = currentWorksheet.copy("None");
 	    newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    newbackupSheet.load(['name']);
 	    // Ensure that we remain on the current worksheet.
 	    // This addresses an apparent bug in the client product.
 	    currentWorksheet.activate();
 	    
-	    await context.sync();
-	    app.suspendScreenUpdatingUntilNextSync();
+//	    await context.sync();
+//	    app.suspendScreenUpdatingUntilNextSync();
 
 	    if (oldBackupSheet) {
 		// There was an old backup sheet, which we now delete.
