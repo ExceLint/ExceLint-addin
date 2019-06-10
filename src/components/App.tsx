@@ -332,7 +332,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
-		let processed_data = Colorize.color_all_data(formulas, processed_formulas);
+		let refs = Colorize.generate_all_references(formulas);
+		t.split("generated all references");
+		await setTimeout(() => {}, 0);
+		let processed_data = Colorize.color_all_data(refs);
 		t.split("processed data");
 		await setTimeout(() => {}, 0);
 //		console.log(" = " + JSON.stringify(processed_data));

@@ -140,14 +140,15 @@ export class Colorize {
 	}
 
 
-    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
+//    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
+    public static color_all_data(refs: { [dep: string]: Array<[number, number]> }) { // , processed_formulas: Array<[[number, number], string]>) {
 	let t = new Timer("color_all_data");
 	//console.log('color_all_data');
-	console.log("formula length = " + formulas.length);
-	console.log("processed formulas length = " + processed_formulas.length);
-	let refs = this.generate_all_references(formulas);
-	t.split("generated all references");
-	console.log("generated all references: length = " + Object.keys(refs).length);
+	//console.log("formula length = " + formulas.length);
+	//console.log("processed formulas length = " + processed_formulas.length);
+	// let refs = this.generate_all_references(formulas);
+	//t.split("generated all references");
+	//console.log("generated all references: length = " + Object.keys(refs).length);
 //	console.log("all refs = " + JSON.stringify(refs));
 	let processed_data = [];
 	for (let refvec of Object.keys(refs)) {

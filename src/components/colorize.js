@@ -125,14 +125,15 @@ var Colorize = /** @class */ (function () {
         }
         return output;
     };
-    Colorize.color_all_data = function (formulas, processed_formulas) {
+    //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
+    Colorize.color_all_data = function (refs) {
         var t = new timer_1.Timer("color_all_data");
         //console.log('color_all_data');
-        console.log("formula length = " + formulas.length);
-        console.log("processed formulas length = " + processed_formulas.length);
-        var refs = this.generate_all_references(formulas);
-        t.split("generated all references");
-        console.log("generated all references: length = " + Object.keys(refs).length);
+        //console.log("formula length = " + formulas.length);
+        //console.log("processed formulas length = " + processed_formulas.length);
+        // let refs = this.generate_all_references(formulas);
+        //t.split("generated all references");
+        //console.log("generated all references: length = " + Object.keys(refs).length);
         //	console.log("all refs = " + JSON.stringify(refs));
         var processed_data = [];
         for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
