@@ -349,9 +349,14 @@ var Colorize = /** @class */ (function () {
     Colorize.generate_all_references = function (formulas) {
         // Generate all references.
         var refs = {};
+        var counter = 0;
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
+                counter++;
+                if (counter % 1000 == 0) {
+                    console.log(counter + " references down");
+                }
                 // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
                 if (row[j][0] === '=') {
                     var all_deps = excelutils_1.ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);

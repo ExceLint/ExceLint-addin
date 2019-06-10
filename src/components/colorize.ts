@@ -377,9 +377,16 @@ export class Colorize {
     public static generate_all_references(formulas: Array<Array<string>>): { [dep: string]: Array<[number, number]> } {
 	// Generate all references.
 	let refs = {};
+	let counter = 0;
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
+		
+		counter++;
+		if (counter % 1000 == 0) {
+		    console.log(counter + " references down");
+		}
+
 		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
 		if (row[j][0] === '=') {
 		    let all_deps = ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);

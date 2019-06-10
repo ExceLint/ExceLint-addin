@@ -329,9 +329,12 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		let formulas = usedRange.formulas;
 		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
+		
+		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
 		let processed_data = Colorize.color_all_data(formulas, processed_formulas);
 		t.split("processed data");
+		await setTimeout(() => {}, 0);
 //		console.log(" = " + JSON.stringify(processed_data));
 
 		let grouped_data = Colorize.identify_groups(processed_data);
@@ -339,6 +342,7 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("identified groups." + JSON.stringify(grouped_data));
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
 		t.split("grouped formulas");
+		await setTimeout(() => {}, 0);
 		
 //		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
