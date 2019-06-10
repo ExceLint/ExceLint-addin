@@ -4,6 +4,7 @@ import { ExcelUtils } from './excelutils';
 import { RectangleUtils } from './rectangleutils';
 import { ExcelUtilities } from '@microsoft/office-js-helpers';
 import { Timer } from './timer';
+import { JSONclone } from './jsonclone';
 
 export class Colorize {
 
@@ -216,7 +217,10 @@ export class Colorize {
 		let id = this.identify_ranges(list, columnsort);
 		let gr = this.group_ranges(id, true); // column-first
 	    // Now try to merge stuff with the same hash.
-		let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
+	    //	    let newGr1 = _.clone(gr);
+	    //let newGr1 = lodash.clone(gr);
+	    let newGr1 = JSONclone.clone(gr);
+//	    let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
 		//        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
 		//        console.log('group');
 		//        console.log(JSON.stringify(newGr1));

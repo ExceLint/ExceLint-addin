@@ -4,6 +4,7 @@ var colorutils_1 = require("./colorutils");
 var excelutils_1 = require("./excelutils");
 var rectangleutils_1 = require("./rectangleutils");
 var timer_1 = require("./timer");
+var jsonclone_1 = require("./jsonclone");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
@@ -204,7 +205,10 @@ var Colorize = /** @class */ (function () {
         var id = this.identify_ranges(list, columnsort);
         var gr = this.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
-        var newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
+        //	    let newGr1 = _.clone(gr);
+        //let newGr1 = lodash.clone(gr);
+        var newGr1 = jsonclone_1.JSONclone.clone(gr);
+        //	    let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
         //        console.log('group');
         //        console.log(JSON.stringify(newGr1));
