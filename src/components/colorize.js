@@ -102,7 +102,7 @@ var Colorize = /** @class */ (function () {
                     //				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
                     //				    console.log("process_formulas: row = " + JSON.stringify(cell));
                     var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
-                    if (vec.join(',') === '0,0') {
+                    if (vec[0] === 0 && vec[1] === 0) {
                         // No dependencies! Use a distinguished "0" value (always the same color?).
                         output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
                     }
