@@ -264,11 +264,16 @@ export default class App extends React.Component<AppProps, AppState> {
 //		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas); 
 // 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 		//									  Excel.SpecialCellValueType.numbers);
-//		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
-		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
-									  Excel.SpecialCellValueType.numbers);
-		await context.sync();
-		t.split("got numeric formula ranges");
+		//		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
+
+		let useNumericFormulaRanges = false;
+		let numericFormulaRanges = null;
+		if (useNumericFormulaRanges) {
+		    numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
+										 Excel.SpecialCellValueType.numbers);
+		    await context.sync();
+		    t.split("got numeric formula ranges");
+		}
 		
  		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
@@ -286,8 +291,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
-		    
-		if (numericFormulaRanges) {
+
+		if (useNumericFormulaRanges && numericFormulaRanges) {
 		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 	
