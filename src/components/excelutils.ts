@@ -248,7 +248,7 @@ export class ExcelUtils {
                 base_vector[1] += sum_y;
 
                 // Wipe out the matched contents of range.
-                range = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
+                range = range.replace(found_pair[0], '_');
             }
         }
 
