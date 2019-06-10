@@ -204,6 +204,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		t.split("got calc mode");
 		
+		
 		let originalCalculationMode = app.calculationMode;
 		app.calculationMode = 'Manual';
 
@@ -254,7 +255,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Now start colorizing.
 
-// 		app.suspendScreenUpdatingUntilNextSync();
+ 		app.suspendScreenUpdatingUntilNextSync();
 		
 //		await context.sync();
 //  		console.log("cleared background color");
@@ -302,7 +303,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		t.split("got numeric ranges");
 		
-		app.suspendScreenUpdatingUntilNextSync();
+//		app.suspendScreenUpdatingUntilNextSync();
 
 		// Remove the background color from all cells.
  		let rangeFill = usedRange.format.fill;
@@ -405,7 +406,9 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Restore original calculation mode.
 //		app.calculationMode = 'Automatic';
+
 		app.calculationMode = originalCalculationMode;
+
 
 		await context.sync();
 /*		let currName = currentWorksheet.name;
