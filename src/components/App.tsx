@@ -230,7 +230,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 //		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
-		if (true) {
+		if (false) {
 		    usedRange.load(['formulas', 'format']);
 		    // usedRange.load(['formulas', 'format', 'formulasR1C1']);
 		    await context.sync();
@@ -238,13 +238,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		} else {
 		    usedRange.load(['formulas']);
 		    await context.sync(); // FOR DEBUGGING
-		    
-		    console.log("setColor: loaded formulas from used range");
+
+		    t.split("loaded formulas from used range");
 		    
 		    usedRange.load(['format']);
 		    await context.sync(); // FOR DEBUGGING
 		    
-		    console.log("setColor: loaded formats from used range");
+		    t.split("loaded formats from used range");
 		}
 
 		/// Save the formats so they can later be restored.
