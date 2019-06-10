@@ -219,7 +219,7 @@ var ExcelUtils = /** @class */ (function () {
                 base_vector[0] += vec[0];
                 base_vector[1] += vec[1];
                 // Wipe out the matched contents of range.
-                range = range.replace(singleton[0], '_'.repeat(singleton[0].length));
+                range = range.replace(singleton[0], '_');
             }
         }
         return base_vector;
