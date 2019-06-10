@@ -266,7 +266,29 @@ export default class App extends React.Component<AppProps, AppState> {
 		//									  Excel.SpecialCellValueType.numbers);
 		//		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
 
+		// Compute the number of cells in the range "usedRange".
+		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
+		console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
+		let upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+		let lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+		let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+		console.log("number of cells used = " + numberOfCellsUsed);
+
+	
 		let useNumericFormulaRanges = false;
+
+		// EDB 10 June 2019: HACK. Getting numeric formula
+		// ranges is shockingly slow -- an order of magnitude
+		// slower than getting numeric ranges -- so we only do
+		// it when it takes less than a second (though that is
+		// total guesswork). Arbitrary threshold for now.
+		// Revisit if this gets fixed...
+		if (numberOfCellsUsed < 2000) {
+		    // Activate using numeric formula ranges when
+		    // there aren't "too many" cells.
+		    useNumericFormulaRanges = true;
+		}
+		
 		let numericFormulaRanges = null;
 		if (useNumericFormulaRanges) {
 		    numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
