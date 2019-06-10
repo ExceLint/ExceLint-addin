@@ -62,7 +62,7 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 //console.log('both_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
+                var row = Number(r[2]);
                 //console.log("parsed " + JSON.stringify([col, row]));
                 return [col, row];
             }
@@ -72,7 +72,7 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 //console.log("cell col absolute only " + JSON.stringify(r));
                 var col = ExcelUtils.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
+                var row = Number(r[2]);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
                 return [col, row - origin_row];
             }
@@ -82,7 +82,7 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 //console.log('row_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
+                var row = Number(r[2]);
                 return [col - origin_col, row];
             }
         }
@@ -91,7 +91,7 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 //console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 var col = ExcelUtils.column_name_to_index(r[1]);
-                var row = parseInt(r[2], 10);
+                var row = Number(r[2]);
                 //		console.log('both relative col: ' + col + ', row: ' + row);
                 return [col - origin_col, row - origin_row];
             }

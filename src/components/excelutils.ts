@@ -79,7 +79,7 @@ export class ExcelUtils {
             if (r) {
                 //console.log('both_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
-                let row = parseInt(r[2], 10);
+                let row = Number(r[2]);
 		//console.log("parsed " + JSON.stringify([col, row]));
                 return [col, row];
             }
@@ -90,7 +90,7 @@ export class ExcelUtils {
             if (r) {
                 //console.log("cell col absolute only " + JSON.stringify(r));
                 let col = ExcelUtils.column_name_to_index(r[1]);
-                let row = parseInt(r[2], 10);
+                let row = Number(r[2]);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
                 return [col, row - origin_row];
             }
@@ -101,7 +101,7 @@ export class ExcelUtils {
             if (r) {
                 //console.log('row_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
-                let row = parseInt(r[2], 10);
+                let row = Number(r[2]);
                 return [col - origin_col, row];
             }
         }
@@ -111,7 +111,7 @@ export class ExcelUtils {
             if (r) {
                 //console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 let col = ExcelUtils.column_name_to_index(r[1]);
-                let row = parseInt(r[2], 10);
+                let row = Number(r[2]);
 //		console.log('both relative col: ' + col + ', row: ' + row);
                 return [col - origin_col, row - origin_row];
             }
