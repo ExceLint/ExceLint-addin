@@ -148,7 +148,7 @@ var ExcelUtils = /** @class */ (function () {
                     }
                 }
                 // Wipe out the matched contents of range.
-                range = range.replace(found_pair[0], '_'.repeat(found_pair[0].length));
+                range = range.replace(found_pair[0], '_');
             }
         }
         // Now look for singletons.
@@ -163,7 +163,7 @@ var ExcelUtils = /** @class */ (function () {
                 var vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.
-                range = range.replace(singleton[0], '_'.repeat(singleton[0].length));
+                range = range.replace(singleton[0], '_');
             }
         }
         //console.log(JSON.stringify(all_vectors));
