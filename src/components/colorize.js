@@ -355,22 +355,12 @@ var Colorize = /** @class */ (function () {
                 // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
                 if (row[j][0] === '=') {
                     var all_deps = excelutils_1.ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
-                    if (all_deps.length > 0) {
-                        // console.log(all_deps);
-                        //					let src = [origin_col + j, origin_row + i];
-                        // console.log('src = ' + src);
-                        for (var _i = 0, all_deps_1 = all_deps; _i < all_deps_1.length; _i++) {
-                            var dep = all_deps_1[_i];
-                            // let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
-                            //				console.log('dep type = ' + typeof(dep));
-                            //				console.log('dep = '+dep);
-                            var key = dep.join(',');
-                            refs[key] = true; // refs[key] || [];
-                            //					    refs[key].push(key);
-                            // NOTE: we are disabling pushing the src onto the list because we don't need it.
-                            //						refs[dep2.join(',')].push(src);
-                            // console.log('refs[' + dep2.join(',') + '] = ' + JSON.stringify(refs[dep2.join(',')]));
-                        }
+                    for (var _i = 0, all_deps_1 = all_deps; _i < all_deps_1.length; _i++) {
+                        var dep = all_deps_1[_i];
+                        var key = dep.join(',');
+                        refs[key] = true; // refs[key] || [];
+                        // NOTE: we are disabling pushing the src onto the list because we don't need it.
+                        // refs[dep2.join(',')].push(src);
                     }
                 }
             }

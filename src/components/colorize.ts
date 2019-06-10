@@ -375,35 +375,25 @@ export class Colorize {
 	}
 
     public static generate_all_references(formulas: Array<Array<string>>): { [dep: string]: Array<[number, number]> } {
-		// Generate all references.
-		let refs = {};
-		for (let i = 0; i < formulas.length; i++) {
-			let row = formulas[i];
-		    for (let j = 0; j < row.length; j++) {
-			    // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-			    if (row[j][0] === '=') {
-				let all_deps = ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
-				if (all_deps.length > 0) {
-					// console.log(all_deps);
-//					let src = [origin_col + j, origin_row + i];
-					// console.log('src = ' + src);
-					for (let dep of all_deps) {
-					    // let dep2 = dep; // [dep[0]+origin_col, dep[1]+origin_row];
-						//				console.log('dep type = ' + typeof(dep));
-					    //				console.log('dep = '+dep);
-					    let key = dep.join(',');
-					    refs[key] = true; // refs[key] || [];
-//					    refs[key].push(key);
-					    // NOTE: we are disabling pushing the src onto the list because we don't need it.
-//						refs[dep2.join(',')].push(src);
-						// console.log('refs[' + dep2.join(',') + '] = ' + JSON.stringify(refs[dep2.join(',')]));
-					}
-				}
-			    }
+	// Generate all references.
+	let refs = {};
+	for (let i = 0; i < formulas.length; i++) {
+	    let row = formulas[i];
+	    for (let j = 0; j < row.length; j++) {
+		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+		if (row[j][0] === '=') {
+		    let all_deps = ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
+		    for (let dep of all_deps) {
+			let key = dep.join(',');
+			refs[key] = true; // refs[key] || [];
+			// NOTE: we are disabling pushing the src onto the list because we don't need it.
+			// refs[dep2.join(',')].push(src);
 		    }
 		}
-		return refs;
+	    }
 	}
+    	return refs;
+    }
 
 
     public static hash_vector(vec: Array<number>): number {
