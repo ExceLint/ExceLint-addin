@@ -382,15 +382,15 @@ export class Colorize {
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
-		
+		let cell = row[j];
 		counter++;
 		if (counter % 1000 == 0) {
 		    console.log(counter + " references down");
 		}
 
 		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-		if (row[j][0] === '=') {
-		    let all_deps = ExcelUtils.all_cell_dependencies(row[j]); // , origin_col + j, origin_row + i);
+		if (cell[0] === '=') {
+		    let all_deps = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
 		    for (let dep of all_deps) {
 			let key = dep.join(',');
 			refs[key] = true; // refs[key] || [];
