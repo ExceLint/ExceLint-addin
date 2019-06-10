@@ -230,7 +230,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 //		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
-		if (false) {
+		if (true) {
 		    usedRange.load(['formulas', 'format']);
 		    // usedRange.load(['formulas', 'format', 'formulasR1C1']);
 		    await context.sync();
@@ -267,10 +267,14 @@ export default class App extends React.Component<AppProps, AppState> {
 //		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
  		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
+		await context.sync();
+		t.split("got numeric ranges");
+		
 		let numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
 									  Excel.SpecialCellValueType.numbers);
 		await context.sync();
-		t.split("got all ranges");
+		t.split("got numeric formula ranges");
+		
 		app.suspendScreenUpdatingUntilNextSync();
 
 		// Remove the background color from all cells.
