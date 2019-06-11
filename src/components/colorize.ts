@@ -240,11 +240,14 @@ export class Colorize {
 		return -p * Math.log2(p);
 	}
 
-	public static entropydiff(oldcount1, oldcount2) {
-		const prevEntropy = this.entropy(oldcount1) + this.entropy(oldcount2);
-		const newEntropy = this.entropy(oldcount1 + oldcount2);
-		return newEntropy - prevEntropy;
-	}
+    public static entropydiff(oldcount1, oldcount2) {
+	const total = oldcount1 + oldcount2;
+	const prevEntropy = this.entropy(oldcount1/total) + this.entropy(oldcount2/total);
+	//	const newEntropy = this.entropy(oldcount1 + oldcount2);
+	const normalizedEntropy = prevEntropy / Math.log2(total);
+	//	return newEntropy - prevEntropy;
+	return normalizedEntropy;
+    }
 
     public static fix_metric(target_norm: number,
 			     target: [[number, number], [number, number]],

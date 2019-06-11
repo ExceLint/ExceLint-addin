@@ -227,9 +227,12 @@ var Colorize = /** @class */ (function () {
         return -p * Math.log2(p);
     };
     Colorize.entropydiff = function (oldcount1, oldcount2) {
-        var prevEntropy = this.entropy(oldcount1) + this.entropy(oldcount2);
-        var newEntropy = this.entropy(oldcount1 + oldcount2);
-        return newEntropy - prevEntropy;
+        var total = oldcount1 + oldcount2;
+        var prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
+        //	const newEntropy = this.entropy(oldcount1 + oldcount2);
+        var normalizedEntropy = prevEntropy / Math.log2(total);
+        //	return newEntropy - prevEntropy;
+        return normalizedEntropy;
     };
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
         var n_target = rectangleutils_1.RectangleUtils.area(target);
