@@ -264,10 +264,7 @@ export class Colorize {
 	let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
 	let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
 	let ranking = entropy_drop * (fix_distance * n_min);
-	// Was this:
-	//return ranking;
-	//	return NORMALIZED ranking
-	return -(1.0-ranking); //  / Math.log2(n_min + n_max);
+	return ranking / Math.log2(n_min + n_max);
     }
 
     public static count_proposed_fixes(fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>) : number
