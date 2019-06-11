@@ -243,7 +243,7 @@ var Colorize = /** @class */ (function () {
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
         var entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-        var ranking = entropy_drop * (fix_distance * n_min);
+        var ranking = entropy_drop / (fix_distance * n_min);
         return ranking / Math.log2(n_min + n_max);
     };
     Colorize.count_proposed_fixes = function (fixes) {
