@@ -46,8 +46,11 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		}
 		console.log("original score = " + arr[i][0]);
 //		let score = Math.round(-arr[i][0]*barWidth*100)/(100 * Math.log2(numFixes));
-		let score = Math.round(-arr[i][0]*barWidth*100)/(100 * Math.log2(numFixes));
+		let score = Math.round(arr[i][0]*barWidth*100); // /(100 * Math.log2(numFixes));
 		console.log("score = " + score);
+		if (score > barWidth) {
+		    score = barWidth;
+		}
 		// Always put up *something*.
 		if (score < 0) {
 		    score = -score;
@@ -55,7 +58,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		}
 		if (score < 1) {
 //		    break;
-//		    score = 1;
+		    score = 1;
 		}
 		if (current === i) {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
