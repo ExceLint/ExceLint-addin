@@ -54,7 +54,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 //		    score = 1;
 		}
 		if (score < 1) {
-		    break;
+//		    break;
 //		    score = 1;
 		}
 		if (current === i) {
