@@ -267,7 +267,7 @@ export class Colorize {
 	// Was this:
 	//return ranking;
 	//	return NORMALIZED ranking
-	return ranking / Math.log2(n_min + n_max);
+	return ranking; //  / Math.log2(n_min + n_max);
     }
 
     public static count_proposed_fixes(fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>) : number
