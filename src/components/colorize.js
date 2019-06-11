@@ -247,7 +247,7 @@ var Colorize = /** @class */ (function () {
         // Was this:
         //return ranking;
         //	return NORMALIZED ranking
-        return (1.0 - ranking); //  / Math.log2(n_min + n_max);
+        return -(1.0 - ranking); //  / Math.log2(n_min + n_max);
     };
     Colorize.count_proposed_fixes = function (fixes) {
         var count = 0;
