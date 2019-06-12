@@ -164,11 +164,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		usedRange.load(['address']);
  		await context.sync();
 
-		let cell = usedRange.getCell(0, 0);
-		cell.load(['value']);
-		await context.sync();
-
-		console.log(JSON.stringify(cell.value));
 		console.log("copying out " + JSON.stringify(usedRange.address));
 		destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
  		await context.sync();
@@ -214,11 +209,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		app.calculationMode = 'Manual';
 
 		let usedRange = currentWorksheet.getUsedRange(false) as any; // FIXME was false! testing for perf
-		usedRange.load(['address']);
+		usedRange.load(['address','values']);
 		await context.sync();
 		t.split("got address");
 		
-//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
+		console.log(JSON.stringify(usedRange.values[0][0]));
+
+		//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
 
 		/*
 		let condFormats = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.conditionalFormats);
