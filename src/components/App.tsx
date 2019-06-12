@@ -168,7 +168,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		cell.load(['value']);
 		await context.sync();
 
-		console.log(JSON.stringify(cell.value);
+		console.log(JSON.stringify(cell.value));
 		console.log("copying out " + JSON.stringify(usedRange.address));
 		destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
  		await context.sync();
