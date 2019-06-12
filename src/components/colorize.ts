@@ -244,7 +244,7 @@ export class Colorize {
 	const total = oldcount1 + oldcount2;
 	const prevEntropy = this.entropy(oldcount1/total) + this.entropy(oldcount2/total);
 	//	const newEntropy = this.entropy(oldcount1 + oldcount2);
-	const normalizedEntropy = prevEntropy / Math.log2(total);
+	const normalizedEntropy = prevEntropy / (total * Math.log2(total));
 	//	return newEntropy - prevEntropy;
 	return normalizedEntropy;
     }
@@ -262,11 +262,9 @@ export class Colorize {
 	let norm_min = Math.min(merge_with_norm, target_norm);
  	let norm_max = Math.max(merge_with_norm, target_norm);
 	let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
-	let entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-//	return 1.0 - entropy_drop;
-	
-	let ranking = (1.0 - entropy_drop) / fix_distance; //  * n_min);
-	return ranking / Math.log2(n_min + n_max);
+	let entropy_drop = this.entropydiff(n_min, n_max);
+	let ranking = (1.0 - entropy_drop) / (fix_distance * n_min);
+	return ranking;
     }
 
     public static count_proposed_fixes(fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>) : number

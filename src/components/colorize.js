@@ -230,7 +230,7 @@ var Colorize = /** @class */ (function () {
         var total = oldcount1 + oldcount2;
         var prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
         //	const newEntropy = this.entropy(oldcount1 + oldcount2);
-        var normalizedEntropy = prevEntropy / Math.log2(total);
+        var normalizedEntropy = prevEntropy / (total * Math.log2(total));
         //	return newEntropy - prevEntropy;
         return normalizedEntropy;
     };
@@ -242,10 +242,9 @@ var Colorize = /** @class */ (function () {
         var norm_min = Math.min(merge_with_norm, target_norm);
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
-        var entropy_drop = this.entropydiff(n_min, n_max); // this.entropy(n_min / (n_min + n_max));
-        //	return 1.0 - entropy_drop;
-        var ranking = (1.0 - entropy_drop) / fix_distance; //  * n_min);
-        return ranking / Math.log2(n_min + n_max);
+        var entropy_drop = this.entropydiff(n_min, n_max);
+        var ranking = (1.0 - entropy_drop) / (fix_distance * n_min);
+        return ranking;
     };
     Colorize.count_proposed_fixes = function (fixes) {
         var count = 0;
