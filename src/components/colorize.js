@@ -234,7 +234,7 @@ var Colorize = /** @class */ (function () {
         //	return newEntropy - prevEntropy;
         return normalizedEntropy;
     };
-    Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
+    Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
         var n_target = rectangleutils_1.RectangleUtils.area(target);
         var n_merge_with = rectangleutils_1.RectangleUtils.area(merge_with);
         var n_min = Math.min(n_target, n_merge_with);
@@ -243,7 +243,7 @@ var Colorize = /** @class */ (function () {
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
         var entropy_drop = this.entropydiff(n_min, n_max);
-        var ranking = -(1.0 - entropy_drop); //  / (fix_distance * n_min + 1.0);
+        var ranking = -(1.0 - entropy_drop) / (fix_distance / sheetDiagonal * n_min / sheetArea);
         return ranking;
     };
     Colorize.count_proposed_fixes = function (fixes) {
@@ -255,7 +255,7 @@ var Colorize = /** @class */ (function () {
         }
         return count;
     };
-    Colorize.generate_proposed_fixes = function (groups) {
+    Colorize.generate_proposed_fixes = function (groups, diagonal, area) {
         var proposed_fixes = [];
         var already_proposed_pair = {};
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
@@ -279,7 +279,7 @@ var Colorize = /** @class */ (function () {
                                 already_proposed_pair[sr1 + sr2] = true;
                                 already_proposed_pair[sr2 + sr1] = true;
                                 ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                                var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+                                var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
                                 // was Math.abs(parseFloat(k2) - parseFloat(k1))
                                 proposed_fixes.push([metric, r1, r2]);
                             }

@@ -252,7 +252,9 @@ export class Colorize {
     public static fix_metric(target_norm: number,
 			     target: [[number, number], [number, number]],
 			     merge_with_norm: number,
-			     merge_with: [[number, number], [number, number]]): number
+			     merge_with: [[number, number], [number, number]],
+			     sheetDiagonal: number,
+			     sheetArea: number): number
     {
 	
 	let n_target = RectangleUtils.area(target);
@@ -263,7 +265,7 @@ export class Colorize {
  	let norm_max = Math.max(merge_with_norm, target_norm);
 	let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
 	let entropy_drop = this.entropydiff(n_min, n_max);
-	let ranking = -(1.0 - entropy_drop); //  / (fix_distance * n_min + 1.0);
+	let ranking = -(1.0 - entropy_drop) / (fix_distance / sheetDiagonal * n_min / sheetArea);
 	return ranking;
     }
 
@@ -278,7 +280,7 @@ export class Colorize {
 	return count;
     }
     
-    public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }):
+    public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }, diagonal: number, area: number):
     Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> {
 	let proposed_fixes = [];
 	let already_proposed_pair = {};
@@ -302,7 +304,7 @@ export class Colorize {
 				already_proposed_pair[sr1 + sr2] = true;
 				already_proposed_pair[sr2 + sr1] = true;
 				///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
 				// was Math.abs(parseFloat(k2) - parseFloat(k1))
 				proposed_fixes.push([metric, r1, r2]);
 			    }

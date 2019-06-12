@@ -273,6 +273,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
 		let lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
 		let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+		let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
 		console.log("number of cells used = " + numberOfCellsUsed);
 
 	
@@ -350,7 +351,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 //		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
-		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
+		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas, diagonal, numberOfCellsUsed);
 		t.split("generated fixes");
 		// Only present up to 5% (threshold from paper).
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
