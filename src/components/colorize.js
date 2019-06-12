@@ -241,7 +241,7 @@ var Colorize = /** @class */ (function () {
         var n_max = Math.max(n_target, n_merge_with);
         var norm_min = Math.min(merge_with_norm, target_norm);
         var norm_max = Math.max(merge_with_norm, target_norm);
-        var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
+        var fix_distance = Math.sqrt(Math.abs(norm_max - norm_min) / this.Multiplier);
         var entropy_drop = this.entropydiff(n_min, n_max);
         var ranking = -(1.0 - entropy_drop) / (fix_distance * n_min);
         return ranking;
