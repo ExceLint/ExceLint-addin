@@ -25,6 +25,12 @@ var RectangleUtils = /** @class */ (function () {
         var width = ay2 - ay1 + 1;
         return length * width;
     };
+    RectangleUtils.diagonal = function (A) {
+        var _a = A[0], ax1 = _a[0], ay1 = _a[1], _b = A[1], ax2 = _b[0], ay2 = _b[1];
+        var length = ax2 - ax1 + 1;
+        var width = ay2 - ay1 + 1;
+        return Math.sqrt(length * length + width * width);
+    };
     RectangleUtils.overlap = function (A, B) {
         var _a = A[0], ax1 = _a[0], ay1 = _a[1], _b = A[1], ax2 = _b[0], ay2 = _b[1];
         var _c = B[0], bx1 = _c[0], by1 = _c[1], _d = B[1], bx2 = _d[0], by2 = _d[1];

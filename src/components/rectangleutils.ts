@@ -28,6 +28,13 @@ export class RectangleUtils {
 	return length * width;
     }
 
+    public static diagonal(A: rectangle) : number {
+	let [[ax1, ay1], [ax2, ay2]] = A;
+	let length = ax2 - ax1 + 1;
+	let width = ay2 - ay1 + 1;
+	return Math.sqrt(length * length + width * width);
+    }
+
     public static overlap(A: rectangle, B: rectangle) : number {
 	let [[ax1, ay1], [ax2, ay2]] = A;
 	let [[bx1, by1], [bx2, by2]] = B;
