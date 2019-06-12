@@ -163,7 +163,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		let usedRange = backupSheet.getUsedRange(false) as any;
 		usedRange.load(['address']);
  		await context.sync();
-		
+
+		let cell = usedRange.getCell(0, 0);
+		cell.load(['value']);
+		await context.sync();
+
+		console.log(JSON.stringify(cell.value);
 		console.log("copying out " + JSON.stringify(usedRange.address));
 		destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
  		await context.sync();
