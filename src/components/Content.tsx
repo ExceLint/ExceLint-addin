@@ -45,7 +45,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		    numFixes = 1;
 		}
 		console.log("original score = " + arr[i][0]);
-		let score = Math.round((arr[i][0])*barWidth*100)/(100 * numFixes);
+		let score = Math.round((-arr[i][0])*barWidth*100)/(100 * numFixes);
 //		let score = Math.round(-arr[i][0]*barWidth*100)/100; // /(100 * Math.log2(numFixes));
 		console.log("score = " + score);
 		if (score > barWidth) {
