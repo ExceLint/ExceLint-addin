@@ -12,7 +12,7 @@ export class Colorize {
 	private static color_list = [];
 	private static light_color_list = [];
     private static light_color_dict = {};
-    private static Multiplier = 103038;
+    private static Multiplier = 1; // was 103038;
 
 	public static initialize() {
 		if (!this.initialized) {
@@ -405,8 +405,8 @@ export class Colorize {
 
 
     public static hash_vector(vec: Array<number>): number {
-	let baseX = 7;
-	let baseY = 3;
+	let baseX = 0; // was 7;
+	let baseY = 0; // was 3;
 	let v0 = vec[0] - baseX;
 	v0 = v0 * v0;
 	let v1 = vec[1] - baseY;

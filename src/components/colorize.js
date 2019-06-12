@@ -375,8 +375,8 @@ var Colorize = /** @class */ (function () {
         return refs;
     };
     Colorize.hash_vector = function (vec) {
-        var baseX = 7;
-        var baseY = 3;
+        var baseX = 0; // was 7;
+        var baseY = 0; // was 3;
         var v0 = vec[0] - baseX;
         v0 = v0 * v0;
         var v1 = vec[1] - baseY;
@@ -393,7 +393,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
-    Colorize.Multiplier = 103038;
+    Colorize.Multiplier = 1; // was 103038;
     return Colorize;
 }());
 exports.Colorize = Colorize;
