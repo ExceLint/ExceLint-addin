@@ -271,9 +271,9 @@ export class Colorize {
     {
 	let count = 0;
 	for (let k in fixes) {
-//	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
-	    count += Math.sqrt(RectangleUtils.area(fixes[k][1]));
-	    count += Math.sqrt(RectangleUtils.area(fixes[k][2]));
+	    //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
+	    count += RectangleUtils.diagonal(fixes[k][1]);
+	    count += RectangleUtils.diagonal(fixes[k][2]);
 	}
 	return count;
     }

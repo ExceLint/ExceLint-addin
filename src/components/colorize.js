@@ -250,8 +250,8 @@ var Colorize = /** @class */ (function () {
         var count = 0;
         for (var k in fixes) {
             //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
-            count += Math.sqrt(rectangleutils_1.RectangleUtils.area(fixes[k][1]));
-            count += Math.sqrt(rectangleutils_1.RectangleUtils.area(fixes[k][2]));
+            count += rectangleutils_1.RectangleUtils.diagonal(fixes[k][1]);
+            count += rectangleutils_1.RectangleUtils.diagonal(fixes[k][2]);
         }
         return count;
     };
