@@ -124,8 +124,11 @@ export class Content extends React.Component<ContentProps, any> {
 				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
 		<br />
 				<br />
-
-		    {Content.colorPalette()}
+			
+			<svg width="300" height="20">
+			<rect x="0" y="0" width="50" height="20" fill="lightblue" />
+			<text x="55" y="13">formulas (pastel colors)</text>
+			</svg>
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#d3d3d3" />
 			<text x="55" y="13">data used by some formula (gray)</text>
