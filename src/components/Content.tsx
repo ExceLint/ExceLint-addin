@@ -140,7 +140,7 @@ export class Content extends React.Component<ContentProps, any> {
 <rect x="39.285714285714285" y="0" width="3.5714285714285716" height="20" fill="#b4efd3" />
 <rect x="42.857142857142854" y="0" width="3.5714285714285716" height="20" fill="#80b6aa" />
 <rect x="46.42857142857142" y="0" width="3.5714285714285716" height="20" fill="#9bd1c6" />
-<text x="55" y="13">formula (pastel colors)</text></svg>
+<text x="55" y="13">formulas (pastel colors)</text></svg>
 
 			<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#d3d3d3" />
