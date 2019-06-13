@@ -247,7 +247,7 @@ var Colorize = /** @class */ (function () {
         //	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min)); //  / sheetDiagonal);
         sheetArea = sheetArea;
         // Updating based on size formula.
-        ranking = (n_target + n_merge_with) / ranking;
+        ranking = (n_target + n_merge_with) / (sheetArea * ranking);
         return ranking;
     };
     Colorize.count_proposed_fixes = function (fixes) {
