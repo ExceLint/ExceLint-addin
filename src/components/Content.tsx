@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Button, ButtonType } from 'office-ui-fabric-react';
 import { ExcelUtils } from './excelutils';
+import { Colorize } from './colorize';
 
 // Checkbox
 
@@ -100,6 +101,13 @@ export class Content extends React.Component<ContentProps, any> {
 	}
 	// <p>{this.props.message}</p>
 
+
+    private static colorPalette() : any {
+	return <svg width="300" height="20">
+	    <rect x="0" y="0" width="50" height="20" fill="lightblue" />
+	    <text x="55" y="13">formulas (pastel colors)</text>
+	    </svg>;
+    }
     
     
     render() {
@@ -117,10 +125,7 @@ export class Content extends React.Component<ContentProps, any> {
 		<br />
 				<br />
 
-				<svg width="300" height="20">
-					<rect x="0" y="0" width="50" height="20" fill="lightblue" />
-					<text x="55" y="13">formulas (pastel colors)</text>
-			</svg>
+		    {App.colorPalette()}
 				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#d3d3d3" />
 			<text x="55" y="13">data used by some formula (gray)</text>
