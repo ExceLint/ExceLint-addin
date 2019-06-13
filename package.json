@@ -47,6 +47,7 @@
     "node": "^11.15.0",
     "npx": "^10.2.0",
     "office-addin-dev-certs": "^1.2.4",
+    "office-js": "^0.1.0",
     "office-toolbox": "^0.1.1",
     "office-ui-fabric-react": "^6.189.3",
     "path": "^0.12.7",
@@ -80,5 +81,7 @@
     "yargs": "^13.2.4",
     "yargs-parser": "^13.1.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/office-js": "^1.0.11"
+  }
 }
