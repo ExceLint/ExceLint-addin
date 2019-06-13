@@ -224,9 +224,11 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		if (displayComments) {
 		    // Test.
-		    const sheet = context.workbook.worksheets.getItem("Comments");
+/*		    const sheet = context.workbook.worksheets.getItem("Comments");
 		    // currentWorksheet.load(['comments']);
 		    sheet.comments.add("A COMMENT", "A1");
+*/
+		    usedRange.values[0][0] = 42000;
 		}
 		    
 		    
