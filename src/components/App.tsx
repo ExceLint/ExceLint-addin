@@ -218,7 +218,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Use the upper-left hand corner of the used range as
 		// an "Easter Egg" to unlock certain functionality.
-		if (usedRange.values[0][0] === 42) {
+		let cornerCell = usedRange.getCell(0, 0);
+		if (cornerCell.values === [[42]]) {
 		    displayComments = true;
 		}
 
@@ -228,7 +229,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // currentWorksheet.load(['comments']);
 		    sheet.comments.add("A COMMENT", "A1");
 */
-		    usedRange.values[0][0] = 42000;
+		    console.log("A comment!");
+		    cornerCell.values[0][0] = [[ 420 ]];
 		    await context.sync();
 		}
 		    
