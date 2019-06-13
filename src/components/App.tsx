@@ -229,6 +229,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    sheet.comments.add("A COMMENT", "A1");
 */
 		    usedRange.values[0][0] = 42000;
+		    await context.sync();
 		}
 		    
 		    
