@@ -19,8 +19,9 @@ export class ExcelUtils {
     // We need to filter out all formulas with numbers so they don't mess with our dependency regexps.
     private static formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
     // Same with sheet name references.
-    private static formulas_with_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
-
+    private static formulas_with_quoted_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    private static formulas_with_unquoted_sheetnames = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     public static hash_sheet(uid: string, maxlen: number = 31) : string {
 	// We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
@@ -148,8 +149,9 @@ export class ExcelUtils {
 	}
 
 	range = range.replace(this.formulas_with_numbers,'_'); // kind of a hack for now
-	range = range.replace(this.formulas_with_sheetnames,'_'); // kind of a hack for now
-    
+	range = range.replace(this.formulas_with_quoted_sheetnames,'_'); // kind of a hack for now
+	range = range.replace(this.formulas_with_unquoted_sheetnames,'_');
+	
         /// FIX ME - should we count the same range multiple times? Or just once?
 
         // First, get all the range pairs out.
@@ -210,7 +212,8 @@ export class ExcelUtils {
         let found_pair = null;
 
 	range = range.replace(this.formulas_with_numbers,'_'); // kind of a hack for now
-	range = range.replace(this.formulas_with_sheetnames,'_'); // kind of a hack for now
+	range = range.replace(this.formulas_with_unquoted_sheetnames,'_'); // kind of a hack for now
+	range = range.replace(this.formulas_with_quoted_sheetnames,'_'); // kind of a hack for now
 	
         /// FIX ME - should we count the same range multiple times? Or just once?
 
