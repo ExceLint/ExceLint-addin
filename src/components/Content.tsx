@@ -103,10 +103,10 @@ export class Content extends React.Component<ContentProps, any> {
 
 
     private static colorPalette() : any {
-	return <svg width="300" height="20">
+	return <div><svg width="300" height="20">
 	    <rect x="0" y="0" width="50" height="20" fill="lightblue" />
 	    <text x="55" y="13">formulas (pastel colors)</text>
-	    </svg>;
+	    </svg></div>;
     }
     
     
