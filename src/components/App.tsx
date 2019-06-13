@@ -214,6 +214,20 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("got address");
 		
 		console.log(JSON.stringify(usedRange.values[0][0]));
+		let displayComments = false;
+
+		// Use the upper-left hand corner of the used range as
+		// an "Easter Egg" to unlock certain functionality.
+		if (usedRange.values[0][0] === 42) {
+		    displayComments = true;
+		}
+
+		if (displayComments) {
+		    // Test.
+		    currentWorksheet.comments.add("A COMMENT", "A1");
+		}
+		    
+		    
 
 		//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
 
