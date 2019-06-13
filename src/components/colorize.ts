@@ -267,8 +267,8 @@ export class Colorize {
  	let norm_max = Math.max(merge_with_norm, target_norm);
 	let fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
 	let entropy_drop = this.entropydiff(n_min, n_max);
-//	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
-	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min)); //  / sheetDiagonal);
+	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
+//	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min)); //  / sheetDiagonal);
 	sheetArea = sheetArea;
 	// Updating based on size formula.
 	ranking = (n_target + n_merge_with) / ranking;
