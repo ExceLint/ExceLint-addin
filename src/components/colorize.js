@@ -244,7 +244,7 @@ var Colorize = /** @class */ (function () {
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
         var entropy_drop = this.entropydiff(n_min, n_max);
         //	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
-        var ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
+        var ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min)); //  / sheetDiagonal);
         sheetArea = sheetArea;
         // Updating based on size formula.
         ranking = (n_target + n_merge_with) / ranking;
