@@ -218,10 +218,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Use the upper-left hand corner of the used range as
 		// an "Easter Egg" to unlock certain functionality.
-		let cornerCell = usedRange.getCell(0, 0);
-		await context.sync();
 		
-		if (cornerCell.values[0][0] === 42) {
+		if (usedRange.values[0][0] === 42) {
 		    displayComments = true;
 		}
 
@@ -232,8 +230,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		    sheet.comments.add("A COMMENT", "A1");
 */
 		    console.log("A comment!");
-		    cornerCell.values = [[ 420 ]];
-		    await context.sync();
 		}
 		    
 		    
