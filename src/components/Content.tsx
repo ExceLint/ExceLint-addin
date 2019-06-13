@@ -125,11 +125,24 @@ export class Content extends React.Component<ContentProps, any> {
 		<br />
 				<br />
 			
+<svg width="300" height="20">
+<rect x="0" y="0" width="3" height="20" fill="#ecaaae" />
+<rect x="3" y="0" width="3" height="20" fill="#74aff3" />
+<rect x="6" y="0" width="3" height="20" fill="#d8e9b2" />
+<rect x="9" y="0" width="3" height="20" fill="#deb1e0" />
+<rect x="12" y="0" width="3" height="20" fill="#9ec991" />
+<rect x="15" y="0" width="3" height="20" fill="#adbce9" />
+<rect x="18" y="0" width="3" height="20" fill="#e9c59a" />
+<rect x="21" y="0" width="3" height="20" fill="#71cdeb" />
+<rect x="24" y="0" width="3" height="20" fill="#bfbb8a" />
+<rect x="27" y="0" width="3" height="20" fill="#94d9df" />
+<rect x="30" y="0" width="3" height="20" fill="#91c7a8" />
+<rect x="33" y="0" width="3" height="20" fill="#b4efd3" />
+<rect x="36" y="0" width="3" height="20" fill="#80b6aa" />
+<rect x="39" y="0" width="3" height="20" fill="#9bd1c6" />
+<text x="55" y="13">formula (pastel colors)</text></svg>
+
 			<svg width="300" height="20">
-			<rect x="0" y="0" width="50" height="20" fill="lightblue" />
-			<text x="55" y="13">formulas (pastel colors)</text>
-			</svg>
-				<svg width="300" height="20">
 					<rect x="0" y="0" width="50" height="20" fill="#d3d3d3" />
 			<text x="55" y="13">data used by some formula (gray)</text>
 				</svg>
