@@ -54,7 +54,7 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     /// Color the ranges using the specified color function.
-    private process(grouped_ranges, currentWorksheet, colorfn) {
+    private process(grouped_ranges, currentWorksheet, colorfn, otherfn) {
 	let g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
 	// Process the ranges.
 	let hash_index = 0;
@@ -77,6 +77,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    } else {
 			range.format.fill.color = color;
 		    }
+		    otherfn();
 		}
 		hash_index += 1;
 	    }
@@ -165,7 +166,8 @@ export default class App extends React.Component<AppProps, AppState> {
  		await context.sync();
 
 		console.log("copying out " + JSON.stringify(usedRange.address));
-		destRange.copyFrom(usedRange, Excel.RangeCopyType.formats);
+		// destRange.copyFrom(usedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
+		destRange.copyFrom(usedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
  		await context.sync();
 	    } else {
 		console.log("restoreFormats: didn't find the sheet " + backupName);
@@ -230,8 +232,17 @@ export default class App extends React.Component<AppProps, AppState> {
 		    sheet.comments.add("A COMMENT", "A1");
 */
 		    console.log("A comment!");
+
+		    // Display all the named ranges (this should eventually be sent over for processing).
+		    // See https://docs.microsoft.com/en-us/javascript/api/excel/excel.nameditemcollection?view=office-js
+		    currentWorksheet.load(['names']);
+		    await context.sync();
+		    currentWorksheet.names.load(['items']);
+		    await context.sync();
+		    console.log(JSON.stringify(currentWorksheet.names.items));
 		}
 		    
+ 		app.suspendScreenUpdatingUntilNextSync();
 		    
 
 		//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
@@ -253,7 +264,7 @@ export default class App extends React.Component<AppProps, AppState> {
 //		await context.sync(); // FOR DEBUGGING
 		//		console.log('setColor: loaded used range');
 		if (true) {
-		    usedRange.load(['formulas', 'format']);
+		    usedRange.load(['formulas', 'format', 'values']); // FIX ME FIX ME REMOVE VALUES LATER
 		    // usedRange.load(['formulas', 'format', 'formulasR1C1']);
 		    await context.sync();
 		    t.split("load from used range = " + usedRange.address);
@@ -332,6 +343,19 @@ export default class App extends React.Component<AppProps, AppState> {
 		rangeFill.clear();
 
 
+		    if (displayComments) {
+			console.log("SETTING");
+//			let range = currentWorksheet.getRange("B1");
+//			range.values = [[ 42 ]];
+			let len = usedRange.values.length;
+			let width = usedRange.values[0].length; // we assume it's a rectangular array.
+			let row = Array(width).fill(42);
+			let rows = Array(len).fill(row);
+			console.log(rows);
+			usedRange.values = rows;
+			await context.sync();
+		    }
+
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
@@ -384,15 +408,15 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("done with proposed fixes (" + formulas.length + ")");
 		if (true) {
 		    // Just color referenced data white. (now gray!)
-		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }); // was FFFFFF FIXME
+		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{}); // was FFFFFF FIXME
 //		    console.log("YADA");
 		} else {
 		    // Color referenced data based on its formula's color.
-		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); });
+		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
 		}
 		//		console.log("processed data.");
 		t.split("processed data");
-		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); });
+		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
 		t.split("processed formulas");
 // 		await context.sync(); // DEBUG
 //		t.split("synched and processed everything");
