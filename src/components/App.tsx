@@ -219,6 +219,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Use the upper-left hand corner of the used range as
 		// an "Easter Egg" to unlock certain functionality.
 		let cornerCell = usedRange.getCell(0, 0);
+		cornerCell.get(['values']);
+		await context.sync();
+		
 		if (cornerCell.values === [[42]]) {
 		    displayComments = true;
 		}
