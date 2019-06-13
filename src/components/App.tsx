@@ -224,9 +224,9 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		if (displayComments) {
 		    // Test.
-		    currentWorksheet.load(['comments']);
-		    await context.sync();
-		    currentWorksheet.comments.add("A COMMENT", "A1");
+		    const sheet = context.workbook.worksheets.getItem("Comments");
+		    // currentWorksheet.load(['comments']);
+		    sheet.add("A COMMENT", "A1");
 		}
 		    
 		    
