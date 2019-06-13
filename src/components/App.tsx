@@ -226,7 +226,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // Test.
 		    const sheet = context.workbook.worksheets.getItem("Comments");
 		    // currentWorksheet.load(['comments']);
-		    sheet.add("A COMMENT", "A1");
+		    sheet.comments.add("A COMMENT", "A1");
 		}
 		    
 		    
