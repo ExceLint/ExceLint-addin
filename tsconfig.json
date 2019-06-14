@@ -13,7 +13,8 @@
     "noImplicitReturns": true,
     "noUnusedParameters": true,
       "noUnusedLocals": false, // true,
-    "lib": [
+      "downlevelIteration": true,
+      "lib": [
       "es7",
       "dom"
     ],
