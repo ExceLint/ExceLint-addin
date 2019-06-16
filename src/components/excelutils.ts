@@ -286,7 +286,11 @@ export class ExcelUtils {
 	}
 //	console.log("tc2");
 	console.log("formulas[" + row + "][" + col + "]");
-	if ((row >= formulas.length) || (col >= formulas[0].length)) {
+	if ((row >= formulas.length)
+	    || (col >= formulas[0].length)
+	    || (row < 0)
+	    || (col < 0))
+	{
 	    // Discard references to cells outside the formula range.
 	    return [];
 	}
