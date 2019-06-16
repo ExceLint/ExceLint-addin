@@ -1,5 +1,21 @@
 "use strict";
 // colorutils
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
 exports.__esModule = true;
 var ColorUtils = /** @class */ (function () {
     function ColorUtils() {
@@ -82,8 +98,8 @@ var ColorUtils = /** @class */ (function () {
     };
     ColorUtils.adjust_brightness = function (color, multiplier) {
         var c = ColorUtils.rgb_ex.exec(color);
-        var _a = [parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)], r = _a[0], g = _a[1], b = _a[2];
-        var _b = ColorUtils.RGBtoHSV(r, g, b), h = _b[0], s = _b[1], v = _b[2];
+        var _a = __read([parseInt(c[1], 16), parseInt(c[2], 16), parseInt(c[3], 16)], 3), r = _a[0], g = _a[1], b = _a[2];
+        var _b = __read(ColorUtils.RGBtoHSV(r, g, b), 3), h = _b[0], s = _b[1], v = _b[2];
         v = multiplier * v;
         if (v <= 0.0) {
             v = 0.0;
@@ -92,7 +108,7 @@ var ColorUtils = /** @class */ (function () {
             v = 0.99;
         }
         var rgb = ColorUtils.HSVtoRGB(h, s, v);
-        var _c = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _c[0], gs = _c[1], bs = _c[2];
+        var _c = __read(rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), 3), rs = _c[0], gs = _c[1], bs = _c[2];
         var str = '#' + rs + gs + bs;
         str = str.toUpperCase();
         return str;

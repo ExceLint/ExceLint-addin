@@ -276,5 +276,112 @@ export class ExcelUtils {
     }
 
 
+    public static transitive_closure(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>, all_deps : { [index: number]: Array<[number,number]> }) : Array<[number, number]> {
+	console.log("tc1: transitive closure of "+row+", "+col+", origin_row = " + origin_row + ", origin_col = " + origin_col);
+	const index = row * formulas[0].length + col;
+//	console.log("index = " + index);
+	if (index in all_deps) {
+	    // We already processed this index: return it.
+	    return all_deps[index];
+	}
+//	console.log("tc2");
+	console.log("formulas[" + row + "][" + col + "]");
+	if ((row >= formulas.length) || (col >= formulas[0].length)) {
+	    // Discard references to cells outside the formula range.
+	    return [];
+	}
+	const cell = formulas[row][col];
+	console.log("formulas[" + row + "][" + col + "] = " + cell);
+	if (cell.length <= 1 || cell[0] !== "=") {
+	    // Not a formula -- no dependencies.
+	    return [];
+	}
+//	console.log("tc3: cell = " + cell);
+	let deps = ExcelUtils.all_cell_dependencies(cell);
+	if (deps.length >= 1) {
+	    let tcs = deps;
+	    console.log("cell deps = " + JSON.stringify(tcs));
+	    for (let dep of deps) {
+		dep[0] -= origin_col;
+//		dep[0] -= 1;
+		dep[1] -= origin_row;
+//		dep[1] -= 1;
+//		console.log("tc4 " + JSON.stringify(dep));
+		tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1]-1, dep[0]-1, origin_row, origin_col, formulas, all_deps));
+	    }
+//	    console.log("tc5: tcs = " + JSON.stringify(tcs));
+	    // Remove any duplicates.
+	    tcs = [...new Set(tcs.map(x => JSON.stringify(x)))].map(x => JSON.parse(x))	
+	    all_deps[index] = tcs;
+	    console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
+	    return tcs;
+	} else {
+	    return [];
+	}
+    }
+    
+    public static generate_all_references(formulas: Array<Array<string>>): { [dep: string]: Array<[number, number]> } {
+	let refs = {};
+	let counter = 0;
+//	let all_deps = {};
+	console.log(JSON.stringify(formulas));
+	for (let i = 0; i < formulas.length; i++) {
+	    let row = formulas[i];
+	    for (let j = 0; j < row.length; j++) {
+		let cell = row[j];
+		counter++;
+		if (counter % 1000 == 0) {
+		    console.log(counter + " references down");
+		}
+
+		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+		if (cell[0] === '=') { // It's a formula.
+		    const index = i * formulas[0].length + j;
+		    let direct_refs = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
+		    console.log("direct refs for " + i + ", " + j + " (" + cell +") = " + JSON.stringify(direct_refs));
+//		    let transitive_deps = ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
+//		    console.log("TRANSITIVE CLOSURE FOR " + i + ", " + j + " = " + JSON.stringify(transitive_deps));
+//		    all_deps[index] = transitive_deps; //
+		    for (let dep of direct_refs) { // direct_refs) {
+			let key = dep.join(',');
+			refs[key] = true; // refs[key] || [];
+			// NOTE: we are disabling pushing the src onto the list because we don't need it.
+			// refs[dep2.join(',')].push(src);
+		    }
+		}
+	    }
+	}
+    	return refs;
+    }
+
+    public static generate_all_references_old(formulas: Array<Array<string>>): { [dep: string]: Array<[number, number]> } {
+	// Generate all references.
+	let refs = {};
+	let counter = 0;
+	for (let i = 0; i < formulas.length; i++) {
+	    let row = formulas[i];
+	    for (let j = 0; j < row.length; j++) {
+		let cell = row[j];
+		counter++;
+		if (counter % 1000 == 0) {
+		    console.log(counter + " references down");
+		}
+
+		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+		if (cell[0] === '=') {
+		    let all_deps = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
+		    for (let dep of all_deps) {
+			let key = dep.join(',');
+			refs[key] = true; // refs[key] || [];
+			// NOTE: we are disabling pushing the src onto the list because we don't need it.
+			// refs[dep2.join(',')].push(src);
+		    }
+		}
+	    }
+	}
+    	return refs;
+    }
+
+
 
 }

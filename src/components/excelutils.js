@@ -1,5 +1,35 @@
 "use strict";
 // excel-utils
+var __values = (this && this.__values) || function (o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+};
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
 exports.__esModule = true;
 var sjcl = require("sjcl");
 var rectangleutils_js_1 = require("./rectangleutils.js");
@@ -34,15 +64,25 @@ var ExcelUtils = /** @class */ (function () {
     };
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     ExcelUtils.column_name_to_index = function (name) {
+        var e_1, _a;
         if (name.length === 1) { // optimizing for the overwhelmingly common case
             return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
         }
         var value = 0;
         var split_name = name.split('');
-        for (var _i = 0, split_name_1 = split_name; _i < split_name_1.length; _i++) {
-            var i = split_name_1[_i];
-            value *= 26;
-            value += (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
+        try {
+            for (var split_name_1 = __values(split_name), split_name_1_1 = split_name_1.next(); !split_name_1_1.done; split_name_1_1 = split_name_1.next()) {
+                var i = split_name_1_1.value;
+                value *= 26;
+                value += (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (split_name_1_1 && !split_name_1_1.done && (_a = split_name_1["return"])) _a.call(split_name_1);
+            }
+            finally { if (e_1) throw e_1.error; }
         }
         return value;
     };
@@ -225,6 +265,141 @@ var ExcelUtils = /** @class */ (function () {
             }
         }
         return base_vector;
+    };
+    ExcelUtils.transitive_closure = function (row, col, origin_row, origin_col, formulas, all_deps) {
+        var e_2, _a;
+        console.log("tc1: transitive closure of " + row + ", " + col + ", origin_row = " + origin_row + ", origin_col = " + origin_col);
+        var index = row * formulas[0].length + col;
+        //	console.log("index = " + index);
+        if (index in all_deps) {
+            // We already processed this index: return it.
+            return all_deps[index];
+        }
+        //	console.log("tc2");
+        console.log("formulas[" + row + "][" + col + "]");
+        if ((row >= formulas.length) || (col >= formulas[0].length)) {
+            // Discard references to cells outside the formula range.
+            return [];
+        }
+        var cell = formulas[row][col];
+        console.log("formulas[" + row + "][" + col + "] = " + cell);
+        if (cell.length <= 1 || cell[0] !== "=") {
+            // Not a formula -- no dependencies.
+            return [];
+        }
+        //	console.log("tc3: cell = " + cell);
+        var deps = ExcelUtils.all_cell_dependencies(cell);
+        if (deps.length >= 1) {
+            var tcs = deps;
+            console.log("cell deps = " + JSON.stringify(tcs));
+            try {
+                for (var deps_1 = __values(deps), deps_1_1 = deps_1.next(); !deps_1_1.done; deps_1_1 = deps_1.next()) {
+                    var dep = deps_1_1.value;
+                    dep[0] -= origin_col;
+                    //		dep[0] -= 1;
+                    dep[1] -= origin_row;
+                    //		dep[1] -= 1;
+                    //		console.log("tc4 " + JSON.stringify(dep));
+                    tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1] - 1, dep[0] - 1, origin_row, origin_col, formulas, all_deps));
+                }
+            }
+            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+            finally {
+                try {
+                    if (deps_1_1 && !deps_1_1.done && (_a = deps_1["return"])) _a.call(deps_1);
+                }
+                finally { if (e_2) throw e_2.error; }
+            }
+            //	    console.log("tc5: tcs = " + JSON.stringify(tcs));
+            // Remove any duplicates.
+            tcs = __spread(new Set(tcs.map(function (x) { return JSON.stringify(x); }))).map(function (x) { return JSON.parse(x); });
+            all_deps[index] = tcs;
+            console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
+            return tcs;
+        }
+        else {
+            return [];
+        }
+    };
+    ExcelUtils.generate_all_references = function (formulas) {
+        var e_3, _a;
+        var refs = {};
+        var counter = 0;
+        //	let all_deps = {};
+        console.log(JSON.stringify(formulas));
+        for (var i = 0; i < formulas.length; i++) {
+            var row = formulas[i];
+            for (var j = 0; j < row.length; j++) {
+                var cell = row[j];
+                counter++;
+                if (counter % 1000 == 0) {
+                    console.log(counter + " references down");
+                }
+                // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+                if (cell[0] === '=') { // It's a formula.
+                    var index = i * formulas[0].length + j;
+                    var direct_refs = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
+                    console.log("direct refs for " + i + ", " + j + " (" + cell + ") = " + JSON.stringify(direct_refs));
+                    try {
+                        //		    let transitive_deps = ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
+                        //		    console.log("TRANSITIVE CLOSURE FOR " + i + ", " + j + " = " + JSON.stringify(transitive_deps));
+                        //		    all_deps[index] = transitive_deps; //
+                        for (var direct_refs_1 = __values(direct_refs), direct_refs_1_1 = direct_refs_1.next(); !direct_refs_1_1.done; direct_refs_1_1 = direct_refs_1.next()) { // direct_refs) {
+                            var dep = direct_refs_1_1.value;
+                            var key = dep.join(',');
+                            refs[key] = true; // refs[key] || [];
+                            // NOTE: we are disabling pushing the src onto the list because we don't need it.
+                            // refs[dep2.join(',')].push(src);
+                        }
+                    }
+                    catch (e_3_1) { e_3 = { error: e_3_1 }; }
+                    finally {
+                        try {
+                            if (direct_refs_1_1 && !direct_refs_1_1.done && (_a = direct_refs_1["return"])) _a.call(direct_refs_1);
+                        }
+                        finally { if (e_3) throw e_3.error; }
+                    }
+                }
+            }
+        }
+        return refs;
+    };
+    ExcelUtils.generate_all_references_old = function (formulas) {
+        var e_4, _a;
+        // Generate all references.
+        var refs = {};
+        var counter = 0;
+        for (var i = 0; i < formulas.length; i++) {
+            var row = formulas[i];
+            for (var j = 0; j < row.length; j++) {
+                var cell = row[j];
+                counter++;
+                if (counter % 1000 == 0) {
+                    console.log(counter + " references down");
+                }
+                // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+                if (cell[0] === '=') {
+                    var all_deps = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
+                    try {
+                        for (var all_deps_1 = __values(all_deps), all_deps_1_1 = all_deps_1.next(); !all_deps_1_1.done; all_deps_1_1 = all_deps_1.next()) {
+                            var dep = all_deps_1_1.value;
+                            var key = dep.join(',');
+                            refs[key] = true; // refs[key] || [];
+                            // NOTE: we are disabling pushing the src onto the list because we don't need it.
+                            // refs[dep2.join(',')].push(src);
+                        }
+                    }
+                    catch (e_4_1) { e_4 = { error: e_4_1 }; }
+                    finally {
+                        try {
+                            if (all_deps_1_1 && !all_deps_1_1.done && (_a = all_deps_1["return"])) _a.call(all_deps_1);
+                        }
+                        finally { if (e_4) throw e_4.error; }
+                    }
+                }
+            }
+        }
+        return refs;
     };
     // Matchers for all kinds of Excel expressions.
     ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
