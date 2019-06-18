@@ -136,24 +136,31 @@ var ExcelUtils = /** @class */ (function () {
                 return [col - origin_col, row - origin_row];
             }
         }
+        console.log("cell is " + cell);
         throw new Error('We should never get here.');
         return [0, 0];
     };
     ExcelUtils.extract_sheet_cell = function (str) {
+        console.log("extract_sheet_cell " + str);
         var matched = ExcelUtils.sheet_plus_cell.exec(str);
         if (matched) {
-            return [matched[1], matched[2], matched[3]];
+            console.log("extract_sheet_cell matched " + str);
+            // There is only one thing to match for this pattern: we convert it into a range.
+            return [matched[1], matched[2], matched[2]];
         }
+        console.log("extract_sheet_cell failed for " + str);
         return ['', '', ''];
     };
     ExcelUtils.extract_sheet_range = function (str) {
         var matched = ExcelUtils.sheet_plus_range.exec(str);
         if (matched) {
+            console.log("extract_sheet_range matched " + str);
             return [matched[1], matched[2], matched[3]];
         }
-        return ['', '', ''];
+        console.log("extract_sheet_range failed to match " + str);
+        return ExcelUtils.extract_sheet_cell(str);
     };
-    ExcelUtils.all_cell_dependencies = function (range) {
+    ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row) {
         //	console.log("looking for dependencies in " + range);
         var found_pair = null;
         var all_vectors = [];
@@ -170,11 +177,11 @@ var ExcelUtils = /** @class */ (function () {
                 //		console.log('all_cell_dependencies --> ' + found_pair);
                 var first_cell = found_pair[1];
                 //		console.log(' first_cell = ' + first_cell);
-                var first_vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
+                var first_vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
                 //		console.log(' first_vec = ' + JSON.stringify(first_vec));
                 var last_cell = found_pair[2];
                 //		console.log(' last_cell = ' + last_cell);
-                var last_vec = ExcelUtils.cell_dependency(last_cell, 0, 0);
+                var last_vec = ExcelUtils.cell_dependency(last_cell, origin_col, origin_row);
                 //		console.log(' last_vec = ' + JSON.stringify(last_vec));
                 // First_vec is the upper-left hand side of a rectangle.
                 // Last_vec is the lower-right hand side of a rectangle.
@@ -201,7 +208,7 @@ var ExcelUtils = /** @class */ (function () {
                 //	    console.log(found_pair);
                 var first_cell = singleton[1];
                 //                console.log(first_cell);
-                var vec = ExcelUtils.cell_dependency(first_cell, 0, 0);
+                var vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.
                 range = range.replace(singleton[0], '_');
@@ -269,7 +276,7 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.transitive_closure = function (row, col, origin_row, origin_col, formulas, all_deps) {
         var e_2, _a;
         console.log("tc1: transitive closure of " + row + ", " + col + ", origin_row = " + origin_row + ", origin_col = " + origin_col);
-        var index = row * formulas[0].length + col;
+        var index = [row, col].join(',');
         //	console.log("index = " + index);
         if (index in all_deps) {
             // We already processed this index: return it.
@@ -291,16 +298,16 @@ var ExcelUtils = /** @class */ (function () {
             return [];
         }
         //	console.log("tc3: cell = " + cell);
-        var deps = ExcelUtils.all_cell_dependencies(cell);
+        var deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
         if (deps.length >= 1) {
             var tcs = deps;
             console.log("cell deps = " + JSON.stringify(tcs));
             try {
                 for (var deps_1 = __values(deps), deps_1_1 = deps_1.next(); !deps_1_1.done; deps_1_1 = deps_1.next()) {
                     var dep = deps_1_1.value;
-                    dep[0] -= origin_col;
+                    //		dep[0] -= origin_col;
                     //		dep[0] -= 1;
-                    dep[1] -= origin_row;
+                    //		dep[1] -= origin_row;
                     //		dep[1] -= 1;
                     //		console.log("tc4 " + JSON.stringify(dep));
                     tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1] - 1, dep[0] - 1, origin_row, origin_col, formulas, all_deps));
@@ -324,7 +331,7 @@ var ExcelUtils = /** @class */ (function () {
             return [];
         }
     };
-    ExcelUtils.generate_all_references = function (formulas) {
+    ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {
         var e_3, _a;
         var refs = {};
         var counter = 0;
@@ -340,8 +347,7 @@ var ExcelUtils = /** @class */ (function () {
                 }
                 // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
                 if (cell[0] === '=') { // It's a formula.
-                    var index = i * formulas[0].length + j;
-                    var direct_refs = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
+                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
                     console.log("direct refs for " + i + ", " + j + " (" + cell + ") = " + JSON.stringify(direct_refs));
                     try {
                         //		    let transitive_deps = ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
@@ -361,43 +367,6 @@ var ExcelUtils = /** @class */ (function () {
                             if (direct_refs_1_1 && !direct_refs_1_1.done && (_a = direct_refs_1["return"])) _a.call(direct_refs_1);
                         }
                         finally { if (e_3) throw e_3.error; }
-                    }
-                }
-            }
-        }
-        return refs;
-    };
-    ExcelUtils.generate_all_references_old = function (formulas) {
-        var e_4, _a;
-        // Generate all references.
-        var refs = {};
-        var counter = 0;
-        for (var i = 0; i < formulas.length; i++) {
-            var row = formulas[i];
-            for (var j = 0; j < row.length; j++) {
-                var cell = row[j];
-                counter++;
-                if (counter % 1000 == 0) {
-                    console.log(counter + " references down");
-                }
-                // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-                if (cell[0] === '=') {
-                    var all_deps = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
-                    try {
-                        for (var all_deps_1 = __values(all_deps), all_deps_1_1 = all_deps_1.next(); !all_deps_1_1.done; all_deps_1_1 = all_deps_1.next()) {
-                            var dep = all_deps_1_1.value;
-                            var key = dep.join(',');
-                            refs[key] = true; // refs[key] || [];
-                            // NOTE: we are disabling pushing the src onto the list because we don't need it.
-                            // refs[dep2.join(',')].push(src);
-                        }
-                    }
-                    catch (e_4_1) { e_4 = { error: e_4_1 }; }
-                    finally {
-                        try {
-                            if (all_deps_1_1 && !all_deps_1_1.done && (_a = all_deps_1["return"])) _a.call(all_deps_1);
-                        }
-                        finally { if (e_4) throw e_4.error; }
                     }
                 }
             }

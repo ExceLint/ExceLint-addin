@@ -122,9 +122,9 @@ export class Colorize {
 //				    console.log("process_formulas: row = " + JSON.stringify(cell));
 				//				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
 				console.log("about to check " + i + ", " + j);
-				let vec_array = ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
+				let vec_array = ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
 				console.log("vec_array WAS = " + JSON.stringify(vec_array));
-				vec_array = vec_array.map((x) => [x[1] - i - 1, x[0] - j - 1]);
+				vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); // was -i, -j
 				console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
 				if (vec_array.length == 0) {
 				    // No dependencies! Use a distinguished "0" value (always the same color?).

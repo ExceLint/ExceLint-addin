@@ -391,8 +391,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
-		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
-		let refs = ExcelUtils.generate_all_references(formulas);
+		await context.sync();
+//		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
+		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("generated all references");
 		await setTimeout(() => {}, 0);
 		let processed_data = Colorize.color_all_data(refs);
@@ -430,6 +431,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		//		console.log("processed data.");
 		t.split("processed data");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
+		await context.sync();
 		t.split("processed formulas");
 // 		await context.sync(); // DEBUG
 //		t.split("synched and processed everything");

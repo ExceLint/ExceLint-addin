@@ -129,9 +129,11 @@ var Colorize = /** @class */ (function () {
         var all_deps = {};
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1]]; };
         var output = [];
-        var _loop_1 = function (i) {
+        // Build up all of the columns of colors.
+        for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
-            var _loop_2 = function (j) {
+            //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
+            for (var j = 0; j < row.length; j++) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     var cell = row[j];
                     //				console.log("process_formulas: i = " + i + ", j = " + j);
@@ -139,9 +141,9 @@ var Colorize = /** @class */ (function () {
                     //				    console.log("process_formulas: row = " + JSON.stringify(cell));
                     //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
                     console.log("about to check " + i + ", " + j);
-                    var vec_array = excelutils_1.ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
+                    var vec_array = excelutils_1.ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
                     console.log("vec_array WAS = " + JSON.stringify(vec_array));
-                    vec_array = vec_array.map(function (x) { return [x[1] - i - 1, x[0] - j - 1]; });
+                    vec_array = vec_array.map(function (x) { return [x[1] - 1, x[0] - 1]; }); // was -i, -j
                     console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
                     if (vec_array.length == 0) {
                         // No dependencies! Use a distinguished "0" value (always the same color?).
@@ -156,7 +158,7 @@ var Colorize = /** @class */ (function () {
                         }
                         else {
                             //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
-                            var hash = this_1.hash_vector(vec);
+                            var hash = this.hash_vector(vec);
                             var str = "";
                             if (hash == lastHash) {
                             }
@@ -170,16 +172,7 @@ var Colorize = /** @class */ (function () {
                         }
                     }
                 }
-            };
-            //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
-            for (var j = 0; j < row.length; j++) {
-                _loop_2(j);
             }
-        };
-        var this_1 = this;
-        // Build up all of the columns of colors.
-        for (var i = 0; i < formulas.length; i++) {
-            _loop_1(i);
         }
         return output;
     };
