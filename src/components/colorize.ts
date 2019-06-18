@@ -131,7 +131,8 @@ export class Colorize {
 		    console.log("about to check " + i + ", " + j);
 		    let vec_array = ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
-		    vec_array = vec_array.map((x) => [x[0] - 1, x[1] - 1]); // was -i, -j
+		    vec_array = vec_array.map((x) => [x[1] - 1 - i, x[0] - 1 - j]); // was -i, -j
+//		    vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
 		    console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
 		    if (vec_array.length == 0) {
 			// No dependencies! Use a distinguished "0" value (always the same color?).

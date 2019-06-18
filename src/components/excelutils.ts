@@ -317,7 +317,7 @@ export class ExcelUtils {
 	    return [];
 	}
 //	console.log("tc3: cell = " + cell);
-	let deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
+	let deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
 	if (deps.length >= 1) {
 	    let tcs = deps.slice();
 	    console.log("cell deps = " + JSON.stringify(tcs));

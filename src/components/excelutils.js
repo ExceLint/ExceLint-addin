@@ -306,7 +306,7 @@ var ExcelUtils = /** @class */ (function () {
             return [];
         }
         //	console.log("tc3: cell = " + cell);
-        var deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
+        var deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
         if (deps.length >= 1) {
             var tcs = deps.slice();
             console.log("cell deps = " + JSON.stringify(tcs));
