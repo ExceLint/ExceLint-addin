@@ -129,7 +129,12 @@ var Colorize = /** @class */ (function () {
         var all_deps = {};
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1]]; };
         var output = [];
+        console.log("formulas = " + JSON.stringify(formulas));
         // Build up all of the columns of colors.
+        // First, let's build up the transitive closure of formulas. Dependencies will be stored in all_deps.
+        excelutils_1.ExcelUtils.build_transitive_closures(formulas, origin_row, origin_col, all_deps);
+        console.log("all_deps = " + JSON.stringify(all_deps));
+        // Now all the dependencies are cached. Compute the vectors.
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
             //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
@@ -143,7 +148,7 @@ var Colorize = /** @class */ (function () {
                     console.log("about to check " + i + ", " + j);
                     var vec_array = excelutils_1.ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
                     console.log("vec_array WAS = " + JSON.stringify(vec_array));
-                    vec_array = vec_array.map(function (x) { return [x[1] - 1, x[0] - 1]; }); // was -i, -j
+                    vec_array = vec_array.map(function (x) { return [x[0] - 1, x[1] - 1]; }); // was -i, -j
                     console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
                     if (vec_array.length == 0) {
                         // No dependencies! Use a distinguished "0" value (always the same color?).
@@ -157,23 +162,26 @@ var Colorize = /** @class */ (function () {
                             output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
                         }
                         else {
-                            //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
+                            console.log("process_formulas: vector = " + JSON.stringify(vec));
                             var hash = this.hash_vector(vec);
+                            console.log("hash = " + hash);
                             var str = "";
-                            if (hash == lastHash) {
+                            if (false) { // hash == lastHash) {
                             }
                             else {
                                 lastHash = hash;
                                 lastHashString = hash.toString();
                             }
                             str = lastHashString;
-                            //				    console.log("process_formulas: hash of this vector = " + hash);
+                            console.log("process_formulas: hash of this vector = " + hash);
+                            console.log("pushing " + (j + origin_col + 1) + ", " + (i + origin_row + 1));
                             output.push([[j + origin_col + 1, i + origin_row + 1], str]);
                         }
                     }
                 }
             }
         }
+        console.log(JSON.stringify(all_deps));
         return output;
     };
     //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
@@ -481,8 +489,8 @@ var Colorize = /** @class */ (function () {
         }
     };
     Colorize.hash_vector = function (vec) {
-        var baseX = 0; // was 7;
-        var baseY = 0; // was 3;
+        var baseX = 0; // 7;
+        var baseY = 0; // 3;
         var v0 = vec[0] - baseX;
         v0 = v0 * v0;
         var v1 = vec[1] - baseY;
@@ -500,7 +508,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
-    Colorize.Multiplier = 1; // was 103038;
+    Colorize.Multiplier = 1; // 103038;
     return Colorize;
 }());
 exports.Colorize = Colorize;

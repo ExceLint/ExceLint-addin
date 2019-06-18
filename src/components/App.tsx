@@ -299,17 +299,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Now start colorizing.
 
+		// Turn off screen updating while this is happening.
  		app.suspendScreenUpdatingUntilNextSync();
-		
-//		await context.sync();
-//  		console.log("cleared background color");
-
-		// Now we can get the formula ranges (all cells with formulas),
-		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
-//		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas); 
-// 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
-		//									  Excel.SpecialCellValueType.numbers);
-		//		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
 
 		// Compute the number of cells in the range "usedRange".
 		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
@@ -373,6 +364,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
+		// Color numeric formulas yellow as well, if this is on.
 		if (useNumericFormulaRanges && numericFormulaRanges) {
 		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}

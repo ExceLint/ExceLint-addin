@@ -273,6 +273,14 @@ var ExcelUtils = /** @class */ (function () {
         }
         return base_vector;
     };
+    ExcelUtils.build_transitive_closures = function (formulas, origin_col, origin_row, all_deps) {
+        for (var i = 0; i < formulas.length; i++) {
+            for (var j = 0; j < formulas[0].length; j++) {
+                // Ignore the return value and just use it for the side effects on all_deps.
+                ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
+            }
+        }
+    };
     ExcelUtils.transitive_closure = function (row, col, origin_row, origin_col, formulas, all_deps) {
         var e_2, _a;
         console.log("tc1: transitive closure of " + row + ", " + col + ", origin_row = " + origin_row + ", origin_col = " + origin_col);
@@ -300,7 +308,7 @@ var ExcelUtils = /** @class */ (function () {
         //	console.log("tc3: cell = " + cell);
         var deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
         if (deps.length >= 1) {
-            var tcs = deps;
+            var tcs = deps.slice();
             console.log("cell deps = " + JSON.stringify(tcs));
             try {
                 for (var deps_1 = __values(deps), deps_1_1 = deps_1.next(); !deps_1_1.done; deps_1_1 = deps_1.next()) {
@@ -325,7 +333,7 @@ var ExcelUtils = /** @class */ (function () {
             tcs = __spread(new Set(tcs.map(function (x) { return JSON.stringify(x); }))).map(function (x) { return JSON.parse(x); });
             all_deps[index] = tcs;
             console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
-            return tcs;
+            return tcs.slice(); // FIXME perhaps
         }
         else {
             return [];
@@ -347,8 +355,9 @@ var ExcelUtils = /** @class */ (function () {
                 }
                 // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
                 if (cell[0] === '=') { // It's a formula.
-                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
-                    console.log("direct refs for " + i + ", " + j + " (" + cell + ") = " + JSON.stringify(direct_refs));
+                    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
+                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+                    console.log("direct refs for " + i + ", " + j + " [origin_row=" + origin_row + ", origin_col=" + origin_col + "] (" + cell + ") = " + JSON.stringify(direct_refs));
                     try {
                         //		    let transitive_deps = ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
                         //		    console.log("TRANSITIVE CLOSURE FOR " + i + ", " + j + " = " + JSON.stringify(transitive_deps));
