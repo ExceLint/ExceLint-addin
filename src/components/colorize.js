@@ -1,4 +1,30 @@
 "use strict";
+var __values = (this && this.__values) || function (o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+};
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
 exports.__esModule = true;
 var colorutils_1 = require("./colorutils");
 var excelutils_1 = require("./excelutils");
@@ -9,12 +35,22 @@ var Colorize = /** @class */ (function () {
     function Colorize() {
     }
     Colorize.initialize = function () {
+        var e_1, _a;
         if (!this.initialized) {
             this.make_light_color_versions();
-            for (var _i = 0, _a = Object.keys(this.light_color_dict); _i < _a.length; _i++) {
-                var i = _a[_i];
-                this.color_list.push(i);
-                this.light_color_list.push(this.light_color_dict[i]);
+            try {
+                for (var _b = __values(Object.keys(this.light_color_dict)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var i = _c.value;
+                    this.color_list.push(i);
+                    this.light_color_list.push(this.light_color_dict[i]);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
             }
             this.initialized = true;
         }
@@ -26,7 +62,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.is_banned_color = function (h, s, v) {
         var ban_it = false;
-        var _a = colorutils_1.ColorUtils.HSVtoRGB(h, s, v), r = _a[0], g = _a[1], b = _a[2];
+        var _a = __read(colorutils_1.ColorUtils.HSVtoRGB(h, s, v), 3), r = _a[0], g = _a[1], b = _a[2];
         if ((r > 128) && (g < 128) && (b < 128)) {
             // Too red.
             ban_it = true;
@@ -65,7 +101,7 @@ var Colorize = /** @class */ (function () {
                 continue;
             }
             var rgb = colorutils_1.ColorUtils.HSVtoRGB(h, s, v);
-            var _a = rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), rs = _a[0], gs = _a[1], bs = _a[2];
+            var _a = __read(rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), 3), rs = _a[0], gs = _a[1], bs = _a[2];
             var str = '#' + rs + gs + bs;
             str = str.toUpperCase();
             this.light_color_dict[str] = '';
@@ -90,43 +126,75 @@ var Colorize = /** @class */ (function () {
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
         var lastHash = 0;
         var lastHashString = lastHash.toString();
+        var all_deps = {};
+        var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1]]; };
         var output = [];
+        console.log("formulas = " + JSON.stringify(formulas));
         // Build up all of the columns of colors.
-        for (var i = 0; i < formulas.length; i++) {
+        // First, let's build up the transitive closure of formulas. Dependencies will be stored in all_deps.
+        excelutils_1.ExcelUtils.build_transitive_closures(formulas, origin_row, origin_col, all_deps);
+        console.log("all_deps = " + JSON.stringify(all_deps));
+        var _loop_1 = function (i) {
             var row = formulas[i];
-            //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
-            for (var j = 0; j < row.length; j++) {
+            var _loop_2 = function (j) {
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     var cell = row[j];
                     //				console.log("process_formulas: i = " + i + ", j = " + j);
                     //				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
                     //				    console.log("process_formulas: row = " + JSON.stringify(cell));
-                    var vec = excelutils_1.ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
-                    if (vec[0] === 0 && vec[1] === 0) {
+                    //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
+                    console.log("about to check " + i + ", " + j);
+                    var vec_array = excelutils_1.ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
+                    console.log("vec_array WAS = " + JSON.stringify(vec_array));
+                    vec_array = vec_array.map(function (x) { return [x[1] - 1 - i, x[0] - 1 - j]; }); // was -i, -j
+                    //		    vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
+                    console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
+                    if (vec_array.length == 0) {
                         // No dependencies! Use a distinguished "0" value (always the same color?).
                         output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
                     }
                     else {
-                        //				    console.log("process_formulas: vector = " + JSON.stringify(vec));
-                        var hash = this.hash_vector(vec);
-                        var str = "";
-                        if (hash == lastHash) {
+                        var vec = vec_array.reduce(reducer);
+                        console.log("vec = " + JSON.stringify(vec));
+                        if (vec[0] === 0 && vec[1] === 0) {
+                            // No dependencies! Use a distinguished "0" value (always the same color?).
+                            output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
                         }
                         else {
-                            lastHash = hash;
-                            lastHashString = hash.toString();
+                            console.log("process_formulas: vector = " + JSON.stringify(vec));
+                            var hash = this_1.hash_vector(vec);
+                            console.log("hash = " + hash);
+                            var str = "";
+                            if (false) { // hash == lastHash) {
+                            }
+                            else {
+                                lastHash = hash;
+                                lastHashString = hash.toString();
+                            }
+                            str = lastHashString;
+                            console.log("process_formulas: hash of this vector = " + hash);
+                            console.log("pushing " + (j + origin_col + 1) + ", " + (i + origin_row + 1));
+                            output.push([[j + origin_col + 1, i + origin_row + 1], str]);
                         }
-                        str = lastHashString;
-                        //				    console.log("process_formulas: hash of this vector = " + hash);
-                        output.push([[j + origin_col + 1, i + origin_row + 1], str]);
                     }
                 }
+            };
+            //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
+            for (var j = 0; j < row.length; j++) {
+                _loop_2(j);
             }
+        };
+        var this_1 = this;
+        // Now all the dependencies are cached. Compute the vectors.
+        for (var i = 0; i < formulas.length; i++) {
+            _loop_1(i);
         }
+        console.log(JSON.stringify(all_deps));
         return output;
     };
     //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
     Colorize.color_all_data = function (refs) {
+        var e_2, _a;
         var t = new timer_1.Timer("color_all_data");
         //console.log('color_all_data');
         //console.log("formula length = " + formulas.length);
@@ -136,13 +204,22 @@ var Colorize = /** @class */ (function () {
         //console.log("generated all references: length = " + Object.keys(refs).length);
         //	console.log("all refs = " + JSON.stringify(refs));
         var processed_data = [];
-        for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
-            var refvec = _a[_i];
-            //	    let rv = JSON.parse('[' + refvec + ']');
-            var rv = refvec.split(',');
-            var row = Number(rv[0]);
-            var col = Number(rv[1]);
-            processed_data.push([[row, col], 1]);
+        try {
+            for (var _b = __values(Object.keys(refs)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var refvec = _c.value;
+                //	    let rv = JSON.parse('[' + refvec + ']');
+                var rv = refvec.split(',');
+                var row = Number(rv[0]);
+                var col = Number(rv[1]);
+                processed_data.push([[row, col], 1]);
+            }
+        }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+            }
+            finally { if (e_2) throw e_2.error; }
         }
         t.split("processed all data");
         //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
@@ -151,23 +228,43 @@ var Colorize = /** @class */ (function () {
     // Take in a list of [[row, col], color] pairs and group them,
     // sorting them (e.g., by columns).
     Colorize.identify_ranges = function (list, sortfn) {
+        var e_3, _a, e_4, _b;
         // Separate into groups based on their string value.
         var groups = {};
-        for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
-            var r = list_1[_i];
-            groups[r[1]] = groups[r[1]] || [];
-            groups[r[1]].push(r[0]);
+        try {
+            for (var list_1 = __values(list), list_1_1 = list_1.next(); !list_1_1.done; list_1_1 = list_1.next()) {
+                var r = list_1_1.value;
+                groups[r[1]] = groups[r[1]] || [];
+                groups[r[1]].push(r[0]);
+            }
         }
-        // Now sort them all.
-        for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {
-            var k = _b[_a];
-            //	console.log(k);
-            groups[k].sort(sortfn);
-            //	console.log(groups[k]);
+        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+        finally {
+            try {
+                if (list_1_1 && !list_1_1.done && (_a = list_1["return"])) _a.call(list_1);
+            }
+            finally { if (e_3) throw e_3.error; }
+        }
+        try {
+            // Now sort them all.
+            for (var _c = __values(Object.keys(groups)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                var k = _d.value;
+                //	console.log(k);
+                groups[k].sort(sortfn);
+                //	console.log(groups[k]);
+            }
+        }
+        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        finally {
+            try {
+                if (_d && !_d.done && (_b = _c["return"])) _b.call(_c);
+            }
+            finally { if (e_4) throw e_4.error; }
         }
         return groups;
     };
     Colorize.group_ranges = function (groups, columnFirst) {
+        var e_5, _a, e_6, _b;
         var output = {};
         var index0 = 0; // column
         var index1 = 1; // row
@@ -175,24 +272,42 @@ var Colorize = /** @class */ (function () {
             index0 = 1; // row
             index1 = 0; // column
         }
-        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
-            var k = _a[_i];
-            output[k] = [];
-            var prev = groups[k].shift();
-            var last = prev;
-            for (var _b = 0, _c = groups[k]; _b < _c.length; _b++) {
-                var v = _c[_b];
-                // Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
-                if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
-                    last = v;
+        try {
+            for (var _c = __values(Object.keys(groups)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                var k = _d.value;
+                output[k] = [];
+                var prev = groups[k].shift();
+                var last = prev;
+                try {
+                    for (var _e = __values(groups[k]), _f = _e.next(); !_f.done; _f = _e.next()) {
+                        var v = _f.value;
+                        // Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
+                        if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
+                            last = v;
+                        }
+                        else {
+                            output[k].push([prev, last]);
+                            prev = v;
+                            last = v;
+                        }
+                    }
                 }
-                else {
-                    output[k].push([prev, last]);
-                    prev = v;
-                    last = v;
+                catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                finally {
+                    try {
+                        if (_f && !_f.done && (_b = _e["return"])) _b.call(_e);
+                    }
+                    finally { if (e_6) throw e_6.error; }
                 }
+                output[k].push([prev, last]);
             }
-            output[k].push([prev, last]);
+        }
+        catch (e_5_1) { e_5 = { error: e_5_1 }; }
+        finally {
+            try {
+                if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
+            }
+            finally { if (e_5) throw e_5.error; }
         }
         return output;
     };
@@ -261,37 +376,56 @@ var Colorize = /** @class */ (function () {
         return count;
     };
     Colorize.generate_proposed_fixes = function (groups, diagonal, area) {
+        var e_7, _a, e_8, _b;
         var proposed_fixes = [];
         var already_proposed_pair = {};
-        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
-            var k1 = _a[_i];
-            // Look for possible fixes in OTHER groups.
-            for (var i = 0; i < groups[k1].length; i++) {
-                var r1 = groups[k1][i];
-                var sr1 = JSON.stringify(r1);
-                for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
-                    var k2 = _c[_b];
-                    if (k1 === k2) {
-                        continue;
-                    }
-                    for (var j = 0; j < groups[k2].length; j++) {
-                        var r2 = groups[k2][j];
-                        var sr2 = JSON.stringify(r2);
-                        // Only add these if we have not already added them.
-                        if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
-                            // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
-                            if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
-                                already_proposed_pair[sr1 + sr2] = true;
-                                already_proposed_pair[sr2 + sr1] = true;
-                                ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                                var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
-                                // was Math.abs(parseFloat(k2) - parseFloat(k1))
-                                proposed_fixes.push([metric, r1, r2]);
+        try {
+            for (var _c = __values(Object.keys(groups)), _d = _c.next(); !_d.done; _d = _c.next()) {
+                var k1 = _d.value;
+                // Look for possible fixes in OTHER groups.
+                for (var i = 0; i < groups[k1].length; i++) {
+                    var r1 = groups[k1][i];
+                    var sr1 = JSON.stringify(r1);
+                    try {
+                        for (var _e = __values(Object.keys(groups)), _f = _e.next(); !_f.done; _f = _e.next()) {
+                            var k2 = _f.value;
+                            if (k1 === k2) {
+                                continue;
+                            }
+                            for (var j = 0; j < groups[k2].length; j++) {
+                                var r2 = groups[k2][j];
+                                var sr2 = JSON.stringify(r2);
+                                // Only add these if we have not already added them.
+                                if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+                                    // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
+                                    if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
+                                        already_proposed_pair[sr1 + sr2] = true;
+                                        already_proposed_pair[sr2 + sr1] = true;
+                                        ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+                                        var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
+                                        // was Math.abs(parseFloat(k2) - parseFloat(k1))
+                                        proposed_fixes.push([metric, r1, r2]);
+                                    }
+                                }
                             }
                         }
                     }
+                    catch (e_8_1) { e_8 = { error: e_8_1 }; }
+                    finally {
+                        try {
+                            if (_f && !_f.done && (_b = _e["return"])) _b.call(_e);
+                        }
+                        finally { if (e_8) throw e_8.error; }
+                    }
                 }
             }
+        }
+        catch (e_7_1) { e_7 = { error: e_7_1 }; }
+        finally {
+            try {
+                if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
+            }
+            finally { if (e_7) throw e_7.error; }
         }
         // First attribute is the Euclidean norm of the vectors. Differencing corresponds roughly to earth-mover distance.
         // Other attributes are the rectangles themselves. Sort by biggest entropy reduction first.
@@ -299,10 +433,20 @@ var Colorize = /** @class */ (function () {
         return proposed_fixes;
     };
     Colorize.merge_groups = function (groups) {
-        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
-            var k = _a[_i];
-            var g = groups[k].slice();
-            groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
+        var e_9, _a;
+        try {
+            for (var _b = __values(Object.keys(groups)), _c = _b.next(); !_c.done; _c = _b.next()) {
+                var k = _c.value;
+                var g = groups[k].slice();
+                groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
+            }
+        }
+        catch (e_9_1) { e_9 = { error: e_9_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
+            }
+            finally { if (e_9) throw e_9.error; }
         }
         return groups;
     };
@@ -352,36 +496,9 @@ var Colorize = /** @class */ (function () {
             }
         }
     };
-    Colorize.generate_all_references = function (formulas) {
-        // Generate all references.
-        var refs = {};
-        var counter = 0;
-        for (var i = 0; i < formulas.length; i++) {
-            var row = formulas[i];
-            for (var j = 0; j < row.length; j++) {
-                var cell = row[j];
-                counter++;
-                if (counter % 1000 == 0) {
-                    console.log(counter + " references down");
-                }
-                // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-                if (cell[0] === '=') {
-                    var all_deps = excelutils_1.ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
-                    for (var _i = 0, all_deps_1 = all_deps; _i < all_deps_1.length; _i++) {
-                        var dep = all_deps_1[_i];
-                        var key = dep.join(',');
-                        refs[key] = true; // refs[key] || [];
-                        // NOTE: we are disabling pushing the src onto the list because we don't need it.
-                        // refs[dep2.join(',')].push(src);
-                    }
-                }
-            }
-        }
-        return refs;
-    };
     Colorize.hash_vector = function (vec) {
-        var baseX = 0; // was 7;
-        var baseY = 0; // was 3;
+        var baseX = 0; // 7;
+        var baseY = 0; // 3;
         var v0 = vec[0] - baseX;
         v0 = v0 * v0;
         var v1 = vec[1] - baseY;
@@ -399,7 +516,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
-    Colorize.Multiplier = 1; // was 103038;
+    Colorize.Multiplier = 1; // 103038;
     return Colorize;
 }());
 exports.Colorize = Colorize;

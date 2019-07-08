@@ -152,22 +152,34 @@ export default class App extends React.Component<AppProps, AppState> {
 	    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
 	    return;
 	}
-	
+
+
 	let backupName = this.saved_original_sheetname(currentWorksheet.id);
 	// If it's there already, restore it.
 	try {
 	    let backupSheet = worksheets.getItemOrNullObject(backupName);
 	    if (backupSheet) {
+		// Get the current used range.
 		let destRange = currentWorksheet.getUsedRange(false) as any;
-//		let destRange = currentWorksheet.getRange("A1") as any;
+		
+		// Clear all formatting.
+		destRange.load(['format']);
+		await context.sync();
+		destRange.format.fill.clear();
+
+		await context.sync();
+		// Now get the used range again.
+		destRange = currentWorksheet.getUsedRange(false) as any;
+
+		// Grab the backup sheet info.
 		backupSheet.load(['format', 'address']);
-		let usedRange = backupSheet.getUsedRange(false) as any;
-		usedRange.load(['address']);
+		let backupSheetUsedRange = backupSheet.getUsedRange(false) as any;
+		backupSheetUsedRange.load(['address']);
  		await context.sync();
 
-		console.log("copying out " + JSON.stringify(usedRange.address));
-		// destRange.copyFrom(usedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
-		destRange.copyFrom(usedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
+		console.log("copying out " + JSON.stringify(backupSheetUsedRange.address));
+		// destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
+		destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
  		await context.sync();
 	    } else {
 		console.log("restoreFormats: didn't find the sheet " + backupName);
@@ -287,17 +299,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Now start colorizing.
 
+		// Turn off screen updating while this is happening.
  		app.suspendScreenUpdatingUntilNextSync();
-		
-//		await context.sync();
-//  		console.log("cleared background color");
-
-		// Now we can get the formula ranges (all cells with formulas),
-		// and the numeric ranges (all cells with numbers). These come in as 2-D arrays.
-//		let formulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas); 
-// 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
-		//									  Excel.SpecialCellValueType.numbers);
-		//		let numericRanges = usedRange.getSpecialCells("Visible", "Numbers"); // should work but does not
 
 		// Compute the number of cells in the range "usedRange".
 		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
@@ -361,6 +364,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
+		// Color numeric formulas yellow as well, if this is on.
 		if (useNumericFormulaRanges && numericFormulaRanges) {
 		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
@@ -379,7 +383,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
-		let refs = Colorize.generate_all_references(formulas);
+		await context.sync();
+//		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
+		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("generated all references");
 		await setTimeout(() => {}, 0);
 		let processed_data = Colorize.color_all_data(refs);
@@ -417,6 +423,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		//		console.log("processed data.");
 		t.split("processed data");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
+		await context.sync();
 		t.split("processed formulas");
 // 		await context.sync(); // DEBUG
 //		t.split("synched and processed everything");

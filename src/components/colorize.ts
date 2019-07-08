@@ -14,7 +14,7 @@ export class Colorize {
 	private static color_list = [];
 	private static light_color_list = [];
     private static light_color_dict = {};
-    private static Multiplier = 1; // was 103038;
+    private static Multiplier = 1; // 103038;
 
 	public static initialize() {
 		if (!this.initialized) {
@@ -105,41 +105,66 @@ export class Colorize {
     public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number], string]> {
 	let lastHash = 0;
 	let lastHashString = lastHash.toString();
-		let output: Array<[[number, number], string]> = [];
-		// Build up all of the columns of colors.
-		for (let i = 0; i < formulas.length; i++) {
-		    let row = formulas[i];
-//		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
-			for (let j = 0; j < row.length; j++) {
-			    if ((row[j].length > 0) && (row[j][0] === '=')) {
-				let cell = row[j];
-				
-				
-//				console.log("process_formulas: i = " + i + ", j = " + j);
-//				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
+	let all_deps = {};
+	let reducer = (acc:[number,number],curr:[number,number]) : [number,number] => [acc[0] + curr[0], acc[1] + curr[1]];
+	let output: Array<[[number, number], string]> = [];
+	console.log("formulas = " + JSON.stringify(formulas));
+	// Build up all of the columns of colors.
+
+	// First, let's build up the transitive closure of formulas. Dependencies will be stored in all_deps.
+	ExcelUtils.build_transitive_closures(formulas, origin_row, origin_col, all_deps);
+	console.log("all_deps = " + JSON.stringify(all_deps));
+
+	// Now all the dependencies are cached. Compute the vectors.
+	for (let i = 0; i < formulas.length; i++) {
+	    let row = formulas[i];
+	    //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
+	    for (let j = 0; j < row.length; j++) {
+		if ((row[j].length > 0) && (row[j][0] === '=')) {
+		    let cell = row[j];
+		    
+		    
+		    //				console.log("process_formulas: i = " + i + ", j = " + j);
+		    //				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
 //				    console.log("process_formulas: row = " + JSON.stringify(cell));
-				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
-				if (vec[0] === 0 && vec[1] === 0) {
-				    // No dependencies! Use a distinguished "0" value (always the same color?).
-				    output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
-				} else {
-//				    console.log("process_formulas: vector = " + JSON.stringify(vec));
-				    let hash = this.hash_vector(vec);
-				    let str = "";
-				    if (hash == lastHash) {
-				    } else {
-					lastHash = hash;
-					lastHashString = hash.toString();
-				    }
-				    str = lastHashString;
-//				    console.log("process_formulas: hash of this vector = " + hash);
-				    output.push([[j + origin_col + 1, i + origin_row + 1], str]);
-				}
-				}
+		    //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
+		    console.log("about to check " + i + ", " + j);
+		    let vec_array = ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
+		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
+		    vec_array = vec_array.map((x) => [x[1] - 1 - i, x[0] - 1 - j]); // was -i, -j
+//		    vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
+		    console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
+		    if (vec_array.length == 0) {
+			// No dependencies! Use a distinguished "0" value (always the same color?).
+			output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
+		    } else {
+			let vec = vec_array.reduce(reducer);
+			console.log("vec = " + JSON.stringify(vec));
+			if (vec[0] === 0 && vec[1] === 0) {
+			    // No dependencies! Use a distinguished "0" value (always the same color?).
+			    output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
+			} else {
+			    console.log("process_formulas: vector = " + JSON.stringify(vec));
+			    let hash = this.hash_vector(vec);
+			    console.log("hash = " + hash);
+			    let str = "";
+			    if (false) { // hash == lastHash) {
+			    } else {
+				lastHash = hash;
+				lastHashString = hash.toString();
+			    }
+			    str = lastHashString;
+			    console.log("process_formulas: hash of this vector = " + hash);
+			    console.log("pushing " + (j + origin_col + 1) + ", " + (i + origin_row + 1));
+			    output.push([[j + origin_col + 1, i + origin_row + 1], str]);
 			}
+		    }
 		}
-		return output;
+	    }
 	}
+	console.log(JSON.stringify(all_deps));
+	return output;
+    }
 
 
 //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
@@ -384,38 +409,9 @@ export class Colorize {
 		}
 	}
 
-    public static generate_all_references(formulas: Array<Array<string>>): { [dep: string]: Array<[number, number]> } {
-	// Generate all references.
-	let refs = {};
-	let counter = 0;
-	for (let i = 0; i < formulas.length; i++) {
-	    let row = formulas[i];
-	    for (let j = 0; j < row.length; j++) {
-		let cell = row[j];
-		counter++;
-		if (counter % 1000 == 0) {
-		    console.log(counter + " references down");
-		}
-
-		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
-		if (cell[0] === '=') {
-		    let all_deps = ExcelUtils.all_cell_dependencies(cell); // , origin_col + j, origin_row + i);
-		    for (let dep of all_deps) {
-			let key = dep.join(',');
-			refs[key] = true; // refs[key] || [];
-			// NOTE: we are disabling pushing the src onto the list because we don't need it.
-			// refs[dep2.join(',')].push(src);
-		    }
-		}
-	    }
-	}
-    	return refs;
-    }
-
-
     public static hash_vector(vec: Array<number>): number {
-	let baseX = 0; // was 7;
-	let baseY = 0; // was 3;
+	let baseX = 0; // 7;
+	let baseY = 0; // 3;
 	let v0 = vec[0] - baseX;
 	v0 = v0 * v0;
 	let v1 = vec[1] - baseY;

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2018",
     "module": "commonjs",
     "jsx": "react",
     "moduleResolution": "node",
@@ -12,11 +12,8 @@
     "allowUnusedLabels": false,
     "noImplicitReturns": true,
     "noUnusedParameters": true,
-      "noUnusedLocals": false, // true,
-    "lib": [
-      "es7",
-      "dom"
-    ],
+      "noUnusedLocals": false,
+      "downlevelIteration": true,
     "pretty": true,
     "typeRoots": [
       "node_modules/@types"
