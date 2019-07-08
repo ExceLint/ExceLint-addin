@@ -277,7 +277,7 @@ var ExcelUtils = /** @class */ (function () {
         for (var i = 0; i < formulas.length; i++) {
             for (var j = 0; j < formulas[0].length; j++) {
                 // Ignore the return value and just use it for the side effects on all_deps.
-                ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
+                ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
             }
         }
     };
