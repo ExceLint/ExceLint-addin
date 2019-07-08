@@ -305,38 +305,42 @@ var ExcelUtils = /** @class */ (function () {
             // Not a formula -- no dependencies.
             return [];
         }
-        //	console.log("tc3: cell = " + cell);
-        var deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
-        if (deps.length >= 1) {
-            var tcs = deps.slice();
-            console.log("cell deps = " + JSON.stringify(tcs));
-            try {
-                for (var deps_1 = __values(deps), deps_1_1 = deps_1.next(); !deps_1_1.done; deps_1_1 = deps_1.next()) {
-                    var dep = deps_1_1.value;
-                    //		dep[0] -= origin_col;
-                    //		dep[0] -= 1;
-                    //		dep[1] -= origin_row;
-                    //		dep[1] -= 1;
-                    //		console.log("tc4 " + JSON.stringify(dep));
-                    tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1] - 1, dep[0] - 1, origin_row, origin_col, formulas, all_deps));
-                }
-            }
-            catch (e_2_1) { e_2 = { error: e_2_1 }; }
-            finally {
+        // Disabling transitivity.
+        return ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+        if (false) {
+            //	console.log("tc3: cell = " + cell);
+            var deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+            if (deps.length >= 1) {
+                var tcs = deps.slice();
+                console.log("cell deps = " + JSON.stringify(tcs));
                 try {
-                    if (deps_1_1 && !deps_1_1.done && (_a = deps_1["return"])) _a.call(deps_1);
+                    for (var deps_1 = __values(deps), deps_1_1 = deps_1.next(); !deps_1_1.done; deps_1_1 = deps_1.next()) {
+                        var dep = deps_1_1.value;
+                        //		dep[0] -= origin_col;
+                        //		dep[0] -= 1;
+                        //		dep[1] -= origin_row;
+                        //		dep[1] -= 1;
+                        //		console.log("tc4 " + JSON.stringify(dep));
+                        tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1] - 1, dep[0] - 1, origin_row, origin_col, formulas, all_deps));
+                    }
                 }
-                finally { if (e_2) throw e_2.error; }
+                catch (e_2_1) { e_2 = { error: e_2_1 }; }
+                finally {
+                    try {
+                        if (deps_1_1 && !deps_1_1.done && (_a = deps_1["return"])) _a.call(deps_1);
+                    }
+                    finally { if (e_2) throw e_2.error; }
+                }
+                //	    console.log("tc5: tcs = " + JSON.stringify(tcs));
+                // Remove any duplicates.
+                tcs = __spread(new Set(tcs.map(function (x) { return JSON.stringify(x); }))).map(function (x) { return JSON.parse(x); });
+                all_deps[index] = tcs;
+                console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
+                return tcs.slice(); // FIXME perhaps
             }
-            //	    console.log("tc5: tcs = " + JSON.stringify(tcs));
-            // Remove any duplicates.
-            tcs = __spread(new Set(tcs.map(function (x) { return JSON.stringify(x); }))).map(function (x) { return JSON.parse(x); });
-            all_deps[index] = tcs;
-            console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
-            return tcs.slice(); // FIXME perhaps
-        }
-        else {
-            return [];
+            else {
+                return [];
+            }
         }
     };
     ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {

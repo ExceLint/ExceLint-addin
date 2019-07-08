@@ -316,27 +316,32 @@ export class ExcelUtils {
 	    // Not a formula -- no dependencies.
 	    return [];
 	}
-//	console.log("tc3: cell = " + cell);
-	let deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
-	if (deps.length >= 1) {
-	    let tcs = deps.slice();
-	    console.log("cell deps = " + JSON.stringify(tcs));
-	    for (let dep of deps) {
-//		dep[0] -= origin_col;
-//		dep[0] -= 1;
-//		dep[1] -= origin_row;
-//		dep[1] -= 1;
-//		console.log("tc4 " + JSON.stringify(dep));
-		tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1]-1, dep[0]-1, origin_row, origin_col, formulas, all_deps));
+	// Disabling transitivity.
+	return ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+
+	if (false) {
+	    //	console.log("tc3: cell = " + cell);
+	    let deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+	    if (deps.length >= 1) {
+		let tcs = deps.slice();
+		console.log("cell deps = " + JSON.stringify(tcs));
+		for (let dep of deps) {
+		    //		dep[0] -= origin_col;
+		    //		dep[0] -= 1;
+		    //		dep[1] -= origin_row;
+		    //		dep[1] -= 1;
+		    //		console.log("tc4 " + JSON.stringify(dep));
+		    tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1]-1, dep[0]-1, origin_row, origin_col, formulas, all_deps));
+		}
+		//	    console.log("tc5: tcs = " + JSON.stringify(tcs));
+		// Remove any duplicates.
+		tcs = [...new Set(tcs.map(x => JSON.stringify(x)))].map(x => JSON.parse(x))	
+		all_deps[index] = tcs;
+		console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
+		return tcs.slice(); // FIXME perhaps
+	    } else {
+		return [];
 	    }
-//	    console.log("tc5: tcs = " + JSON.stringify(tcs));
-	    // Remove any duplicates.
-	    tcs = [...new Set(tcs.map(x => JSON.stringify(x)))].map(x => JSON.parse(x))	
-	    all_deps[index] = tcs;
-	    console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
-	    return tcs.slice(); // FIXME perhaps
-	} else {
-	    return [];
 	}
     }
     
