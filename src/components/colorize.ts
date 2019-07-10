@@ -111,10 +111,6 @@ export class Colorize {
 //	console.log("formulas = " + JSON.stringify(formulas));
 	// Build up all of the columns of colors.
 
-	// First, let's build up the transitive closure of formulas. Dependencies will be stored in all_deps.
-	ExcelUtils.build_transitive_closures(formulas, origin_row, origin_col, all_deps);
-//	console.log("all_deps = " + JSON.stringify(all_deps));
-
 	// Now all the dependencies are cached. Compute the vectors.
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
@@ -130,10 +126,13 @@ export class Colorize {
 		    //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
 //		    console.log("about to check " + i + ", " + j);
 		    let vec_array = ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
-//		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
-		    vec_array = vec_array.map((x) => [x[1] - 1 - i, x[0] - 1 - j]); // was -i, -j
-//		    vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
-//		    console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
+		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
+		    if (false) {
+			/* Don't adjust -- this is old logic to be removed. */
+			vec_array = vec_array.map((x) => [x[1] - 1 - i, x[0] - 1 - j]); // was -i, -j
+			vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
+			console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
+		    }
 		    if (vec_array.length == 0) {
 			// No dependencies! Use a distinguished "0" value (always the same color?).
 			output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
@@ -273,6 +272,8 @@ export class Colorize {
 	//	const newEntropy = this.entropy(oldcount1 + oldcount2);
 	const normalizedEntropy = prevEntropy / (total * Math.log2(total));
 	//	return newEntropy - prevEntropy;
+	//	return prevEntropy; // FIXME ? a test, non normalized
+	
 	return normalizedEntropy;
     }
 

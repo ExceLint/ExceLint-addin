@@ -129,10 +129,6 @@ var Colorize = /** @class */ (function () {
         var all_deps = {};
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1]]; };
         var output = [];
-        //	console.log("formulas = " + JSON.stringify(formulas));
-        // Build up all of the columns of colors.
-        // First, let's build up the transitive closure of formulas. Dependencies will be stored in all_deps.
-        excelutils_1.ExcelUtils.build_transitive_closures(formulas, origin_row, origin_col, all_deps);
         var _loop_1 = function (i) {
             var row = formulas[i];
             var _loop_2 = function (j) {
@@ -144,10 +140,13 @@ var Colorize = /** @class */ (function () {
                     //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
                     //		    console.log("about to check " + i + ", " + j);
                     var vec_array = excelutils_1.ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
-                    //		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
-                    vec_array = vec_array.map(function (x) { return [x[1] - 1 - i, x[0] - 1 - j]; }); // was -i, -j
-                    //		    vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
-                    //		    console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
+                    console.log("vec_array WAS = " + JSON.stringify(vec_array));
+                    if (false) {
+                        /* Don't adjust -- this is old logic to be removed. */
+                        vec_array = vec_array.map(function (x) { return [x[1] - 1 - i, x[0] - 1 - j]; }); // was -i, -j
+                        vec_array = vec_array.map(function (x) { return [x[1] - 1, x[0] - 1]; });
+                        console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
+                    }
                     if (vec_array.length == 0) {
                         // No dependencies! Use a distinguished "0" value (always the same color?).
                         output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
@@ -184,7 +183,8 @@ var Colorize = /** @class */ (function () {
             }
         };
         var this_1 = this;
-        //	console.log("all_deps = " + JSON.stringify(all_deps));
+        //	console.log("formulas = " + JSON.stringify(formulas));
+        // Build up all of the columns of colors.
         // Now all the dependencies are cached. Compute the vectors.
         for (var i = 0; i < formulas.length; i++) {
             _loop_1(i);
@@ -347,6 +347,7 @@ var Colorize = /** @class */ (function () {
         //	const newEntropy = this.entropy(oldcount1 + oldcount2);
         var normalizedEntropy = prevEntropy / (total * Math.log2(total));
         //	return newEntropy - prevEntropy;
+        //	return prevEntropy; // FIXME ? a test, non normalized
         return normalizedEntropy;
     };
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {

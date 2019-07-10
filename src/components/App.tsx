@@ -431,7 +431,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
 
 		    // Convert to Excel column-row notation.
-		    console.log("fix = " + JSON.stringify(fixes[k]));
+		    // console.log("fix = " + JSON.stringify(fixes[k]));
 
 		    let first = fixes[k][1];
 		    let second = fixes[k][2];
@@ -448,15 +448,15 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // Finally, get the range from the backup (original) sheet.
 		    let range = backupSheet.getRange(rangeStr);
 		    await context.sync();
-		    console.log("loading " + rangeStr);
+		    // console.log("loading " + rangeStr);
 		    range.load(['format/*', 'format/fill/color', 'format/borders','format/font']);
 		    await context.sync();
 
 		    // compare range.format?
 		    // compare range.format.font, range.format.borders?
-		    console.log(JSON.stringify(range.format.fill.color));
-		    console.log(JSON.stringify(range.format.fill));
-		    console.log(JSON.stringify(range.format));
+		    //console.log(JSON.stringify(range.format.fill.color));
+		    //console.log(JSON.stringify(range.format.fill));
+		    //console.log(JSON.stringify(range.format));
 		    
 		    // If null (different formats in merged), then we won't propose this as a fix.
 		    // TODO: perhaps make this less conservative?
@@ -469,23 +469,17 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		    for (let ind = 0; ind < border.items.length; ind++) {
 			let b = border.items[ind];
-			console.log("border = " + JSON.stringify(b));
+			// console.log("border = " + JSON.stringify(b));
 			if (b["color"] &&
 			    b["style"] &&
 			    b["weight"])
 			{
 			    continue;
 			}
-			console.log(b["color"]);
-			console.log(b["style"]);
-			console.log(b["weight"]);
-			console.log("DIFFERENT!");
 			sameBorders = false;
 			break;
 		    }
 
-		    console.log("same borders? = " + sameBorders);
-		    
 		    if (sameBorders &&
 			range.format.fill.color &&
 			range.format.font.color &&
@@ -494,12 +488,12 @@ export default class App extends React.Component<AppProps, AppState> {
 			range.format.font.name)
 		    {
 			// Add it to the proposed fixes list.
-			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
+//			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
 			this.proposed_fixes.push(fixes[k]);
 			continue;
 		    }
 
-		    console.log("CONFLICT FOR " + rangeStr);
+//		    console.log("CONFLICT FOR " + rangeStr);
 		}
 		
 		t.split("generated fixes");
