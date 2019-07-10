@@ -136,28 +136,28 @@ var ExcelUtils = /** @class */ (function () {
                 return [col - origin_col, row - origin_row];
             }
         }
-        console.log("cell is " + cell);
+        // console.log("cell is "+cell);
         throw new Error('We should never get here.');
         return [0, 0];
     };
     ExcelUtils.extract_sheet_cell = function (str) {
-        console.log("extract_sheet_cell " + str);
+        //	console.log("extract_sheet_cell " + str);
         var matched = ExcelUtils.sheet_plus_cell.exec(str);
         if (matched) {
-            console.log("extract_sheet_cell matched " + str);
+            //	    console.log("extract_sheet_cell matched " + str);
             // There is only one thing to match for this pattern: we convert it into a range.
             return [matched[1], matched[2], matched[2]];
         }
-        console.log("extract_sheet_cell failed for " + str);
+        //	console.log("extract_sheet_cell failed for "+str);
         return ['', '', ''];
     };
     ExcelUtils.extract_sheet_range = function (str) {
         var matched = ExcelUtils.sheet_plus_range.exec(str);
         if (matched) {
-            console.log("extract_sheet_range matched " + str);
+            //	    console.log("extract_sheet_range matched " + str);
             return [matched[1], matched[2], matched[3]];
         }
-        console.log("extract_sheet_range failed to match " + str);
+        //	console.log("extract_sheet_range failed to match " + str);
         return ExcelUtils.extract_sheet_cell(str);
     };
     ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row) {
@@ -283,7 +283,7 @@ var ExcelUtils = /** @class */ (function () {
     };
     ExcelUtils.transitive_closure = function (row, col, origin_row, origin_col, formulas, all_deps) {
         var e_2, _a;
-        console.log("tc1: transitive closure of " + row + ", " + col + ", origin_row = " + origin_row + ", origin_col = " + origin_col);
+        //	console.log("tc1: transitive closure of "+row+", "+col+", origin_row = " + origin_row + ", origin_col = " + origin_col);
         var index = [row, col].join(',');
         //	console.log("index = " + index);
         if (index in all_deps) {
@@ -291,7 +291,7 @@ var ExcelUtils = /** @class */ (function () {
             return all_deps[index];
         }
         //	console.log("tc2");
-        console.log("formulas[" + row + "][" + col + "]");
+        //	console.log("formulas[" + row + "][" + col + "]");
         if ((row >= formulas.length)
             || (col >= formulas[0].length)
             || (row < 0)
@@ -300,7 +300,7 @@ var ExcelUtils = /** @class */ (function () {
             return [];
         }
         var cell = formulas[row][col];
-        console.log("formulas[" + row + "][" + col + "] = " + cell);
+        //	console.log("formulas[" + row + "][" + col + "] = " + cell);
         if (cell.length <= 1 || cell[0] !== "=") {
             // Not a formula -- no dependencies.
             return [];
@@ -312,8 +312,8 @@ var ExcelUtils = /** @class */ (function () {
             var deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
             if (deps.length >= 1) {
                 var tcs = deps.slice();
-                console.log("cell deps = " + JSON.stringify(tcs));
                 try {
+                    //		console.log("cell deps = " + JSON.stringify(tcs));
                     for (var deps_1 = __values(deps), deps_1_1 = deps_1.next(); !deps_1_1.done; deps_1_1 = deps_1.next()) {
                         var dep = deps_1_1.value;
                         //		dep[0] -= origin_col;
@@ -335,7 +335,7 @@ var ExcelUtils = /** @class */ (function () {
                 // Remove any duplicates.
                 tcs = __spread(new Set(tcs.map(function (x) { return JSON.stringify(x); }))).map(function (x) { return JSON.parse(x); });
                 all_deps[index] = tcs;
-                console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
+                //		console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
                 return tcs.slice(); // FIXME perhaps
             }
             else {
@@ -348,7 +348,7 @@ var ExcelUtils = /** @class */ (function () {
         var refs = {};
         var counter = 0;
         //	let all_deps = {};
-        console.log(JSON.stringify(formulas));
+        //	console.log(JSON.stringify(formulas));
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {

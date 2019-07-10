@@ -403,6 +403,105 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas, diagonal, numberOfCellsUsed);
+		
+		// Filter the proposed fixes:
+		// * If they don't all have the same format (pre-colorization), don't propose them as fixes.
+		// TODO
+		
+		// Grab the backup sheet for use in looking up the formats.
+		let backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
+		let worksheets = context.workbook.worksheets;
+		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
+		await context.sync();
+
+		console.log("backup sheetname = " + backupSheetname);
+		console.log(JSON.stringify(backupSheet));
+
+		// Walk through each proposed fix, checking to see if
+		// the merged range (that is, the applied fix) would
+		// include inconsistent formatting. If so, we prune
+		// it.
+
+		let fixes = this.proposed_fixes;
+		this.proposed_fixes = [];
+		
+		for (let k in fixes) {
+		    // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
+		    // entropy, and two ranges:
+		    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
+
+		    // Convert to Excel column-row notation.
+		    console.log("fix = " + JSON.stringify(fixes[k]));
+
+		    let first = fixes[k][1];
+		    let second = fixes[k][2];
+		    
+		    let [[ax1, ay1], [ax2, ay2]] = first;
+		    let [[bx1, by1], [bx2, by2]] = second;
+		    
+		    let col0 = ExcelUtils.column_index_to_name(ax1);
+		    let row0 = ay1.toString();
+		    let col1 = ExcelUtils.column_index_to_name(bx2);
+		    let row1 = by2.toString();
+		    let rangeStr = col0 + row0 + ":" + col1 + row1;
+
+		    // Finally, get the range from the backup (original) sheet.
+		    let range = backupSheet.getRange(rangeStr);
+		    await context.sync();
+		    console.log("loading " + rangeStr);
+		    range.load(['format/*', 'format/fill/color', 'format/borders','format/font']);
+		    await context.sync();
+
+		    // compare range.format?
+		    // compare range.format.font, range.format.borders?
+		    console.log(JSON.stringify(range.format.fill.color));
+		    console.log(JSON.stringify(range.format.fill));
+		    console.log(JSON.stringify(range.format));
+		    
+		    // If null (different formats in merged), then we won't propose this as a fix.
+		    // TODO: perhaps make this less conservative?
+
+		    // First, iterate through borders. This is a drag.
+		    let sameBorders = true;
+		    let border = range.format.borders;
+		    border.load('items');
+		    await context.sync();
+
+		    for (let ind = 0; ind < border.items.length; ind++) {
+			let b = border.items[ind];
+			console.log("border = " + JSON.stringify(b));
+			if (b["color"] &&
+			    b["style"] &&
+			    b["weight"])
+			{
+			    continue;
+			}
+			console.log(b["color"]);
+			console.log(b["style"]);
+			console.log(b["weight"]);
+			console.log("DIFFERENT!");
+			sameBorders = false;
+			break;
+		    }
+
+		    console.log("same borders? = " + sameBorders);
+		    
+		    if (sameBorders &&
+			range.format.fill.color &&
+			range.format.font.color &&
+			range.format.font.bold != null &&
+			range.format.font.italic != null &&
+			range.format.font.name)
+		    {
+			// Add it to the proposed fixes list.
+			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
+			this.proposed_fixes.push(fixes[k]);
+			continue;
+		    }
+
+		    console.log("CONFLICT FOR " + rangeStr);
+		}
+		
 		t.split("generated fixes");
 		// Only present up to 5% (threshold from paper).
 		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);

@@ -118,30 +118,30 @@ export class ExcelUtils {
             }
         }
 
-	console.log("cell is "+cell);
+	// console.log("cell is "+cell);
         throw new Error('We should never get here.');
         return [0, 0];
     }
 
     public static extract_sheet_cell(str: string): Array<string> {
-	console.log("extract_sheet_cell " + str);
+//	console.log("extract_sheet_cell " + str);
         let matched = ExcelUtils.sheet_plus_cell.exec(str);
         if (matched) {
-	    console.log("extract_sheet_cell matched " + str);
+//	    console.log("extract_sheet_cell matched " + str);
 	    // There is only one thing to match for this pattern: we convert it into a range.
             return [matched[1], matched[2], matched[2]];
         }
-	console.log("extract_sheet_cell failed for "+str);
+//	console.log("extract_sheet_cell failed for "+str);
         return ['', '', ''];
     }
 
     public static extract_sheet_range(str: string): Array<string> {
         let matched = ExcelUtils.sheet_plus_range.exec(str);
         if (matched) {
-	    console.log("extract_sheet_range matched " + str);
+//	    console.log("extract_sheet_range matched " + str);
             return [matched[1], matched[2], matched[3]];
         }
-	console.log("extract_sheet_range failed to match " + str);
+//	console.log("extract_sheet_range failed to match " + str);
 	return ExcelUtils.extract_sheet_cell(str);
     }
 
@@ -293,7 +293,7 @@ export class ExcelUtils {
     
 
     public static transitive_closure(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>, all_deps : { [index: number]: Array<[number,number]> }) : Array<[number, number]> {
-	console.log("tc1: transitive closure of "+row+", "+col+", origin_row = " + origin_row + ", origin_col = " + origin_col);
+//	console.log("tc1: transitive closure of "+row+", "+col+", origin_row = " + origin_row + ", origin_col = " + origin_col);
 	const index = [row,col].join(',');
 //	console.log("index = " + index);
 	if (index in all_deps) {
@@ -301,7 +301,7 @@ export class ExcelUtils {
 	    return all_deps[index];
 	}
 //	console.log("tc2");
-	console.log("formulas[" + row + "][" + col + "]");
+//	console.log("formulas[" + row + "][" + col + "]");
 	if ((row >= formulas.length)
 	    || (col >= formulas[0].length)
 	    || (row < 0)
@@ -311,7 +311,7 @@ export class ExcelUtils {
 	    return [];
 	}
 	const cell = formulas[row][col];
-	console.log("formulas[" + row + "][" + col + "] = " + cell);
+//	console.log("formulas[" + row + "][" + col + "] = " + cell);
 	if (cell.length <= 1 || cell[0] !== "=") {
 	    // Not a formula -- no dependencies.
 	    return [];
@@ -324,7 +324,7 @@ export class ExcelUtils {
 	    let deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
 	    if (deps.length >= 1) {
 		let tcs = deps.slice();
-		console.log("cell deps = " + JSON.stringify(tcs));
+//		console.log("cell deps = " + JSON.stringify(tcs));
 		for (let dep of deps) {
 		    //		dep[0] -= origin_col;
 		    //		dep[0] -= 1;
@@ -337,7 +337,7 @@ export class ExcelUtils {
 		// Remove any duplicates.
 		tcs = [...new Set(tcs.map(x => JSON.stringify(x)))].map(x => JSON.parse(x))	
 		all_deps[index] = tcs;
-		console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
+//		console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
 		return tcs.slice(); // FIXME perhaps
 	    } else {
 		return [];
@@ -349,7 +349,7 @@ export class ExcelUtils {
 	let refs = {};
 	let counter = 0;
 //	let all_deps = {};
-	console.log(JSON.stringify(formulas));
+//	console.log(JSON.stringify(formulas));
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
