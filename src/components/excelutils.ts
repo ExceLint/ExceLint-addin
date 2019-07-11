@@ -212,31 +212,37 @@ export class ExcelUtils {
         return all_vectors;
     }
 
+    public static baseVector() : Array<number> {
+	return [0, 0];
+    }
+    
     public static dependencies(range: string, origin_col: number, origin_row: number): Array<number> {
-
-        let base_vector = [0, 0];
+	// Return an array of dependencies from the range string.
+	// NOTE: we will count the same dependencies every time they appear.
+	
+        let base_vector = ExcelUtils.baseVector();
 
         let found_pair = null;
 
-	range = range.replace(this.formulas_with_numbers,'_'); // kind of a hack for now
-	range = range.replace(this.formulas_with_unquoted_sheetnames,'_'); // kind of a hack for now
-	range = range.replace(this.formulas_with_quoted_sheetnames,'_'); // kind of a hack for now
-	
-        /// FIX ME - should we count the same range multiple times? Or just once?
+	// Get rid of any formulas with numbers (e.g., ATAN2) to avoid confusion.
+	range = range.replace(this.formulas_with_numbers,'_');
+
+	// Get rid of formulas with sheetnames, since we (for now) ignore references across sheets.
+	range = range.replace(this.formulas_with_unquoted_sheetnames,'_');
+	range = range.replace(this.formulas_with_quoted_sheetnames,'_');
 
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
             if (found_pair) {
-                //	    console.log(found_pair);
-                let first_cell = found_pair[1];
-                //		console.log(first_cell);
-                let first_vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
-                let last_cell = found_pair[2];
-                //		console.log(last_cell);
-                let last_vec = ExcelUtils.cell_dependency(last_cell, origin_col, origin_row);
+		// Get the upper-left hand and lower-right hand sides of the rectangle formed by the range.
 
                 // First_vec is the upper-left hand side of a rectangle.
                 // Last_vec is the lower-right hand side of a rectangle.
+                let first_cell = found_pair[1];
+                let first_vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
+                let last_cell = found_pair[2];
+                let last_vec = ExcelUtils.cell_dependency(last_cell, origin_col, origin_row);
+		
                 // Compute the appropriate vectors to be added.
 
                 // e.g., [3, 2] --> [5, 5] ===
@@ -266,11 +272,8 @@ export class ExcelUtils {
         let singleton = null;
         while (singleton = ExcelUtils.single_dep.exec(range)) {
             if (singleton) {
-                //	    console.log(found_pair);
                 let first_cell = singleton[1];
-//                console.log("dependencies: first cell = " + JSON.stringify(first_cell) + ", origin col = " + origin_col + ", origin_row = " + origin_row);
                 let vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
-//		console.log("dependencies: vec = " + vec[0] + ", " + vec[1]);
                 base_vector[0] += vec[0];
                 base_vector[1] += vec[1];
                 // Wipe out the matched contents of range.
@@ -281,75 +284,27 @@ export class ExcelUtils {
         return base_vector;
 
     }
-
-    public static build_transitive_closures(formulas: Array<Array<string>>, origin_col: number, origin_row: number, all_deps : { [index: number]: Array<[number,number]> }) : void {
-	/*
-	for (let i = 0; i < formulas.length; i++) {
-	    for (let j = 0; j < formulas[0].length; j++) {
-		ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
-	    }
-	}
-	*/
-    }
     
-
-    public static transitive_closure(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>, all_deps : { [index: number]: Array<[number,number]> }) : Array<[number, number]> {
-//	console.log("tc1: transitive closure of "+row+", "+col+", origin_row = " + origin_row + ", origin_col = " + origin_col);
-	const index = [row,col].join(',');
-//	console.log("index = " + index);
-	if (index in all_deps) {
-	    // We already processed this index: return it.
-	    return all_deps[index];
-	}
-//	console.log("tc2");
-//	console.log("formulas[" + row + "][" + col + "]");
+    public static all_dependencies(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>) : Array<[number, number]> {
+	let deps = [];
+	// Discard references to cells outside the formula range.
 	if ((row >= formulas.length)
 	    || (col >= formulas[0].length)
 	    || (row < 0)
 	    || (col < 0))
 	{
-	    // Discard references to cells outside the formula range.
 	    return [];
 	}
+	// Check if this cell is a formula.
 	const cell = formulas[row][col];
-//	console.log("formulas[" + row + "][" + col + "] = " + cell);
-	if (cell.length <= 1 || cell[0] !== "=") {
-	    // Not a formula -- no dependencies.
-	    return [];
+	if ((cell.length > 1) && (cell[0] === "=")) {
+	    // It is. Compute the dependencies.
+	    deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
 	}
-	// Disabling transitivity.
-//	all_deps[index] = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
-	all_deps[index] = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
-	console.log("all_deps[" + index + "] = " + JSON.stringify(all_deps[index]));
-	return all_deps[index];
-	
-
-	if (false) {
-	    //	console.log("tc3: cell = " + cell);
-	    let deps = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
-	    if (deps.length >= 1) {
-		let tcs = deps.slice();
-//		console.log("cell deps = " + JSON.stringify(tcs));
-		for (let dep of deps) {
-		    //		dep[0] -= origin_col;
-		    //		dep[0] -= 1;
-		    //		dep[1] -= origin_row;
-		    //		dep[1] -= 1;
-		    //		console.log("tc4 " + JSON.stringify(dep));
-		    tcs = tcs.concat(ExcelUtils.transitive_closure(dep[1]-1, dep[0]-1, origin_row, origin_col, formulas, all_deps));
-		}
-		//	    console.log("tc5: tcs = " + JSON.stringify(tcs));
-		// Remove any duplicates.
-		tcs = [...new Set(tcs.map(x => JSON.stringify(x)))].map(x => JSON.parse(x))	
-		all_deps[index] = tcs;
-//		console.log("tc6: all_deps[" + index + "] = " + JSON.stringify(tcs));
-		return tcs.slice(); // FIXME perhaps
-	    } else {
-		return [];
-	    }
-	}
+	return deps;
     }
     
+
     public static generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number]> } {
 	let refs = {};
 	let counter = 0;

@@ -103,59 +103,34 @@ export class Colorize {
     */
 
     public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number], string]> {
-	let lastHash = 0;
-	let lastHashString = lastHash.toString();
-	let all_deps = {};
+	const distinguishedZeroHash = "0";
+	const base_vector = JSON.stringify(ExcelUtils.baseVector());
 	let reducer = (acc:[number,number],curr:[number,number]) : [number,number] => [acc[0] + curr[0], acc[1] + curr[1]];
 	let output: Array<[[number, number], string]> = [];
-//	console.log("formulas = " + JSON.stringify(formulas));
-	// Build up all of the columns of colors.
-
-	// Now all the dependencies are cached. Compute the vectors.
+	
+	// Compute the vectors for all of the formulas.
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
-	    //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
 	    for (let j = 0; j < row.length; j++) {
+		// If it's a formula, process it.
 		if ((row[j].length > 0) && (row[j][0] === '=')) {
 		    let cell = row[j];
-		    
-		    
-		    //				console.log("process_formulas: i = " + i + ", j = " + j);
-		    //				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
-//				    console.log("process_formulas: row = " + JSON.stringify(cell));
-		    //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
-//		    console.log("about to check " + i + ", " + j);
-		    let vec_array = ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
-		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
-		    if (false) {
-			/* Don't adjust -- this is old logic to be removed. */
-			vec_array = vec_array.map((x) => [x[1] - 1 - i, x[0] - 1 - j]); // was -i, -j
-			vec_array = vec_array.map((x) => [x[1] - 1, x[0] - 1]); 
-			console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
-		    }
+		    let vec_array = ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
+		    const adjustedX = j + origin_col + 1;
+		    const adjustedY = i + origin_row + 1;
+ 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
 		    if (vec_array.length == 0) {
-			// No dependencies! Use a distinguished "0" value (always the same color?).
-			output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
+			// No dependencies! Use a distinguished value.
+			output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
 		    } else {
 			let vec = vec_array.reduce(reducer);
-//			console.log("vec = " + JSON.stringify(vec));
-			if (vec[0] === 0 && vec[1] === 0) {
-			    // No dependencies! Use a distinguished "0" value (always the same color?).
-			    output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
+			if (JSON.stringify(vec) === base_vector) {
+			    // No dependencies! Use a distinguished value.
+			    output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
 			} else {
-//			    console.log("process_formulas: vector = " + JSON.stringify(vec));
 			    let hash = this.hash_vector(vec);
-//			    console.log("hash = " + hash);
-			    let str = "";
-			    if (false) { // hash == lastHash) {
-			    } else {
-				lastHash = hash;
-				lastHashString = hash.toString();
-			    }
-			    str = lastHashString;
-//			    console.log("process_formulas: hash of this vector = " + hash);
-//			    console.log("pushing " + (j + origin_col + 1) + ", " + (i + origin_row + 1));
-			    output.push([[j + origin_col + 1, i + origin_row + 1], str]);
+			    let str = hash.toString();
+			    output.push([[adjustedX, adjustedY], str]);
 			}
 		    }
 		}
@@ -298,7 +273,10 @@ export class Colorize {
 	sheetArea = sheetArea;
 	sheetDiagonal = sheetDiagonal;
 	// Updating based on size formula.
+	console.log("fix distance = " + fix_distance);
+	console.log("ranking was " + ranking);
 	ranking = n_max / ranking;
+	console.log("ranking now " + ranking);
 	return ranking;
     }
 

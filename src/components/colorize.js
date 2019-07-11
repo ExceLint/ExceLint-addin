@@ -124,70 +124,39 @@ var Colorize = /** @class */ (function () {
       }
     */
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
-        var lastHash = 0;
-        var lastHashString = lastHash.toString();
-        var all_deps = {};
+        var distinguishedZeroHash = "0";
+        var base_vector = JSON.stringify(excelutils_1.ExcelUtils.baseVector());
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1]]; };
         var output = [];
-        var _loop_1 = function (i) {
+        // Compute the vectors for all of the formulas.
+        for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
-            var _loop_2 = function (j) {
+            for (var j = 0; j < row.length; j++) {
+                // If it's a formula, process it.
                 if ((row[j].length > 0) && (row[j][0] === '=')) {
                     var cell = row[j];
-                    //				console.log("process_formulas: i = " + i + ", j = " + j);
-                    //				console.log("process_formulas: origin_col, row = " + origin_col + ", " + origin_row);
-                    //				    console.log("process_formulas: row = " + JSON.stringify(cell));
-                    //				let vec = ExcelUtils.dependencies(cell, j + origin_col + 1, i + origin_row + 1);
-                    //		    console.log("about to check " + i + ", " + j);
-                    var vec_array = excelutils_1.ExcelUtils.transitive_closure(i, j, origin_row + i, origin_col + j, formulas, all_deps);
+                    var vec_array = excelutils_1.ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
+                    var adjustedX = j + origin_col + 1;
+                    var adjustedY = i + origin_row + 1;
                     console.log("vec_array WAS = " + JSON.stringify(vec_array));
-                    if (false) {
-                        /* Don't adjust -- this is old logic to be removed. */
-                        vec_array = vec_array.map(function (x) { return [x[1] - 1 - i, x[0] - 1 - j]; }); // was -i, -j
-                        vec_array = vec_array.map(function (x) { return [x[1] - 1, x[0] - 1]; });
-                        console.log("RELATIVE transitive closure of " + i + ", " + j + " (vec_array) NOW = " + JSON.stringify(vec_array) + " (i = " + i + ", j = " + j + ", origin_row = " + origin_row + ", origin_col = " + origin_col + ")");
-                    }
                     if (vec_array.length == 0) {
-                        // No dependencies! Use a distinguished "0" value (always the same color?).
-                        output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
+                        // No dependencies! Use a distinguished value.
+                        output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
                     }
                     else {
                         var vec = vec_array.reduce(reducer);
-                        //			console.log("vec = " + JSON.stringify(vec));
-                        if (vec[0] === 0 && vec[1] === 0) {
-                            // No dependencies! Use a distinguished "0" value (always the same color?).
-                            output.push([[j + origin_col + 1, i + origin_row + 1], "0"]);
+                        if (JSON.stringify(vec) === base_vector) {
+                            // No dependencies! Use a distinguished value.
+                            output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
                         }
                         else {
-                            //			    console.log("process_formulas: vector = " + JSON.stringify(vec));
-                            var hash = this_1.hash_vector(vec);
-                            //			    console.log("hash = " + hash);
-                            var str = "";
-                            if (false) { // hash == lastHash) {
-                            }
-                            else {
-                                lastHash = hash;
-                                lastHashString = hash.toString();
-                            }
-                            str = lastHashString;
-                            //			    console.log("process_formulas: hash of this vector = " + hash);
-                            //			    console.log("pushing " + (j + origin_col + 1) + ", " + (i + origin_row + 1));
-                            output.push([[j + origin_col + 1, i + origin_row + 1], str]);
+                            var hash = this.hash_vector(vec);
+                            var str = hash.toString();
+                            output.push([[adjustedX, adjustedY], str]);
                         }
                     }
                 }
-            };
-            //		    console.log("process_formulas: formulas[" + i + "] = " + JSON.stringify(row));
-            for (var j = 0; j < row.length; j++) {
-                _loop_2(j);
             }
-        };
-        var this_1 = this;
-        //	console.log("formulas = " + JSON.stringify(formulas));
-        // Build up all of the columns of colors.
-        // Now all the dependencies are cached. Compute the vectors.
-        for (var i = 0; i < formulas.length; i++) {
-            _loop_1(i);
         }
         //	console.log(JSON.stringify(all_deps));
         return output;
@@ -364,7 +333,10 @@ var Colorize = /** @class */ (function () {
         sheetArea = sheetArea;
         sheetDiagonal = sheetDiagonal;
         // Updating based on size formula.
+        console.log("fix distance = " + fix_distance);
+        console.log("ranking was " + ranking);
         ranking = n_max / ranking;
+        console.log("ranking now " + ranking);
         return ranking;
     };
     Colorize.count_proposed_fixes = function (fixes) {
