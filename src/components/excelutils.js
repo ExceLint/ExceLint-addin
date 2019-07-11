@@ -84,7 +84,7 @@ var ExcelUtils = /** @class */ (function () {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
                 //console.log("parsed " + JSON.stringify([col, row]));
-                return [col, row];
+                return [col, row, 0];
             }
         }
         {
@@ -94,7 +94,7 @@ var ExcelUtils = /** @class */ (function () {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
-                return [col, row - origin_row];
+                return [col, row - origin_row, 0];
             }
         }
         {
@@ -103,7 +103,7 @@ var ExcelUtils = /** @class */ (function () {
                 //console.log('row_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
-                return [col - origin_col, row];
+                return [col - origin_col, row, 0];
             }
         }
         {
@@ -113,12 +113,12 @@ var ExcelUtils = /** @class */ (function () {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
                 //		console.log('both relative col: ' + col + ', row: ' + row);
-                return [col - origin_col, row - origin_row];
+                return [col - origin_col, row - origin_row, 0];
             }
         }
         // console.log("cell is "+cell);
         throw new Error('We should never get here.');
-        return [0, 0];
+        return [0, 0, 0];
     };
     ExcelUtils.extract_sheet_cell = function (str) {
         //	console.log("extract_sheet_cell " + str);
@@ -141,7 +141,7 @@ var ExcelUtils = /** @class */ (function () {
         return ExcelUtils.extract_sheet_cell(str);
     };
     ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row) {
-        //	console.log("looking for dependencies in " + range);
+        console.log("looking for dependencies in " + range);
         var found_pair = null;
         var all_vectors = [];
         if (typeof (range) !== 'string') {
@@ -172,7 +172,7 @@ var ExcelUtils = /** @class */ (function () {
                     for (var y = 0; y < width; y++) {
                         // console.log(' pushing ' + (x + first_vec[0]) + ', ' + (y + first_vec[1]));
                         // console.log(' (x = ' + x + ', y = ' + y);
-                        all_vectors.push([x + first_vec[0], y + first_vec[1]]);
+                        all_vectors.push([x + first_vec[0], y + first_vec[1], 0]);
                     }
                 }
                 // Wipe out the matched contents of range.
@@ -194,13 +194,43 @@ var ExcelUtils = /** @class */ (function () {
                 range = range.replace(singleton[0], '_');
             }
         }
+        console.log("range is now " + range);
+        // FIXME perhaps. For now, we are going to roll numbers in
+        // formulas into the dependency vectors.  To keep this as a
+        // metric, we want the distance between two vectors with two
+        // numbers X and Y to have distance |X-Y|. To do this, we can
+        // just put the number N in a single dimension. Rather than pick one,
+        // we split it across two dimensions by adding sqrt(N^2/2) to each.
+        // e.g., 8 adds sqrt(64/2) = sqrt(32) to both x and y.
+        // Derivation:
+        //   dist((0,0), (x, x) = sqrt(x^2 + x^2) = sqrt(2x^2)
+        //   sqrt(2x^2) = Q
+        //   2x^2 =  Q^2
+        //   x^2 = Q^2/2
+        //   x = sqrt(Q^2/2)
+        var number = null;
+        while (number = ExcelUtils.number_dep.exec(range)) {
+            console.log("matched a number");
+            if (number) {
+                var n = parseFloat(number[1]);
+                console.log("number = " + n);
+                var q = Math.sqrt(n * n / 2);
+                //// FIX ME DO NOTHING FOR NOW		all_vectors.push([0, 0, n]);
+                // Wipe out the matched contents of range.
+                range = range.replace(number[0], '_');
+            }
+        }
         //console.log(JSON.stringify(all_vectors));
         return all_vectors;
     };
     ExcelUtils.baseVector = function () {
-        return [0, 0];
+        return [0, 0, 0];
     };
-    ExcelUtils.dependencies = function (range, origin_col, origin_row) {
+    ExcelUtils.tomato_all_cell_dependencies = function (range, origin_col, origin_row) {
+        console.log("range = " + range);
+        if (typeof (range) !== 'string') {
+            return null;
+        }
         // Return an array of dependencies from the range string.
         // NOTE: we will count the same dependencies every time they appear.
         var base_vector = ExcelUtils.baseVector();
@@ -252,6 +282,31 @@ var ExcelUtils = /** @class */ (function () {
                 range = range.replace(singleton[0], '_');
             }
         }
+        // FIXME perhaps. For now, we are going to roll numbers in
+        // formulas into the dependency vectors.  To keep this as a
+        // metric, we want the distance between two vectors with two
+        // numbers X and Y to have distance |X-Y|. To do this, we can
+        // just put the number N in a single dimension. Rather than pick one,
+        // we split it across two dimensions by adding sqrt(N^2/2) to each.
+        // e.g., 8 adds sqrt(64/2) = sqrt(32) to both x and y.
+        // Derivation:
+        //   dist((0,0), (x, x) = sqrt(x^2 + x^2) = sqrt(2x^2)
+        //   sqrt(2x^2) = Q
+        //   2x^2 =  Q^2
+        //   x^2 = Q^2/2
+        //   x = sqrt(Q^2/2)
+        var number = null;
+        while (number = ExcelUtils.number_dep.exec(range)) {
+            console.log("matched a number");
+            if (number) {
+                var n = parseFloat(number[1]);
+                var q = Math.sqrt(n * n / 2);
+                base_vector[0] += q;
+                base_vector[1] += q;
+                // Wipe out the matched contents of range.
+                range = range.replace(number[0], '_');
+            }
+        }
         return base_vector;
     };
     ExcelUtils.all_dependencies = function (row, col, origin_row, origin_col, formulas) {
@@ -267,12 +322,15 @@ var ExcelUtils = /** @class */ (function () {
         var cell = formulas[row][col];
         if ((cell.length > 1) && (cell[0] === "=")) {
             // It is. Compute the dependencies.
+            console.log("ALL CELL DEPENDENCIES");
             deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
         }
         return deps;
     };
     ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {
         var e_2, _a;
+        origin_row = origin_row;
+        origin_col = origin_col;
         var refs = {};
         var counter = 0;
         //	let all_deps = {};
@@ -290,16 +348,10 @@ var ExcelUtils = /** @class */ (function () {
                     //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
                     var direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
                     try {
-                        //		    console.log("direct refs for " + i + ", " + j + " [origin_row=" + origin_row + ", origin_col=" + origin_col + "] (" + cell +") = " + JSON.stringify(direct_refs));
-                        //		    let transitive_deps = ExcelUtils.transitive_closure(i, j, origin_row, origin_col, formulas, all_deps);
-                        //		    console.log("TRANSITIVE CLOSURE FOR " + i + ", " + j + " = " + JSON.stringify(transitive_deps));
-                        //		    all_deps[index] = transitive_deps; //
-                        for (var direct_refs_1 = __values(direct_refs), direct_refs_1_1 = direct_refs_1.next(); !direct_refs_1_1.done; direct_refs_1_1 = direct_refs_1.next()) { // direct_refs) {
+                        for (var direct_refs_1 = __values(direct_refs), direct_refs_1_1 = direct_refs_1.next(); !direct_refs_1_1.done; direct_refs_1_1 = direct_refs_1.next()) {
                             var dep = direct_refs_1_1.value;
                             var key = dep.join(',');
-                            refs[key] = true; // refs[key] || [];
-                            // NOTE: we are disabling pushing the src onto the list because we don't need it.
-                            // refs[dep2.join(',')].push(src);
+                            refs[key] = true;
                         }
                     }
                     catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -321,6 +373,7 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     ExcelUtils.single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     ExcelUtils.range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
+    ExcelUtils.number_dep = new RegExp('([0-9]+)');
     ExcelUtils.cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
     ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
     ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');

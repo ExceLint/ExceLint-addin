@@ -124,9 +124,10 @@ var Colorize = /** @class */ (function () {
       }
     */
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
+        console.log("***** PROCESS FORMULAS *****");
         var distinguishedZeroHash = "0";
         var base_vector = JSON.stringify(excelutils_1.ExcelUtils.baseVector());
-        var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1]]; };
+        var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]]; };
         var output = [];
         // Compute the vectors for all of the formulas.
         for (var i = 0; i < formulas.length; i++) {
@@ -141,18 +142,18 @@ var Colorize = /** @class */ (function () {
                     console.log("vec_array WAS = " + JSON.stringify(vec_array));
                     if (vec_array.length == 0) {
                         // No dependencies! Use a distinguished value.
-                        output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
+                        output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
                     }
                     else {
                         var vec = vec_array.reduce(reducer);
                         if (JSON.stringify(vec) === base_vector) {
                             // No dependencies! Use a distinguished value.
-                            output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
+                            output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
                         }
                         else {
                             var hash = this.hash_vector(vec);
                             var str = hash.toString();
-                            output.push([[adjustedX, adjustedY], str]);
+                            output.push([[adjustedX, adjustedY, 0], str]);
                         }
                     }
                 }

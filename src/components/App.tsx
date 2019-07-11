@@ -61,6 +61,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	Object.keys(grouped_ranges).forEach(hash => {
 	    if (!(hash === undefined)) {
 		let v = grouped_ranges[hash];
+		console.log("v = " + JSON.stringify(v));
 		for (let theRange of v) {
 		    let r = theRange;
 		    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
@@ -68,7 +69,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
 		    let row1 = r[1][1];
 
-//		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
+		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash_index);
 //		    console.log("color to set = " + color + " for hash = " + hash);
@@ -197,7 +198,7 @@ export default class App extends React.Component<AppProps, AppState> {
     setColor = async () => {
 
 	try {
-//	    OfficeExtension.config.extendedErrorLogging = true;
+	    OfficeExtension.config.extendedErrorLogging = true;
 	    await Excel.run(async context => {
 		console.log('setColor: starting processing.');
 		let t = new Timer("setColor");
@@ -395,7 +396,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		let grouped_data = Colorize.identify_groups(processed_data);
 		t.split("identified groups");
-//		console.log("identified groups." + JSON.stringify(grouped_data));
+		console.log("identified groups." + JSON.stringify(grouped_data));
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
 		t.split("grouped formulas");
 		await setTimeout(() => {}, 0);
@@ -573,7 +574,9 @@ export default class App extends React.Component<AppProps, AppState> {
     getRange(currentWorksheet, proposed_fixes, current_fix) {
 	if (proposed_fixes.length > 0) {
 	    let [ col0, row0, col1, row1 ] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
-	    let range = currentWorksheet.getRange(col0 + row0 + ":" + col1 + row1);
+	    let rangeStr = col0 + row0 + ":" + col1 + row1;
+	    console.log("getRange: " + rangeStr);
+	    let range = currentWorksheet.getRange(rangeStr);
 	    return range;
 	} else {
 	    return null;

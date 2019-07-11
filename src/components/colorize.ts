@@ -102,11 +102,12 @@ export class Colorize {
       }
     */
 
-    public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number], string]> {
+    public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number, number], string]> {
+	console.log("***** PROCESS FORMULAS *****");
 	const distinguishedZeroHash = "0";
 	const base_vector = JSON.stringify(ExcelUtils.baseVector());
-	let reducer = (acc:[number,number],curr:[number,number]) : [number,number] => [acc[0] + curr[0], acc[1] + curr[1]];
-	let output: Array<[[number, number], string]> = [];
+	let reducer = (acc:[number,number,number],curr:[number,number,number]) : [number,number,number] => [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]];
+	let output: Array<[[number, number,number], string]> = [];
 	
 	// Compute the vectors for all of the formulas.
 	for (let i = 0; i < formulas.length; i++) {
@@ -121,16 +122,16 @@ export class Colorize {
  		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
 		    if (vec_array.length == 0) {
 			// No dependencies! Use a distinguished value.
-			output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
+			output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
 		    } else {
 			let vec = vec_array.reduce(reducer);
 			if (JSON.stringify(vec) === base_vector) {
 			    // No dependencies! Use a distinguished value.
-			    output.push([[adjustedX, adjustedY], distinguishedZeroHash]);
+			    output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
 			} else {
 			    let hash = this.hash_vector(vec);
 			    let str = hash.toString();
-			    output.push([[adjustedX, adjustedY], str]);
+			    output.push([[adjustedX, adjustedY, 0], str]);
 			}
 		    }
 		}
