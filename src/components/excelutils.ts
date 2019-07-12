@@ -11,7 +11,7 @@ export class ExcelUtils {
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     private static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     private static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
-    private static number_dep = new RegExp('([0-9]+)');
+    private static number_dep = new RegExp('([0-9]+\.?[0-9]*)');
     private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
     private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
     private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
@@ -236,7 +236,7 @@ export class ExcelUtils {
                 let n = parseFloat(number[1]);
 		console.log("number = " + n);
 		let q = Math.sqrt(n*n/2);
-//// FIX ME DO NOTHING FOR NOW		all_vectors.push([0, 0, n]);
+		all_vectors.push([0, 0, n]);
                 // Wipe out the matched contents of range.
                 range = range.replace(number[0], '_');
             }
@@ -248,110 +248,6 @@ export class ExcelUtils {
 
     public static baseVector() : [number, number, number] {
 	return [0, 0, 0];
-    }
-    
-    public static tomato_all_cell_dependencies(range: string, origin_col: number, origin_row: number): Array<number> {
-	console.log("range = " + range);
-	if (typeof(range) !== 'string') {
-	    return null;
-	}
-
-	// Return an array of dependencies from the range string.
-	// NOTE: we will count the same dependencies every time they appear.
-	
-        const base_vector = ExcelUtils.baseVector();
-
-        let found_pair = null;
-
-
-	// Get rid of any formulas with numbers (e.g., ATAN2) to avoid confusion.
-	range = range.replace(this.formulas_with_numbers,'_');
-
-	// Get rid of formulas with sheetnames, since we (for now) ignore references across sheets.
-	range = range.replace(this.formulas_with_unquoted_sheetnames,'_');
-	range = range.replace(this.formulas_with_quoted_sheetnames,'_');
-
-        // First, get all the range pairs out.
-        while (found_pair = ExcelUtils.range_pair.exec(range)) {
-            if (found_pair) {
-		// Get the upper-left hand and lower-right hand sides of the rectangle formed by the range.
-
-                // First_vec is the upper-left hand side of a rectangle.
-                // Last_vec is the lower-right hand side of a rectangle.
-                let first_cell = found_pair[1];
-                let first_vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
-                let last_cell = found_pair[2];
-                let last_vec = ExcelUtils.cell_dependency(last_cell, origin_col, origin_row);
-		
-                // Compute the appropriate vectors to be added.
-
-                // e.g., [3, 2] --> [5, 5] ===
-                //          [3, 2], [3, 3], [3, 4], [3, 5]
-                //          [4, 2], [4, 3], [4, 4], [4, 5]
-                //          [5, 2], [5, 3], [5, 4], [5, 5]
-                //
-                // vector to be added is [4 * (3 + 4 + 5), 3 * (2 + 3 + 4 + 5) ]
-                //  = [48, 42]
-
-                let sum_x = 0;
-                let sum_y = 0;
-                let width = last_vec[1] - first_vec[1] + 1;   // 4
-                sum_x = width * ((last_vec[0] * (last_vec[0] + 1)) / 2 - ((first_vec[0] - 1) * ((first_vec[0] - 1) + 1)) / 2);
-                let length = last_vec[0] - first_vec[0] + 1;   // 3
-                sum_y = length * ((last_vec[1] * (last_vec[1] + 1)) / 2 - ((first_vec[1] - 1) * ((first_vec[1] - 1) + 1)) / 2);
-
-                base_vector[0] += sum_x;
-                base_vector[1] += sum_y;
-
-                // Wipe out the matched contents of range.
-                range = range.replace(found_pair[0], '_');
-            }
-        }
-
-        // Now look for singletons.
-        let singleton = null;
-        while (singleton = ExcelUtils.single_dep.exec(range)) {
-            if (singleton) {
-                let first_cell = singleton[1];
-                let vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
-                base_vector[0] += vec[0];
-                base_vector[1] += vec[1];
-                // Wipe out the matched contents of range.
-                range = range.replace(singleton[0], '_');
-            }
-        }
-
-	// FIXME perhaps. For now, we are going to roll numbers in
-	// formulas into the dependency vectors.  To keep this as a
-	// metric, we want the distance between two vectors with two
-	// numbers X and Y to have distance |X-Y|. To do this, we can
-	// just put the number N in a single dimension. Rather than pick one,
-	// we split it across two dimensions by adding sqrt(N^2/2) to each.
-
-	// e.g., 8 adds sqrt(64/2) = sqrt(32) to both x and y.
-
-	// Derivation:
-	//   dist((0,0), (x, x) = sqrt(x^2 + x^2) = sqrt(2x^2)
-	//   sqrt(2x^2) = Q
-	//   2x^2 =  Q^2
-	//   x^2 = Q^2/2
-	//   x = sqrt(Q^2/2)
-
-        let number = null;
-        while (number = ExcelUtils.number_dep.exec(range)) {
-	    console.log("matched a number");
-            if (number) {
-                let n = parseFloat(number[1]);
-		let q = Math.sqrt(n*n/2); 
-                base_vector[0] += q;
-                base_vector[1] += q;
-                // Wipe out the matched contents of range.
-                range = range.replace(number[0], '_');
-            }
-        }
-	
-        return base_vector;
-
     }
 
     public static all_dependencies(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>) : Array<[number, number,number]> {
@@ -395,8 +291,12 @@ export class ExcelUtils {
 		    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
 		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
 		    for (let dep of direct_refs) {
-			let key = dep.join(',');
-			refs[key] = true;
+			if ((dep[0] == 0) && (dep[1] == 0) && (dep[2] != 0)) {
+			    // Not a real reference. Skip.
+			} else {
+			    let key = dep.join(',');
+			    refs[key] = true;
+			}
 		    }
 		}
 	    }

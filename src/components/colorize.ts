@@ -396,7 +396,8 @@ export class Colorize {
 	v0 = v0 * v0;
 	let v1 = vec[1] - baseY;
 	v1 = v1 * v1;
-	return this.Multiplier * Math.sqrt(v0 + v1);
+	let v2 = vec[2];
+	return this.Multiplier * Math.sqrt(v0 + v1) + v2;
 	// Return a hash of the given vector.
 //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
 		//	console.log("hash of " + JSON.stringify(vec) + " = " + h);
