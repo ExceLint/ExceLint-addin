@@ -6,13 +6,16 @@ import { ExcelUtilities } from '@microsoft/office-js-helpers';
 import { Timer } from './timer';
 import { JSONclone } from './jsonclone';
 
+type excelintVector = [number, number, number];
+
 export class Colorize {
 
+   
     public static palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
 
-	private static initialized = false;
-	private static color_list = [];
-	private static light_color_list = [];
+    private static initialized = false;
+    private static color_list = [];
+    private static light_color_list = [];
     private static light_color_dict = {};
     private static Multiplier = 1; // 103038;
 
@@ -102,7 +105,7 @@ export class Colorize {
       }
     */
 
-    public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[[number, number, number], string]> {
+    public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[excelintVector, string]> {
 	console.log("***** PROCESS FORMULAS *****");
 	const distinguishedZeroHash = "0";
 	const base_vector = JSON.stringify(ExcelUtils.baseVector());
@@ -119,7 +122,7 @@ export class Colorize {
 		    let vec_array = ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
 		    const adjustedX = j + origin_col + 1;
 		    const adjustedY = i + origin_row + 1;
- 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
+// 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
 		    if (vec_array.length == 0) {
 			// No dependencies! Use a distinguished value.
 			output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
@@ -142,8 +145,8 @@ export class Colorize {
     }
 
 
-//    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
-    public static color_all_data(refs: { [dep: string]: Array<[number, number]> }) { // , processed_formulas: Array<[[number, number], string]>) {
+//    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[excelintVector, string]>) {
+    public static color_all_data(refs: { [dep: string]: Array<excelintVector> }) { // , processed_formulas: Array<[excelintVector, string]>) {
 	let t = new Timer("color_all_data");
 	//console.log('color_all_data');
 	//console.log("formula length = " + formulas.length);
@@ -168,9 +171,9 @@ export class Colorize {
 
 	// Take in a list of [[row, col], color] pairs and group them,
 	// sorting them (e.g., by columns).
-	private static identify_ranges(list: Array<[[number, number], string]>,
-		sortfn?: (n1: [number, number], n2: [number, number]) => number)
-		: { [val: string]: Array<[number, number]> } {
+	private static identify_ranges(list: Array<[excelintVector, string]>,
+		sortfn?: (n1: excelintVector, n2: excelintVector) => number)
+		: { [val: string]: Array<excelintVector> } {
 		// Separate into groups based on their string value.
 		let groups = {};
 		for (let r of list) {
@@ -186,9 +189,9 @@ export class Colorize {
 		return groups;
 	}
 
-	private static group_ranges(groups: { [val: string]: Array<[number, number]> },
+	private static group_ranges(groups: { [val: string]: Array<excelintVector> },
 		columnFirst: boolean)
-		: { [val: string]: Array<[[number, number], [number, number]]> } {
+		: { [val: string]: Array<[excelintVector, excelintVector]> } {
 		let output = {};
 		let index0 = 0; // column
 		let index1 = 1; // row
@@ -215,8 +218,8 @@ export class Colorize {
 		return output;
 	}
 
-	public static identify_groups(list: Array<[[number, number], string]>): { [val: string]: Array<[[number, number], [number, number]]> } {
-		let columnsort = (a: [number, number], b: [number, number]) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
+	public static identify_groups(list: Array<[excelintVector, string]>): { [val: string]: Array<[excelintVector, excelintVector]> } {
+		let columnsort = (a: excelintVector, b: excelintVector) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
 		let id = this.identify_ranges(list, columnsort);
 		let gr = this.group_ranges(id, true); // column-first
 	    // Now try to merge stuff with the same hash.
@@ -254,15 +257,16 @@ export class Colorize {
     }
 
     public static fix_metric(target_norm: number,
-			     target: [[number, number], [number, number]],
+			     target: [excelintVector, excelintVector],
 			     merge_with_norm: number,
-			     merge_with: [[number, number], [number, number]],
+			     merge_with: [excelintVector, excelintVector],
 			     sheetDiagonal: number,
 			     sheetArea: number): number
     {
-	
-	let n_target = RectangleUtils.area(target);
- 	let n_merge_with = RectangleUtils.area(merge_with);
+	let [t1, t2] = target;
+	let [m1, m2] = merge_with;
+	let n_target = RectangleUtils.area([[t1[0], t1[1]], [t2[0], t2[1]]]);
+	let n_merge_with = RectangleUtils.area([[m1[0], m1[1]], [m2[0], m2[1]]]);
 	let n_min = Math.min(n_target, n_merge_with);
 	let n_max = Math.max(n_target, n_merge_with);
 	let norm_min = Math.min(merge_with_norm, target_norm);
@@ -274,40 +278,42 @@ export class Colorize {
 	sheetArea = sheetArea;
 	sheetDiagonal = sheetDiagonal;
 	// Updating based on size formula.
-	console.log("fix distance = " + fix_distance);
+	console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
 	console.log("ranking was " + ranking);
 	ranking = n_max / ranking;
 	console.log("ranking now " + ranking);
 	return ranking;
     }
 
-    public static count_proposed_fixes(fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>) : number
+    public static count_proposed_fixes(fixes: Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]>) : number
     {
 	let count = 0;
 	for (let k in fixes) {
 	    //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
-	    count += RectangleUtils.diagonal(fixes[k][1]);
-	    count += RectangleUtils.diagonal(fixes[k][2]);
+	    let [f11, f12] = fixes[k][1];
+	    let [f21, f22] = fixes[k][2];
+	    count += RectangleUtils.diagonal([[f11[0], f11[1]], [f12[0], f12[1]]]);
+	    count += RectangleUtils.diagonal([[f21[0], f21[1]], [f22[0], f22[1]]]);
 	}
 	return count;
     }
     
-    public static generate_proposed_fixes(groups: { [val: string]: Array<[[number, number], [number, number]]> }, diagonal: number, area: number):
-    Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> {
+    public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }, diagonal: number, area: number):
+    Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
 	let proposed_fixes = [];
 	let already_proposed_pair = {};
 	
 	for (let k1 of Object.keys(groups)) {
 	    // Look for possible fixes in OTHER groups.
 	    for (let i = 0; i < groups[k1].length; i++) {
-		let r1 = groups[k1][i];
+		let r1 : any = groups[k1][i];
 		let sr1 = JSON.stringify(r1);
 		for (let k2 of Object.keys(groups)) {
 		    if (k1 === k2) {
 			continue;
 		    }
 		    for (let j = 0; j < groups[k2].length; j++) {
-			let r2 = groups[k2][j];
+			let r2 : any = groups[k2][j];
 			let sr2 = JSON.stringify(r2);
 			// Only add these if we have not already added them.
 			if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
@@ -332,8 +338,8 @@ export class Colorize {
 	return proposed_fixes;
     }
 
-	public static merge_groups(groups: { [val: string]: Array<[[number, number], [number, number]]> })
-		: { [val: string]: Array<[[number, number], [number, number]]> } {
+	public static merge_groups(groups: { [val: string]: Array<[excelintVector, excelintVector]> })
+		: { [val: string]: Array<[excelintVector, excelintVector]> } {
 		    for (let k of Object.keys(groups)) {
 			let g = groups[k].slice();
 			groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
@@ -341,8 +347,8 @@ export class Colorize {
 		return groups;
 	}
 
-	public static merge_individual_groups(group: Array<[[number, number], [number, number]]>)
-		: Array<[[number, number], [number, number]]> {
+	public static merge_individual_groups(group: Array<[excelintVector, excelintVector]>)
+		: Array<[excelintVector, excelintVector]> {
 		let numIterations = 0;
 		group = group.sort();
 		//        console.log(JSON.stringify(group));
@@ -351,9 +357,9 @@ export class Colorize {
 			let merged_one = false;
 			let deleted_rectangles = {};
 			let updated_rectangles = [];
-		    let working_group = group.slice(); // JSON.parse(JSON.stringify(group));
+		    let working_group : any = group.slice(); // JSON.parse(JSON.stringify(group));
 			while (working_group.length > 0) {
-				let head = working_group.shift();
+			    let head : any = working_group.shift();
 				for (let i = 0; i < working_group.length; i++) {
 					//                    console.log("comparing " + head + " and " + working_group[i]);
 					if (RectangleUtils.is_mergeable(head, working_group[i])) {
@@ -384,7 +390,7 @@ export class Colorize {
 		    group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
 			numIterations++;
 			if (numIterations > 20) {
-				return [[[-1, -1], [-1, -1]]];
+			    return [[[-1, -1, 0], [-1, -1, 0]]];
 			}
 		}
 	}

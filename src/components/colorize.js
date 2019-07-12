@@ -139,7 +139,7 @@ var Colorize = /** @class */ (function () {
                     var vec_array = excelutils_1.ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
                     var adjustedX = j + origin_col + 1;
                     var adjustedY = i + origin_row + 1;
-                    console.log("vec_array WAS = " + JSON.stringify(vec_array));
+                    // 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
                     if (vec_array.length == 0) {
                         // No dependencies! Use a distinguished value.
                         output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
@@ -162,7 +162,7 @@ var Colorize = /** @class */ (function () {
         //	console.log(JSON.stringify(all_deps));
         return output;
     };
-    //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[[number, number], string]>) {
+    //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[excelintVector, string]>) {
     Colorize.color_all_data = function (refs) {
         var e_2, _a;
         var t = new timer_1.Timer("color_all_data");
@@ -321,8 +321,10 @@ var Colorize = /** @class */ (function () {
         return normalizedEntropy;
     };
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
-        var n_target = rectangleutils_1.RectangleUtils.area(target);
-        var n_merge_with = rectangleutils_1.RectangleUtils.area(merge_with);
+        var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
+        var _b = __read(merge_with, 2), m1 = _b[0], m2 = _b[1];
+        var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1]], [t2[0], t2[1]]]);
+        var n_merge_with = rectangleutils_1.RectangleUtils.area([[m1[0], m1[1]], [m2[0], m2[1]]]);
         var n_min = Math.min(n_target, n_merge_with);
         var n_max = Math.max(n_target, n_merge_with);
         var norm_min = Math.min(merge_with_norm, target_norm);
@@ -334,7 +336,7 @@ var Colorize = /** @class */ (function () {
         sheetArea = sheetArea;
         sheetDiagonal = sheetDiagonal;
         // Updating based on size formula.
-        console.log("fix distance = " + fix_distance);
+        console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
         console.log("ranking was " + ranking);
         ranking = n_max / ranking;
         console.log("ranking now " + ranking);
@@ -344,8 +346,10 @@ var Colorize = /** @class */ (function () {
         var count = 0;
         for (var k in fixes) {
             //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
-            count += rectangleutils_1.RectangleUtils.diagonal(fixes[k][1]);
-            count += rectangleutils_1.RectangleUtils.diagonal(fixes[k][2]);
+            var _a = __read(fixes[k][1], 2), f11 = _a[0], f12 = _a[1];
+            var _b = __read(fixes[k][2], 2), f21 = _b[0], f22 = _b[1];
+            count += rectangleutils_1.RectangleUtils.diagonal([[f11[0], f11[1]], [f12[0], f12[1]]]);
+            count += rectangleutils_1.RectangleUtils.diagonal([[f21[0], f21[1]], [f22[0], f22[1]]]);
         }
         return count;
     };
@@ -466,7 +470,7 @@ var Colorize = /** @class */ (function () {
             group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
             numIterations++;
             if (numIterations > 20) {
-                return [[[-1, -1], [-1, -1]]];
+                return [[[-1, -1, 0], [-1, -1, 0]]];
             }
         }
     };

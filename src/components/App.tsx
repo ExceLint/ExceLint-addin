@@ -306,8 +306,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Compute the number of cells in the range "usedRange".
 		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
 		console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
-		let upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
-		let lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+		let [ul1, ul2, ul3] = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+		let [lr1, lr2, lr3] = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+		let upperLeftCorner : [number, number] = [ul1, ul2];
+		let lowerRightCorner : [number, number] = [lr1, lr2];
 		let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
 		let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
 		console.log("number of cells used = " + numberOfCellsUsed);
@@ -380,7 +382,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("computed cell dependency for start");
 
 		let formulas = usedRange.formulas;
-		let processed_formulas = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
+		let processed_formulas : any = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
