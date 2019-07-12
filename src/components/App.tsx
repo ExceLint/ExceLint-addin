@@ -198,7 +198,7 @@ export default class App extends React.Component<AppProps, AppState> {
     setColor = async () => {
 
 	try {
-	    OfficeExtension.config.extendedErrorLogging = true;
+//	    OfficeExtension.config.extendedErrorLogging = true;
 	    await Excel.run(async context => {
 		console.log('setColor: starting processing.');
 		let t = new Timer("setColor");
@@ -221,7 +221,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		
 		let originalCalculationMode = app.calculationMode;
-		app.calculationMode = 'Manual';
+//		app.calculationMode = 'Manual';
 
 		let usedRange = currentWorksheet.getUsedRange(false) as any; // FIXME was false! testing for perf
 		usedRange.load(['address','values']);
@@ -340,7 +340,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		t.split("got numeric ranges");
 		
-//		app.suspendScreenUpdatingUntilNextSync();
+		app.suspendScreenUpdatingUntilNextSync();
 
 		// Remove the background color from all cells.
  		let rangeFill = usedRange.format.fill;
@@ -385,6 +385,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
 		await context.sync();
+		app.suspendScreenUpdatingUntilNextSync();
+		
 //		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
 		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("generated all references");
@@ -415,6 +417,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
 		await context.sync();
 
+		app.suspendScreenUpdatingUntilNextSync();
+		
 		console.log("backup sheetname = " + backupSheetname);
 		console.log(JSON.stringify(backupSheet));
 
@@ -518,6 +522,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("processed data");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
 		await context.sync();
+		app.suspendScreenUpdatingUntilNextSync();
 		t.split("processed formulas");
 // 		await context.sync(); // DEBUG
 //		t.split("synched and processed everything");
@@ -554,7 +559,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Restore original calculation mode.
 //		app.calculationMode = 'Automatic';
 
-		app.calculationMode = originalCalculationMode;
+////		app.calculationMode = originalCalculationMode;
 
 
 		await context.sync();
