@@ -148,7 +148,7 @@ export class ExcelUtils {
 
     private static all_cell_dependencies(range: string, origin_col: number, origin_row: number): Array<[number, number,number]> {
 
-	console.log("looking for dependencies in " + range);
+//	console.log("looking for dependencies in " + range);
 	
         let found_pair = null;
         let all_vectors: Array<[number, number,number]> = [];
@@ -211,7 +211,7 @@ export class ExcelUtils {
             }
         }
 
-	console.log("range is now " + range);
+//	console.log("range is now " + range);
 	
 	// FIXME perhaps. For now, we are going to roll numbers in
 	// formulas into the dependency vectors.  To keep this as a
@@ -231,10 +231,10 @@ export class ExcelUtils {
 
         let number = null;
         while (number = ExcelUtils.number_dep.exec(range)) {
-	    console.log("matched a number");
+//	    console.log("matched a number");
             if (number) {
                 let n = parseFloat(number[1]);
-		console.log("number = " + n);
+//		console.log("number = " + n);
 		let q = Math.sqrt(n*n/2);
 		all_vectors.push([0, 0, n]);
                 // Wipe out the matched contents of range.
@@ -264,7 +264,7 @@ export class ExcelUtils {
 	const cell = formulas[row][col];
 	if ((cell.length > 1) && (cell[0] === "=")) {
 	    // It is. Compute the dependencies.
-	    console.log("ALL CELL DEPENDENCIES");
+//	    console.log("ALL CELL DEPENDENCIES");
 	    deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
 	}
 	return deps;
@@ -291,7 +291,7 @@ export class ExcelUtils {
 		    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
 		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
 		    for (let dep of direct_refs) {
-			if ((dep[0] == 0) && (dep[1] == 0) && (dep[2] != 0)) {
+			if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
 			    // Not a real reference. Skip.
 			} else {
 			    let key = dep.join(',');

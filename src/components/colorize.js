@@ -338,7 +338,7 @@ var Colorize = /** @class */ (function () {
         // Updating based on size formula.
         console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
         console.log("ranking was " + ranking);
-        ranking = n_max / ranking;
+        ranking = -(n_max / ranking); // negating to sort in reverse order.
         console.log("ranking now " + ranking);
         return ranking;
     };

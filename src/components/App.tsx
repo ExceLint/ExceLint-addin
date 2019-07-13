@@ -21,7 +21,7 @@ export interface AppState {
 
 export default class App extends React.Component<AppProps, AppState> {
 
-    private proposed_fixes: Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
+    private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
     private proposed_fixes_length = 0;
     private current_fix = 0;
     private total_fixes = -1;
@@ -69,6 +69,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
 		    let row1 = r[1][1];
 
+		    if ((r[0][0] === 0) && (r[0][1] === 0) && (r[0][2] != 0)) {
+			// Not a real dependency. Skip.
+			continue;
+		    }
+		    
 		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash_index);

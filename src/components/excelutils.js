@@ -141,7 +141,7 @@ var ExcelUtils = /** @class */ (function () {
         return ExcelUtils.extract_sheet_cell(str);
     };
     ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row) {
-        console.log("looking for dependencies in " + range);
+        //	console.log("looking for dependencies in " + range);
         var found_pair = null;
         var all_vectors = [];
         if (typeof (range) !== 'string') {
@@ -194,7 +194,7 @@ var ExcelUtils = /** @class */ (function () {
                 range = range.replace(singleton[0], '_');
             }
         }
-        console.log("range is now " + range);
+        //	console.log("range is now " + range);
         // FIXME perhaps. For now, we are going to roll numbers in
         // formulas into the dependency vectors.  To keep this as a
         // metric, we want the distance between two vectors with two
@@ -210,10 +210,10 @@ var ExcelUtils = /** @class */ (function () {
         //   x = sqrt(Q^2/2)
         var number = null;
         while (number = ExcelUtils.number_dep.exec(range)) {
-            console.log("matched a number");
+            //	    console.log("matched a number");
             if (number) {
                 var n = parseFloat(number[1]);
-                console.log("number = " + n);
+                //		console.log("number = " + n);
                 var q = Math.sqrt(n * n / 2);
                 all_vectors.push([0, 0, n]);
                 // Wipe out the matched contents of range.
@@ -239,7 +239,7 @@ var ExcelUtils = /** @class */ (function () {
         var cell = formulas[row][col];
         if ((cell.length > 1) && (cell[0] === "=")) {
             // It is. Compute the dependencies.
-            console.log("ALL CELL DEPENDENCIES");
+            //	    console.log("ALL CELL DEPENDENCIES");
             deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
         }
         return deps;
@@ -267,7 +267,7 @@ var ExcelUtils = /** @class */ (function () {
                     try {
                         for (var direct_refs_1 = __values(direct_refs), direct_refs_1_1 = direct_refs_1.next(); !direct_refs_1_1.done; direct_refs_1_1 = direct_refs_1.next()) {
                             var dep = direct_refs_1_1.value;
-                            if ((dep[0] == 0) && (dep[1] == 0) && (dep[2] != 0)) {
+                            if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
                                 // Not a real reference. Skip.
                             }
                             else {

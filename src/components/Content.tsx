@@ -21,6 +21,9 @@ export interface ContentProps {
 }
 
 function makeTable(sheetName: string, arr, selector, current: number, numFixes : number) : any {
+    if (numFixes === 0) {
+	numFixes = 1;
+    }
     const divStyle : any = {
 	height: '100px',
 	overflowY: 'auto',
@@ -42,9 +45,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
 		// Sort from largest to smallest (by making negative).
-		if (numFixes === 0) {
-		    numFixes = 1;
-		}
+		console.log(JSON.stringify(r));
 		console.log("original score = " + arr[i][0]);
 		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 //		let score = Math.round((-arr[i][0])*barWidth*100)/(100); //  * numFixes);
@@ -62,6 +63,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 //		    break;
 		    score = 1;
 		}
+		score = barWidth - score; // Invert the ranking.
 		if (current === i) {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
 		} else {
