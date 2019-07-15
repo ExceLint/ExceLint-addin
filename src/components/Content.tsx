@@ -38,6 +38,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	color : 'red'
     };
     const barWidth = 80;
+    let counter = 0;
     if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
@@ -47,37 +48,34 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		// Sort from largest to smallest (by making negative).
 		console.log(JSON.stringify(r));
 		console.log("original score = " + arr[i][0]);
-		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
-//		let score = Math.round((-arr[i][0])*barWidth*100)/(100); //  * numFixes);
-//		let score = Math.round(-arr[i][0]*barWidth*100)/100; // /(100 * Math.log2(numFixes));
+		let score = -arr[i][0] * barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
+//		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 		console.log("score = " + score);
 		if (score > barWidth) {
 		    score = barWidth;
 		}
-		// Always put up *something*.
-		if (score < 0) {
-		    score = -score;
-//		    score = 1;
+//		score = barWidth - score; // Invert the ranking.
+		// Skip really low scores.
+		if (score < 5) {
+		    continue;
 		}
-		if (score < 1) {
-//		    break;
-		    score = 1;
-		}
-		score = barWidth - score; // Invert the ranking.
+		counter += 1;
+		console.log("score is now = " + score);
 		if (current === i) {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
 		} else {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'white', display:'inline-block'}}>&nbsp;</td></tr>);
+		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
 		}
 	    }
 	}
-	let table = [];
-	let header = <tr><th align="left">Range</th><th align="left">Suspiciousness</th></tr>;
-	table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{header}{children}</table></div></div>);
-	return table;
-    } else {
-	return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+	if (counter > 0) {
+	    let table = [];
+	    let header = <tr><th align="left">Range</th><th align="left">Suspiciousness</th></tr>;
+	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{header}{children}</table></div></div>);
+	    return table;
+	}
     }
+    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
 }
 
 function DisplayFixes(props) {

@@ -153,6 +153,7 @@ var Colorize = /** @class */ (function () {
                         else {
                             var hash = this.hash_vector(vec);
                             var str = hash.toString();
+                            console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
                             output.push([[adjustedX, adjustedY, 0], str]);
                         }
                     }
@@ -315,10 +316,11 @@ var Colorize = /** @class */ (function () {
         var total = oldcount1 + oldcount2;
         var prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
         //	const newEntropy = this.entropy(oldcount1 + oldcount2);
-        var normalizedEntropy = prevEntropy / (total * Math.log2(total));
+        //	const normalizedEntropy = prevEntropy / (total * Math.log2(total));
+        var normalizedEntropy = prevEntropy / (Math.log2(total));
         //	return newEntropy - prevEntropy;
-        //	return prevEntropy; // FIXME ? a test, non normalized
-        return normalizedEntropy;
+        // return prevEntropy; // FIXME ? a test, non normalized
+        return -normalizedEntropy;
     };
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
         var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
@@ -330,15 +332,18 @@ var Colorize = /** @class */ (function () {
         var norm_min = Math.min(merge_with_norm, target_norm);
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
-        var entropy_drop = this.entropydiff(n_min, n_max);
-        //	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min));
-        var ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
+        var entropy_drop = this.entropydiff(n_min, n_max); // negative
+        console.log("entropy drop = " + entropy_drop);
+        //	let ranking = (1.0 + entropy_drop); // ONLY COUNT ENTROPY (between 0 and 1)
+        var ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
+        //	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
         sheetArea = sheetArea;
         sheetDiagonal = sheetDiagonal;
         // Updating based on size formula.
         console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
         console.log("ranking was " + ranking);
-        ranking = -(n_max / ranking); // negating to sort in reverse order.
+        //	ranking = -(n_max / ranking); // negating to sort in reverse order.
+        ranking = -ranking; // negating to sort in reverse order.
         console.log("ranking now " + ranking);
         return ranking;
     };
@@ -477,12 +482,13 @@ var Colorize = /** @class */ (function () {
     Colorize.hash_vector = function (vec) {
         var baseX = 0; // 7;
         var baseY = 0; // 3;
-        var v0 = vec[0] - baseX;
-        v0 = v0 * v0;
-        var v1 = vec[1] - baseY;
-        v1 = v1 * v1;
+        var v0 = Math.abs(vec[0] - baseX);
+        //	v0 = v0 * v0;
+        var v1 = Math.abs(vec[1] - baseY);
+        //	v1 = v1 * v1;
         var v2 = vec[2];
-        return this.Multiplier * Math.sqrt(v0 + v1) + v2;
+        return this.Multiplier * (v0 + v1 + v2);
+        //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
         // Return a hash of the given vector.
         //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
         //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
@@ -495,7 +501,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
-    Colorize.Multiplier = 1; // 103038;
+    Colorize.Multiplier = 103038;
     return Colorize;
 }());
 exports.Colorize = Colorize;

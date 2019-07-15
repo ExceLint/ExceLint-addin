@@ -196,26 +196,15 @@ var ExcelUtils = /** @class */ (function () {
         }
         //	console.log("range is now " + range);
         // FIXME perhaps. For now, we are going to roll numbers in
-        // formulas into the dependency vectors.  To keep this as a
-        // metric, we want the distance between two vectors with two
-        // numbers X and Y to have distance |X-Y|. To do this, we can
-        // just put the number N in a single dimension. Rather than pick one,
-        // we split it across two dimensions by adding sqrt(N^2/2) to each.
-        // e.g., 8 adds sqrt(64/2) = sqrt(32) to both x and y.
-        // Derivation:
-        //   dist((0,0), (x, x) = sqrt(x^2 + x^2) = sqrt(2x^2)
-        //   sqrt(2x^2) = Q
-        //   2x^2 =  Q^2
-        //   x^2 = Q^2/2
-        //   x = sqrt(Q^2/2)
+        // formulas into the dependency vectors. Each number counts as "1".
         var number = null;
         while (number = ExcelUtils.number_dep.exec(range)) {
             //	    console.log("matched a number");
             if (number) {
-                var n = parseFloat(number[1]);
+                //                let n = parseFloat(number[1]);
                 //		console.log("number = " + n);
-                var q = Math.sqrt(n * n / 2);
-                all_vectors.push([0, 0, n]);
+                //		let q = Math.sqrt(n*n/2);
+                all_vectors.push([0, 0, 1]); // just add 1 for every number
                 // Wipe out the matched contents of range.
                 range = range.replace(number[0], '_');
             }

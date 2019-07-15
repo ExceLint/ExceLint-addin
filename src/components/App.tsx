@@ -391,7 +391,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
-		await context.sync();
+//		await context.sync();
 		app.suspendScreenUpdatingUntilNextSync();
 		
 //		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
