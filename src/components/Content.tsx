@@ -37,7 +37,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
     const notSuspiciousStyle : any = {
 	color : 'red'
     };
-    const barWidth = 80;
+    const barWidth = 100;
     let counter = 0;
     if (arr.length > 0) {
 	let children = [];
