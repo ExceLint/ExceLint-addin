@@ -3,6 +3,8 @@ import { Button, ButtonType } from 'office-ui-fabric-react';
 import { ExcelUtils } from './excelutils';
 import { Colorize } from './colorize';
 
+const reportingThreshold = 10; // percent of bar
+
 // Checkbox
 
 export interface ContentProps {
@@ -56,7 +58,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		}
 //		score = barWidth - score; // Invert the ranking.
 		// Skip really low scores.
-		if (score < 5) {
+		if (score < reportingThreshold) {
 		    continue;
 		}
 		counter += 1;

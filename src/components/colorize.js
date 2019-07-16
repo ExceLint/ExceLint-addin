@@ -361,6 +361,62 @@ var Colorize = /** @class */ (function () {
         }
         return count;
     };
+    Colorize.fix_proposed_fixes = function (fixes) {
+        // example: [[-0.8729568798082977,[[4,23],[13,23]],[[3,23,0],[3,23,0]]],[-0.6890824929174288,[[4,6],[7,6]],[[3,6,0],[3,6,0]]],[-0.5943609377704335,[[4,10],[6,10]],[[3,10,0],[3,10,0]]],[-0.42061983571430495,[[3,27],[4,27]],[[5,27,0],[5,27,0]]],[-0.42061983571430495,[[4,14],[5,14]],[[3,14,0],[3,14,0]]],[-0.42061983571430495,[[6,27],[7,27]],[[5,27,0],[5,27,0]]]]
+        var count = 0;
+        // Search for fixes where the same coordinate pair appears in the front and in the back.
+        var front = {};
+        var back = {};
+        // Build up the front and back dictionaries.
+        for (var k in fixes) {
+            // Sort the fixes so the smaller array (further up and
+            // to the left) always comes first.
+            if (fixes[k][1] > fixes[k][2]) {
+                var tmp = fixes[k][1];
+                fixes[k][1] = fixes[k][2];
+                fixes[k][2] = tmp;
+            }
+            // Now add them.
+            front[JSON.stringify(fixes[k][1])] = fixes[k];
+            back[JSON.stringify(fixes[k][2])] = fixes[k];
+        }
+        // 	    console.log("front = " + JSON.stringify(front));
+        // 	    console.log("back = " + JSON.stringify(back));
+        // Now iterate through one, looking for hits on the other.
+        var new_fixes = [];
+        var merged = {};
+        for (var k in fixes) {
+            console.log("processing " + JSON.stringify(fixes[k]));
+            var this_front_str = JSON.stringify(fixes[k][1]);
+            var this_back_str = JSON.stringify(fixes[k][2]);
+            if (!(this_front_str in back) && !(this_back_str in front)) {
+                console.log("no match here for " + this_front_str + " or " + this_back_str);
+                // No match. Just merge them.
+                new_fixes.push(fixes[k]);
+            }
+            else {
+                if ((!merged[this_front_str]) && (this_front_str in back)) {
+                    console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
+                    // FIXME. This calculation may not make sense.			
+                    var newscore = fixes[k][0] + JSON.parse(back[this_front_str][0]);
+                    console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
+                    new_fixes.push([newscore, fixes[k][1], back[this_front_str][1]]);
+                    merged[this_front_str] = true;
+                    continue;
+                }
+                if ((!merged[this_back_str]) && (this_back_str in front)) {
+                    // this_back_str in front
+                    console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
+                    // FIXME. This calculation may not make sense.
+                    var newscore = fixes[k][0] + JSON.parse(front[this_back_str][0]);
+                    console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
+                    new_fixes.push([newscore, fixes[k][1], front[this_back_str][2]]);
+                    merged[this_back_str] = true;
+                }
+            }
+        }
+        return new_fixes;
+    };
     Colorize.generate_proposed_fixes = function (groups, diagonal, area) {
         var e_7, _a, e_8, _b;
         var proposed_fixes = [];
@@ -413,9 +469,14 @@ var Colorize = /** @class */ (function () {
             }
             finally { if (e_7) throw e_7.error; }
         }
-        // First attribute is the Euclidean norm of the vectors. Differencing corresponds roughly to earth-mover distance.
-        // Other attributes are the rectangles themselves. Sort by biggest entropy reduction first.
+        // First attribute is the norm of the vectors. Differencing
+        // corresponds to earth-mover distance.  Other attributes are
+        // the rectangles themselves. Sort by biggest entropy
+        // reduction first.
+        console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
+        proposed_fixes = this.fix_proposed_fixes(proposed_fixes);
         proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
+        console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
         return proposed_fixes;
     };
     Colorize.merge_groups = function (groups) {
