@@ -290,7 +290,9 @@ var Colorize = /** @class */ (function () {
             return a[0] - b[0];
         } };
         var id = this.identify_ranges(list, columnsort);
+        // 	    console.log("id = " + JSON.stringify(id));
         var gr = this.group_ranges(id, true); // column-first
+        // 	    console.log("gr = " + JSON.stringify(gr));
         // Now try to merge stuff with the same hash.
         //	    let newGr1 = _.clone(gr);
         //let newGr1 = lodash.clone(gr);
@@ -300,6 +302,7 @@ var Colorize = /** @class */ (function () {
         //        console.log('group');
         //        console.log(JSON.stringify(newGr1));
         var mg = this.merge_groups(newGr1);
+        //	    console.log("mg = " + JSON.stringify(mg));
         //        let mr = this.mergeable(newGr1);
         //        console.log('mergeable');
         //       console.log(JSON.stringify(mr));
@@ -474,7 +477,8 @@ var Colorize = /** @class */ (function () {
             }
             group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
             numIterations++;
-            if (numIterations > 20) {
+            if (numIterations > 2000) { // This is hack to guarantee convergence.
+                console.log("Too many iterations; abandoning this group.");
                 return [[[-1, -1, 0], [-1, -1, 0]]];
             }
         }

@@ -73,6 +73,11 @@ export default class App extends React.Component<AppProps, AppState> {
 			// Not a real dependency. Skip.
 			continue;
 		    }
+		    if ((r[0][0] < 0) || (r[0][1] < 0) || (r[1][0] < 0) || (r[1][1] < 0)) {
+			// Defensive programming.
+			console.log("WARNING: FOUND NEGATIVE VALUES.");
+			continue;
+		    }
 		    
 		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
@@ -112,7 +117,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    // Don't show the copied sheet.
 	    // FIXME? Disabled to test to see if it resolves slow updating issue on Excel (Windows).
 	    let app = context.workbook.application;
-	    app.suspendScreenUpdatingUntilNextSync();
+//	    app.suspendScreenUpdatingUntilNextSync();
 
 	    
 	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
@@ -260,7 +265,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    console.log(JSON.stringify(currentWorksheet.names.items));
 		}
 		    
- 		app.suspendScreenUpdatingUntilNextSync();
+// 		app.suspendScreenUpdatingUntilNextSync();
 		    
 
 		//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
@@ -306,7 +311,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Now start colorizing.
 
 		// Turn off screen updating while this is happening.
- 		app.suspendScreenUpdatingUntilNextSync();
+// 		app.suspendScreenUpdatingUntilNextSync();
 
 		// Compute the number of cells in the range "usedRange".
 		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
@@ -317,7 +322,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let lowerRightCorner : [number, number] = [lr1, lr2];
 		let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
 		let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
-		console.log("number of cells used = " + numberOfCellsUsed);
+//		console.log("number of cells used = " + numberOfCellsUsed);
 
 	
 		let useNumericFormulaRanges = false;
@@ -347,7 +352,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		t.split("got numeric ranges");
 		
-		app.suspendScreenUpdatingUntilNextSync();
+//		app.suspendScreenUpdatingUntilNextSync();
 
 		// Remove the background color from all cells.
  		let rangeFill = usedRange.format.fill;
@@ -392,7 +397,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
 //		await context.sync();
-		app.suspendScreenUpdatingUntilNextSync();
+//		app.suspendScreenUpdatingUntilNextSync();
 		
 //		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
 		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
@@ -407,6 +412,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("identified groups");
 		console.log("identified groups." + JSON.stringify(grouped_data));
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
+		console.log("processed formulas = " + JSON.stringify(processed_formulas));
+		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
 		t.split("grouped formulas");
 		await setTimeout(() => {}, 0);
 		
@@ -424,7 +431,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
 		await context.sync();
 
-		app.suspendScreenUpdatingUntilNextSync();
+//		app.suspendScreenUpdatingUntilNextSync();
 		
 		console.log("backup sheetname = " + backupSheetname);
 		console.log(JSON.stringify(backupSheet));
@@ -529,7 +536,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("processed data");
 		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
 		await context.sync();
-		app.suspendScreenUpdatingUntilNextSync();
+//		app.suspendScreenUpdatingUntilNextSync();
 		t.split("processed formulas");
 // 		await context.sync(); // DEBUG
 //		t.split("synched and processed everything");

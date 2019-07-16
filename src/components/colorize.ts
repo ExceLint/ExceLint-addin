@@ -220,26 +220,29 @@ export class Colorize {
 	}
 
 	public static identify_groups(list: Array<[excelintVector, string]>): { [val: string]: Array<[excelintVector, excelintVector]> } {
-		let columnsort = (a: excelintVector, b: excelintVector) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
-		let id = this.identify_ranges(list, columnsort);
-		let gr = this.group_ranges(id, true); // column-first
+	    let columnsort = (a: excelintVector, b: excelintVector) => { if (a[0] === b[0]) { return a[1] - b[1]; } else { return a[0] - b[0]; } };
+	    let id = this.identify_ranges(list, columnsort);
+// 	    console.log("id = " + JSON.stringify(id));
+	    let gr = this.group_ranges(id, true); // column-first
+// 	    console.log("gr = " + JSON.stringify(gr));
 	    // Now try to merge stuff with the same hash.
 	    //	    let newGr1 = _.clone(gr);
 	    //let newGr1 = lodash.clone(gr);
 	    let newGr1 = JSONclone.clone(gr);
 //	    let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
-		//        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-		//        console.log('group');
-		//        console.log(JSON.stringify(newGr1));
-		let mg = this.merge_groups(newGr1);
-		//        let mr = this.mergeable(newGr1);
-		//        console.log('mergeable');
-		//       console.log(JSON.stringify(mr));
-		//       let mg = this.merge_groups(newGr2, mr);
-		//        console.log('new merge groups');
-		//        console.log(JSON.stringify(mg));
-		//this.generate_proposed_fixes(mg);
-		return mg;
+	    //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
+	    //        console.log('group');
+	    //        console.log(JSON.stringify(newGr1));
+	    let mg = this.merge_groups(newGr1);
+ //	    console.log("mg = " + JSON.stringify(mg));
+	    //        let mr = this.mergeable(newGr1);
+	    //        console.log('mergeable');
+	    //       console.log(JSON.stringify(mr));
+	    //       let mg = this.merge_groups(newGr2, mr);
+	    //        console.log('new merge groups');
+	    //        console.log(JSON.stringify(mg));
+	    //this.generate_proposed_fixes(mg);
+	    return mg;
 	}
 
 	public static entropy(p: number): number {
@@ -353,51 +356,53 @@ export class Colorize {
 	}
 
 	public static merge_individual_groups(group: Array<[excelintVector, excelintVector]>)
-		: Array<[excelintVector, excelintVector]> {
-		let numIterations = 0;
-		group = group.sort();
-		//        console.log(JSON.stringify(group));
-		while (true) {
-			// console.log("iteration "+numIterations);
-			let merged_one = false;
-			let deleted_rectangles = {};
-			let updated_rectangles = [];
-		    let working_group : any = group.slice(); // JSON.parse(JSON.stringify(group));
-			while (working_group.length > 0) {
-			    let head : any = working_group.shift();
-				for (let i = 0; i < working_group.length; i++) {
-					//                    console.log("comparing " + head + " and " + working_group[i]);
-					if (RectangleUtils.is_mergeable(head, working_group[i])) {
-						//console.log("friendly!" + head + " -- " + working_group[i]);
-						updated_rectangles.push(RectangleUtils.bounding_box(head, working_group[i]));
-						deleted_rectangles[JSON.stringify(head)] = true;
-						deleted_rectangles[JSON.stringify(working_group[i])] = true;
-						merged_one = true;
-						break;
-					}
-				}
-				//                if (!merged_one) {
-				//                    updated_rectangles.push(head);
-				//                }
+    : Array<[excelintVector, excelintVector]>
+	{
+	    let numIterations = 0;
+	    group = group.sort();
+	    //        console.log(JSON.stringify(group));
+	    while (true) {
+		// console.log("iteration "+numIterations);
+		let merged_one = false;
+		let deleted_rectangles = {};
+		let updated_rectangles = [];
+		let working_group : any = group.slice(); // JSON.parse(JSON.stringify(group));
+		while (working_group.length > 0) {
+		    let head : any = working_group.shift();
+		    for (let i = 0; i < working_group.length; i++) {
+			//                    console.log("comparing " + head + " and " + working_group[i]);
+			if (RectangleUtils.is_mergeable(head, working_group[i])) {
+			    //console.log("friendly!" + head + " -- " + working_group[i]);
+			    updated_rectangles.push(RectangleUtils.bounding_box(head, working_group[i]));
+			    deleted_rectangles[JSON.stringify(head)] = true;
+			    deleted_rectangles[JSON.stringify(working_group[i])] = true;
+			    merged_one = true;
+			    break;
 			}
-			for (let i = 0; i < group.length; i++) {
-				if (!(JSON.stringify(group[i]) in deleted_rectangles)) {
-					updated_rectangles.push(group[i]);
-				}
-			}
-			updated_rectangles.sort();
-			// console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-			//            console.log('group = ' + JSON.stringify(group));
-			if (!merged_one) {
-				// console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-				return updated_rectangles;
-			}
-		    group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
-			numIterations++;
-			if (numIterations > 20) {
-			    return [[[-1, -1, 0], [-1, -1, 0]]];
-			}
+		    }
+		    //                if (!merged_one) {
+		    //                    updated_rectangles.push(head);
+		    //                }
 		}
+		for (let i = 0; i < group.length; i++) {
+		    if (!(JSON.stringify(group[i]) in deleted_rectangles)) {
+			updated_rectangles.push(group[i]);
+		    }
+		}
+		updated_rectangles.sort();
+		// console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+		//            console.log('group = ' + JSON.stringify(group));
+		if (!merged_one) {
+		    // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+		    return updated_rectangles;
+		}
+		group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
+		numIterations++;
+		if (numIterations > 2000) { // This is hack to guarantee convergence.
+		    console.log("Too many iterations; abandoning this group.")
+		    return [[[-1, -1, 0], [-1, -1, 0]]];
+		}
+	    }
 	}
 
     public static hash_vector(vec: Array<number>): number {
