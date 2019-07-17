@@ -394,7 +394,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let formulas = usedRange.formulas;
 		let processed_formulas : any = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		
-		await setTimeout(() => {}, 0);
+//		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
 //		await context.sync();
 //		app.suspendScreenUpdatingUntilNextSync();
@@ -402,10 +402,10 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
 		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("generated all references");
-		await setTimeout(() => {}, 0);
+//		await setTimeout(() => {}, 0);
 		let processed_data = Colorize.color_all_data(refs);
 		t.split("processed data");
-		await setTimeout(() => {}, 0);
+//		await setTimeout(() => {}, 0);
 //		console.log(" = " + JSON.stringify(processed_data));
 
 		let grouped_data = Colorize.identify_groups(processed_data);
@@ -484,10 +484,18 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		    if (range.format.fill.color) {
 			
-			range.load(['format/font']);
+			range.load(['format/font', 'numberFormat']);
 			await context.sync();
 
-			if (range.format.font.color &&
+			// Check that the whole range has the same numeric format,
+			// and that the fonts are the same.
+
+			console.log(range.numberFormat);
+			let sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
+			console.log("same formats = " + sameFormats);
+			
+			if (sameFormats &&
+			    range.format.font.color &&
 			    range.format.font.bold != null &&
 			    range.format.font.italic != null &&
 			    range.format.font.name)
