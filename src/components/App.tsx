@@ -61,7 +61,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	Object.keys(grouped_ranges).forEach(hash => {
 	    if (!(hash === undefined)) {
 		let v = grouped_ranges[hash];
-		console.log("v = " + JSON.stringify(v));
+//		console.log("v = " + JSON.stringify(v));
 		for (let theRange of v) {
 		    let r = theRange;
 		    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
@@ -79,7 +79,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			continue;
 		    }
 		    
-		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
+//		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
 		    let color = colorfn(hash_index);
 //		    console.log("color to set = " + color + " for hash = " + hash);
@@ -410,10 +410,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		let grouped_data = Colorize.identify_groups(processed_data);
 		t.split("identified groups");
-		console.log("identified groups." + JSON.stringify(grouped_data));
+//		console.log("identified groups." + JSON.stringify(grouped_data));
 		let grouped_formulas = Colorize.identify_groups(processed_formulas);
-		console.log("processed formulas = " + JSON.stringify(processed_formulas));
-		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+//		console.log("processed formulas = " + JSON.stringify(processed_formulas));
+//		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
 		t.split("grouped formulas");
 		await setTimeout(() => {}, 0);
 		
@@ -433,8 +433,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 //		app.suspendScreenUpdatingUntilNextSync();
 		
-		console.log("backup sheetname = " + backupSheetname);
-		console.log(JSON.stringify(backupSheet));
+//		console.log("backup sheetname = " + backupSheetname);
+//		console.log(JSON.stringify(backupSheet));
 
 		// Walk through each proposed fix, checking to see if
 		// the merged range (that is, the applied fix) would

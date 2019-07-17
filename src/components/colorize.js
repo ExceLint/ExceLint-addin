@@ -336,18 +336,18 @@ var Colorize = /** @class */ (function () {
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
         var entropy_drop = this.entropydiff(n_min, n_max); // negative
-        console.log("entropy drop = " + entropy_drop);
+        //	console.log("entropy drop = " + entropy_drop);
         //	let ranking = (1.0 + entropy_drop); // ONLY COUNT ENTROPY (between 0 and 1)
         var ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
         //	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
         sheetArea = sheetArea;
         sheetDiagonal = sheetDiagonal;
         // Updating based on size formula.
-        console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
-        console.log("ranking was " + ranking);
+        //	console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
+        //	console.log("ranking was " + ranking);
         //	ranking = -(n_max / ranking); // negating to sort in reverse order.
         ranking = -ranking; // negating to sort in reverse order.
-        console.log("ranking now " + ranking);
+        //	console.log("ranking now " + ranking);
         return ranking;
     };
     Colorize.count_proposed_fixes = function (fixes) {
@@ -386,30 +386,30 @@ var Colorize = /** @class */ (function () {
         var new_fixes = [];
         var merged = {};
         for (var k in fixes) {
-            console.log("processing " + JSON.stringify(fixes[k]));
+            //		console.log("processing " + JSON.stringify(fixes[k]));
             var this_front_str = JSON.stringify(fixes[k][1]);
             var this_back_str = JSON.stringify(fixes[k][2]);
             if (!(this_front_str in back) && !(this_back_str in front)) {
-                console.log("no match here for " + this_front_str + " or " + this_back_str);
+                //		    console.log("no match here for " + this_front_str + " or " + this_back_str);
                 // No match. Just merge them.
                 new_fixes.push(fixes[k]);
             }
             else {
                 if ((!merged[this_front_str]) && (this_front_str in back)) {
-                    console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
+                    //			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
                     // FIXME. This calculation may not make sense.			
                     var newscore = fixes[k][0] + JSON.parse(back[this_front_str][0]);
-                    console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
+                    //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
                     new_fixes.push([newscore, fixes[k][1], back[this_front_str][1]]);
                     merged[this_front_str] = true;
                     continue;
                 }
                 if ((!merged[this_back_str]) && (this_back_str in front)) {
                     // this_back_str in front
-                    console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
+                    //			console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
                     // FIXME. This calculation may not make sense.
                     var newscore = fixes[k][0] + JSON.parse(front[this_back_str][0]);
-                    console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
+                    //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
                     new_fixes.push([newscore, fixes[k][1], front[this_back_str][2]]);
                     merged[this_back_str] = true;
                 }
