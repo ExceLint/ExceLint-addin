@@ -153,7 +153,7 @@ var Colorize = /** @class */ (function () {
                         else {
                             var hash = this.hash_vector(vec);
                             var str = hash.toString();
-                            console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+                            //			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
                             output.push([[adjustedX, adjustedY, 0], str]);
                         }
                     }

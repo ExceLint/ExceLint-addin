@@ -134,7 +134,7 @@ export class Colorize {
 			} else {
 			    let hash = this.hash_vector(vec);
 			    let str = hash.toString();
-			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+//			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
 			    output.push([[adjustedX, adjustedY, 0], str]);
 			}
 		    }
