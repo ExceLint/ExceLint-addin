@@ -443,6 +443,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		let fixes = this.proposed_fixes;
 		this.proposed_fixes = [];
+
+		t.split("about to iterate through fixes.");
 		
 		for (let k in fixes) {
 		    // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
@@ -468,7 +470,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let range = backupSheet.getRange(rangeStr);
 		    await context.sync();
 		    // console.log("loading " + rangeStr);
-		    range.load(['format/*', 'format/fill/color', 'format/borders','format/font']);
+		    range.load(['format/fill/color']);
 		    await context.sync();
 
 		    // compare range.format?
@@ -480,39 +482,47 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // If null (different formats in merged), then we won't propose this as a fix.
 		    // TODO: perhaps make this less conservative?
 
-		    // First, iterate through borders. This is a drag.
-		    let sameBorders = true;
-		    let border = range.format.borders;
-		    border.load('items');
-		    await context.sync();
+		    if (range.format.fill.color) {
+			
+			range.load(['format/font']);
+			await context.sync();
 
-		    for (let ind = 0; ind < border.items.length; ind++) {
-			let b = border.items[ind];
-			// console.log("border = " + JSON.stringify(b));
-			if (b["color"] &&
-			    b["style"] &&
-			    b["weight"])
+			if (range.format.font.color &&
+			    range.format.font.bold != null &&
+			    range.format.font.italic != null &&
+			    range.format.font.name)
 			{
-			    continue;
+			    
+			    // Only iterate through borders if needed.
+			    range.load(['format/borders']);
+			    await context.sync();
+			    let sameBorders = true;
+			    let border = range.format.borders;
+			    border.load('items');
+			    await context.sync();
+			    
+			    for (let ind = 0; ind < border.items.length; ind++) {
+				let b = border.items[ind];
+				// console.log("border = " + JSON.stringify(b));
+				if (b["color"] &&
+				    b["style"] &&
+				    b["weight"])
+				{
+				    continue;
+				}
+				sameBorders = false;
+				break;
+			    }
+			    
+			    if (sameBorders) {
+				// Add it to the proposed fixes list.
+				//			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
+				this.proposed_fixes.push(fixes[k]);
+			    } else {
+				console.log("trimmed a proposed fix (" + rangeStr + ").");
+			    }
 			}
-			sameBorders = false;
-			break;
 		    }
-
-		    if (sameBorders &&
-			range.format.fill.color &&
-			range.format.font.color &&
-			range.format.font.bold != null &&
-			range.format.font.italic != null &&
-			range.format.font.name)
-		    {
-			// Add it to the proposed fixes list.
-//			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
-			this.proposed_fixes.push(fixes[k]);
-			continue;
-		    }
-
-//		    console.log("CONFLICT FOR " + rangeStr);
 		}
 		
 		t.split("generated fixes");

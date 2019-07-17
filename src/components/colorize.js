@@ -419,6 +419,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.generate_proposed_fixes = function (groups, diagonal, area) {
         var e_7, _a, e_8, _b;
+        var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
         var already_proposed_pair = {};
         try {
@@ -473,10 +474,11 @@ var Colorize = /** @class */ (function () {
         // corresponds to earth-mover distance.  Other attributes are
         // the rectangles themselves. Sort by biggest entropy
         // reduction first.
-        console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
+        //	console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
         proposed_fixes = this.fix_proposed_fixes(proposed_fixes);
         proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
-        console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
+        //	console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
+        t.split("done.");
         return proposed_fixes;
     };
     Colorize.merge_groups = function (groups) {
@@ -498,6 +500,7 @@ var Colorize = /** @class */ (function () {
         return groups;
     };
     Colorize.merge_individual_groups = function (group) {
+        var t = new timer_1.Timer("merge_individual_groups");
         var numIterations = 0;
         group = group.sort();
         //        console.log(JSON.stringify(group));
@@ -534,12 +537,14 @@ var Colorize = /** @class */ (function () {
             //            console.log('group = ' + JSON.stringify(group));
             if (!merged_one) {
                 // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
+                t.split("done, " + numIterations + " iterations.");
                 return updated_rectangles;
             }
             group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
             numIterations++;
             if (numIterations > 2000) { // This is hack to guarantee convergence.
                 console.log("Too many iterations; abandoning this group.");
+                t.split("done, " + numIterations + " iterations.");
                 return [[[-1, -1, 0], [-1, -1, 0]]];
             }
         }

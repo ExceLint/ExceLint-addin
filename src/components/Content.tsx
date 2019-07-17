@@ -48,11 +48,11 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
 		// Sort from largest to smallest (by making negative).
-		console.log(JSON.stringify(r));
-		console.log("original score = " + arr[i][0]);
+//		console.log(JSON.stringify(r));
+//		console.log("original score = " + arr[i][0]);
 		let score = -arr[i][0] * barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 //		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
-		console.log("score = " + score);
+//		console.log("score = " + score);
 		if (score > barWidth) {
 		    score = barWidth;
 		}
@@ -62,7 +62,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		    continue;
 		}
 		counter += 1;
-		console.log("score is now = " + score);
+//		console.log("score is now = " + score);
 		if (current === i) {
 		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
 		} else {
