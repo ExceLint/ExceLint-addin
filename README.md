@@ -10,6 +10,16 @@ Microsoft Research), and [Ben
 Zorn](https://www.microsoft.com/en-us/research/people/zorn/) (Microsoft
 Research).
 
+## Installation
+
+Exce-Lint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
+You need to install the file `manifest.xml` following the appropriate instructions for each platform:
+
+* Windows: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins
+* on-line: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing
+* Mac: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac
+
+
 ## Source code
 
 Source code for the add-in may be found [at its GitHub
