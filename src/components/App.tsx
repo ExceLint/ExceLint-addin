@@ -372,19 +372,9 @@ export default class App extends React.Component<AppProps, AppState> {
 			await context.sync();
 		    }
 
-		// Make all numbers yellow; this will be the default value for unreferenced data.
-		if (numericRanges) {
-		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
-		}
-
-		// Color numeric formulas yellow as well, if this is on.
-		if (useNumericFormulaRanges && numericFormulaRanges) {
-		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
-		}
-	
 		let usedRangeAddress = usedRange.address;
 
-		t.split("set numbers to yellow, etc.");
+//		t.split("set numbers to yellow, etc.");
 
 		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
@@ -541,7 +531,18 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
 		this.proposed_fixes_length = Colorize.count_proposed_fixes(this.proposed_fixes);
 //		console.log("setColor: length = " + this.proposed_fixes_length);
-//		console.log("done with proposed fixes (" + formulas.length + ")");
+		//		console.log("done with proposed fixes (" + formulas.length + ")");
+		
+		// Make all numbers yellow; this will be the default value for unreferenced data.
+		if (numericRanges) {
+		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		}
+
+		// Color numeric formulas yellow as well, if this is on.
+		if (useNumericFormulaRanges && numericFormulaRanges) {
+		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		}
+	
 		if (true) {
 		    // Just color referenced data white. (now gray!)
 		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{}); // was FFFFFF FIXME
