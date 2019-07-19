@@ -354,10 +354,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 //		app.suspendScreenUpdatingUntilNextSync();
 
-		// Remove the background color from all cells.
- 		let rangeFill = usedRange.format.fill;
-		rangeFill.clear();
-
 
 		    if (displayComments) {
 			console.log("SETTING");
@@ -392,10 +388,10 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
 		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("generated all references");
-//		await setTimeout(() => {}, 0);
+		await setTimeout(() => {}, 0);
 		let processed_data = Colorize.color_all_data(refs);
 		t.split("processed data");
-//		await setTimeout(() => {}, 0);
+		await setTimeout(() => {}, 0);
 //		console.log(" = " + JSON.stringify(processed_data));
 
 		let grouped_data = Colorize.identify_groups(processed_data);
@@ -413,7 +409,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Filter the proposed fixes:
 		// * If they don't all have the same format (pre-colorization), don't propose them as fixes.
-		// TODO
 		
 		// Grab the backup sheet for use in looking up the formats.
 		let backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
@@ -480,9 +475,9 @@ export default class App extends React.Component<AppProps, AppState> {
 			// Check that the whole range has the same numeric format,
 			// and that the fonts are the same.
 
-			console.log(range.numberFormat);
+//			console.log(range.numberFormat);
 			let sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
-			console.log("same formats = " + sameFormats);
+//			console.log("same formats = " + sameFormats);
 			
 			if (sameFormats &&
 			    range.format.font.color &&
@@ -532,6 +527,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.proposed_fixes_length = Colorize.count_proposed_fixes(this.proposed_fixes);
 //		console.log("setColor: length = " + this.proposed_fixes_length);
 		//		console.log("done with proposed fixes (" + formulas.length + ")");
+
+		/// Finally, apply colors.
+		
+		// Remove the background color from all cells.
+ 		let rangeFill = usedRange.format.fill;
+		rangeFill.clear();
 		
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
