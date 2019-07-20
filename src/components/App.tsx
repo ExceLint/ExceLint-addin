@@ -115,21 +115,17 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 
 	    // Don't show the copied sheet.
-	    // FIXME? Disabled to test to see if it resolves slow updating issue on Excel (Windows).
 	    let app = context.workbook.application;
-//	    app.suspendScreenUpdatingUntilNextSync();
+	    app.suspendScreenUpdatingUntilNextSync();
 
 	    
 	    // Now, generate a new backup sheet. This will take the place of the old backup, if any.
-	    let newbackupSheet = currentWorksheet.copy("None");
+	    let newbackupSheet = currentWorksheet.copy("End");
 	    newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
 	    newbackupSheet.load(['name']);
 	    // Ensure that we remain on the current worksheet.
 	    // This addresses an apparent bug in the client product.
 	    currentWorksheet.activate();
-	    
-//	    await context.sync();
-//	    app.suspendScreenUpdatingUntilNextSync();
 
 	    if (oldBackupSheet) {
 		// There was an old backup sheet, which we now delete.
@@ -230,7 +226,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("got calc mode");
 		
 		
-		let originalCalculationMode = app.calculationMode;
+//		let originalCalculationMode = app.calculationMode;
 //		app.calculationMode = 'Manual';
 
 		let usedRange = currentWorksheet.getUsedRange(false) as any; // FIXME was false! testing for perf
@@ -303,15 +299,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		    t.split("loaded formats from used range");
 		}
 
-		/// Save the formats so they can later be restored.
-		await this.saveFormats();
-//		console.log(JSON.stringify(usedRange.formulasR1C1));
-		t.split("saved formats");
-		
 		// Now start colorizing.
-
-		// Turn off screen updating while this is happening.
-// 		app.suspendScreenUpdatingUntilNextSync();
+		
+		// Turn off screen updating and calculations while this is happening.
+ 		app.suspendScreenUpdatingUntilNextSync();
+		app.suspendApiCalculationUntilNextSync();
 
 		// Compute the number of cells in the range "usedRange".
 		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
@@ -410,11 +402,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Filter the proposed fixes:
 		// * If they don't all have the same format (pre-colorization), don't propose them as fixes.
 		
-		// Grab the backup sheet for use in looking up the formats.
-		let backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
-		let worksheets = context.workbook.worksheets;
-		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
-		await context.sync();
 
 //		app.suspendScreenUpdatingUntilNextSync();
 		
@@ -428,6 +415,17 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		let fixes = this.proposed_fixes;
 		this.proposed_fixes = [];
+
+		/// Save the formats so they can later be restored.
+		await this.saveFormats();
+//		console.log(JSON.stringify(usedRange.formulasR1C1));
+		t.split("saved formats");
+		
+		// Grab the backup sheet for use in looking up the formats.
+		let backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
+		let worksheets = context.workbook.worksheets;
+		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
+		await context.sync();
 
 		t.split("about to iterate through fixes.");
 		
@@ -591,9 +589,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.updateContent();
 
 		// Restore original calculation mode.
-//		app.calculationMode = 'Automatic';
-
-////		app.calculationMode = originalCalculationMode;
+//		app.calculationMode = originalCalculationMode;
 
 
 		await context.sync();
@@ -603,6 +599,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	    });
 	} catch (error) {
+	    //app.calculationMode = originalCalculationMode;
 	    console.log("Error: " + error);
 	    if (error instanceof OfficeExtension.Error) { 
 		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 

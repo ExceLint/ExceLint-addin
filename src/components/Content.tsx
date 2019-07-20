@@ -62,12 +62,14 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		    continue;
 		}
 		counter += 1;
-//		console.log("score is now = " + score);
+		//		console.log("score is now = " + score);
+		let rangeDisplay = <b></b>;
 		if (current === i) {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td><b>{col0}{row0}:{col1}{row1}</b></td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
+		    rangeDisplay = <td><b>{col0}{row0}:{col1}{row1}</b></td>;
 		} else {
-		    children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}><td>{col0}{row0}:{col1}{row1}</td><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
+		    rangeDisplay = <td>{col0}{row0}:{col1}{row1}</td>;
 		}
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
 	    }
 	}
 	if (counter > 0) {
