@@ -17,7 +17,7 @@ export class Colorize {
     private static color_list = [];
     private static light_color_list = [];
     private static light_color_dict = {};
-    private static Multiplier = 103038;
+    private static Multiplier = 1; // 103037;
 
 	public static initialize() {
 		if (!this.initialized) {
@@ -111,21 +111,27 @@ export class Colorize {
 	const base_vector = JSON.stringify(ExcelUtils.baseVector());
 	let reducer = (acc:[number,number,number],curr:[number,number,number]) : [number,number,number] => [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]];
 	let output: Array<[[number, number,number], string]> = [];
+
+	console.log("process_formulas: " + JSON.stringify(formulas));
 	
 	// Compute the vectors for all of the formulas.
 	for (let i = 0; i < formulas.length; i++) {
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
+		let cell = row[j].toString();
+		console.log("checking [" + cell + "]...");
 		// If it's a formula, process it.
-		if ((row[j].length > 0) && (row[j][0] === '=')) {
-		    let cell = row[j];
+		if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
+		    console.log("processing cell " + JSON.stringify(cell) + " in process_formulas");
 		    let vec_array = ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
 		    const adjustedX = j + origin_col + 1;
 		    const adjustedY = i + origin_row + 1;
 // 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
 		    if (vec_array.length == 0) {
-			// No dependencies! Use a distinguished value.
-			output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
+			if (cell[0] === '=') {
+			    // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
+			    output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
+			}
 		    } else {
 			let vec = vec_array.reduce(reducer);
 			if (JSON.stringify(vec) === base_vector) {

@@ -129,20 +129,25 @@ var Colorize = /** @class */ (function () {
         var base_vector = JSON.stringify(excelutils_1.ExcelUtils.baseVector());
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]]; };
         var output = [];
+        console.log("process_formulas: " + JSON.stringify(formulas));
         // Compute the vectors for all of the formulas.
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
+                var cell = row[j].toString();
+                console.log("checking [" + cell + "]...");
                 // If it's a formula, process it.
-                if ((row[j].length > 0) && (row[j][0] === '=')) {
-                    var cell = row[j];
+                if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
+                    console.log("processing cell " + JSON.stringify(cell) + " in process_formulas");
                     var vec_array = excelutils_1.ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
                     var adjustedX = j + origin_col + 1;
                     var adjustedY = i + origin_row + 1;
                     // 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
                     if (vec_array.length == 0) {
-                        // No dependencies! Use a distinguished value.
-                        output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
+                        if (cell[0] === '=') {
+                            // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
+                            output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
+                        }
                     }
                     else {
                         var vec = vec_array.reduce(reducer);
@@ -571,7 +576,7 @@ var Colorize = /** @class */ (function () {
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
-    Colorize.Multiplier = 103038;
+    Colorize.Multiplier = 1; // 103037;
     return Colorize;
 }());
 exports.Colorize = Colorize;

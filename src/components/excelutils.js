@@ -226,6 +226,7 @@ var ExcelUtils = /** @class */ (function () {
         }
         // Check if this cell is a formula.
         var cell = formulas[row][col];
+        //	console.log("cell[" + col + "][" + row + "] =" + cell);
         if ((cell.length > 1) && (cell[0] === "=")) {
             // It is. Compute the dependencies.
             //	    console.log("ALL CELL DEPENDENCIES");
@@ -242,17 +243,20 @@ var ExcelUtils = /** @class */ (function () {
         //	let all_deps = {};
         //	console.log(JSON.stringify(formulas));
         for (var i = 0; i < formulas.length; i++) {
+            console.log("now examining row " + i);
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
+                console.log("now examining column " + j);
                 var cell = row[j];
                 counter++;
                 if (counter % 1000 == 0) {
                     console.log(counter + " references down");
                 }
-                // console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+                console.log('origin_col = ' + origin_col + ', origin_row = ' + origin_row);
                 if (cell[0] === '=') { // It's a formula.
                     //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
-                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
+                    console.log("direct_refs = " + direct_refs);
                     try {
                         for (var direct_refs_1 = __values(direct_refs), direct_refs_1_1 = direct_refs_1.next(); !direct_refs_1_1.done; direct_refs_1_1 = direct_refs_1.next()) {
                             var dep = direct_refs_1_1.value;
@@ -260,8 +264,34 @@ var ExcelUtils = /** @class */ (function () {
                                 // Not a real reference. Skip.
                             }
                             else {
-                                var key = dep.join(',');
-                                refs[key] = true;
+                                // Check to see if this is data or a formula.
+                                // If it's not a formula, add it.
+                                console.log("cell = " + cell);
+                                console.log("dep[0] = " + dep[0]);
+                                console.log("dep[1] = " + dep[1]);
+                                console.log("(# rows = " + formulas.length + ", # cols = " + row.length + ")");
+                                console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
+                                var rowIndex = dep[1] - 1;
+                                var colIndex = dep[0] - 1;
+                                console.log("rowIndex = " + rowIndex);
+                                console.log("colIndex = " + colIndex);
+                                // Discard references to cells outside the formula range.
+                                if (!((rowIndex >= formulas.length)
+                                    || (colIndex >= formulas[0].length)
+                                    || (rowIndex < 0)
+                                    || (colIndex < 0))) {
+                                    var referentCell = formulas[rowIndex][colIndex];
+                                    console.log("referent cell = " + JSON.stringify(referentCell));
+                                    // Only include non-formulas. NOTE: this also excludes blank cells right now.
+                                    if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
+                                        console.log("adding reference!");
+                                        dep[0] += origin_col;
+                                        dep[1] += origin_row;
+                                        var key = dep.join(',');
+                                        console.log("added reference to " + key);
+                                        refs[key] = true;
+                                    }
+                                }
                             }
                         }
                     }

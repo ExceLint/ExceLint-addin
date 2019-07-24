@@ -325,7 +325,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// it when it takes less than a second (though that is
 		// total guesswork). Arbitrary threshold for now.
 		// Revisit if this gets fixed...
-		if (numberOfCellsUsed < 2000) {
+ 		if (false) { // FIXME numberOfCellsUsed < 2000) {
 		    // Activate using numeric formula ranges when
 		    // there aren't "too many" cells.
 		    useNumericFormulaRanges = true;
@@ -370,6 +370,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("computed cell dependency for start");
 
 		let formulas = usedRange.formulas;
+//		console.log("formulas = " + JSON.stringify(formulas));
 		let processed_formulas : any = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		
 //		await setTimeout(() => {}, 0);
@@ -382,20 +383,21 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("generated all references");
 		await setTimeout(() => {}, 0);
 		let processed_data = Colorize.color_all_data(refs);
+		console.log("refs = " + JSON.stringify(refs));
+		console.log("processed_data = " + JSON.stringify(processed_data));
 		t.split("processed data");
 		await setTimeout(() => {}, 0);
 //		console.log(" = " + JSON.stringify(processed_data));
 
 		let grouped_data = Colorize.identify_groups(processed_data);
 		t.split("identified groups");
-//		console.log("identified groups." + JSON.stringify(grouped_data));
-		let grouped_formulas = Colorize.identify_groups(processed_formulas);
-//		console.log("processed formulas = " + JSON.stringify(processed_formulas));
-//		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+		console.log("identified grouped_data: " + JSON.stringify(grouped_data));
+		let grouped_formulas = Colorize.identify_groups(processed_formulas.concat(processed_data));
+		console.log("processed formulas = " + JSON.stringify(processed_formulas));
+		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
 		t.split("grouped formulas");
 		await setTimeout(() => {}, 0);
 		
-//		console.log(JSON.stringify(grouped_formulas));
 		// For now, select the very first proposed fix.
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas, diagonal, numberOfCellsUsed);
 		
@@ -437,6 +439,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // Convert to Excel column-row notation.
 		    // console.log("fix = " + JSON.stringify(fixes[k]));
 
+		    let score = fixes[k][0];
 		    let first = fixes[k][1];
 		    let second = fixes[k][2];
 		    
@@ -453,7 +456,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    let range = backupSheet.getRange(rangeStr);
 		    await context.sync();
 		    // console.log("loading " + rangeStr);
-		    range.load(['format/fill/color']);
+		    range.load(['format/fill/color', 'format/font', 'numberFormat', 'format/borders']);
 		    await context.sync();
 
 		    // compare range.format?
@@ -465,66 +468,61 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // If null (different formats in merged), then we won't propose this as a fix.
 		    // TODO: perhaps make this less conservative?
 
-		    if (range.format.fill.color) {
-			
-			range.load(['format/font', 'numberFormat']);
+		    let sameFillColor = range.format.fill.color;
+		    let sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
+		    let sameFonts = (range.format.font.color &&
+				       range.format.font.bold != null &&
+				       range.format.font.italic != null &&
+				       range.format.font.name);
+		    let sameBorders = true;
+		    
+		    {
+			let border = range.format.borders;
+			border.load('items');
 			await context.sync();
-
-			// Check that the whole range has the same numeric format,
-			// and that the fonts are the same.
-
-//			console.log(range.numberFormat);
-			let sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
-//			console.log("same formats = " + sameFormats);
-			
-			if (sameFormats &&
-			    range.format.font.color &&
-			    range.format.font.bold != null &&
-			    range.format.font.italic != null &&
-			    range.format.font.name)
-			{
 			    
-			    // Only iterate through borders if needed.
-			    range.load(['format/borders']);
-			    await context.sync();
-			    let sameBorders = true;
-			    let border = range.format.borders;
-			    border.load('items');
-			    await context.sync();
-			    
-			    for (let ind = 0; ind < border.items.length; ind++) {
-				let b = border.items[ind];
-				// console.log("border = " + JSON.stringify(b));
-				if (b["color"] &&
-				    b["style"] &&
-				    b["weight"])
-				{
-				    continue;
-				}
-				sameBorders = false;
-				break;
+			for (let ind = 0; ind < border.items.length; ind++) {
+			    let b = border.items[ind];
+			    // console.log("border = " + JSON.stringify(b));
+			    if (b["color"] &&
+				b["style"] &&
+				b["weight"])
+			    {
+				continue;
 			    }
-			    
-			    if (sameBorders) {
-				// Add it to the proposed fixes list.
-				//			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
-				this.proposed_fixes.push(fixes[k]);
-			    } else {
-				console.log("trimmed a proposed fix (" + rangeStr + ").");
-			    }
+			    sameBorders = false;
+			    break;
 			}
+		    }
+		    // Discount merge candidates based on their formatting characteristics
+		    // (that is, whether the merge candidates have the same fill color and so on).
+		    // Made-up numbers that should be replaced by a model.
+		    // Call these "priors" for now :).
+		    if (!sameFillColor) {
+			score = score * 0.5;
+		    }
+		    if (!sameFormats) {
+			score = score * 0.2;
+		    }
+		    if (!sameFonts) {
+			score = score * 0.3;
+		    }
+		    if (!sameBorders) {
+			score = score * 0.1;
+		    }
+//		    if (true) {
+		    if (sameFillColor && sameFormats && sameFonts && sameBorders) {
+			// Add it to the proposed fixes list.
+						console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
+			this.proposed_fixes.push([score, first, second]);
+		    } else {
+			console.log("trimmed a proposed fix (" + rangeStr + ").");
 		    }
 		}
 		
 		t.split("generated fixes");
-		// Only present up to 5% (threshold from paper).
-		let max_proposed_fixes = formulas.length; /// Math.round(0.05 * formulas.length);
-		this.total_fixes = max_proposed_fixes;
-		//this.proposed_fixes = this.proposed_fixes.slice(0, max_proposed_fixes);
-//		console.log("setColor: proposed_fixes = " + JSON.stringify(this.proposed_fixes));
+		this.total_fixes = formulas.length;
 		this.proposed_fixes_length = Colorize.count_proposed_fixes(this.proposed_fixes);
-//		console.log("setColor: length = " + this.proposed_fixes_length);
-		//		console.log("done with proposed fixes (" + formulas.length + ")");
 
 		/// Finally, apply colors.
 		
@@ -532,33 +530,32 @@ export default class App extends React.Component<AppProps, AppState> {
  		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
 		
+//		t.split("processed data");
+		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
+
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
 		}
 
 		// Color numeric formulas yellow as well, if this is on.
-		if (useNumericFormulaRanges && numericFormulaRanges) {
-		    numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		if (false) {
+		    if (useNumericFormulaRanges && numericFormulaRanges) {
+			numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		    }
 		}
 	
 		if (true) {
-		    // Just color referenced data white. (now gray!)
-		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{}); // was FFFFFF FIXME
-//		    console.log("YADA");
+		    // Just color referenced data gray.
+		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{});
 		} else {
 		    // Color referenced data based on its formula's color.
 		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
 		}
-		//		console.log("processed data.");
-		t.split("processed data");
-		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
+
 		await context.sync();
 //		app.suspendScreenUpdatingUntilNextSync();
 		t.split("processed formulas");
-// 		await context.sync(); // DEBUG
-//		t.split("synched and processed everything");
-//		console.log("processed formulas.");
 
 /*
 		for (let i = 0; i < this.proposed_fixes.length; i++) {
@@ -570,21 +567,9 @@ export default class App extends React.Component<AppProps, AppState> {
 */
 		
 		this.current_fix = -1;
-		/*
-		let r = this.getRange(currentWorksheet, this.proposed_fixes, this.current_fix);
-		// Only select if the range is non-null and the number of total fixes is more than 0
-		// (In principle, those checks should be redundant.)
-		if (r && this.total_fixes > 0) {
-		    r.select();
-		}
-		*/
-//		await context.sync(); // DEBUG
-		//		console.log("setColor: got range to select.");
 		
 		// Protect the sheet against changes.
 		currentWorksheet.protection.protect();
-// 		await context.sync();
-//		t.split("done with sync 3");
 		
 		this.updateContent();
 

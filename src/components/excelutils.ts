@@ -248,6 +248,7 @@ export class ExcelUtils {
 	}
 	// Check if this cell is a formula.
 	const cell = formulas[row][col];
+//	console.log("cell[" + col + "][" + row + "] =" + cell);
 	if ((cell.length > 1) && (cell[0] === "=")) {
 	    // It is. Compute the dependencies.
 //	    console.log("ALL CELL DEPENDENCIES");
@@ -264,24 +265,53 @@ export class ExcelUtils {
 //	let all_deps = {};
 //	console.log(JSON.stringify(formulas));
 	for (let i = 0; i < formulas.length; i++) {
+	    console.log("now examining row " + i);
 	    let row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
+		console.log("now examining column " + j);
 		let cell = row[j];
 		counter++;
 		if (counter % 1000 == 0) {
 		    console.log(counter + " references down");
 		}
 
-		// console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
 		if (cell[0] === '=') { // It's a formula.
 		    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
-		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row);
+		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
+		    console.log("direct_refs = " + direct_refs);
 		    for (let dep of direct_refs) {
 			if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
 			    // Not a real reference. Skip.
 			} else {
-			    let key = dep.join(',');
-			    refs[key] = true;
+			    // Check to see if this is data or a formula.
+			    // If it's not a formula, add it.
+			    console.log("cell = " + cell);
+			    console.log("dep[0] = " + dep[0]);
+			    console.log("dep[1] = " + dep[1]);
+			    console.log("(# rows = " + formulas.length + ", # cols = " + row.length + ")");
+			    console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
+			    let rowIndex = dep[1] - 1;
+			    let colIndex = dep[0] - 1;
+			    console.log("rowIndex = " + rowIndex);
+			    console.log("colIndex = " + colIndex);
+			    // Discard references to cells outside the formula range.
+			    if (!((rowIndex >= formulas.length)
+				  || (colIndex >= formulas[0].length)
+				  || (rowIndex < 0)
+				  || (colIndex < 0))) {
+				let referentCell = formulas[rowIndex][colIndex];
+				console.log("referent cell = " + JSON.stringify(referentCell));
+				// Only include non-formulas. NOTE: this also excludes blank cells right now.
+				if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
+				    console.log("adding reference!");
+				    dep[0] += origin_col;
+				    dep[1] += origin_row;
+				    let key = dep.join(',');
+				    console.log("added reference to " + key);
+				    refs[key] = true;
+				}
+			    }
 			}
 		    }
 		}
