@@ -3,7 +3,7 @@ import { Button, ButtonType } from 'office-ui-fabric-react';
 import { ExcelUtils } from './excelutils';
 import { Colorize } from './colorize';
 
-const reportingThreshold = 10; // percent of bar
+const reportingThreshold = 10; //  percent of bar
 
 // Checkbox
 

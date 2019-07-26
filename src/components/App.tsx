@@ -55,19 +55,19 @@ export default class App extends React.Component<AppProps, AppState> {
 
     /// Color the ranges using the specified color function.
     private process(grouped_ranges, currentWorksheet, colorfn, otherfn) {
-	let g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
+	const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
 	// Process the ranges.
 	let hash_index = 0;
 	Object.keys(grouped_ranges).forEach(hash => {
 	    if (!(hash === undefined)) {
-		let v = grouped_ranges[hash];
+		const v = grouped_ranges[hash];
 //		console.log("v = " + JSON.stringify(v));
 		for (let theRange of v) {
-		    let r = theRange;
-		    let col0 = ExcelUtils.column_index_to_name(r[0][0]);
-		    let row0 = r[0][1];
-		    let col1 = ExcelUtils.column_index_to_name(r[1][0]);
-		    let row1 = r[1][1];
+		    const r = theRange;
+		    const col0 = ExcelUtils.column_index_to_name(r[0][0]);
+		    const row0 = r[0][1];
+		    const col1 = ExcelUtils.column_index_to_name(r[1][0]);
+		    const row1 = r[1][1];
 
 		    if ((r[0][0] === 0) && (r[0][1] === 0) && (r[0][2] != 0)) {
 			// Not a real dependency. Skip.
@@ -81,7 +81,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    
 //		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
 		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
-		    let color = colorfn(hash_index);
+		    const color = colorfn(hash_index);
 //		    console.log("color to set = " + color + " for hash = " + hash);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
@@ -110,7 +110,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    this.sheetName = currentWorksheet.name;
 
 	    // Find any old backup sheet corresponding to this id.
-	    let oldBackupName = this.saved_original_sheetname(currentWorksheet.id);
+	    const oldBackupName = this.saved_original_sheetname(currentWorksheet.id);
 	    let oldBackupSheet = worksheets.getItemOrNullObject(oldBackupName);
 	    await context.sync();
 
@@ -379,20 +379,22 @@ export default class App extends React.Component<AppProps, AppState> {
 //		app.suspendScreenUpdatingUntilNextSync();
 		
 //		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
-		let refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
+		const refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
 		t.split("generated all references");
 		await setTimeout(() => {}, 0);
-		let processed_data = Colorize.color_all_data(refs);
+		const referenced_data = Colorize.color_all_data(refs);
+		const data_values = Colorize.process_values(usedRange.values, vec[0] - 1, vec[1] - 1);
 		console.log("refs = " + JSON.stringify(refs));
-		console.log("processed_data = " + JSON.stringify(processed_data));
+		console.log("referenced_data = " + JSON.stringify(referenced_data));
 		t.split("processed data");
 		await setTimeout(() => {}, 0);
-//		console.log(" = " + JSON.stringify(processed_data));
+//		console.log(" = " + JSON.stringify(referenced_data));
 
-		let grouped_data = Colorize.identify_groups(processed_data);
+		const grouped_data = Colorize.identify_groups(referenced_data);
 		t.split("identified groups");
 		console.log("identified grouped_data: " + JSON.stringify(grouped_data));
-		let grouped_formulas = Colorize.identify_groups(processed_formulas.concat(processed_data));
+		const grouped_formulas = Colorize.identify_groups(processed_formulas);
+//		const grouped_formulas = Colorize.identify_groups(processed_formulas.concat(data_values)); // .concat(referenced_data));
 		console.log("processed formulas = " + JSON.stringify(processed_formulas));
 		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
 		t.split("grouped formulas");
@@ -415,7 +417,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// include inconsistent formatting. If so, we prune
 		// it.
 
-		let fixes = this.proposed_fixes;
+		const fixes = this.proposed_fixes;
 		this.proposed_fixes = [];
 
 		/// Save the formats so they can later be restored.
@@ -424,7 +426,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("saved formats");
 		
 		// Grab the backup sheet for use in looking up the formats.
-		let backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
+		const backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
 		let worksheets = context.workbook.worksheets;
 		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
 		await context.sync();
@@ -440,17 +442,17 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // console.log("fix = " + JSON.stringify(fixes[k]));
 
 		    let score = fixes[k][0];
-		    let first = fixes[k][1];
-		    let second = fixes[k][2];
+		    const first = fixes[k][1];
+		    const second = fixes[k][2];
 		    
-		    let [[ax1, ay1], [ax2, ay2]] = first;
-		    let [[bx1, by1], [bx2, by2]] = second;
+		    const [[ax1, ay1], [ax2, ay2]] = first;
+		    const [[bx1, by1], [bx2, by2]] = second;
 		    
-		    let col0 = ExcelUtils.column_index_to_name(ax1);
-		    let row0 = ay1.toString();
-		    let col1 = ExcelUtils.column_index_to_name(bx2);
-		    let row1 = by2.toString();
-		    let rangeStr = col0 + row0 + ":" + col1 + row1;
+		    const col0 = ExcelUtils.column_index_to_name(ax1);
+		    const row0 = ay1.toString();
+		    const col1 = ExcelUtils.column_index_to_name(bx2);
+		    const row1 = by2.toString();
+		    const rangeStr = col0 + row0 + ":" + col1 + row1;
 
 		    // Finally, get the range from the backup (original) sheet.
 		    let range = backupSheet.getRange(rangeStr);
@@ -468,9 +470,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // If null (different formats in merged), then we won't propose this as a fix.
 		    // TODO: perhaps make this less conservative?
 
-		    let sameFillColor = range.format.fill.color;
-		    let sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
-		    let sameFonts = (range.format.font.color &&
+		    const sameFillColor = range.format.fill.color;
+		    const sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
+		    const sameFonts = (range.format.font.color &&
 				       range.format.font.bold != null &&
 				       range.format.font.italic != null &&
 				       range.format.font.name);
@@ -482,7 +484,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			await context.sync();
 			    
 			for (let ind = 0; ind < border.items.length; ind++) {
-			    let b = border.items[ind];
+			    const b = border.items[ind];
 			    // console.log("border = " + JSON.stringify(b));
 			    if (b["color"] &&
 				b["style"] &&
@@ -494,6 +496,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			    break;
 			}
 		    }
+		    console.log("score was " + score);
 		    // Discount merge candidates based on their formatting characteristics
 		    // (that is, whether the merge candidates have the same fill color and so on).
 		    // Made-up numbers that should be replaced by a model.
@@ -511,9 +514,9 @@ export default class App extends React.Component<AppProps, AppState> {
 			score = score * 0.1;
 		    }
 //		    if (true) {
-		    if (sameFillColor && sameFormats && sameFonts && sameBorders) {
+		    if (true) { // sameFillColor && sameFormats && sameFonts && sameBorders) {
 			// Add it to the proposed fixes list.
-						console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
+			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
 			this.proposed_fixes.push([score, first, second]);
 		    } else {
 			console.log("trimmed a proposed fix (" + rangeStr + ").");

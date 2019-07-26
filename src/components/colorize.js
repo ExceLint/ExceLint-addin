@@ -118,14 +118,8 @@ var Colorize = /** @class */ (function () {
     Colorize.get_light_color_version = function (color) {
         return this.light_color_dict[color];
     };
-    /*
-      private static transpose(array) {
-      array[0].map((col, i) => array.map(row => row[i]));
-      }
-    */
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
-        console.log("***** PROCESS FORMULAS *****");
-        var distinguishedZeroHash = "0";
+        //	console.log("***** PROCESS FORMULAS *****");
         var base_vector = JSON.stringify(excelutils_1.ExcelUtils.baseVector());
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]]; };
         var output = [];
@@ -135,10 +129,10 @@ var Colorize = /** @class */ (function () {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
                 var cell = row[j].toString();
-                console.log("checking [" + cell + "]...");
+                //		console.log("checking [" + cell + "]...");
                 // If it's a formula, process it.
                 if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
-                    console.log("processing cell " + JSON.stringify(cell) + " in process_formulas");
+                    //		    console.log("processing cell " + JSON.stringify(cell) + " in process_formulas");
                     var vec_array = excelutils_1.ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
                     var adjustedX = j + origin_col + 1;
                     var adjustedY = i + origin_row + 1;
@@ -146,14 +140,14 @@ var Colorize = /** @class */ (function () {
                     if (vec_array.length == 0) {
                         if (cell[0] === '=') {
                             // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
-                            output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
+                            output.push([[adjustedX, adjustedY, 0], Colorize.distinguishedZeroHash]);
                         }
                     }
                     else {
                         var vec = vec_array.reduce(reducer);
                         if (JSON.stringify(vec) === base_vector) {
                             // No dependencies! Use a distinguished value.
-                            output.push([[adjustedX, adjustedY, 0], distinguishedZeroHash]);
+                            output.push([[adjustedX, adjustedY, 0], Colorize.distinguishedZeroHash]);
                         }
                         else {
                             var hash = this.hash_vector(vec);
@@ -168,7 +162,8 @@ var Colorize = /** @class */ (function () {
         //	console.log(JSON.stringify(all_deps));
         return output;
     };
-    //    public static color_all_data(formulas: Array<Array<string>>, processed_formulas: Array<[excelintVector, string]>) {
+    // Return all referenced data so it can be colored later.
+    // Note that for now, the last value of each tuple is set to 1.
     Colorize.color_all_data = function (refs) {
         var e_2, _a;
         var t = new timer_1.Timer("color_all_data");
@@ -179,7 +174,7 @@ var Colorize = /** @class */ (function () {
         //t.split("generated all references");
         //console.log("generated all references: length = " + Object.keys(refs).length);
         //	console.log("all refs = " + JSON.stringify(refs));
-        var processed_data = [];
+        var referenced_data = [];
         try {
             for (var _b = __values(Object.keys(refs)), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var refvec = _c.value;
@@ -187,7 +182,7 @@ var Colorize = /** @class */ (function () {
                 var rv = refvec.split(',');
                 var row = Number(rv[0]);
                 var col = Number(rv[1]);
-                processed_data.push([[row, col], 1]);
+                referenced_data.push([[row, col, 0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
             }
         }
         catch (e_2_1) { e_2 = { error: e_2_1 }; }
@@ -198,8 +193,31 @@ var Colorize = /** @class */ (function () {
             finally { if (e_2) throw e_2.error; }
         }
         t.split("processed all data");
-        //	console.log("color_all_data: processed_data = " + JSON.stringify(processed_data));
-        return processed_data;
+        //	console.log("color_all_data: referenced_data = " + JSON.stringify(referenced_data));
+        return referenced_data;
+    };
+    // Take all values and return an array of each row and column.
+    // Note that for now, the last value of each tuple is set to 1.
+    Colorize.process_values = function (values, origin_col, origin_row) {
+        var value_array = [];
+        var t = new timer_1.Timer("process_values");
+        for (var i = 0; i < values.length; i++) {
+            var row = values[i];
+            for (var j = 0; j < row.length; j++) {
+                var cell = row[j].toString();
+                if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
+                    var cellAsNumber = Number(cell).toString();
+                    if (cellAsNumber === cell) {
+                        // It's a number. Add it.
+                        var adjustedX = j + origin_col + 1;
+                        var adjustedY = i + origin_row + 1;
+                        value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+                    }
+                }
+            }
+        }
+        t.split("processed all values");
+        return value_array;
     };
     // Take in a list of [[row, col], color] pairs and group them,
     // sorting them (e.g., by columns).
@@ -295,26 +313,10 @@ var Colorize = /** @class */ (function () {
             return a[0] - b[0];
         } };
         var id = this.identify_ranges(list, columnsort);
-        // 	    console.log("id = " + JSON.stringify(id));
         var gr = this.group_ranges(id, true); // column-first
-        // 	    console.log("gr = " + JSON.stringify(gr));
         // Now try to merge stuff with the same hash.
-        //	    let newGr1 = _.clone(gr);
-        //let newGr1 = lodash.clone(gr);
         var newGr1 = jsonclone_1.JSONclone.clone(gr);
-        //	    let newGr1 = JSON.parse(JSON.stringify(gr)); // deep copy
-        //        let newGr2 = JSON.parse(JSON.stringify(gr)); // deep copy
-        //        console.log('group');
-        //        console.log(JSON.stringify(newGr1));
         var mg = this.merge_groups(newGr1);
-        //	    console.log("mg = " + JSON.stringify(mg));
-        //        let mr = this.mergeable(newGr1);
-        //        console.log('mergeable');
-        //       console.log(JSON.stringify(mr));
-        //       let mg = this.merge_groups(newGr2, mr);
-        //        console.log('new merge groups');
-        //        console.log(JSON.stringify(mg));
-        //this.generate_proposed_fixes(mg);
         return mg;
     };
     Colorize.entropy = function (p) {
@@ -323,11 +325,7 @@ var Colorize = /** @class */ (function () {
     Colorize.entropydiff = function (oldcount1, oldcount2) {
         var total = oldcount1 + oldcount2;
         var prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
-        //	const newEntropy = this.entropy(oldcount1 + oldcount2);
-        //	const normalizedEntropy = prevEntropy / (total * Math.log2(total));
         var normalizedEntropy = prevEntropy / (Math.log2(total));
-        //	return newEntropy - prevEntropy;
-        // return prevEntropy; // FIXME ? a test, non normalized
         return -normalizedEntropy;
     };
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
@@ -341,18 +339,10 @@ var Colorize = /** @class */ (function () {
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
         var entropy_drop = this.entropydiff(n_min, n_max); // negative
-        //	console.log("entropy drop = " + entropy_drop);
-        //	let ranking = (1.0 + entropy_drop); // ONLY COUNT ENTROPY (between 0 and 1)
         var ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
-        //	let ranking = -(1.0 - entropy_drop) / ((fix_distance * n_min) / sheetDiagonal);
         sheetArea = sheetArea;
         sheetDiagonal = sheetDiagonal;
-        // Updating based on size formula.
-        //	console.log("fix distance = " + fix_distance + " for " + JSON.stringify(target) + " and " + JSON.stringify(merge_with));
-        //	console.log("ranking was " + ranking);
-        //	ranking = -(n_max / ranking); // negating to sort in reverse order.
         ranking = -ranking; // negating to sort in reverse order.
-        //	console.log("ranking now " + ranking);
         return ranking;
     };
     Colorize.count_proposed_fixes = function (fixes) {
@@ -385,38 +375,44 @@ var Colorize = /** @class */ (function () {
             front[JSON.stringify(fixes[k][1])] = fixes[k];
             back[JSON.stringify(fixes[k][2])] = fixes[k];
         }
-        // 	    console.log("front = " + JSON.stringify(front));
-        // 	    console.log("back = " + JSON.stringify(back));
         // Now iterate through one, looking for hits on the other.
         var new_fixes = [];
         var merged = {};
         for (var k in fixes) {
-            //		console.log("processing " + JSON.stringify(fixes[k]));
+            var original_score = fixes[k][0];
             var this_front_str = JSON.stringify(fixes[k][1]);
             var this_back_str = JSON.stringify(fixes[k][2]);
             if (!(this_front_str in back) && !(this_back_str in front)) {
-                //		    console.log("no match here for " + this_front_str + " or " + this_back_str);
                 // No match. Just merge them.
                 new_fixes.push(fixes[k]);
             }
             else {
+                console.log("**** original score = " + original_score);
                 if ((!merged[this_front_str]) && (this_front_str in back)) {
-                    //			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
+                    console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
                     // FIXME. This calculation may not make sense.			
-                    var newscore = fixes[k][0] + JSON.parse(back[this_front_str][0]);
+                    var newscore = -original_score * JSON.parse(back[this_front_str][0]);
                     //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
-                    new_fixes.push([newscore, fixes[k][1], back[this_front_str][1]]);
+                    var new_fix = [newscore, fixes[k][1], back[this_front_str][1]];
+                    console.log("pushing " + JSON.stringify(new_fix));
+                    new_fixes.push(new_fix);
                     merged[this_front_str] = true;
+                    // FIXME? testing below. The idea is to not keep merging things (for now).
+                    merged[this_back_str] = true;
                     continue;
                 }
                 if ((!merged[this_back_str]) && (this_back_str in front)) {
                     // this_back_str in front
-                    //			console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
+                    console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
                     // FIXME. This calculation may not make sense.
-                    var newscore = fixes[k][0] + JSON.parse(front[this_back_str][0]);
+                    var newscore = -original_score * JSON.parse(front[this_back_str][0]);
                     //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
-                    new_fixes.push([newscore, fixes[k][1], front[this_back_str][2]]);
+                    var new_fix = [newscore, fixes[k][1], front[this_back_str][2]];
+                    console.log("pushing " + JSON.stringify(new_fix));
+                    new_fixes.push(new_fix);
                     merged[this_back_str] = true;
+                    // FIXME? testing below.
+                    merged[this_front_str] = true;
                 }
             }
         }
@@ -446,7 +442,9 @@ var Colorize = /** @class */ (function () {
                                 // Only add these if we have not already added them.
                                 if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
                                     // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
+                                    //			    console.log("checking " + JSON.stringify(sr1) + " and " + JSON.stringify(sr2));
                                     if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
+                                        console.log("YES");
                                         already_proposed_pair[sr1 + sr2] = true;
                                         already_proposed_pair[sr2 + sr1] = true;
                                         ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
@@ -479,7 +477,7 @@ var Colorize = /** @class */ (function () {
         // corresponds to earth-mover distance.  Other attributes are
         // the rectangles themselves. Sort by biggest entropy
         // reduction first.
-        //	console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
+        console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
         proposed_fixes = this.fix_proposed_fixes(proposed_fixes);
         proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
         //	console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
@@ -555,21 +553,28 @@ var Colorize = /** @class */ (function () {
         }
     };
     Colorize.hash_vector = function (vec) {
-        var baseX = 0; // 7;
-        var baseY = 0; // 3;
-        var v0 = Math.abs(vec[0] - baseX);
-        //	v0 = v0 * v0;
-        var v1 = Math.abs(vec[1] - baseY);
-        //	v1 = v1 * v1;
-        var v2 = vec[2];
-        return this.Multiplier * (v0 + v1 + v2);
+        var useL1 = false;
+        if (useL1) {
+            var baseX = 0; // 7;
+            var baseY = 0; // 3;
+            var v0 = Math.abs(vec[0] - baseX);
+            //	v0 = v0 * v0;
+            var v1 = Math.abs(vec[1] - baseY);
+            //	v1 = v1 * v1;
+            var v2 = vec[2];
+            return this.Multiplier * (v0 + v1 + v2);
+        }
+        else {
+            var baseX = 7;
+            var baseY = 3;
+            var v0 = vec[0] - baseX;
+            v0 = v0 * v0;
+            var v1 = vec[1] - baseY;
+            v1 = v1 * v1;
+            var v2 = vec[2];
+            return this.Multiplier * Math.sqrt(v0 + v1 + v2);
+        }
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
-        // Return a hash of the given vector.
-        //	let h = Math.sqrt(vec.map(v => { return v * v; }).reduce((a, b) => { return a + b; }));
-        //	console.log("hash of " + JSON.stringify(vec) + " = " + h);
-        //		return h;
-        //        let h = this.hash(JSON.stringify(vec) + 'NONCE01');
-        //        return h;
     };
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     Colorize.initialized = false;
@@ -577,6 +582,12 @@ var Colorize = /** @class */ (function () {
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
     Colorize.Multiplier = 1; // 103037;
+    /*
+      private static transpose(array) {
+      array[0].map((col, i) => array.map(row => row[i]));
+      }
+    */
+    Colorize.distinguishedZeroHash = "1";
     return Colorize;
 }());
 exports.Colorize = Colorize;
