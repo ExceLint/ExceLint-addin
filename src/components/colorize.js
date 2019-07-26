@@ -331,8 +331,8 @@ var Colorize = /** @class */ (function () {
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
         var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
         var _b = __read(merge_with, 2), m1 = _b[0], m2 = _b[1];
-        var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1]], [t2[0], t2[1]]]);
-        var n_merge_with = rectangleutils_1.RectangleUtils.area([[m1[0], m1[1]], [m2[0], m2[1]]]);
+        var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
+        var n_merge_with = rectangleutils_1.RectangleUtils.area([[m1[0], m1[1], 0], [m2[0], m2[1], 0]]);
         var n_min = Math.min(n_target, n_merge_with);
         var n_max = Math.max(n_target, n_merge_with);
         var norm_min = Math.min(merge_with_norm, target_norm);
@@ -351,8 +351,8 @@ var Colorize = /** @class */ (function () {
             //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
             var _a = __read(fixes[k][1], 2), f11 = _a[0], f12 = _a[1];
             var _b = __read(fixes[k][2], 2), f21 = _b[0], f22 = _b[1];
-            count += rectangleutils_1.RectangleUtils.diagonal([[f11[0], f11[1]], [f12[0], f12[1]]]);
-            count += rectangleutils_1.RectangleUtils.diagonal([[f21[0], f21[1]], [f22[0], f22[1]]]);
+            count += rectangleutils_1.RectangleUtils.diagonal([[f11[0], f11[1], 0], [f12[0], f12[1], 0]]);
+            count += rectangleutils_1.RectangleUtils.diagonal([[f21[0], f21[1], 0], [f22[0], f22[1], 0]]);
         }
         return count;
     };

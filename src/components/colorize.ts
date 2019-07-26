@@ -282,8 +282,8 @@ export class Colorize {
     {
 	let [t1, t2] = target;
 	let [m1, m2] = merge_with;
-	let n_target = RectangleUtils.area([[t1[0], t1[1]], [t2[0], t2[1]]]);
-	let n_merge_with = RectangleUtils.area([[m1[0], m1[1]], [m2[0], m2[1]]]);
+	let n_target = RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
+	let n_merge_with = RectangleUtils.area([[m1[0], m1[1], 0], [m2[0], m2[1], 0]]);
 	let n_min = Math.min(n_target, n_merge_with);
 	let n_max = Math.max(n_target, n_merge_with);
 	let norm_min = Math.min(merge_with_norm, target_norm);
@@ -304,8 +304,8 @@ export class Colorize {
 	    //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
 	    let [f11, f12] = fixes[k][1];
 	    let [f21, f22] = fixes[k][2];
-	    count += RectangleUtils.diagonal([[f11[0], f11[1]], [f12[0], f12[1]]]);
-	    count += RectangleUtils.diagonal([[f21[0], f21[1]], [f22[0], f22[1]]]);
+	    count += RectangleUtils.diagonal([[f11[0], f11[1], 0], [f12[0], f12[1], 0]]);
+	    count += RectangleUtils.diagonal([[f21[0], f21[1], 0], [f22[0], f22[1], 0]]);
 	}
 	return count;
     }
@@ -384,14 +384,14 @@ export class Colorize {
 	for (let k1 of Object.keys(groups)) {
 	    // Look for possible fixes in OTHER groups.
 	    for (let i = 0; i < groups[k1].length; i++) {
-		let r1 : any = groups[k1][i];
+		let r1 = groups[k1][i];
 		let sr1 = JSON.stringify(r1);
 		for (let k2 of Object.keys(groups)) {
 		    if (k1 === k2) {
 			continue;
 		    }
 		    for (let j = 0; j < groups[k2].length; j++) {
-			let r2 : any = groups[k2][j];
+			let r2 = groups[k2][j];
 			let sr2 = JSON.stringify(r2);
 			// Only add these if we have not already added them.
 			if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
@@ -447,9 +447,9 @@ export class Colorize {
 		let merged_one = false;
 		let deleted_rectangles = {};
 		let updated_rectangles = [];
-		let working_group : any = group.slice(); // JSON.parse(JSON.stringify(group));
+		let working_group = group.slice(); // JSON.parse(JSON.stringify(group));
 		while (working_group.length > 0) {
-		    let head : any = working_group.shift();
+		    let head = working_group.shift();
 		    for (let i = 0; i < working_group.length; i++) {
 			//                    console.log("comparing " + head + " and " + working_group[i]);
 			if (RectangleUtils.is_mergeable(head, working_group[i])) {
