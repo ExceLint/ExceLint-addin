@@ -254,6 +254,7 @@ var Colorize = /** @class */ (function () {
     };
     // Compute the normalized distance from merging two ranges.
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
+        console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
         var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
         var _b = __read(merge_with, 2), m1 = _b[0], m2 = _b[1];
         var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
@@ -263,6 +264,10 @@ var Colorize = /** @class */ (function () {
         var norm_min = Math.min(merge_with_norm, target_norm);
         var norm_max = Math.max(merge_with_norm, target_norm);
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
+        // Ensure that the minimum fix is at least one (we need this if we don't use the L1 norm).
+        if (fix_distance < 1.0) {
+            fix_distance = 1.0;
+        }
         var entropy_drop = this.entropydiff(n_min, n_max); // negative
         var ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
         ranking = -ranking; // negating to sort in reverse order.
