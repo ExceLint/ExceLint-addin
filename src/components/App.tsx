@@ -64,28 +64,32 @@ export default class App extends React.Component<AppProps, AppState> {
 //		console.log("v = " + JSON.stringify(v));
 		for (let theRange of v) {
 		    const r = theRange;
-		    const col0 = ExcelUtils.column_index_to_name(r[0][0]);
+		    const col0 = r[0][0];
 		    const row0 = r[0][1];
-		    const col1 = ExcelUtils.column_index_to_name(r[1][0]);
+		    const col1 = r[1][0];
 		    const row1 = r[1][1];
 
-		    if ((r[0][0] === 0) && (r[0][1] === 0) && (r[0][2] != 0)) {
+		    if ((col0 === 0) && (row0 === 0) && (r[0][2] != 0)) {
 			// Not a real dependency. Skip.
+			console.log("NOT A REAL DEPENDENCY: " + col1 + "," + row1);
 			continue;
 		    }
-		    if ((r[0][0] < 0) || (r[0][1] < 0) || (r[1][0] < 0) || (r[1][1] < 0)) {
+		    if ((col0 < 0) || (row0 < 0) || (col1 < 0) || (row1 < 0)) {
 			// Defensive programming.
 			console.log("WARNING: FOUND NEGATIVE VALUES.");
 			continue;
 		    }
 		    
-//		    console.log("process: about to get range " + col0 + row0 + ":" + col1 + row1);
-		    let range = currentWorksheet.getRange(col0 + row0 + ':' + col1 + row1);
+		    const colname0 = ExcelUtils.column_index_to_name(col0);
+		    const colname1 = ExcelUtils.column_index_to_name(col1);
+		    //		    console.log("process: about to get range " + colname0 + row0 + ":" + colname1 + row1);
+		    const rangeStr = colname0 + row0 + ':' + colname1 + row1;
+		    let range = currentWorksheet.getRange(rangeStr);
 		    const color = colorfn(hash_index);
-//		    console.log("color to set = " + color + " for hash = " + hash);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
 		    } else {
+			console.log("setting " + rangeStr + " to " + color);
 			range.format.fill.color = color;
 		    }
 		    otherfn();
@@ -306,14 +310,14 @@ export default class App extends React.Component<AppProps, AppState> {
 		app.suspendApiCalculationUntilNextSync();
 
 		// Compute the number of cells in the range "usedRange".
-		let usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
+		const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
 		console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
-		let [ul1, ul2, ul3] = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
-		let [lr1, lr2, lr3] = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
-		let upperLeftCorner : [number, number] = [ul1, ul2];
-		let lowerRightCorner : [number, number] = [lr1, lr2];
-		let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
-		let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
+		const [ul1, ul2, ul3] = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+		const [lr1, lr2, lr3] = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+		// let upperLeftCorner : [number, number] = [ul1, ul2];
+		// let lowerRightCorner : [number, number] = [lr1, lr2];
+		// let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+		// let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
 //		console.log("number of cells used = " + numberOfCellsUsed);
 
 	
@@ -347,29 +351,29 @@ export default class App extends React.Component<AppProps, AppState> {
 //		app.suspendScreenUpdatingUntilNextSync();
 
 
-		    if (displayComments) {
-			console.log("SETTING");
-//			let range = currentWorksheet.getRange("B1");
-//			range.values = [[ 42 ]];
+		if (displayComments) {
+		    console.log("SETTING");
+		    //			let range = currentWorksheet.getRange("B1");
+		    //			range.values = [[ 42 ]];
 			let len = usedRange.values.length;
-			let width = usedRange.values[0].length; // we assume it's a rectangular array.
-			let row = Array(width).fill(42);
-			let rows = Array(len).fill(row);
-			console.log(rows);
-			usedRange.values = rows;
-			await context.sync();
-		    }
-
-		let usedRangeAddress = usedRange.address;
+		    let width = usedRange.values[0].length; // we assume it's a rectangular array.
+		    let row = Array(width).fill(42);
+		    let rows = Array(len).fill(row);
+		    console.log(rows);
+		    usedRange.values = rows;
+		    await context.sync();
+		}
+		
+		const usedRangeAddress = usedRange.address;
 
 //		t.split("set numbers to yellow, etc.");
 
-		let [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-		let vec = ExcelUtils.cell_dependency(startCell, 0, 0);
+		const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
+		const vec = ExcelUtils.cell_dependency(startCell, 0, 0);
  		// console.log("setColor: cell dependency = " + vec);
 		t.split("computed cell dependency for start");
 
-		let formulas = usedRange.formulas;
+		const formulas = usedRange.formulas;
 //		console.log("formulas = " + JSON.stringify(formulas));
 		let processed_formulas : any = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
 		
@@ -388,7 +392,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log("referenced_data = " + JSON.stringify(referenced_data));
 		t.split("processed data");
 		await setTimeout(() => {}, 0);
-//		console.log(" = " + JSON.stringify(referenced_data));
+
+		console.log("referenced_data = " + JSON.stringify(referenced_data));
 
 		const grouped_data = Colorize.identify_groups(referenced_data);
 		t.split("identified groups");
@@ -401,7 +406,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await setTimeout(() => {}, 0);
 		
 		// For now, select the very first proposed fix.
-		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas, diagonal, numberOfCellsUsed);
+		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 		
 		// Filter the proposed fixes:
 		// * If they don't all have the same format (pre-colorization), don't propose them as fixes.
@@ -548,13 +553,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		    }
 		}
 	
-		if (true) {
-		    // Just color referenced data gray.
-		    this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{});
-		} else {
-		    // Color referenced data based on its formula's color.
-		    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
-		}
+		// Just color referenced data gray.
+		this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{});
+
+		// Color referenced data based on its formula's color.
+		// DISABLED.
+		///    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
 
 		await context.sync();
 //		app.suspendScreenUpdatingUntilNextSync();

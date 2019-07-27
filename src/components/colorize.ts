@@ -19,14 +19,16 @@ export class Colorize {
 
     // The array of colors (used to hash into).
     private static color_list = [];
-    private static light_color_list = [];
-    private static light_color_dict = {};
 
     // A multiplier for the hash function.
     private static Multiplier = 1; // 103037;
 
+    // A hash string indicating no dependencies.
+    private static distinguishedZeroHash = "0";
+
     public static initialize() {
 	if (!this.initialized) {
+	    // Create the color palette array.
 	    const arr = Colorize.palette;
 	    for (let i = 0; i < arr.length; i++) {
 		this.color_list.push(arr[i]);
@@ -40,12 +42,6 @@ export class Colorize {
 	const color = this.color_list[(hashval * 1) % this.color_list.length];
 	return color;
     }
-
-    public static get_light_color_version(color: string): string {
-	return this.light_color_dict[color];
-    }
-    
-    private static distinguishedZeroHash = "0";
 
     // Generate dependence vectors and their hash for all formulas.
     public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[excelintVector, string]> {
@@ -213,9 +209,7 @@ export class Colorize {
     public static fix_metric(target_norm: number,
 			     target: [excelintVector, excelintVector],
 			     merge_with_norm: number,
-			     merge_with: [excelintVector, excelintVector],
-			     sheetDiagonal: number,
-			     sheetArea: number): number
+			     merge_with: [excelintVector, excelintVector]): number
     {
 	const [t1, t2] = target;
 	const [m1, m2] = merge_with;
@@ -228,8 +222,6 @@ export class Colorize {
 	const fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
 	const entropy_drop = this.entropydiff(n_min, n_max); // negative
 	let ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
-	sheetArea = sheetArea;
-	sheetDiagonal = sheetDiagonal;
 	ranking = -ranking; // negating to sort in reverse order.
 	return ranking;
     }
@@ -315,7 +307,7 @@ export class Colorize {
 	}
 
     // Generate an array of proposed fixes (a score and the two ranges to merge).
-    public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }, diagonal: number, area: number):
+    public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
     Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
 	let t = new Timer("generate_proposed_fixes");
 	let proposed_fixes = [];
@@ -341,7 +333,7 @@ export class Colorize {
 				already_proposed_pair[sr1 + sr2] = true;
 				already_proposed_pair[sr2 + sr1] = true;
 				///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
+				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
 				// was Math.abs(parseFloat(k2) - parseFloat(k1))
 				const new_fix = [metric, r1, r2];
 				console.log("pushing new fix = " + JSON.stringify(new_fix));

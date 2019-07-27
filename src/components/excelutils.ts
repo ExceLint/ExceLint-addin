@@ -307,16 +307,23 @@ export class ExcelUtils {
 			    console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
 			    console.log("rowIndex = " + rowIndex);
 			    console.log("colIndex = " + colIndex);  */
-			    // Discard references to cells outside the formula range.
-			    if (!((rowIndex >= formulas.length)
-				  || (colIndex >= formulas[0].length)
-				  || (rowIndex < 0)
-				  || (colIndex < 0))) {
-				let referentCell = formulas[rowIndex][colIndex];
-//				console.log("referent cell = " + JSON.stringify(referentCell));
-				// Only include non-formulas. NOTE: this also excludes blank cells right now.
-				if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
-//				    console.log("adding reference!");
+			    const outsideFormulaRange = ((rowIndex >= formulas.length)
+							 || (colIndex >= formulas[0].length)
+							 || (rowIndex < 0)
+							 || (colIndex < 0));
+			    // DISABLE FOR NOW (Discard references to cells outside the formula range.)
+			    if (true) {
+				let addReference = false;
+				if (outsideFormulaRange) {
+				    addReference = true;
+				} else {
+				    // Only include non-formulas (if they are in the range).
+				    let referentCell = formulas[rowIndex][colIndex];
+				    if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
+					addReference = true;
+				    }
+				}
+				if (addReference) {
 				    dep[0] += origin_col;
 				    dep[1] += origin_row;
 				    let key = dep.join(',');

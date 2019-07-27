@@ -35,6 +35,7 @@ var Colorize = /** @class */ (function () {
     }
     Colorize.initialize = function () {
         if (!this.initialized) {
+            // Create the color palette array.
             var arr = Colorize.palette;
             for (var i = 0; i < arr.length; i++) {
                 this.color_list.push(arr[i]);
@@ -46,9 +47,6 @@ var Colorize = /** @class */ (function () {
     Colorize.get_color = function (hashval) {
         var color = this.color_list[(hashval * 1) % this.color_list.length];
         return color;
-    };
-    Colorize.get_light_color_version = function (color) {
-        return this.light_color_dict[color];
     };
     // Generate dependence vectors and their hash for all formulas.
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
@@ -255,7 +253,7 @@ var Colorize = /** @class */ (function () {
         return -normalizedEntropy;
     };
     // Compute the normalized distance from merging two ranges.
-    Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
+    Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
         var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
         var _b = __read(merge_with, 2), m1 = _b[0], m2 = _b[1];
         var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
@@ -267,8 +265,6 @@ var Colorize = /** @class */ (function () {
         var fix_distance = Math.abs(norm_max - norm_min) / this.Multiplier;
         var entropy_drop = this.entropydiff(n_min, n_max); // negative
         var ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
-        sheetArea = sheetArea;
-        sheetDiagonal = sheetDiagonal;
         ranking = -ranking; // negating to sort in reverse order.
         return ranking;
     };
@@ -348,7 +344,7 @@ var Colorize = /** @class */ (function () {
         return new_fixes;
     };
     // Generate an array of proposed fixes (a score and the two ranges to merge).
-    Colorize.generate_proposed_fixes = function (groups, diagonal, area) {
+    Colorize.generate_proposed_fixes = function (groups) {
         var e_6, _a, e_7, _b;
         var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
@@ -377,7 +373,7 @@ var Colorize = /** @class */ (function () {
                                         already_proposed_pair[sr1 + sr2] = true;
                                         already_proposed_pair[sr2 + sr1] = true;
                                         ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                                        var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
+                                        var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
                                         // was Math.abs(parseFloat(k2) - parseFloat(k1))
                                         var new_fix = [metric, r1, r2];
                                         console.log("pushing new fix = " + JSON.stringify(new_fix));
@@ -514,10 +510,9 @@ var Colorize = /** @class */ (function () {
     Colorize.initialized = false;
     // The array of colors (used to hash into).
     Colorize.color_list = [];
-    Colorize.light_color_list = [];
-    Colorize.light_color_dict = {};
     // A multiplier for the hash function.
     Colorize.Multiplier = 1; // 103037;
+    // A hash string indicating no dependencies.
     Colorize.distinguishedZeroHash = "0";
     return Colorize;
 }());
