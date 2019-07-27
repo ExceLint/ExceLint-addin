@@ -75,7 +75,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	if (counter > 0) {
 	    let table = [];
 	    let header = <tr><th align="left">Range</th><th align="left">Suspiciousness</th></tr>;
-	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}>{header}{children}</table></div></div>);
+	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div></div>);
 	    return table;
 	}
     }
