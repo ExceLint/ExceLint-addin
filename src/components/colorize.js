@@ -26,7 +26,6 @@ var __read = (this && this.__read) || function (o, n) {
     return ar;
 };
 exports.__esModule = true;
-var colorutils_1 = require("./colorutils");
 var excelutils_1 = require("./excelutils");
 var rectangleutils_1 = require("./rectangleutils");
 var timer_1 = require("./timer");
@@ -35,89 +34,23 @@ var Colorize = /** @class */ (function () {
     function Colorize() {
     }
     Colorize.initialize = function () {
-        var e_1, _a;
         if (!this.initialized) {
-            this.make_light_color_versions();
-            try {
-                for (var _b = __values(Object.keys(this.light_color_dict)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var i = _c.value;
-                    this.color_list.push(i);
-                    this.light_color_list.push(this.light_color_dict[i]);
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
-                }
-                finally { if (e_1) throw e_1.error; }
+            var arr = Colorize.palette;
+            for (var i = 0; i < arr.length; i++) {
+                this.color_list.push(arr[i]);
             }
             this.initialized = true;
         }
     };
+    // Get the color corresponding to a hash value.
     Colorize.get_color = function (hashval) {
         var color = this.color_list[(hashval * 1) % this.color_list.length];
-        //	console.log("get_color " + hashval + ", " + (hashval * 1) + " = " + color);
         return color;
-    };
-    Colorize.is_banned_color = function (h, s, v) {
-        var ban_it = false;
-        var _a = __read(colorutils_1.ColorUtils.HSVtoRGB(h, s, v), 3), r = _a[0], g = _a[1], b = _a[2];
-        if ((r > 128) && (g < 128) && (b < 128)) {
-            // Too red.
-            ban_it = true;
-        }
-        if ((r < 192) && (g > 128) && (b < 192)) {
-            // Too green.
-            ban_it = true;
-        }
-        // Also avoid colors near '#eed202', safety yellow.
-        var safety_r = 238;
-        var safety_g = 210;
-        var safety_b = 2;
-        var threshold = 128;
-        if ((Math.abs(r - safety_r) < threshold) && (Math.abs(g - safety_g) < threshold) && (Math.abs(b - safety_b) < threshold)) {
-            ///			console.log("too close to safety yellow.");
-            ban_it = true;
-        }
-        if (ban_it) {
-            ///			console.log("Banned a color: " + r + ", " + g + ", " + b);
-        }
-        return ban_it;
-    };
-    Colorize.make_light_color_versions = function () {
-        //	    console.log('building color map (make_light_color_versions)');
-        var arr = Colorize.palette; // ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
-        //	    let arr = ['#8E0152','#C51B7D','#D01C8B','#DE77AE','#E9A3C9','#F1B6DA','#FDE0EF','#F7F7F7','#E6F5D0','#B8E186','#A1D76A','#7FBC41','#4DAC26','#4D9221','#276419'];
-        for (var i = 0; i < arr.length; i++) {
-            this.light_color_dict[arr[i]] = '';
-        }
-        return;
-        for (var i = 0; i < 255; i += 9) {
-            var h = i / 255.0;
-            var s = 0.5;
-            var v = 0.85;
-            if (this.is_banned_color(h, s, v)) {
-                continue;
-            }
-            var rgb = colorutils_1.ColorUtils.HSVtoRGB(h, s, v);
-            var _a = __read(rgb.map(function (x) { return Math.round(x).toString(16).padStart(2, '0'); }), 3), rs = _a[0], gs = _a[1], bs = _a[2];
-            var str = '#' + rs + gs + bs;
-            str = str.toUpperCase();
-            this.light_color_dict[str] = '';
-        }
-        for (var color in this.light_color_dict) {
-            var lightstr = colorutils_1.ColorUtils.adjust_brightness(color, 4.0);
-            var darkstr = color; // = this.adjust_color(color, 0.25);
-            //			console.log(str);
-            //			console.log('Old RGB = ' + color + ', new = ' + str);
-            delete this.light_color_dict[color];
-            this.light_color_dict[darkstr] = lightstr;
-        }
     };
     Colorize.get_light_color_version = function (color) {
         return this.light_color_dict[color];
     };
+    // Generate dependence vectors and their hash for all formulas.
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
         //	console.log("***** PROCESS FORMULAS *****");
         var base_vector = JSON.stringify(excelutils_1.ExcelUtils.baseVector());
@@ -162,38 +95,28 @@ var Colorize = /** @class */ (function () {
         //	console.log(JSON.stringify(all_deps));
         return output;
     };
-    // Return all referenced data so it can be colored later.
-    // Note that for now, the last value of each tuple is set to 1.
+    // Returns all referenced data so it can be colored later.
     Colorize.color_all_data = function (refs) {
-        var e_2, _a;
+        var e_1, _a;
         var t = new timer_1.Timer("color_all_data");
-        //console.log('color_all_data');
-        //console.log("formula length = " + formulas.length);
-        //console.log("processed formulas length = " + processed_formulas.length);
-        // let refs = this.generate_all_references(formulas);
-        //t.split("generated all references");
-        //console.log("generated all references: length = " + Object.keys(refs).length);
-        //	console.log("all refs = " + JSON.stringify(refs));
         var referenced_data = [];
         try {
             for (var _b = __values(Object.keys(refs)), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var refvec = _c.value;
-                //	    let rv = JSON.parse('[' + refvec + ']');
                 var rv = refvec.split(',');
                 var row = Number(rv[0]);
                 var col = Number(rv[1]);
                 referenced_data.push([[row, col, 0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
             }
         }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
             }
-            finally { if (e_2) throw e_2.error; }
+            finally { if (e_1) throw e_1.error; }
         }
         t.split("processed all data");
-        //	console.log("color_all_data: referenced_data = " + JSON.stringify(referenced_data));
         return referenced_data;
     };
     // Take all values and return an array of each row and column.
@@ -222,7 +145,7 @@ var Colorize = /** @class */ (function () {
     // Take in a list of [[row, col], color] pairs and group them,
     // sorting them (e.g., by columns).
     Colorize.identify_ranges = function (list, sortfn) {
-        var e_3, _a, e_4, _b;
+        var e_2, _a, e_3, _b;
         // Separate into groups based on their string value.
         var groups = {};
         try {
@@ -232,12 +155,12 @@ var Colorize = /** @class */ (function () {
                 groups[r[1]].push(r[0]);
             }
         }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
         finally {
             try {
                 if (list_1_1 && !list_1_1.done && (_a = list_1["return"])) _a.call(list_1);
             }
-            finally { if (e_3) throw e_3.error; }
+            finally { if (e_2) throw e_2.error; }
         }
         try {
             // Now sort them all.
@@ -248,17 +171,18 @@ var Colorize = /** @class */ (function () {
                 //	console.log(groups[k]);
             }
         }
-        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        catch (e_3_1) { e_3 = { error: e_3_1 }; }
         finally {
             try {
                 if (_d && !_d.done && (_b = _c["return"])) _b.call(_c);
             }
-            finally { if (e_4) throw e_4.error; }
+            finally { if (e_3) throw e_3.error; }
         }
         return groups;
     };
+    // Group all ranges by their value.
     Colorize.group_ranges = function (groups, columnFirst) {
-        var e_5, _a, e_6, _b;
+        var e_4, _a, e_5, _b;
         var output = {};
         var index0 = 0; // column
         var index1 = 1; // row
@@ -286,22 +210,22 @@ var Colorize = /** @class */ (function () {
                         }
                     }
                 }
-                catch (e_6_1) { e_6 = { error: e_6_1 }; }
+                catch (e_5_1) { e_5 = { error: e_5_1 }; }
                 finally {
                     try {
                         if (_f && !_f.done && (_b = _e["return"])) _b.call(_e);
                     }
-                    finally { if (e_6) throw e_6.error; }
+                    finally { if (e_5) throw e_5.error; }
                 }
                 output[k].push([prev, last]);
             }
         }
-        catch (e_5_1) { e_5 = { error: e_5_1 }; }
+        catch (e_4_1) { e_4 = { error: e_4_1 }; }
         finally {
             try {
                 if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
             }
-            finally { if (e_5) throw e_5.error; }
+            finally { if (e_4) throw e_4.error; }
         }
         return output;
     };
@@ -319,15 +243,18 @@ var Colorize = /** @class */ (function () {
         var mg = this.merge_groups(newGr1);
         return mg;
     };
+    // Shannon entropy.
     Colorize.entropy = function (p) {
         return -p * Math.log2(p);
     };
+    // Take two counts and compute the normalized entropy difference that would result if these were "merged".
     Colorize.entropydiff = function (oldcount1, oldcount2) {
         var total = oldcount1 + oldcount2;
         var prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
         var normalizedEntropy = prevEntropy / (Math.log2(total));
         return -normalizedEntropy;
     };
+    // Compute the normalized distance from merging two ranges.
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with, sheetDiagonal, sheetArea) {
         var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
         var _b = __read(merge_with, 2), m1 = _b[0], m2 = _b[1];
@@ -345,6 +272,7 @@ var Colorize = /** @class */ (function () {
         ranking = -ranking; // negating to sort in reverse order.
         return ranking;
     };
+    // Iterate through the size of proposed fixes.
     Colorize.count_proposed_fixes = function (fixes) {
         var count = 0;
         for (var k in fixes) {
@@ -356,6 +284,7 @@ var Colorize = /** @class */ (function () {
         }
         return count;
     };
+    // Try to merge fixes into larger groups.
     Colorize.fix_proposed_fixes = function (fixes) {
         // example: [[-0.8729568798082977,[[4,23],[13,23]],[[3,23,0],[3,23,0]]],[-0.6890824929174288,[[4,6],[7,6]],[[3,6,0],[3,6,0]]],[-0.5943609377704335,[[4,10],[6,10]],[[3,10,0],[3,10,0]]],[-0.42061983571430495,[[3,27],[4,27]],[[5,27,0],[5,27,0]]],[-0.42061983571430495,[[4,14],[5,14]],[[3,14,0],[3,14,0]]],[-0.42061983571430495,[[6,27],[7,27]],[[5,27,0],[5,27,0]]]]
         var count = 0;
@@ -418,8 +347,9 @@ var Colorize = /** @class */ (function () {
         }
         return new_fixes;
     };
+    // Generate an array of proposed fixes (a score and the two ranges to merge).
     Colorize.generate_proposed_fixes = function (groups, diagonal, area) {
-        var e_7, _a, e_8, _b;
+        var e_6, _a, e_7, _b;
         var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
         var already_proposed_pair = {};
@@ -444,48 +374,50 @@ var Colorize = /** @class */ (function () {
                                     // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
                                     //			    console.log("checking " + JSON.stringify(sr1) + " and " + JSON.stringify(sr2));
                                     if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
-                                        console.log("YES");
                                         already_proposed_pair[sr1 + sr2] = true;
                                         already_proposed_pair[sr2 + sr1] = true;
                                         ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
                                         var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2, diagonal, area);
                                         // was Math.abs(parseFloat(k2) - parseFloat(k1))
-                                        proposed_fixes.push([metric, r1, r2]);
+                                        var new_fix = [metric, r1, r2];
+                                        console.log("pushing new fix = " + JSON.stringify(new_fix));
+                                        proposed_fixes.push(new_fix);
                                     }
                                 }
                             }
                         }
                     }
-                    catch (e_8_1) { e_8 = { error: e_8_1 }; }
+                    catch (e_7_1) { e_7 = { error: e_7_1 }; }
                     finally {
                         try {
                             if (_f && !_f.done && (_b = _e["return"])) _b.call(_e);
                         }
-                        finally { if (e_8) throw e_8.error; }
+                        finally { if (e_7) throw e_7.error; }
                     }
                 }
             }
         }
-        catch (e_7_1) { e_7 = { error: e_7_1 }; }
+        catch (e_6_1) { e_6 = { error: e_6_1 }; }
         finally {
             try {
                 if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
             }
-            finally { if (e_7) throw e_7.error; }
+            finally { if (e_6) throw e_6.error; }
         }
         // First attribute is the norm of the vectors. Differencing
         // corresponds to earth-mover distance.  Other attributes are
         // the rectangles themselves. Sort by biggest entropy
         // reduction first.
         console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
-        proposed_fixes = this.fix_proposed_fixes(proposed_fixes);
+        // FIXME currently disabled.
+        // 	proposed_fixes = this.fix_proposed_fixes(proposed_fixes);
         proposed_fixes.sort(function (a, b) { return a[0] - b[0]; });
         //	console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
         t.split("done.");
         return proposed_fixes;
     };
     Colorize.merge_groups = function (groups) {
-        var e_9, _a;
+        var e_8, _a;
         try {
             for (var _b = __values(Object.keys(groups)), _c = _b.next(); !_c.done; _c = _b.next()) {
                 var k = _c.value;
@@ -493,12 +425,12 @@ var Colorize = /** @class */ (function () {
                 groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
             }
         }
-        catch (e_9_1) { e_9 = { error: e_9_1 }; }
+        catch (e_8_1) { e_8 = { error: e_8_1 }; }
         finally {
             try {
                 if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
             }
-            finally { if (e_9) throw e_9.error; }
+            finally { if (e_8) throw e_8.error; }
         }
         return groups;
     };
@@ -553,8 +485,8 @@ var Colorize = /** @class */ (function () {
         }
     };
     Colorize.hash_vector = function (vec) {
-        var useL1 = false;
-        if (useL1) {
+        var useL1norm = false;
+        if (useL1norm) {
             var baseX = 0; // 7;
             var baseY = 0; // 3;
             var v0 = Math.abs(vec[0] - baseX);
@@ -576,18 +508,17 @@ var Colorize = /** @class */ (function () {
         }
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     };
+    // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
+    // True iff this class been initialized.
     Colorize.initialized = false;
+    // The array of colors (used to hash into).
     Colorize.color_list = [];
     Colorize.light_color_list = [];
     Colorize.light_color_dict = {};
+    // A multiplier for the hash function.
     Colorize.Multiplier = 1; // 103037;
-    /*
-      private static transpose(array) {
-      array[0].map((col, i) => array.map(row => row[i]));
-      }
-    */
-    Colorize.distinguishedZeroHash = "1";
+    Colorize.distinguishedZeroHash = "0";
     return Colorize;
 }());
 exports.Colorize = Colorize;
