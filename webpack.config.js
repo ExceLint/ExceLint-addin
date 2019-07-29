@@ -1,4 +1,3 @@
-const devCerts = require("office-addin-dev-certs");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require("webpack");
 
@@ -34,7 +33,6 @@ module.exports = async (env, options) => {
       headers: {
         "Access-Control-Allow-Origin": "*"
       },
-      https: await devCerts.getHttpsServerOptions(),
       port: 3000
     },
     plugins: [
