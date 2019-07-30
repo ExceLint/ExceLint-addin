@@ -48,9 +48,41 @@ export default class App extends React.Component<AppProps, AppState> {
 					       numFixes : this.proposed_fixes_length });
     }
 
-    adjust_fix_scores = async(context, backupSheet) => {
+    adjust_fix_scores = async(context, backupSheet, origin_col, origin_row) => {
 	const fixes = this.proposed_fixes;
 	this.proposed_fixes = [];
+
+	let usedRange = backupSheet.getUsedRange(false) as any;
+	
+//	const cell = context.workbook.getActiveCell();
+
+	// Define the cell properties to get by setting the matching LoadOptions to true.
+	const propertiesToGet = usedRange.getCellProperties({ // cell.getCellProperties({
+	    numberFormat : true,
+            format: {
+		fill: {
+                    color: true
+		},
+		border: {
+		    color: true,
+		    style: true,
+		    weight: true
+		},
+		font: {
+                    color: true,
+		    style: true,
+		    weight: true,
+		    bold: true,
+		    italic: true,
+		    name: true
+		}
+            },
+	});
+	
+	// Sync to get the data from the workbook.
+	await context.sync();
+
+	console.log(JSON.stringify(propertiesToGet.value));
 	
 	for (let k in fixes) {
 	    // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
@@ -58,7 +90,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
 	    
 	    // Convert to Excel column-row notation.
-	    // console.log("fix = " + JSON.stringify(fixes[k]));
+//	    console.log("fix = " + JSON.stringify(fixes[k]));
 	    
 	    let score = fixes[k][0];
 	    const first = fixes[k][1];
@@ -67,78 +99,38 @@ export default class App extends React.Component<AppProps, AppState> {
 	    const [[ax1, ay1], [ax2, ay2]] = first;
 	    const [[bx1, by1], [bx2, by2]] = second;
 	    
-	    const col0 = ExcelUtils.column_index_to_name(ax1);
-	    const row0 = ay1.toString();
-	    const col1 = ExcelUtils.column_index_to_name(bx2);
-	    const row1 = by2.toString();
-	    const rangeStr = col0 + row0 + ":" + col1 + row1;
-	    
-	    // Finally, get the range from the backup (original) sheet.
-	    let range = backupSheet.getRange(rangeStr);
-	    await context.sync();
-	    // console.log("loading " + rangeStr);
-	    range.load(['format/fill/color', 'format/font', 'numberFormat', 'format/borders']);
-	    await context.sync();
-	    
-	    // compare range.format?
-	    // compare range.format.font, range.format.borders?
-	    //console.log(JSON.stringify(range.format.fill.color));
-	    //console.log(JSON.stringify(range.format.fill));
-	    //console.log(JSON.stringify(range.format));
-	    
-	    // If null (different formats in merged), then we won't propose this as a fix.
-	    // TODO: perhaps make this less conservative?
-	    
-	    const sameFillColor = range.format.fill.color;
-	    const sameFormats = range.numberFormat.every((val, _, arr) => JSON.stringify(val) === JSON.stringify(arr[0]));
-	    const sameFonts = (range.format.font.color &&
-			       range.format.font.bold != null &&
-			       range.format.font.italic != null &&
-			       range.format.font.name);
-	    let sameBorders = true;
-	    
-	    {
-		let border = range.format.borders;
-		border.load('items');
-		await context.sync();
-		
-		for (let ind = 0; ind < border.items.length; ind++) {
-		    const b = border.items[ind];
-		    // console.log("border = " + JSON.stringify(b));
-		    if (b["color"] &&
-			b["style"] &&
-			b["weight"])
-		    {
-			continue;
+	    const col0 = ax1 - origin_col - 1; // ExcelUtils.column_index_to_name(ax1);
+	    const row0 = ay1 - origin_row - 1; //.toString();
+	    const col1 = bx2 - origin_col - 1; // ExcelUtils.column_index_to_name(bx2);
+	    const row1 = by2 - origin_row - 1; // .toString();
+
+//	    console.log("length = " + propertiesToGet.value.length);
+//	    console.log("width = " + propertiesToGet.value[0].length);
+	    let sameFormats = true;
+	    const firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
+	    console.log(firstFormat);
+	    for (let i = row0; i <= row1; i++) {
+		for (let j = col0; j <= col1; j++) {
+//		    console.log("checking " + i + ", " + j);
+		    console.log(propertiesToGet.value[i][j]);
+		    if (JSON.stringify(propertiesToGet.value[i][j]) !== firstFormat) {
+			sameFormats = false;
+			break;
 		    }
-		    sameBorders = false;
-		    break;
 		}
 	    }
-	    console.log("score was " + score);
-	    // Discount merge candidates based on their formatting characteristics
-	    // (that is, whether the merge candidates have the same fill color and so on).
-	    // Made-up numbers that should be replaced by a model.
-	    // Call these "priors" for now :).
-	    if (!sameFillColor) {
-		score = score * 0.5;
-	    }
+//	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
+
+//	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
 		score = score * 0.2;
 	    }
-	    if (!sameFonts) {
-		score = score * 0.3;
-	    }
-	    if (!sameBorders) {
-		score = score * 0.1;
-	    }
-	    //		    if (true) {
 	    if (true) { // sameFillColor && sameFormats && sameFonts && sameBorders) {
 		// Add it to the proposed fixes list.
 		//			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
 		this.proposed_fixes.push([score, first, second]);
 	    } else {
-		console.log("trimmed a proposed fix (" + rangeStr + ").");
+//		console.log("trimmed a proposed fix (" + rangeStr + ").");
 	    }
 	}
     }
@@ -563,7 +555,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
 		// FIXME - this seems maybe super slow!
-////////		await this.adjust_fix_scores(context, backupSheet);
+		await this.adjust_fix_scores(context, backupSheet, vec[0] - 1, vec[1] - 1);
 		
 		t.split("generated fixes");
 		this.total_fixes = formulas.length;
