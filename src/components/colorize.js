@@ -1,30 +1,4 @@
 "use strict";
-var __values = (this && this.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
-    if (m) return m.call(o);
-    return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-};
-var __read = (this && this.__read) || function (o, n) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator];
-    if (!m) return o;
-    var i = m.call(o), r, ar = [], e;
-    try {
-        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
-    }
-    catch (error) { e = { error: error }; }
-    finally {
-        try {
-            if (r && !r.done && (m = i["return"])) m.call(i);
-        }
-        finally { if (e) throw e.error; }
-    }
-    return ar;
-};
 exports.__esModule = true;
 var excelutils_1 = require("./excelutils");
 var rectangleutils_1 = require("./rectangleutils");
@@ -95,24 +69,14 @@ var Colorize = /** @class */ (function () {
     };
     // Returns all referenced data so it can be colored later.
     Colorize.color_all_data = function (refs) {
-        var e_1, _a;
         var t = new timer_1.Timer("color_all_data");
         var referenced_data = [];
-        try {
-            for (var _b = __values(Object.keys(refs)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var refvec = _c.value;
-                var rv = refvec.split(',');
-                var row = Number(rv[0]);
-                var col = Number(rv[1]);
-                referenced_data.push([[row, col, 0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
-            }
-            finally { if (e_1) throw e_1.error; }
+        for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
+            var refvec = _a[_i];
+            var rv = refvec.split(',');
+            var row = Number(rv[0]);
+            var col = Number(rv[1]);
+            referenced_data.push([[row, col, 0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
         }
         t.split("processed all data");
         return referenced_data;
@@ -143,44 +107,24 @@ var Colorize = /** @class */ (function () {
     // Take in a list of [[row, col], color] pairs and group them,
     // sorting them (e.g., by columns).
     Colorize.identify_ranges = function (list, sortfn) {
-        var e_2, _a, e_3, _b;
         // Separate into groups based on their string value.
         var groups = {};
-        try {
-            for (var list_1 = __values(list), list_1_1 = list_1.next(); !list_1_1.done; list_1_1 = list_1.next()) {
-                var r = list_1_1.value;
-                groups[r[1]] = groups[r[1]] || [];
-                groups[r[1]].push(r[0]);
-            }
+        for (var _i = 0, list_1 = list; _i < list_1.length; _i++) {
+            var r = list_1[_i];
+            groups[r[1]] = groups[r[1]] || [];
+            groups[r[1]].push(r[0]);
         }
-        catch (e_2_1) { e_2 = { error: e_2_1 }; }
-        finally {
-            try {
-                if (list_1_1 && !list_1_1.done && (_a = list_1["return"])) _a.call(list_1);
-            }
-            finally { if (e_2) throw e_2.error; }
-        }
-        try {
-            // Now sort them all.
-            for (var _c = __values(Object.keys(groups)), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var k = _d.value;
-                //	console.log(k);
-                groups[k].sort(sortfn);
-                //	console.log(groups[k]);
-            }
-        }
-        catch (e_3_1) { e_3 = { error: e_3_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_b = _c["return"])) _b.call(_c);
-            }
-            finally { if (e_3) throw e_3.error; }
+        // Now sort them all.
+        for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {
+            var k = _b[_a];
+            //	console.log(k);
+            groups[k].sort(sortfn);
+            //	console.log(groups[k]);
         }
         return groups;
     };
     // Group all ranges by their value.
     Colorize.group_ranges = function (groups, columnFirst) {
-        var e_4, _a, e_5, _b;
         var output = {};
         var index0 = 0; // column
         var index1 = 1; // row
@@ -188,42 +132,24 @@ var Colorize = /** @class */ (function () {
             index0 = 1; // row
             index1 = 0; // column
         }
-        try {
-            for (var _c = __values(Object.keys(groups)), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var k = _d.value;
-                output[k] = [];
-                var prev = groups[k].shift();
-                var last = prev;
-                try {
-                    for (var _e = __values(groups[k]), _f = _e.next(); !_f.done; _f = _e.next()) {
-                        var v = _f.value;
-                        // Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
-                        if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
-                            last = v;
-                        }
-                        else {
-                            output[k].push([prev, last]);
-                            prev = v;
-                            last = v;
-                        }
-                    }
+        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
+            var k = _a[_i];
+            output[k] = [];
+            var prev = groups[k].shift();
+            var last = prev;
+            for (var _b = 0, _c = groups[k]; _b < _c.length; _b++) {
+                var v = _c[_b];
+                // Check if in the same column, adjacent row (if columnFirst; otherwise, vice versa).
+                if ((v[index0] === last[index0]) && (v[index1] === last[index1] + 1)) {
+                    last = v;
                 }
-                catch (e_5_1) { e_5 = { error: e_5_1 }; }
-                finally {
-                    try {
-                        if (_f && !_f.done && (_b = _e["return"])) _b.call(_e);
-                    }
-                    finally { if (e_5) throw e_5.error; }
+                else {
+                    output[k].push([prev, last]);
+                    prev = v;
+                    last = v;
                 }
-                output[k].push([prev, last]);
             }
-        }
-        catch (e_4_1) { e_4 = { error: e_4_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
-            }
-            finally { if (e_4) throw e_4.error; }
+            output[k].push([prev, last]);
         }
         return output;
     };
@@ -255,8 +181,8 @@ var Colorize = /** @class */ (function () {
     // Compute the normalized distance from merging two ranges.
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
         console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
-        var _a = __read(target, 2), t1 = _a[0], t2 = _a[1];
-        var _b = __read(merge_with, 2), m1 = _b[0], m2 = _b[1];
+        var t1 = target[0], t2 = target[1];
+        var m1 = merge_with[0], m2 = merge_with[1];
         var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
         var n_merge_with = rectangleutils_1.RectangleUtils.area([[m1[0], m1[1], 0], [m2[0], m2[1], 0]]);
         var n_min = Math.min(n_target, n_merge_with);
@@ -278,8 +204,8 @@ var Colorize = /** @class */ (function () {
         var count = 0;
         for (var k in fixes) {
             //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
-            var _a = __read(fixes[k][1], 2), f11 = _a[0], f12 = _a[1];
-            var _b = __read(fixes[k][2], 2), f21 = _b[0], f22 = _b[1];
+            var _a = fixes[k][1], f11 = _a[0], f12 = _a[1];
+            var _b = fixes[k][2], f21 = _b[0], f22 = _b[1];
             count += rectangleutils_1.RectangleUtils.diagonal([[f11[0], f11[1], 0], [f12[0], f12[1], 0]]);
             count += rectangleutils_1.RectangleUtils.diagonal([[f21[0], f21[1], 0], [f22[0], f22[1], 0]]);
         }
@@ -350,60 +276,41 @@ var Colorize = /** @class */ (function () {
     };
     // Generate an array of proposed fixes (a score and the two ranges to merge).
     Colorize.generate_proposed_fixes = function (groups) {
-        var e_6, _a, e_7, _b;
         var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
         var already_proposed_pair = {};
-        try {
-            for (var _c = __values(Object.keys(groups)), _d = _c.next(); !_d.done; _d = _c.next()) {
-                var k1 = _d.value;
-                // Look for possible fixes in OTHER groups.
-                for (var i = 0; i < groups[k1].length; i++) {
-                    var r1 = groups[k1][i];
-                    var sr1 = JSON.stringify(r1);
-                    try {
-                        for (var _e = __values(Object.keys(groups)), _f = _e.next(); !_f.done; _f = _e.next()) {
-                            var k2 = _f.value;
-                            if (k1 === k2) {
-                                continue;
-                            }
-                            for (var j = 0; j < groups[k2].length; j++) {
-                                var r2 = groups[k2][j];
-                                var sr2 = JSON.stringify(r2);
-                                // Only add these if we have not already added them.
-                                if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
-                                    // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
-                                    //			    console.log("checking " + JSON.stringify(sr1) + " and " + JSON.stringify(sr2));
-                                    if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
-                                        already_proposed_pair[sr1 + sr2] = true;
-                                        already_proposed_pair[sr2 + sr1] = true;
-                                        ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
-                                        var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
-                                        // was Math.abs(parseFloat(k2) - parseFloat(k1))
-                                        var new_fix = [metric, r1, r2];
-                                        console.log("pushing new fix = " + JSON.stringify(new_fix));
-                                        proposed_fixes.push(new_fix);
-                                    }
-                                }
-                            }
-                        }
+        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
+            var k1 = _a[_i];
+            // Look for possible fixes in OTHER groups.
+            for (var i = 0; i < groups[k1].length; i++) {
+                var r1 = groups[k1][i];
+                var sr1 = JSON.stringify(r1);
+                for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
+                    var k2 = _c[_b];
+                    if (k1 === k2) {
+                        continue;
                     }
-                    catch (e_7_1) { e_7 = { error: e_7_1 }; }
-                    finally {
-                        try {
-                            if (_f && !_f.done && (_b = _e["return"])) _b.call(_e);
+                    for (var j = 0; j < groups[k2].length; j++) {
+                        var r2 = groups[k2][j];
+                        var sr2 = JSON.stringify(r2);
+                        // Only add these if we have not already added them.
+                        if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+                            // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
+                            //			    console.log("checking " + JSON.stringify(sr1) + " and " + JSON.stringify(sr2));
+                            if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
+                                already_proposed_pair[sr1 + sr2] = true;
+                                already_proposed_pair[sr2 + sr1] = true;
+                                ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
+                                var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
+                                // was Math.abs(parseFloat(k2) - parseFloat(k1))
+                                var new_fix = [metric, r1, r2];
+                                //				console.log("pushing new fix = " + JSON.stringify(new_fix));
+                                proposed_fixes.push(new_fix);
+                            }
                         }
-                        finally { if (e_7) throw e_7.error; }
                     }
                 }
             }
-        }
-        catch (e_6_1) { e_6 = { error: e_6_1 }; }
-        finally {
-            try {
-                if (_d && !_d.done && (_a = _c["return"])) _a.call(_c);
-            }
-            finally { if (e_6) throw e_6.error; }
         }
         // First attribute is the norm of the vectors. Differencing
         // corresponds to earth-mover distance.  Other attributes are
@@ -418,20 +325,10 @@ var Colorize = /** @class */ (function () {
         return proposed_fixes;
     };
     Colorize.merge_groups = function (groups) {
-        var e_8, _a;
-        try {
-            for (var _b = __values(Object.keys(groups)), _c = _b.next(); !_c.done; _c = _b.next()) {
-                var k = _c.value;
-                var g = groups[k].slice();
-                groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
-            }
-        }
-        catch (e_8_1) { e_8 = { error: e_8_1 }; }
-        finally {
-            try {
-                if (_c && !_c.done && (_a = _b["return"])) _a.call(_b);
-            }
-            finally { if (e_8) throw e_8.error; }
+        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
+            var k = _a[_i];
+            var g = groups[k].slice();
+            groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
         }
         return groups;
     };

@@ -1,15 +1,5 @@
 "use strict";
 // excel-utils
-var __values = (this && this.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
-    if (m) return m.call(o);
-    return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-};
 exports.__esModule = true;
 var sjcl = require("sjcl");
 var rectangleutils_js_1 = require("./rectangleutils.js");
@@ -44,25 +34,15 @@ var ExcelUtils = /** @class */ (function () {
     };
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     ExcelUtils.column_name_to_index = function (name) {
-        var e_1, _a;
         if (name.length === 1) { // optimizing for the overwhelmingly common case
             return name[0].charCodeAt(0) - 'A'.charCodeAt(0) + 1;
         }
         var value = 0;
         var split_name = name.split('');
-        try {
-            for (var split_name_1 = __values(split_name), split_name_1_1 = split_name_1.next(); !split_name_1_1.done; split_name_1_1 = split_name_1.next()) {
-                var i = split_name_1_1.value;
-                value *= 26;
-                value += (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (split_name_1_1 && !split_name_1_1.done && (_a = split_name_1["return"])) _a.call(split_name_1);
-            }
-            finally { if (e_1) throw e_1.error; }
+        for (var _i = 0, split_name_1 = split_name; _i < split_name_1.length; _i++) {
+            var i = split_name_1[_i];
+            value *= 26;
+            value += (i.charCodeAt(0) - 'A'.charCodeAt(0)) + 1;
         }
         return value;
     };
@@ -245,7 +225,6 @@ var ExcelUtils = /** @class */ (function () {
         return deps;
     };
     ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {
-        var e_2, _a;
         origin_row = origin_row;
         origin_col = origin_col;
         var refs = {};
@@ -266,60 +245,51 @@ var ExcelUtils = /** @class */ (function () {
                 if (cell[0] === '=') { // It's a formula.
                     //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
                     var direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
-                    try {
-                        //		    console.log("direct_refs = " + direct_refs);
-                        for (var direct_refs_1 = __values(direct_refs), direct_refs_1_1 = direct_refs_1.next(); !direct_refs_1_1.done; direct_refs_1_1 = direct_refs_1.next()) {
-                            var dep = direct_refs_1_1.value;
-                            if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
-                                // Not a real reference. Skip.
-                            }
-                            else {
-                                // Check to see if this is data or a formula.
-                                // If it's not a formula, add it.
-                                var rowIndex = dep[1] - 1;
-                                var colIndex = dep[0] - 1;
-                                /*
-                                console.log("cell = " + cell);
-                                console.log("dep[0] = " + dep[0]);
-                                console.log("dep[1] = " + dep[1]);
-                                console.log("(# rows = " + formulas.length + ", # cols = " + row.length + ")");
-                                console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
-                                console.log("rowIndex = " + rowIndex);
-                                console.log("colIndex = " + colIndex);  */
-                                var outsideFormulaRange = ((rowIndex >= formulas.length)
-                                    || (colIndex >= formulas[0].length)
-                                    || (rowIndex < 0)
-                                    || (colIndex < 0));
-                                // DISABLE FOR NOW (Discard references to cells outside the formula range.)
-                                if (true) {
-                                    var addReference = false;
-                                    if (outsideFormulaRange) {
+                    //		    console.log("direct_refs = " + direct_refs);
+                    for (var _i = 0, direct_refs_1 = direct_refs; _i < direct_refs_1.length; _i++) {
+                        var dep = direct_refs_1[_i];
+                        if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
+                            // Not a real reference. Skip.
+                        }
+                        else {
+                            // Check to see if this is data or a formula.
+                            // If it's not a formula, add it.
+                            var rowIndex = dep[1] - 1;
+                            var colIndex = dep[0] - 1;
+                            /*
+                            console.log("cell = " + cell);
+                            console.log("dep[0] = " + dep[0]);
+                            console.log("dep[1] = " + dep[1]);
+                            console.log("(# rows = " + formulas.length + ", # cols = " + row.length + ")");
+                            console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
+                            console.log("rowIndex = " + rowIndex);
+                            console.log("colIndex = " + colIndex);  */
+                            var outsideFormulaRange = ((rowIndex >= formulas.length)
+                                || (colIndex >= formulas[0].length)
+                                || (rowIndex < 0)
+                                || (colIndex < 0));
+                            // DISABLE FOR NOW (Discard references to cells outside the formula range.)
+                            if (true) {
+                                var addReference = false;
+                                if (outsideFormulaRange) {
+                                    addReference = true;
+                                }
+                                else {
+                                    // Only include non-formulas (if they are in the range).
+                                    var referentCell = formulas[rowIndex][colIndex];
+                                    if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
                                         addReference = true;
                                     }
-                                    else {
-                                        // Only include non-formulas (if they are in the range).
-                                        var referentCell = formulas[rowIndex][colIndex];
-                                        if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
-                                            addReference = true;
-                                        }
-                                    }
-                                    if (addReference) {
-                                        dep[0] += origin_col;
-                                        dep[1] += origin_row;
-                                        var key = dep.join(',');
-                                        //				    console.log("added reference to " + key);
-                                        refs[key] = true;
-                                    }
+                                }
+                                if (addReference) {
+                                    dep[0] += origin_col;
+                                    dep[1] += origin_row;
+                                    var key = dep.join(',');
+                                    //				    console.log("added reference to " + key);
+                                    refs[key] = true;
                                 }
                             }
                         }
-                    }
-                    catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                    finally {
-                        try {
-                            if (direct_refs_1_1 && !direct_refs_1_1.done && (_a = direct_refs_1["return"])) _a.call(direct_refs_1);
-                        }
-                        finally { if (e_2) throw e_2.error; }
                     }
                 }
             }

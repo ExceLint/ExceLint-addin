@@ -341,7 +341,7 @@ export class Colorize {
 				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
 				// was Math.abs(parseFloat(k2) - parseFloat(k1))
 				const new_fix = [metric, r1, r2];
-				console.log("pushing new fix = " + JSON.stringify(new_fix));
+//				console.log("pushing new fix = " + JSON.stringify(new_fix));
 				proposed_fixes.push(new_fix);
 			    }
 			}
