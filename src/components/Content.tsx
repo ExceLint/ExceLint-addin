@@ -69,7 +69,8 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		} else {
 		    rangeDisplay = <td>{col0}{row0}:{col1}{row1}</td>;
 		}
-		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
+		const scoreStr = Math.round(score).toString() + "% suspicious";
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<span title={scoreStr}><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></span></tr>);
 	    }
 	}
 	if (counter > 0) {
