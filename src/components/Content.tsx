@@ -3,8 +3,6 @@ import { Button, ButtonType } from 'office-ui-fabric-react';
 import { ExcelUtils } from './excelutils';
 import { Colorize } from './colorize';
 
-const reportingThreshold = 10; //  percent of bar
-
 // Checkbox
 
 export interface ContentProps {
@@ -58,7 +56,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		}
 //		score = barWidth - score; // Invert the ranking.
 		// Skip really low scores.
-		if (score < reportingThreshold) {
+		if (score < Colorize.reportingThreshold) {
 		    continue;
 		}
 		counter += 1;
@@ -70,7 +68,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		    rangeDisplay = <td>{col0}{row0}:{col1}{row1}</td>;
 		}
 		const scoreStr = Math.round(score).toString() + "% suspicious";
-		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<span title={scoreStr}><td style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></span></tr>);
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
 	    }
 	}
 	if (counter > 0) {

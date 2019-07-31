@@ -10,6 +10,7 @@ type excelintVector = [number, number, number];
 
 export class Colorize {
 
+    public static reportingThreshold = 33; //  percent of bar
 
     // Color-blind friendly color palette.
     public static palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
@@ -50,7 +51,7 @@ export class Colorize {
 	const reducer = (acc:[number,number,number],curr:[number,number,number]) : [number,number,number] => [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]];
 	let output: Array<[[number, number,number], string]> = [];
 
-	console.log("process_formulas: " + JSON.stringify(formulas));
+//	console.log("process_formulas: " + JSON.stringify(formulas));
 	
 	// Compute the vectors for all of the formulas.
 	for (let i = 0; i < formulas.length; i++) {
@@ -272,6 +273,9 @@ export class Colorize {
 	    let merged = {};
 	    for (let k in fixes) {
 		const original_score = fixes[k][0];
+		if (-original_score < (Colorize.reportingThreshold / 100)) {
+		    continue;
+		}
 		const this_front_str = JSON.stringify(fixes[k][1]);
 		const this_back_str = JSON.stringify(fixes[k][2]);
 		if (!(this_front_str in back) && !(this_back_str in front)) {
@@ -339,9 +343,11 @@ export class Colorize {
 				already_proposed_pair[sr2 + sr1] = true;
 				///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
 				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
-				// was Math.abs(parseFloat(k2) - parseFloat(k1))
+				// If it's below the threshold, don't include as a proposed fix.
+				if (-metric < (Colorize.reportingThreshold / 100)) {
+				    continue;
+				}
 				const new_fix = [metric, r1, r2];
-//				console.log("pushing new fix = " + JSON.stringify(new_fix));
 				proposed_fixes.push(new_fix);
 			    }
 			}
@@ -354,7 +360,7 @@ export class Colorize {
 	// the rectangles themselves. Sort by biggest entropy
 	// reduction first.
 
-	console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
+//	console.log("proposed fixes was = " + JSON.stringify(proposed_fixes));
 
 	// FIXME currently disabled.
 // 	proposed_fixes = this.fix_proposed_fixes(proposed_fixes);

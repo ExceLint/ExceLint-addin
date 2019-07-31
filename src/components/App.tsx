@@ -92,9 +92,21 @@ export default class App extends React.Component<AppProps, AppState> {
 //	    console.log("fix = " + JSON.stringify(fixes[k]));
 	    
 	    let score = fixes[k][0];
+
+	    // Skip fixes whose score is already below the threshold.
+	    if (-score < (Colorize.reportingThreshold / 100)) {
+		continue;
+	    }
+	    
 	    // Sort the fixes.
-	    const first  = (fixes[k][1] < fixes[k][2]) ? fixes[k][1] : fixes[k][2];
-	    const second = (fixes[k][1] < fixes[k][2]) ? fixes[k][2] : fixes[k][1];
+	    // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
+	    // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
+	    // (which is 1 more than Excel needs right now).
+	    const firstPadded  = fixes[k][1].map((a) => a.toString().padStart(10,'0'));
+	    const secondPadded = fixes[k][2].map((a) => a.toString().padStart(10,'0'));
+	    
+	    const first  = (firstPadded < secondPadded) ? fixes[k][1] : fixes[k][2];
+	    const second = (firstPadded < secondPadded) ? fixes[k][2] : fixes[k][1];
 
 	    const [[ax1, ay1], [ax2, ay2]] = first;
 	    const [[bx1, by1], [bx2, by2]] = second;
@@ -108,10 +120,11 @@ export default class App extends React.Component<AppProps, AppState> {
 //	    console.log("width = " + propertiesToGet.value[0].length);
 	    let sameFormats = true;
 	    const firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
-//	    console.log(firstFormat);
+	    console.log(firstFormat);
+	    console.log(JSON.stringify(fixes));
 	    for (let i = row0; i <= row1; i++) {
 		for (let j = col0; j <= col1; j++) {
-		    //		    console.log("checking " + i + ", " + j);
+		    		    console.log("checking " + i + ", " + j);
 		    const str = JSON.stringify(propertiesToGet.value[i][j]);
 //		    console.log(str);
 		    if (str !== firstFormat) {
@@ -122,9 +135,9 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
 
-//	    console.log("sameFormats? " + sameFormats);
+	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
-		score = score * 0.1; // These should be parameterized; plus we could have more nuance...
+		score = score * 0.5; // This should be parameterized; plus we could have more nuance...
 	    }
 	    this.proposed_fixes.push([score, first, second]);
 	}
@@ -315,7 +328,6 @@ export default class App extends React.Component<AppProps, AppState> {
 		app.load(['calculationMode']);
 		await context.sync();
 		t.split("got calc mode");
-		
 		
 		let originalCalculationMode = app.calculationMode;
 		app.calculationMode = 'Manual';
@@ -551,6 +563,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Adjust the fix scores (downward) to take into account formatting in the original sheet.
 		await this.adjust_fix_scores(context, backupSheet, vec[0] - 1, vec[1] - 1);
+		this.proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
 		
 		t.split("generated fixes");
 		this.total_fixes = formulas.length;
