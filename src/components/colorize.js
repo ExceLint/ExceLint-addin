@@ -282,14 +282,24 @@ var Colorize = /** @class */ (function () {
         var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
         var already_proposed_pair = {};
-        for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
-            var k1 = _a[_i];
+        if (false) {
+            var count = 0;
+            for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
+                var k1 = _a[_i];
+                for (var i = 0; i < groups[k1].length; i++) {
+                    count++;
+                }
+            }
+            console.log("generate_proposed_fixes: total to process = " + count);
+        }
+        for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
+            var k1 = _c[_b];
             // Look for possible fixes in OTHER groups.
             for (var i = 0; i < groups[k1].length; i++) {
                 var r1 = groups[k1][i];
                 var sr1 = JSON.stringify(r1);
-                for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
-                    var k2 = _c[_b];
+                for (var _d = 0, _e = Object.keys(groups); _d < _e.length; _d++) {
+                    var k2 = _e[_d];
                     if (k1 === k2) {
                         continue;
                     }

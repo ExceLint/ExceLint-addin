@@ -321,6 +321,17 @@ export class Colorize {
 	let t = new Timer("generate_proposed_fixes");
 	let proposed_fixes = [];
 	let already_proposed_pair = {};
+
+	if (false)
+	{
+	    let count = 0;
+	    for (let k1 of Object.keys(groups)) {
+		for (let i = 0; i < groups[k1].length; i++) {
+		    count++;
+		}
+	    }
+	    console.log("generate_proposed_fixes: total to process = " + count);
+	}
 	
 	for (let k1 of Object.keys(groups)) {
 	    // Look for possible fixes in OTHER groups.

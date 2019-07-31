@@ -68,7 +68,11 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		    rangeDisplay = <td>{col0}{row0}:{col1}{row1}</td>;
 		}
 		const scoreStr = Math.round(score).toString() + "% suspicious";
-		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'red', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
+		let barColor = 'red';
+		if (Math.round(score) < 50) {
+		    barColor = 'yellow';
+		}
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: barColor, display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'pink', display:'inline-block'}}>&nbsp;</td></tr>);
 	    }
 	}
 	if (counter > 0) {

@@ -120,11 +120,11 @@ export default class App extends React.Component<AppProps, AppState> {
 //	    console.log("width = " + propertiesToGet.value[0].length);
 	    let sameFormats = true;
 	    const firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
-	    console.log(firstFormat);
-	    console.log(JSON.stringify(fixes));
+//	    console.log(firstFormat);
+//	    console.log(JSON.stringify(fixes));
 	    for (let i = row0; i <= row1; i++) {
 		for (let j = col0; j <= col1; j++) {
-		    		    console.log("checking " + i + ", " + j);
+//		    		    console.log("checking " + i + ", " + j);
 		    const str = JSON.stringify(propertiesToGet.value[i][j]);
 //		    console.log(str);
 		    if (str !== firstFormat) {
@@ -135,7 +135,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
 
-	    console.log("sameFormats? " + sameFormats);
+//	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
 		score = score * 0.5; // This should be parameterized; plus we could have more nuance...
 	    }
