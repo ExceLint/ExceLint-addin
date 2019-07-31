@@ -90,12 +90,13 @@ export default class App extends React.Component<AppProps, AppState> {
 	    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
 	    
 	    // Convert to Excel column-row notation.
-//	    console.log("fix = " + JSON.stringify(fixes[k]));
+	    console.log("fix = " + JSON.stringify(fixes[k]));
 	    
 	    let score = fixes[k][0];
-	    const first = fixes[k][1];
-	    const second = fixes[k][2];
-	    
+	    // Sort the fixes.
+	    const first  = (fixes[k][1] < fixes[k][2]) ? fixes[k][1] : fixes[k][2];
+	    const second = (fixes[k][1] < fixes[k][2]) ? fixes[k][2] : fixes[k][1];
+
 	    const [[ax1, ay1], [ax2, ay2]] = first;
 	    const [[bx1, by1], [bx2, by2]] = second;
 	    
@@ -111,9 +112,10 @@ export default class App extends React.Component<AppProps, AppState> {
 	    console.log(firstFormat);
 	    for (let i = row0; i <= row1; i++) {
 		for (let j = col0; j <= col1; j++) {
-//		    console.log("checking " + i + ", " + j);
-		    console.log(propertiesToGet.value[i][j]);
-		    if (JSON.stringify(propertiesToGet.value[i][j]) !== firstFormat) {
+		    //		    console.log("checking " + i + ", " + j);
+		    const str = JSON.stringify(propertiesToGet.value[i][j]);
+		    console.log(str);
+		    if (str !== firstFormat) {
 			sameFormats = false;
 			break;
 		    }
@@ -121,9 +123,9 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
 
-//	    console.log("sameFormats? " + sameFormats);
+	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
-		score = score * 0.2;
+		score = score * 0.5;
 	    }
 	    if (true) { // sameFillColor && sameFormats && sameFonts && sameBorders) {
 		// Add it to the proposed fixes list.
