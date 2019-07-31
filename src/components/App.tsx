@@ -82,15 +82,14 @@ export default class App extends React.Component<AppProps, AppState> {
 	// Sync to get the data from the workbook.
 	await context.sync();
 
-	console.log(JSON.stringify(propertiesToGet.value));
+//	console.log(JSON.stringify(propertiesToGet.value));
 	
 	for (let k in fixes) {
 	    // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
 	    // entropy, and two ranges:
 	    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
 	    
-	    // Convert to Excel column-row notation.
-	    console.log("fix = " + JSON.stringify(fixes[k]));
+//	    console.log("fix = " + JSON.stringify(fixes[k]));
 	    
 	    let score = fixes[k][0];
 	    // Sort the fixes.
@@ -109,12 +108,12 @@ export default class App extends React.Component<AppProps, AppState> {
 //	    console.log("width = " + propertiesToGet.value[0].length);
 	    let sameFormats = true;
 	    const firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
-	    console.log(firstFormat);
+//	    console.log(firstFormat);
 	    for (let i = row0; i <= row1; i++) {
 		for (let j = col0; j <= col1; j++) {
 		    //		    console.log("checking " + i + ", " + j);
 		    const str = JSON.stringify(propertiesToGet.value[i][j]);
-		    console.log(str);
+//		    console.log(str);
 		    if (str !== firstFormat) {
 			sameFormats = false;
 			break;
@@ -123,17 +122,11 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
 
-	    console.log("sameFormats? " + sameFormats);
+//	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
-		score = score * 0.5;
+		score = score * 0.2; // These should be parameterized; plus we could have more nuance...
 	    }
-	    if (true) { // sameFillColor && sameFormats && sameFonts && sameBorders) {
-		// Add it to the proposed fixes list.
-		//			console.log("PROPOSED FIX = " + JSON.stringify(fixes[k]));
-		this.proposed_fixes.push([score, first, second]);
-	    } else {
-//		console.log("trimmed a proposed fix (" + rangeStr + ").");
-	    }
+	    this.proposed_fixes.push([score, first, second]);
 	}
     }
 
@@ -327,7 +320,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		let originalCalculationMode = app.calculationMode;
 		app.calculationMode = 'Manual';
 
-		let usedRange = currentWorksheet.getUsedRange(false) as any; // FIXME was false! testing for perf
+		let usedRange = currentWorksheet.getUsedRange(false) as any;
 		usedRange.load(['address','values']);
 		await context.sync();
 		t.split("got address");
