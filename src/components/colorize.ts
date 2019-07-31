@@ -211,7 +211,7 @@ export class Colorize {
 			     merge_with_norm: number,
 			     merge_with: [excelintVector, excelintVector]): number
     {
-	console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
+//	console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
 	const [t1, t2] = target;
 	const [m1, m2] = merge_with;
 	const n_target = RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
@@ -278,14 +278,14 @@ export class Colorize {
 		    // No match. Just merge them.
 		    new_fixes.push(fixes[k]);
 		} else {
-		    console.log("**** original score = " + original_score);
+//		    console.log("**** original score = " + original_score);
 		    if ((!merged[this_front_str]) && (this_front_str in back)) {
-			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
+//			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
 			// FIXME. This calculation may not make sense.			
 			let newscore = -original_score * JSON.parse(back[this_front_str][0]);
 //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
 			const new_fix = [newscore, fixes[k][1], back[this_front_str][1]];
-			console.log("pushing " + JSON.stringify(new_fix));
+//			console.log("pushing " + JSON.stringify(new_fix));
 			new_fixes.push(new_fix);
 			merged[this_front_str] = true;
 			// FIXME? testing below. The idea is to not keep merging things (for now).
@@ -294,12 +294,12 @@ export class Colorize {
 		    }
 		    if ((!merged[this_back_str]) && (this_back_str in front)) {
 			// this_back_str in front
-			console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
+//			console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
 			// FIXME. This calculation may not make sense.
 			const newscore = -original_score * JSON.parse(front[this_back_str][0]);
 			//			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
 			const new_fix = [newscore, fixes[k][1], front[this_back_str][2]];
-			console.log("pushing " + JSON.stringify(new_fix));
+//			console.log("pushing " + JSON.stringify(new_fix));
 			new_fixes.push(new_fix);
 			merged[this_back_str] = true;
 			// FIXME? testing below.

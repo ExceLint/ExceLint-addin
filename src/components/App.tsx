@@ -124,7 +124,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 //	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
-		score = score * 0.2; // These should be parameterized; plus we could have more nuance...
+		score = score * 0.1; // These should be parameterized; plus we could have more nuance...
 	    }
 	    this.proposed_fixes.push([score, first, second]);
 	}
@@ -172,7 +172,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
 		    } else {
-			console.log("setting " + rangeStr + " to " + color);
+			// console.log("setting " + rangeStr + " to " + color);
 			range.format.fill.color = color;
 		    }
 		    otherfn();
@@ -475,20 +475,20 @@ export default class App extends React.Component<AppProps, AppState> {
 		await setTimeout(() => {}, 0);
 		const referenced_data = Colorize.color_all_data(refs);
 		const data_values = Colorize.process_values(usedRange.values, vec[0] - 1, vec[1] - 1);
-		console.log("refs = " + JSON.stringify(refs));
-		console.log("referenced_data = " + JSON.stringify(referenced_data));
+//		console.log("refs = " + JSON.stringify(refs));
+//		console.log("referenced_data = " + JSON.stringify(referenced_data));
 		t.split("processed data");
 		await setTimeout(() => {}, 0);
 
-		console.log("referenced_data = " + JSON.stringify(referenced_data));
+//		console.log("referenced_data = " + JSON.stringify(referenced_data));
 
 		const grouped_data = Colorize.identify_groups(referenced_data);
 		t.split("identified groups");
-		console.log("identified grouped_data: " + JSON.stringify(grouped_data));
+//		console.log("identified grouped_data: " + JSON.stringify(grouped_data));
 		const grouped_formulas = Colorize.identify_groups(processed_formulas);
 		//		const grouped_formulas = Colorize.identify_groups(processed_formulas.concat(data_values)); // .concat(referenced_data));
-		console.log("processed formulas = " + JSON.stringify(processed_formulas));
-		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+//		console.log("processed formulas = " + JSON.stringify(processed_formulas));
+//		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
 		t.split("grouped formulas");
 		await setTimeout(() => {}, 0);
 		
@@ -549,7 +549,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
-		// FIXME - this seems maybe super slow!
+		// Adjust the fix scores (downward) to take into account formatting in the original sheet.
 		await this.adjust_fix_scores(context, backupSheet, vec[0] - 1, vec[1] - 1);
 		
 		t.split("generated fixes");
@@ -598,7 +598,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	if (proposed_fixes.length > 0) {
 	    let [ col0, row0, col1, row1 ] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
 	    let rangeStr = col0 + row0 + ":" + col1 + row1;
-	    console.log("getRange: " + rangeStr);
+//	    console.log("getRange: " + rangeStr);
 	    let range = currentWorksheet.getRange(rangeStr);
 	    return range;
 	} else {

@@ -180,7 +180,7 @@ var Colorize = /** @class */ (function () {
     };
     // Compute the normalized distance from merging two ranges.
     Colorize.fix_metric = function (target_norm, target, merge_with_norm, merge_with) {
-        console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
+        //	console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
         var t1 = target[0], t2 = target[1];
         var m1 = merge_with[0], m2 = merge_with[1];
         var n_target = rectangleutils_1.RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
@@ -243,14 +243,14 @@ var Colorize = /** @class */ (function () {
                 new_fixes.push(fixes[k]);
             }
             else {
-                console.log("**** original score = " + original_score);
+                //		    console.log("**** original score = " + original_score);
                 if ((!merged[this_front_str]) && (this_front_str in back)) {
-                    console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
+                    //			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
                     // FIXME. This calculation may not make sense.			
                     var newscore = -original_score * JSON.parse(back[this_front_str][0]);
                     //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
                     var new_fix = [newscore, fixes[k][1], back[this_front_str][1]];
-                    console.log("pushing " + JSON.stringify(new_fix));
+                    //			console.log("pushing " + JSON.stringify(new_fix));
                     new_fixes.push(new_fix);
                     merged[this_front_str] = true;
                     // FIXME? testing below. The idea is to not keep merging things (for now).
@@ -259,12 +259,12 @@ var Colorize = /** @class */ (function () {
                 }
                 if ((!merged[this_back_str]) && (this_back_str in front)) {
                     // this_back_str in front
-                    console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
+                    //			console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
                     // FIXME. This calculation may not make sense.
                     var newscore = -original_score * JSON.parse(front[this_back_str][0]);
                     //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
                     var new_fix = [newscore, fixes[k][1], front[this_back_str][2]];
-                    console.log("pushing " + JSON.stringify(new_fix));
+                    //			console.log("pushing " + JSON.stringify(new_fix));
                     new_fixes.push(new_fix);
                     merged[this_back_str] = true;
                     // FIXME? testing below.
