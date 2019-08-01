@@ -72,7 +72,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		if (Math.round(score) < 50) {
 		    barColor = 'yellow';
 		}
-		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: barColor, display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'gray', display:'inline-block'}}>&nbsp;</td></tr>);
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: barColor, display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
 	    }
 	}
 	if (counter > 0) {
