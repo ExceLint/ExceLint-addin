@@ -48,7 +48,9 @@ export default class App extends React.Component<AppProps, AppState> {
 					       numFixes : this.proposed_fixes_length });
     }
 
+    // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
     adjust_fix_scores = async(context, backupSheet, origin_col, origin_row) => {
+	let t = new Timer("adjust_fix_scores");
 	const fixes = this.proposed_fixes;
 	this.proposed_fixes = [];
 
@@ -81,7 +83,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	
 	// Sync to get the data from the workbook.
 	await context.sync();
-
+	t.split("got formatting info.");
+	
 //	console.log(JSON.stringify(propertiesToGet.value));
 	
 	for (let k in fixes) {
@@ -141,6 +144,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 	    this.proposed_fixes.push([score, first, second]);
 	}
+	t.split("done.");
     }
 
 
