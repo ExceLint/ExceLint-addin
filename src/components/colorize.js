@@ -282,7 +282,7 @@ var Colorize = /** @class */ (function () {
         var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
         var already_proposed_pair = {};
-        if (false) {
+        if (true) {
             var count = 0;
             for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
                 var k1 = _a[_i];

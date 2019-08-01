@@ -322,7 +322,7 @@ export class Colorize {
 	let proposed_fixes = [];
 	let already_proposed_pair = {};
 
-	if (false)
+	if (true)
 	{
 	    let count = 0;
 	    for (let k1 of Object.keys(groups)) {
