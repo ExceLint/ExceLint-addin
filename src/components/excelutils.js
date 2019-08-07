@@ -2,7 +2,7 @@
 // excel-utils
 exports.__esModule = true;
 var sjcl = require("sjcl");
-var rectangleutils_js_1 = require("./rectangleutils.js");
+var rectangleutils_1 = require("./rectangleutils");
 var ExcelUtils = /** @class */ (function () {
     function ExcelUtils() {
     }
@@ -19,7 +19,7 @@ var ExcelUtils = /** @class */ (function () {
         if (proposed_fixes.length > 0) {
             // console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
             // console.log("current fix = " + current_fix);
-            var r = rectangleutils_js_1.RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
+            var r = rectangleutils_1.RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
             // console.log("r = " + JSON.stringify(r));
             // convert to sheet notation
             var col0 = ExcelUtils.column_index_to_name(r[0][0]);
@@ -57,14 +57,24 @@ var ExcelUtils = /** @class */ (function () {
     };
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     ExcelUtils.cell_dependency = function (cell, origin_col, origin_row) {
+        //	console.log("cell_dependency: computing for " + cell + "(" + origin_col + ", " + origin_row + ")");
+        //	if (origin_col + origin_row === 0) {
+        //	    console.trace("WTF DUDE.");
+        //	}
+        var alwaysReturnAdjustedColRow = false;
         {
             var r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
                 //console.log('both_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
-                //console.log("parsed " + JSON.stringify([col, row]));
-                return [col, row, 0];
+                //		console.log("parsed " + JSON.stringify([col, row]));
+                if (alwaysReturnAdjustedColRow) {
+                    return [col - origin_col, row - origin_row, 0];
+                }
+                else {
+                    return [col, row, 0];
+                }
             }
         }
         {
@@ -74,7 +84,12 @@ var ExcelUtils = /** @class */ (function () {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
-                return [col, row - origin_row, 0];
+                if (alwaysReturnAdjustedColRow) {
+                    return [col, row, 0];
+                }
+                else {
+                    return [col, row - origin_row, 0];
+                }
             }
         }
         {
@@ -83,7 +98,12 @@ var ExcelUtils = /** @class */ (function () {
                 //console.log('row_absolute');
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
-                return [col - origin_col, row, 0];
+                if (alwaysReturnAdjustedColRow) {
+                    return [col, row, 0];
+                }
+                else {
+                    return [col - origin_col, row, 0];
+                }
             }
         }
         {
@@ -93,7 +113,12 @@ var ExcelUtils = /** @class */ (function () {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
                 //		console.log('both relative col: ' + col + ', row: ' + row);
-                return [col - origin_col, row - origin_row, 0];
+                if (alwaysReturnAdjustedColRow) {
+                    return [col, row, 0];
+                }
+                else {
+                    return [col - origin_col, row - origin_row, 0];
+                }
             }
         }
         // console.log("cell is "+cell);
@@ -225,8 +250,8 @@ var ExcelUtils = /** @class */ (function () {
         return deps;
     };
     ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {
-        origin_row = origin_row;
-        origin_col = origin_col;
+        //	origin_row = origin_row;
+        //	origin_col = origin_col;
         var refs = {};
         var counter = 0;
         //	let all_deps = {};
@@ -244,7 +269,7 @@ var ExcelUtils = /** @class */ (function () {
                 //		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
                 if (cell[0] === '=') { // It's a formula.
                     //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
-                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
+                    var direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
                     //		    console.log("direct_refs = " + direct_refs);
                     for (var _i = 0, direct_refs_1 = direct_refs; _i < direct_refs_1.length; _i++) {
                         var dep = direct_refs_1[_i];
@@ -282,8 +307,8 @@ var ExcelUtils = /** @class */ (function () {
                                     }
                                 }
                                 if (addReference) {
-                                    dep[0] += origin_col;
-                                    dep[1] += origin_row;
+                                    //				    dep[0] += origin_col;
+                                    //				    dep[1] += origin_row;
                                     var key = dep.join(',');
                                     //				    console.log("added reference to " + key);
                                     refs[key] = true;

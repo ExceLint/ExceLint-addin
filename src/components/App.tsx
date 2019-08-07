@@ -93,11 +93,12 @@ export default class App extends React.Component<AppProps, AppState> {
 	    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
 	    
 //	    console.log("fix = " + JSON.stringify(fixes[k]));
-	    
+
 	    let score = fixes[k][0];
 
 	    // Skip fixes whose score is already below the threshold.
 	    if (-score < (Colorize.reportingThreshold / 100)) {
+//		console.log("too low: " + (-score));
 		continue;
 	    }
 	    
@@ -341,7 +342,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		t.split("got address");
 		
-		console.log(JSON.stringify(usedRange.values[0][0]));
+//		console.log(JSON.stringify(usedRange.values[0][0]));
 		let displayComments = false;
 
 		// Use the upper-left hand corner of the used range as
@@ -413,10 +414,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		app.suspendApiCalculationUntilNextSync();
 
 		// Compute the number of cells in the range "usedRange".
-		const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
-		console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
-		const [ul1, ul2, ul3] = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
-		const [lr1, lr2, lr3] = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+		// const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
+		// console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
+		// const [ul1, ul2, ul3] = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+		// const [lr1, lr2, lr3] = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
 		// let upperLeftCorner : [number, number] = [ul1, ul2];
 		// let lowerRightCorner : [number, number] = [lr1, lr2];
 		// let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
@@ -472,13 +473,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		//		t.split("set numbers to yellow, etc.");
 
 		const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-		const vec = ExcelUtils.cell_dependency(startCell, 0, 0);
- 		// console.log("setColor: cell dependency = " + vec);
+		const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
+ 		console.log("setColor: cell dependency = " + origin);
 		t.split("computed cell dependency for start");
 
 		const formulas = usedRange.formulas;
 		//		console.log("formulas = " + JSON.stringify(formulas));
-		let processed_formulas : any = Colorize.process_formulas(formulas, vec[0] - 1, vec[1] - 1);
+		let processed_formulas : any = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
 		
 		//		await setTimeout(() => {}, 0);
 		t.split("processed formulas");
@@ -486,11 +487,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		//		app.suspendScreenUpdatingUntilNextSync();
 		
 		//		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
-		const refs = ExcelUtils.generate_all_references(formulas, vec[0] - 1, vec[1] - 1);
+		const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
 		t.split("generated all references");
 		await setTimeout(() => {}, 0);
 		const referenced_data = Colorize.color_all_data(refs);
-		const data_values = Colorize.process_values(usedRange.values, vec[0] - 1, vec[1] - 1);
+		const data_values = Colorize.process_values(usedRange.values, origin[0] - 1, origin[1] - 1);
 //		console.log("refs = " + JSON.stringify(refs));
 //		console.log("referenced_data = " + JSON.stringify(referenced_data));
 		t.split("processed data");
@@ -502,9 +503,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("identified groups");
 //		console.log("identified grouped_data: " + JSON.stringify(grouped_data));
 		const grouped_formulas = Colorize.identify_groups(processed_formulas);
+		
 		//		const grouped_formulas = Colorize.identify_groups(processed_formulas.concat(data_values)); // .concat(referenced_data));
 //		console.log("processed formulas = " + JSON.stringify(processed_formulas));
-//		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+//		console.log("grouped formulas = " + JSON.stringify(grouped_formulas, null, 2));
 		t.split("grouped formulas");
 		await setTimeout(() => {}, 0);
 		
@@ -529,8 +531,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		rangeFill.clear();
 		
 		//		t.split("processed data");
-		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
-
+  		//this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
+		
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
 		    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
@@ -545,6 +547,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		// Just color referenced data gray.
 		this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{});
+
+		// And color the formulas.
+		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
 
 		// Color referenced data based on its formula's color.
 		// DISABLED.
@@ -566,7 +571,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
 		// Adjust the fix scores (downward) to take into account formatting in the original sheet.
-		await this.adjust_fix_scores(context, backupSheet, vec[0] - 1, vec[1] - 1);
+		await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
 		this.proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
 		
 		t.split("generated fixes");

@@ -4,6 +4,7 @@ var excelutils_1 = require("./excelutils");
 var rectangleutils_1 = require("./rectangleutils");
 var timer_1 = require("./timer");
 var jsonclone_1 = require("./jsonclone");
+var groupme_1 = require("./groupme");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
@@ -278,41 +279,62 @@ var Colorize = /** @class */ (function () {
         return new_fixes;
     };
     // Generate an array of proposed fixes (a score and the two ranges to merge).
-    Colorize.generate_proposed_fixes = function (groups) {
+    Colorize.old_generate_proposed_fixes = function (groups) {
         var t = new timer_1.Timer("generate_proposed_fixes");
         var proposed_fixes = [];
         var already_proposed_pair = {};
+        var s1 = {}; // [];
+        var s2 = {}; // [];
         if (true) {
             var count = 0;
             for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
                 var k1 = _a[_i];
+                s1[k1] = Array(groups[k1].length);
+                s2[k1] = Array(groups[k1].length);
                 for (var i = 0; i < groups[k1].length; i++) {
-                    count++;
+                    var r1 = groups[k1][i];
+                    var sr1 = JSON.stringify(r1);
+                    s1[k1][i] = Array(Object.keys(groups).length);
+                    s2[k1][i] = Array(Object.keys(groups).length);
+                    for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
+                        var k2 = _c[_b];
+                        if (k1 === k2) {
+                            continue;
+                        }
+                        for (var j = 0; j < groups[k2].length; j++) {
+                            var r2 = groups[k2][j];
+                            var sr2 = JSON.stringify(r2);
+                            s1[k1][i][j] = sr1;
+                            s2[k1][i][j] = sr2;
+                            count++;
+                        }
+                    }
                 }
             }
             console.log("generate_proposed_fixes: total to process = " + count);
         }
-        for (var _b = 0, _c = Object.keys(groups); _b < _c.length; _b++) {
-            var k1 = _c[_b];
+        for (var _d = 0, _e = Object.keys(groups); _d < _e.length; _d++) {
+            var k1 = _e[_d];
             // Look for possible fixes in OTHER groups.
             for (var i = 0; i < groups[k1].length; i++) {
                 var r1 = groups[k1][i];
-                var sr1 = JSON.stringify(r1);
-                for (var _d = 0, _e = Object.keys(groups); _d < _e.length; _d++) {
-                    var k2 = _e[_d];
+                //		const sr1 = JSON.stringify(r1);
+                for (var _f = 0, _g = Object.keys(groups); _f < _g.length; _f++) {
+                    var k2 = _g[_f];
                     if (k1 === k2) {
                         continue;
                     }
                     for (var j = 0; j < groups[k2].length; j++) {
                         var r2 = groups[k2][j];
-                        var sr2 = JSON.stringify(r2);
+                        //			const sr2 = JSON.stringify(r2);
                         // Only add these if we have not already added them.
-                        if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+                        if (!(s1[k1][i][j] + s2[k1][i][j] in already_proposed_pair)
+                            && !(s2[k1][i][j] + s1[k1][i][j] in already_proposed_pair)) {
                             // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
                             //			    console.log("checking " + JSON.stringify(sr1) + " and " + JSON.stringify(sr2));
                             if (rectangleutils_1.RectangleUtils.is_mergeable(r1, r2) && (rectangleutils_1.RectangleUtils.area(r1) + rectangleutils_1.RectangleUtils.area(r2) > 2)) {
-                                already_proposed_pair[sr1 + sr2] = true;
-                                already_proposed_pair[sr2 + sr1] = true;
+                                already_proposed_pair[s1[k1][i][j] + s2[k1][i][j]] = true;
+                                already_proposed_pair[s2[k1][i][j] + s1[k1][i][j]] = true;
                                 ///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
                                 var metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
                                 // If it's below the threshold, don't include as a proposed fix.
@@ -338,6 +360,14 @@ var Colorize = /** @class */ (function () {
         //	console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
         t.split("done.");
         return proposed_fixes;
+    };
+    Colorize.generate_proposed_fixes = function (groups) {
+        var t = new timer_1.Timer("generate_proposed_fixes");
+        var proposed_fixes_new = groupme_1.find_all_proposed_fixes(groups);
+        proposed_fixes_new.sort(function (a, b) { return a[0] - b[0]; });
+        t.split("done.");
+        //	console.log(JSON.stringify(proposed_fixes_new));
+        return proposed_fixes_new;
     };
     Colorize.merge_groups = function (groups) {
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
@@ -385,7 +415,7 @@ var Colorize = /** @class */ (function () {
             //            console.log('group = ' + JSON.stringify(group));
             if (!merged_one) {
                 // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-                t.split("done, " + numIterations + " iterations.");
+                //		    t.split("done, " + numIterations + " iterations.");
                 return updated_rectangles;
             }
             group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
@@ -421,7 +451,7 @@ var Colorize = /** @class */ (function () {
         }
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     };
-    Colorize.reportingThreshold = 33; //  percent of bar
+    Colorize.reportingThreshold = 35; //  percent of bar
     // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     // True iff this class been initialized.

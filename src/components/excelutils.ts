@@ -1,7 +1,7 @@
 // excel-utils
 
 import * as sjcl from 'sjcl';
-import { RectangleUtils } from './rectangleutils.js';
+import { RectangleUtils } from './rectangleutils';
 
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
@@ -76,14 +76,23 @@ export class ExcelUtils {
 
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number): [number, number,number] {
+//	console.log("cell_dependency: computing for " + cell + "(" + origin_col + ", " + origin_row + ")");
+//	if (origin_col + origin_row === 0) {
+//	    console.trace("WTF DUDE.");
+//	}
+	const alwaysReturnAdjustedColRow = false;
         {
             let r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
                 //console.log('both_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
-		//console.log("parsed " + JSON.stringify([col, row]));
-                return [col, row, 0];
+//		console.log("parsed " + JSON.stringify([col, row]));
+		if (alwaysReturnAdjustedColRow) {
+		    return [col - origin_col, row - origin_row, 0];
+		} else {
+                    return [col, row, 0];
+		}
             }
 	}
 	
@@ -94,7 +103,11 @@ export class ExcelUtils {
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
                 //	    console.log('absolute col: ' + col + ', row: ' + row);
-                return [col, row - origin_row, 0];
+		if (alwaysReturnAdjustedColRow) {
+		    return [col, row, 0];
+		} else {
+                    return [col, row - origin_row, 0];
+		}
             }
         }
 
@@ -104,7 +117,11 @@ export class ExcelUtils {
                 //console.log('row_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
-                return [col - origin_col, row, 0];
+		if (alwaysReturnAdjustedColRow) {
+		    return [col, row, 0];
+		} else {
+                    return [col - origin_col, row, 0];
+		}
             }
         }
 
@@ -115,7 +132,11 @@ export class ExcelUtils {
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
 //		console.log('both relative col: ' + col + ', row: ' + row);
-                return [col - origin_col, row - origin_row, 0];
+		if (alwaysReturnAdjustedColRow) {
+		    return [col, row, 0];
+		} else {
+                    return [col - origin_col, row - origin_row, 0];
+		}
             }
         }
 
@@ -250,6 +271,7 @@ export class ExcelUtils {
     public static all_dependencies(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>) : Array<[number, number,number]> {
 	let deps = [];
 	// Discard references to cells outside the formula range.
+
 	if ((row >= formulas.length)
 	    || (col >= formulas[0].length)
 	    || (row < 0)
@@ -257,6 +279,7 @@ export class ExcelUtils {
 	{
 	    return [];
 	}
+
 	// Check if this cell is a formula.
 	const cell = formulas[row][col];
 //	console.log("cell[" + col + "][" + row + "] =" + cell);
@@ -269,8 +292,8 @@ export class ExcelUtils {
     }
     
     public static generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number, number]> } {
-	origin_row = origin_row;
-	origin_col = origin_col;
+//	origin_row = origin_row;
+//	origin_col = origin_col;
 	let refs = {};
 	let counter = 0;
 //	let all_deps = {};
@@ -289,7 +312,7 @@ export class ExcelUtils {
 //		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
 		if (cell[0] === '=') { // It's a formula.
 		    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
-		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
+		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
 //		    console.log("direct_refs = " + direct_refs);
 		    for (let dep of direct_refs) {
 			if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
@@ -324,8 +347,9 @@ export class ExcelUtils {
 				    }
 				}
 				if (addReference) {
-				    dep[0] += origin_col;
-				    dep[1] += origin_row;
+				    //				    dep[0] += origin_col;
+				    //				    dep[1] += origin_row;
+				    
 				    let key = dep.join(',');
 //				    console.log("added reference to " + key);
 				    refs[key] = true;

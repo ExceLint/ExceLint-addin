@@ -5,12 +5,13 @@ import { RectangleUtils } from './rectangleutils';
 import { ExcelUtilities } from '@microsoft/office-js-helpers';
 import { Timer } from './timer';
 import { JSONclone } from './jsonclone';
+import { find_all_proposed_fixes } from './groupme';
 
 type excelintVector = [number, number, number];
 
 export class Colorize {
 
-    public static reportingThreshold = 33; //  percent of bar
+    public static reportingThreshold = 35; //  percent of bar
 
     // Color-blind friendly color palette.
     public static palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
@@ -316,18 +317,38 @@ export class Colorize {
 	}
 
     // Generate an array of proposed fixes (a score and the two ranges to merge).
-    public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
+    public static old_generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
     Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
 	let t = new Timer("generate_proposed_fixes");
 	let proposed_fixes = [];
 	let already_proposed_pair = {};
 
+	let s1 = {}; // [];
+	let s2 = {}; // [];
+	
 	if (true)
 	{
 	    let count = 0;
 	    for (let k1 of Object.keys(groups)) {
+		s1[k1] = Array(groups[k1].length);
+		s2[k1] = Array(groups[k1].length);
 		for (let i = 0; i < groups[k1].length; i++) {
-		    count++;
+		    const r1 : [excelintVector, excelintVector] = groups[k1][i];
+		    const sr1 = JSON.stringify(r1);
+		    s1[k1][i] = Array(Object.keys(groups).length);
+		    s2[k1][i] = Array(Object.keys(groups).length);
+		    for (let k2 of Object.keys(groups)) {
+			if (k1 === k2) {
+			    continue;
+			}
+			for (let j = 0; j < groups[k2].length; j++) {
+			    const r2 : [excelintVector, excelintVector] = groups[k2][j];
+			    const sr2 = JSON.stringify(r2);
+			    s1[k1][i][j] = sr1;
+			    s2[k1][i][j] = sr2;
+			    count++;
+			}
+		    }			    
 		}
 	    }
 	    console.log("generate_proposed_fixes: total to process = " + count);
@@ -336,22 +357,23 @@ export class Colorize {
 	for (let k1 of Object.keys(groups)) {
 	    // Look for possible fixes in OTHER groups.
 	    for (let i = 0; i < groups[k1].length; i++) {
-		let r1 : [excelintVector, excelintVector] = groups[k1][i];
-		let sr1 = JSON.stringify(r1);
+		const r1 : [excelintVector, excelintVector] = groups[k1][i];
+//		const sr1 = JSON.stringify(r1);
 		for (let k2 of Object.keys(groups)) {
 		    if (k1 === k2) {
 			continue;
 		    }
 		    for (let j = 0; j < groups[k2].length; j++) {
-			let r2 : [excelintVector, excelintVector] = groups[k2][j];
-			let sr2 = JSON.stringify(r2);
+			const r2 : [excelintVector, excelintVector] = groups[k2][j];
+//			const sr2 = JSON.stringify(r2);
 			// Only add these if we have not already added them.
-			if (!(sr1 + sr2 in already_proposed_pair) && !(sr2 + sr1 in already_proposed_pair)) {
+			if (!(s1[k1][i][j] + s2[k1][i][j] in already_proposed_pair)
+			    && !(s2[k1][i][j] + s1[k1][i][j] in already_proposed_pair)) {
 			    // If both are compatible rectangles AND the regions include more than two cells, propose them as fixes.
 //			    console.log("checking " + JSON.stringify(sr1) + " and " + JSON.stringify(sr2));
 			    if (RectangleUtils.is_mergeable(r1, r2) && (RectangleUtils.area(r1) + RectangleUtils.area(r2) > 2)) {
-				already_proposed_pair[sr1 + sr2] = true;
-				already_proposed_pair[sr2 + sr1] = true;
+				already_proposed_pair[s1[k1][i][j] + s2[k1][i][j]] = true;
+				already_proposed_pair[s2[k1][i][j] + s1[k1][i][j]] = true;
 				///								console.log("generate_proposed_fixes: could merge (" + k1 + ") " + JSON.stringify(groups[k1][i]) + " and (" + k2 + ") " + JSON.stringify(groups[k2][j]));
 				let metric = this.fix_metric(parseFloat(k1), r1, parseFloat(k2), r2);
 				// If it's below the threshold, don't include as a proposed fix.
@@ -380,6 +402,17 @@ export class Colorize {
 	//	console.log("proposed fixes = " + JSON.stringify(proposed_fixes));
 	t.split("done.");
 	return proposed_fixes;
+    }
+
+    public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
+    Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
+	let t = new Timer("generate_proposed_fixes");
+	let proposed_fixes_new = find_all_proposed_fixes(groups);
+	
+	proposed_fixes_new.sort((a, b) => { return a[0] - b[0]; });
+	t.split("done.");
+//	console.log(JSON.stringify(proposed_fixes_new));
+	return proposed_fixes_new;
     }
 
     public static merge_groups(groups: { [val: string]: Array<[excelintVector, excelintVector]> })
@@ -431,7 +464,7 @@ export class Colorize {
 		//            console.log('group = ' + JSON.stringify(group));
 		if (!merged_one) {
 		    // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-		    t.split("done, " + numIterations + " iterations.");
+//		    t.split("done, " + numIterations + " iterations.");
 		    return updated_rectangles;
 		}
 		group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));

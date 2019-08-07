@@ -1,11 +1,12 @@
 "use strict";
 exports.__esModule = true;
 var binsearch_1 = require("./binsearch");
+var colorize_1 = require("./colorize");
 function fix(n) {
     return n.toString().padStart(10, '0');
 }
 function fix_array(arr) {
-    return arr.map(function (x, _, a) { return fix(x); });
+    return arr.map(function (x, _1, _2) { return fix(x); });
 }
 function fix_pair(p) {
     var p1 = p[0], p2 = p[1];
@@ -42,7 +43,7 @@ function fix_grouped_formulas(g, newG) {
         newG[i].sort(sort_x_coord);
         //	newGy[i].sort(sort_y_coord);
         if (true) {
-            newG[i] = newG[i].map(function (x, _, a) {
+            newG[i] = newG[i].map(function (x, _1, _2) {
                 return [x[0].map(function (a, _1, _2) { return Number(a); }),
                     x[1].map(function (a, _1, _2) { return Number(a); })];
             });
@@ -83,12 +84,14 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     var y1 = rect_ul[1];
     var x2 = rect_lr[0];
     var y2 = rect_lr[1];
-    // Try to find something adjacent to [[x1, y1, 0], [x2, y2, 0]]
+    // Try to find something adjacent to A = [[x1, y1, 0], [x2, y2, 0]]
     // options are:
-    //   [x1-1, y2] left (lower-right)
-    //   [x1, y1-1] up (lower-right)
-    //   [x2+1, y1] right (upper-left)
-    //   [x1, y2+1] down (upper-left)
+    //   [x1-1, y2] left (lower-right)   [ ] [A] --> [ (?, y1) ... (x1-1, y2) ]
+    //   [x2, y1-1] up (lower-right)     [ ]
+    //                                   [A] --> [ (x1, ?) ... (x2, y1-1) ]
+    //   [x2+1, y1] right (upper-left)   [A] [ ] --> [ (x2 + 1, y1) ... (?, y2) ]
+    //   [x1, y2+1] down (upper-left)    [A]
+    //                                   [ ] --> [ (x1, y2+1) ... (x2, ?) ]
     // left (lr) = ul_x, lr_y
     var left = [x1 - 1, y2, 0];
     // up (lr) = lr_x, ul_y
@@ -102,26 +105,34 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     ind = binsearch_1.binsearch(rect_lrs, left, numComparator);
     //	console.log("left = " + ind);
     if (ind != -1) {
-        var candidate = [rect_uls[ind], rect_lrs[ind]];
-        matches.push(candidate);
+        if (rect_uls[ind][1] === y1) {
+            var candidate = [rect_uls[ind], rect_lrs[ind]];
+            matches.push(candidate);
+        }
     }
     ind = binsearch_1.binsearch(rect_lrs, up, numComparator);
     //	console.log("up = " + ind);
     if (ind != -1) {
-        var candidate = [rect_uls[ind], rect_lrs[ind]];
-        matches.push(candidate);
+        if (rect_uls[ind][0] === x1) {
+            var candidate = [rect_uls[ind], rect_lrs[ind]];
+            matches.push(candidate);
+        }
     }
     ind = binsearch_1.binsearch(rect_uls, right, numComparator);
     //	console.log("right = " + ind);
     if (ind != -1) {
-        var candidate = [rect_uls[ind], rect_lrs[ind]];
-        matches.push(candidate);
+        if (rect_lrs[ind][1] === y2) {
+            var candidate = [rect_uls[ind], rect_lrs[ind]];
+            matches.push(candidate);
+        }
     }
     ind = binsearch_1.binsearch(rect_uls, down, numComparator);
     //	console.log("down = " + ind);
     if (ind != -1) {
-        var candidate = [rect_uls[ind], rect_lrs[ind]];
-        matches.push(candidate);
+        if (rect_lrs[ind][0] === x2) {
+            var candidate = [rect_uls[ind], rect_lrs[ind]];
+            matches.push(candidate);
+        }
     }
     return matches;
 }
@@ -130,49 +141,60 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
     var match_list = [];
     var a = grouped_formulas;
-    for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
-        var key = _a[_i];
+    var _loop_1 = function (key) {
         if (key === thisKey) {
-            continue;
+            return "continue";
         }
-        var x_ul = a[key].map(function (i, _, a) { var p1 = i[0], p2 = i[1]; return p1; });
-        var x_lr = a[key].map(function (i, _, a) { var p1 = i[0], p2 = i[1]; return p2; });
+        var x_ul = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
+        var x_lr = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p2; });
         var matches = matching_rectangles(base_ul, base_lr, x_ul, x_lr);
         if (matches.length > 0) {
             //	    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
         }
-        match_list = match_list.concat(matches);
-    }
-    return match_list;
-}
-function find_all_proposed_fixes(grouped_formulas) {
-    var all_matches = [];
-    var _loop_1 = function (key) {
-        var a = {};
-        var b = {};
-        fix_grouped_formulas(grouped_formulas, a); // , b);
-        var _loop_2 = function (i) {
-            var matches = find_all_matching_rectangles(key, a[key][i], a);
-            if (matches.length > 0) {
-                var matched_pairs = matches.map(function (item, _, arr) { return [a[key][i], item]; });
-                all_matches = all_matches.concat(matched_pairs);
-                //	    console.log("Matched " + JSON.stringify(matches));
-            }
-        };
-        for (var i = 0; i < a[key].length; i++) {
-            _loop_2(i);
-        }
+        match_list = match_list.concat(matches.map(function (item, _1, _2) {
+            var metric = colorize_1.Colorize.fix_metric(parseFloat(thisKey), rect, parseFloat(key), item);
+            return [metric, rect, item];
+        }));
     };
-    for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
+    for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
         var key = _a[_i];
         _loop_1(key);
     }
+    //	console.log("match_list = " + JSON.stringify(match_list));
+    return match_list;
+}
+function dedup(arr) {
+    var t = {};
+    return arr.filter(function (e) { return !(t[e] = e in t); });
+}
+function find_all_proposed_fixes(grouped_formulas) {
+    var all_matches = [];
+    for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
+        var key = _a[_i];
+        var a = {};
+        fix_grouped_formulas(grouped_formulas, a); // , b);
+        for (var i = 0; i < a[key].length; i++) {
+            var matches = find_all_matching_rectangles(key, a[key][i], a);
+            all_matches = all_matches.concat(matches);
+        }
+    }
     if (false) {
-        all_matches = all_matches.map(function (x, _, a) {
+        all_matches = all_matches.map(function (x, _1, _2) {
             return [x[0].map(function (a, _1, _2) { return Number(a); }),
                 x[1].map(function (a, _1, _2) { return Number(a); })];
         });
     }
+    //    console.log("before: " + JSON.stringify(all_matches));
+    all_matches = all_matches.map(function (x, _1, _2) {
+        if (numComparator(x[1], x[2]) < 0) {
+            return [x[0], x[2], x[1]];
+        }
+        else {
+            return [x[0], x[1], x[2]];
+        }
+    });
+    all_matches = dedup(all_matches);
+    //   console.log("after: " + JSON.stringify(all_matches));
     return all_matches;
 }
 exports.find_all_proposed_fixes = find_all_proposed_fixes;
@@ -189,4 +211,5 @@ function test_find_all_proposed_fixes(grouped_formulas) {
     console.log("total length of grouped_formulas = " + theLength);
 }
 exports.test_find_all_proposed_fixes = test_find_all_proposed_fixes;
-// test_find_all_proposed_fixes();
+//let r = require('./grouped_formulas.js');
+//test_find_all_proposed_fixes(r.grouped_formulas);

@@ -46,3 +46,49 @@ function binsearch(arr, v, comparator) {
     return binsearch_helper(arr, 0, arr.length, v, comparator);
 }
 exports.binsearch = binsearch;
+function test_binsearch() {
+    // Random testing that checks if binary search is working properly.
+    var iterations = 10000;
+    var maxTestArrayLength = 400;
+    var failures = 0;
+    for (var i = 0; i < iterations; i++) {
+        var arr = [];
+        var len = Math.floor(Math.random() * maxTestArrayLength);
+        for (var j = 0; j < len; j++) {
+            arr.push(j);
+            while ((j < len) && (Math.random() < 0.5)) {
+                arr.push(j);
+                j++;
+            }
+        }
+        arr.sort(function (a, b) { return a - b; });
+        //	console.log(arr);
+        // Search for items in the array.
+        for (var j = 0; j < len; j++) {
+            var ind = binsearch(arr, arr[j]);
+            if ((ind === -1) ||
+                (arr[ind] != arr[j]) ||
+                (ind > j)) {
+                // Check to make sure this is the earliest.
+                if (arr[ind - 1] === arr[j]) {
+                    failures++;
+                    console.log("Failure: " + JSON.stringify(arr) + ", ind = " + ind + ", j = " + j);
+                }
+            }
+        }
+        // Search for items NOT in the array (with exceedingly high probability).
+        for (var j = 0; j < len; j++) {
+            var val = Math.random();
+            var ind = binsearch(arr, val);
+            if (ind !== -1) {
+                failures++;
+                console.log("Found an item which should almost certainly not be there: " + val);
+                console.log(JSON.stringify(arr));
+            }
+        }
+    }
+    var passPercentage = 100.0 * ((2 * iterations - failures) / (2 * iterations));
+    console.log("Passed = " + passPercentage + " percent.");
+    return passPercentage;
+}
+exports.test_binsearch = test_binsearch;
