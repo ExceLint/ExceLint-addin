@@ -2,16 +2,21 @@
 exports.__esModule = true;
 var binsearch_1 = require("./binsearch");
 var colorize_1 = require("./colorize");
+// Enable reasonable comparisons of numbers by converting them to zero-padded strings
+// so that 9 < 56 (because "0009" < "0056").
 function fix(n) {
     return n.toString().padStart(10, '0');
 }
+// Apply fixes to an array.
 function fix_array(arr) {
     return arr.map(function (x, _1, _2) { return fix(x); });
 }
+// Apply fixes to a pair.
 function fix_pair(p) {
     var p1 = p[0], p2 = p[1];
     return [fix_array(p1), fix_array(p2)];
 }
+// A comparison function to sort by x-coordinate.
 function sort_x_coord(a, b) {
     var a1 = a[0], a2 = a[1];
     var b1 = b[0], b2 = b[1];
@@ -22,6 +27,7 @@ function sort_x_coord(a, b) {
         return (a1[1] - b1[1]);
     }
 }
+// A comparison function to sort by y-coordinate.
 function sort_y_coord(a, b) {
     var a1 = a[0], a2 = a[1];
     var b1 = b[0], b2 = b[1];
@@ -32,26 +38,20 @@ function sort_y_coord(a, b) {
         return (a1[0] - b1[0]);
     }
 }
-function fix_grouped_formulas(g, newG) {
-    //    console.log("newG = " + JSON.stringify(newG));
-    //    newG = {};
-    //    newGy = {};
+function fix_grouped_formulas(g, newGnum) {
+    var newGstr = {};
     for (var _i = 0, _a = Object.keys(g); _i < _a.length; _i++) {
         var i = _a[_i];
-        newG[i] = g[i].map(function (p, _1, _2) { return fix_pair(p); });
-        //	newGy[i] = JSON.parse(JSON.stringify(newG[i])); // deep copy
-        newG[i].sort(sort_x_coord);
-        //	newGy[i].sort(sort_y_coord);
-        if (true) {
-            newG[i] = newG[i].map(function (x, _1, _2) {
-                return [x[0].map(function (a, _1, _2) { return Number(a); }),
-                    x[1].map(function (a, _1, _2) { return Number(a); })];
-            });
-        }
-        //	newGy[i] = newGy[i].map((x,_,a) => { return [x[0].map((a,_1,_2) => Number(a)),
-        //						     x[1].map((a,_1,_2) => Number(a))]; });
+        // The below is maybe too inefficient; possibly revisit.
+        newGstr[i] = g[i].map(function (p, _1, _2) { return fix_pair(p); });
+        newGstr[i].sort(sort_x_coord);
+        newGnum[i] = newGstr[i].map(function (x, _1, _2) {
+            return [x[0].map(function (a, _1, _2) { return Number(a); }),
+                x[1].map(function (a, _1, _2) { return Number(a); })];
+        });
     }
 }
+// Knuth-Fisher-Yates shuffle (not currently used).
 function shuffle(a) {
     var j, x, i;
     for (i = a.length - 1; i > 0; i--) {
@@ -65,7 +65,15 @@ function shuffle(a) {
 //test_binsearch();
 var comparisons = 0;
 function numComparator(a_val, b_val) {
-    //    console.log("a_val = " + JSON.stringify(a_val));
+    for (var i = 0; i < 3; i++) { // note: length of excelint vector
+        if (a_val[i] < b_val[i]) {
+            return -1;
+        }
+        if (a_val[i] > b_val[i]) {
+            return 1;
+        }
+    }
+    return 0;
     var a = JSON.stringify(fix_array(a_val));
     var b = JSON.stringify(fix_array(b_val));
     comparisons++;
@@ -148,6 +156,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
         }
         rectangles_count++;
         if (rectangles_count % 1000 === 0) {
+            //	    if (true) { // rectangles_count % 1000 === 0) {
             console.log("find_all_matching_rectangles, iteration " + rectangles_count);
         }
         var x_ul = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
@@ -168,6 +177,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
     //	console.log("match_list = " + JSON.stringify(match_list));
     return match_list;
 }
+// Returns an array with all duplicated entries removed.
 function dedup(arr) {
     var t = {};
     return arr.filter(function (e) { return !(t[e] = e in t); });
@@ -178,10 +188,10 @@ function find_all_proposed_fixes(grouped_formulas) {
     rectangles_count = 0;
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
         var key = _a[_i];
-        var a = {};
-        fix_grouped_formulas(grouped_formulas, a); // , b);
-        for (var i = 0; i < a[key].length; i++) {
-            var matches = find_all_matching_rectangles(key, a[key][i], a);
+        var aNum = {};
+        fix_grouped_formulas(grouped_formulas, aNum);
+        for (var i = 0; i < aNum[key].length; i++) {
+            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum);
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 == 0) {

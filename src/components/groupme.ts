@@ -3,19 +3,24 @@ import { Colorize } from './colorize';
 
 type excelintVector = [number, number, number];
 
+// Enable reasonable comparisons of numbers by converting them to zero-padded strings
+// so that 9 < 56 (because "0009" < "0056").
 function fix(n) {
     return n.toString().padStart(10, '0');
 }
 
+// Apply fixes to an array.
 function fix_array(arr) {
     return arr.map((x,_1,_2) => { return fix(x); });
 }
 
+// Apply fixes to a pair.
 function fix_pair(p) {
     const [p1, p2] = p;
     return [fix_array(p1), fix_array(p2)];
 }
 
+// A comparison function to sort by x-coordinate.
 function sort_x_coord(a,b) {
     const [a1, a2] = a;
     const [b1, b2] = b;
@@ -26,6 +31,7 @@ function sort_x_coord(a,b) {
     }
 }
 
+// A comparison function to sort by y-coordinate.
 function sort_y_coord(a,b) {
     const [a1, a2] = a;
     const [b1, b2] = b;
@@ -36,27 +42,19 @@ function sort_y_coord(a,b) {
     }
 }
 
-function fix_grouped_formulas(g, newG) { // , newGy) {
-//    console.log("newG = " + JSON.stringify(newG));
-//    newG = {};
-//    newGy = {};
+function fix_grouped_formulas(g, newGnum) {
+    let newGstr = {};
     for (let i of Object.keys(g)) {
-	newG[i] = g[i].map((p, _1, _2) => { return fix_pair(p); });
-//	newGy[i] = JSON.parse(JSON.stringify(newG[i])); // deep copy
-	newG[i].sort(sort_x_coord);
-	//	newGy[i].sort(sort_y_coord);
-
-	if (true) {
-	    newG[i] = newG[i].map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
-						       x[1].map((a,_1,_2) => Number(a))]; });
-	}
-	
-//	newGy[i] = newGy[i].map((x,_,a) => { return [x[0].map((a,_1,_2) => Number(a)),
-//						     x[1].map((a,_1,_2) => Number(a))]; });
+	// The below is maybe too inefficient; possibly revisit.
+	newGstr[i] = g[i].map((p, _1, _2) => { return fix_pair(p); });
+	newGstr[i].sort(sort_x_coord);
+	newGnum[i] = newGstr[i].map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
+							   x[1].map((a,_1,_2) => Number(a))]; });
     }
 }
 
 
+// Knuth-Fisher-Yates shuffle (not currently used).
 function shuffle(a) {
     var j, x, i;
     for (i = a.length - 1; i > 0; i--) {
@@ -74,7 +72,17 @@ function shuffle(a) {
 let comparisons = 0;
 
 function numComparator(a_val : excelintVector, b_val: excelintVector) {
-//    console.log("a_val = " + JSON.stringify(a_val));
+    for (let i = 0; i < 3; i++) { // note: length of excelint vector
+	if (a_val[i] < b_val[i]) {
+	    return -1;
+	}
+	if (a_val[i] > b_val[i]) {
+	    return 1;
+	}
+    }
+    return 0;
+    
+    
     let a = JSON.stringify(fix_array(a_val));
     let b = JSON.stringify(fix_array(b_val));
     comparisons++;
@@ -170,6 +178,7 @@ function find_all_matching_rectangles(thisKey: string,
 	    }
 	    rectangles_count++;
 	    if (rectangles_count % 1000 === 0) {
+//	    if (true) { // rectangles_count % 1000 === 0) {
 		console.log("find_all_matching_rectangles, iteration " + rectangles_count);
 	    }
 	    const x_ul = a[key].map((i,_1,_2) => { let [p1,p2] = i; return p1;});
@@ -187,20 +196,23 @@ function find_all_matching_rectangles(thisKey: string,
 	return match_list;
     }
 
+
+// Returns an array with all duplicated entries removed.
 function dedup(arr) {
     let t = {};
     return arr.filter(e=>!(t[e]=e in t));
 }
+
 
 export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Array<[excelintVector, excelintVector]> }) : Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
     let all_matches = [];
     let count = 0;
     rectangles_count = 0;
     for (let key of Object.keys(grouped_formulas)) {
-	let a = {};
-	fix_grouped_formulas(grouped_formulas, a); // , b);
-	for (let i = 0; i < a[key].length; i++) {
-	    const matches = find_all_matching_rectangles(key, a[key][i], a);
+	let aNum = {};
+	fix_grouped_formulas(grouped_formulas, aNum);
+	for (let i = 0; i < aNum[key].length; i++) {
+	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum);
 	    all_matches = all_matches.concat(matches);
 	    count++;
 	    if (count % 1000 == 0) {
