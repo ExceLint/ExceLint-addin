@@ -408,7 +408,7 @@ export class Colorize {
     Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
 	let t = new Timer("generate_proposed_fixes");
 	let proposed_fixes_new = find_all_proposed_fixes(groups);
-	
+	t.split("sorting fixes.");
 	proposed_fixes_new.sort((a, b) => { return a[0] - b[0]; });
 	t.split("done.");
 //	console.log(JSON.stringify(proposed_fixes_new));

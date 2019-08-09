@@ -136,6 +136,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     }
     return matches;
 }
+var rectangles_count = 0;
 function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
     var base_ul = rect[0], base_lr = rect[1];
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
@@ -144,6 +145,10 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
     var _loop_1 = function (key) {
         if (key === thisKey) {
             return "continue";
+        }
+        rectangles_count++;
+        if (rectangles_count % 1000 === 0) {
+            console.log("find_all_matching_rectangles, iteration " + rectangles_count);
         }
         var x_ul = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
         var x_lr = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p2; });
@@ -169,6 +174,8 @@ function dedup(arr) {
 }
 function find_all_proposed_fixes(grouped_formulas) {
     var all_matches = [];
+    var count = 0;
+    rectangles_count = 0;
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
         var key = _a[_i];
         var a = {};
@@ -176,6 +183,10 @@ function find_all_proposed_fixes(grouped_formulas) {
         for (var i = 0; i < a[key].length; i++) {
             var matches = find_all_matching_rectangles(key, a[key][i], a);
             all_matches = all_matches.concat(matches);
+            count++;
+            if (count % 1000 == 0) {
+                console.log("find_all_proposed_fixes, iteration " + count);
+            }
         }
     }
     if (false) {

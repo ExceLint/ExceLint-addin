@@ -154,6 +154,7 @@ function matching_rectangles(rect_ul: excelintVector,
     }
 
 
+let rectangles_count = 0;
 
 function find_all_matching_rectangles(thisKey: string,
 				      rect: [excelintVector, excelintVector],
@@ -166,6 +167,10 @@ function find_all_matching_rectangles(thisKey: string,
 	for (let key of Object.keys(a)) {
 	    if (key === thisKey) {
 		continue;
+	    }
+	    rectangles_count++;
+	    if (rectangles_count % 1000 === 0) {
+		console.log("find_all_matching_rectangles, iteration " + rectangles_count);
 	    }
 	    const x_ul = a[key].map((i,_1,_2) => { let [p1,p2] = i; return p1;});
 	    const x_lr = a[key].map((i,_1,_2) => { let [p1,p2] = i; return p2;});
@@ -189,12 +194,18 @@ function dedup(arr) {
 
 export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Array<[excelintVector, excelintVector]> }) : Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
     let all_matches = [];
+    let count = 0;
+    rectangles_count = 0;
     for (let key of Object.keys(grouped_formulas)) {
 	let a = {};
 	fix_grouped_formulas(grouped_formulas, a); // , b);
 	for (let i = 0; i < a[key].length; i++) {
 	    const matches = find_all_matching_rectangles(key, a[key][i], a);
 	    all_matches = all_matches.concat(matches);
+	    count++;
+	    if (count % 1000 == 0) {
+		console.log("find_all_proposed_fixes, iteration " + count);
+	    }
 	}
     }
     if (false) {

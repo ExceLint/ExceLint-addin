@@ -570,8 +570,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
+		t.split("about to adjust scores.");
+		
 		// Adjust the fix scores (downward) to take into account formatting in the original sheet.
 		await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
+
+		t.split("sorting fixes.");
+		
 		this.proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
 		
 		t.split("generated fixes");
