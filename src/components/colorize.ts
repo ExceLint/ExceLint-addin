@@ -407,6 +407,7 @@ export class Colorize {
     public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
     Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
 	let t = new Timer("generate_proposed_fixes");
+	t.split("about to find.");
 	let proposed_fixes_new = find_all_proposed_fixes(groups);
 	t.split("sorting fixes.");
 	proposed_fixes_new.sort((a, b) => { return a[0] - b[0]; });

@@ -363,6 +363,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.generate_proposed_fixes = function (groups) {
         var t = new timer_1.Timer("generate_proposed_fixes");
+        t.split("about to find.");
         var proposed_fixes_new = groupme_1.find_all_proposed_fixes(groups);
         t.split("sorting fixes.");
         proposed_fixes_new.sort(function (a, b) { return a[0] - b[0]; });

@@ -43,13 +43,19 @@ function sort_y_coord(a,b) {
 }
 
 function fix_grouped_formulas(g, newGnum) {
-    let newGstr = {};
     for (let i of Object.keys(g)) {
-	// The below is maybe too inefficient; possibly revisit.
-	newGstr[i] = g[i].map((p, _1, _2) => { return fix_pair(p); });
-	newGstr[i].sort(sort_x_coord);
-	newGnum[i] = newGstr[i].map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
-							   x[1].map((a,_1,_2) => Number(a))]; });
+	if (true) {
+	    newGnum[i] = g[i].sort(sort_x_coord).map((x,_1,_2) =>
+						     { return [x[0].map((a,_1,_2) => Number(a)),
+							       x[1].map((a,_1,_2) => Number(a))]; });
+	} else {
+	    // The below is maybe too inefficient; possibly revisit.
+	    let newGstr = {};
+	    newGstr[i] = g[i].map((p, _1, _2) => { return fix_pair(p); });
+	    newGstr[i].sort(sort_x_coord);
+	    newGnum[i] = newGstr[i].map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
+							       x[1].map((a,_1,_2) => Number(a))]; });
+	}
     }
 }
 
@@ -81,19 +87,6 @@ function numComparator(a_val : excelintVector, b_val: excelintVector) {
 	}
     }
     return 0;
-    
-    
-    let a = JSON.stringify(fix_array(a_val));
-    let b = JSON.stringify(fix_array(b_val));
-    comparisons++;
-//    console.log("Comparing " + JSON.stringify(a) + " to " + JSON.stringify(b));
-    if (a === b) {
-	return 0;
-    }
-    if (a < b) {
-	return -1;
-    }
-    return 1;
 }
 
 function matching_rectangles(rect_ul: excelintVector,
@@ -166,7 +159,9 @@ let rectangles_count = 0;
 
 function find_all_matching_rectangles(thisKey: string,
 				      rect: [excelintVector, excelintVector],
-				      grouped_formulas: { [val: string]: Array<[excelintVector, excelintVector]> }) : Array<[number, [excelintVector, excelintVector]]>
+				      grouped_formulas: { [val: string]: Array<[excelintVector, excelintVector]> },
+				      x_ul : { [val: string]: Array<excelintVector> },
+				      x_lr : { [val: string]: Array<excelintVector> }) : Array<[number, [excelintVector, excelintVector]]>
     {
 	const [base_ul, base_lr] = rect;
 	//    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
@@ -181,9 +176,7 @@ function find_all_matching_rectangles(thisKey: string,
 //	    if (true) { // rectangles_count % 1000 === 0) {
 		console.log("find_all_matching_rectangles, iteration " + rectangles_count);
 	    }
-	    const x_ul = a[key].map((i,_1,_2) => { let [p1,p2] = i; return p1;});
-	    const x_lr = a[key].map((i,_1,_2) => { let [p1,p2] = i; return p2;});
-	    const matches = matching_rectangles(base_ul, base_lr, x_ul, x_lr);
+	    const matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
 	    if (matches.length > 0) {
 		//	    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
 	    }
@@ -210,9 +203,15 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
     rectangles_count = 0;
     let aNum = {};
     fix_grouped_formulas(grouped_formulas, aNum);
+    let x_ul = {};
+    let x_lr = {};
+    for (let key of Object.keys(grouped_formulas)) {
+	x_ul[key] = aNum[key].map((i,_1,_2) => { let [p1,p2] = i; return p1;});
+	x_lr[key] = aNum[key].map((i,_1,_2) => { let [p1,p2] = i; return p2;});
+    }
     for (let key of Object.keys(grouped_formulas)) {
 	for (let i = 0; i < aNum[key].length; i++) {
-	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum);
+	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr);
 	    all_matches = all_matches.concat(matches);
 	    count++;
 	    if (count % 1000 == 0) {

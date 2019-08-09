@@ -39,16 +39,24 @@ function sort_y_coord(a, b) {
     }
 }
 function fix_grouped_formulas(g, newGnum) {
-    var newGstr = {};
     for (var _i = 0, _a = Object.keys(g); _i < _a.length; _i++) {
         var i = _a[_i];
-        // The below is maybe too inefficient; possibly revisit.
-        newGstr[i] = g[i].map(function (p, _1, _2) { return fix_pair(p); });
-        newGstr[i].sort(sort_x_coord);
-        newGnum[i] = newGstr[i].map(function (x, _1, _2) {
-            return [x[0].map(function (a, _1, _2) { return Number(a); }),
-                x[1].map(function (a, _1, _2) { return Number(a); })];
-        });
+        if (true) {
+            newGnum[i] = g[i].sort(sort_x_coord).map(function (x, _1, _2) {
+                return [x[0].map(function (a, _1, _2) { return Number(a); }),
+                    x[1].map(function (a, _1, _2) { return Number(a); })];
+            });
+        }
+        else {
+            // The below is maybe too inefficient; possibly revisit.
+            var newGstr = {};
+            newGstr[i] = g[i].map(function (p, _1, _2) { return fix_pair(p); });
+            newGstr[i].sort(sort_x_coord);
+            newGnum[i] = newGstr[i].map(function (x, _1, _2) {
+                return [x[0].map(function (a, _1, _2) { return Number(a); }),
+                    x[1].map(function (a, _1, _2) { return Number(a); })];
+            });
+        }
     }
 }
 // Knuth-Fisher-Yates shuffle (not currently used).
@@ -74,17 +82,6 @@ function numComparator(a_val, b_val) {
         }
     }
     return 0;
-    var a = JSON.stringify(fix_array(a_val));
-    var b = JSON.stringify(fix_array(b_val));
-    comparisons++;
-    //    console.log("Comparing " + JSON.stringify(a) + " to " + JSON.stringify(b));
-    if (a === b) {
-        return 0;
-    }
-    if (a < b) {
-        return -1;
-    }
-    return 1;
 }
 function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     // Assumes uls and lrs are already sorted and the same length.
@@ -145,7 +142,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     return matches;
 }
 var rectangles_count = 0;
-function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
+function find_all_matching_rectangles(thisKey, rect, grouped_formulas, x_ul, x_lr) {
     var base_ul = rect[0], base_lr = rect[1];
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
     var match_list = [];
@@ -159,9 +156,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas) {
             //	    if (true) { // rectangles_count % 1000 === 0) {
             console.log("find_all_matching_rectangles, iteration " + rectangles_count);
         }
-        var x_ul = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
-        var x_lr = a[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p2; });
-        var matches = matching_rectangles(base_ul, base_lr, x_ul, x_lr);
+        var matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
         if (matches.length > 0) {
             //	    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
         }
@@ -188,10 +183,17 @@ function find_all_proposed_fixes(grouped_formulas) {
     rectangles_count = 0;
     var aNum = {};
     fix_grouped_formulas(grouped_formulas, aNum);
+    var x_ul = {};
+    var x_lr = {};
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
         var key = _a[_i];
+        x_ul[key] = aNum[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
+        x_lr[key] = aNum[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p2; });
+    }
+    for (var _b = 0, _c = Object.keys(grouped_formulas); _b < _c.length; _b++) {
+        var key = _c[_b];
         for (var i = 0; i < aNum[key].length; i++) {
-            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum);
+            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr);
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 == 0) {
