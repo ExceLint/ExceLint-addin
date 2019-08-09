@@ -186,10 +186,10 @@ function find_all_proposed_fixes(grouped_formulas) {
     var all_matches = [];
     var count = 0;
     rectangles_count = 0;
+    var aNum = {};
+    fix_grouped_formulas(grouped_formulas, aNum);
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
         var key = _a[_i];
-        var aNum = {};
-        fix_grouped_formulas(grouped_formulas, aNum);
         for (var i = 0; i < aNum[key].length; i++) {
             var matches = find_all_matching_rectangles(key, aNum[key][i], aNum);
             all_matches = all_matches.concat(matches);

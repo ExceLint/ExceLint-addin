@@ -208,9 +208,9 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
     let all_matches = [];
     let count = 0;
     rectangles_count = 0;
+    let aNum = {};
+    fix_grouped_formulas(grouped_formulas, aNum);
     for (let key of Object.keys(grouped_formulas)) {
-	let aNum = {};
-	fix_grouped_formulas(grouped_formulas, aNum);
 	for (let i = 0; i < aNum[key].length; i++) {
 	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum);
 	    all_matches = all_matches.concat(matches);
