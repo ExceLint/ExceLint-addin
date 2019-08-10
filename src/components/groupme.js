@@ -2,6 +2,7 @@
 exports.__esModule = true;
 var binsearch_1 = require("./binsearch");
 var colorize_1 = require("./colorize");
+var timer_1 = require("./timer");
 // Enable reasonable comparisons of numbers by converting them to zero-padded strings
 // so that 9 < 56 (because "0009" < "0056").
 function fix(n) {
@@ -38,25 +39,45 @@ function sort_y_coord(a, b) {
         return (a1[0] - b1[0]);
     }
 }
+function generate_bounding_box(g) {
+    var bb = {};
+    for (var _i = 0, _a = Object.keys(g); _i < _a.length; _i++) {
+        var i = _a[_i];
+        console.log("length of formulas for " + i + " = " + g[i].length);
+        var xMin = 1000000;
+        var yMin = 1000000;
+        var xMax = -1000000;
+        var yMax = -1000000;
+        for (var j = 0; j < g[i].length; j++) {
+            var x1 = g[i][j][0][0];
+            var x2 = g[i][j][1][0];
+            var y1 = g[i][j][0][1];
+            var y2 = g[i][j][1][1];
+            if (x2 > xMax) {
+                xMax = x2;
+            }
+            if (x1 < xMin) {
+                xMin = x1;
+            }
+            if (y2 > yMax) {
+                yMax = y2;
+            }
+            if (y1 < yMin) {
+                yMin = y1;
+            }
+        }
+        bb[i] = [[xMin, yMin, 0], [xMax, yMax, 0]];
+        console.log("bounding rectangle = (" + xMin + ", " + yMin + "), (" + xMax + ", " + yMax + ")");
+    }
+    return bb;
+}
 function fix_grouped_formulas(g, newGnum) {
     for (var _i = 0, _a = Object.keys(g); _i < _a.length; _i++) {
         var i = _a[_i];
-        if (true) {
-            newGnum[i] = g[i].sort(sort_x_coord).map(function (x, _1, _2) {
-                return [x[0].map(function (a, _1, _2) { return Number(a); }),
-                    x[1].map(function (a, _1, _2) { return Number(a); })];
-            });
-        }
-        else {
-            // The below is maybe too inefficient; possibly revisit.
-            var newGstr = {};
-            newGstr[i] = g[i].map(function (p, _1, _2) { return fix_pair(p); });
-            newGstr[i].sort(sort_x_coord);
-            newGnum[i] = newGstr[i].map(function (x, _1, _2) {
-                return [x[0].map(function (a, _1, _2) { return Number(a); }),
-                    x[1].map(function (a, _1, _2) { return Number(a); })];
-            });
-        }
+        newGnum[i] = g[i].sort(sort_x_coord).map(function (x, _1, _2) {
+            return [x[0].map(function (a, _1, _2) { return Number(a); }),
+                x[1].map(function (a, _1, _2) { return Number(a); })];
+        });
     }
 }
 // Knuth-Fisher-Yates shuffle (not currently used).
@@ -142,7 +163,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     return matches;
 }
 var rectangles_count = 0;
-function find_all_matching_rectangles(thisKey, rect, grouped_formulas, x_ul, x_lr) {
+function find_all_matching_rectangles(thisKey, rect, grouped_formulas, x_ul, x_lr, bb) {
     var base_ul = rect[0], base_lr = rect[1];
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
     var match_list = [];
@@ -156,20 +177,48 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, x_ul, x_l
             //	    if (true) { // rectangles_count % 1000 === 0) {
             console.log("find_all_matching_rectangles, iteration " + rectangles_count);
         }
-        var matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
-        if (matches.length > 0) {
-            //	    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
+        // Check bounding box.
+        var box = bb[key];
+        /*
+
+          Don't bother processing any rectangle whose edges are
+          outside the bounding box, since they could never be merged with any
+          rectangle inside that box.
+
+
+                          [ lr_y + 1 < min_y ]
+
+                          +--------------+
+      [lr_x + 1 < min_x ] |   Bounding   |  [ max_x + 1 < ul_x ]
+                      |      Box     |
+                      +--------------+
+
+                  [ max_y + 1 < ul_y ]
+
+         */
+        if (((base_lr[0] + 1 < box[0][0]) // left
+            || (base_lr[1] + 1 < box[0][1]) // top
+            || (box[1][0] + 1 < base_ul[0]) // right
+            || (box[1][1] + 1 < base_ul[1]))) {
+            // Skip. Outside the bounding box.
         }
-        match_list = match_list.concat(matches.map(function (item, _1, _2) {
-            var metric = colorize_1.Colorize.fix_metric(parseFloat(thisKey), rect, parseFloat(key), item);
-            return [metric, rect, item];
-        }));
+        else {
+            var matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
+            if (matches.length > 0) {
+                //		    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
+                match_list = match_list.concat(matches.map(function (item, _1, _2) {
+                    var metric = colorize_1.Colorize.fix_metric(parseFloat(thisKey), rect, parseFloat(key), item);
+                    return [metric, rect, item];
+                }));
+            }
+        }
     };
     for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
         var key = _a[_i];
         _loop_1(key);
     }
     //	console.log("match_list = " + JSON.stringify(match_list));
+    //	t.split("done.");
     return match_list;
 }
 // Returns an array with all duplicated entries removed.
@@ -178,6 +227,7 @@ function dedup(arr) {
     return arr.filter(function (e) { return !(t[e] = e in t); });
 }
 function find_all_proposed_fixes(grouped_formulas) {
+    var t = new timer_1.Timer("find_all_proposed_fixes");
     var all_matches = [];
     var count = 0;
     rectangles_count = 0;
@@ -190,10 +240,13 @@ function find_all_proposed_fixes(grouped_formulas) {
         x_ul[key] = aNum[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
         x_lr[key] = aNum[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p2; });
     }
+    t.split("generated upper left and lower right arrays.");
+    var bb = generate_bounding_box(grouped_formulas);
+    t.split("generated bounding box.");
     for (var _b = 0, _c = Object.keys(grouped_formulas); _b < _c.length; _b++) {
         var key = _c[_b];
         for (var i = 0; i < aNum[key].length; i++) {
-            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr);
+            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr, bb);
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 == 0) {
@@ -218,6 +271,7 @@ function find_all_proposed_fixes(grouped_formulas) {
     });
     all_matches = dedup(all_matches);
     //   console.log("after: " + JSON.stringify(all_matches));
+    t.split("done.");
     return all_matches;
 }
 exports.find_all_proposed_fixes = find_all_proposed_fixes;

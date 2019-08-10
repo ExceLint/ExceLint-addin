@@ -1,5 +1,6 @@
 import { binsearch } from './binsearch';
 import { Colorize } from './colorize';
+import { Timer } from './timer';
 
 type excelintVector = [number, number, number];
 
@@ -42,20 +43,43 @@ function sort_y_coord(a,b) {
     }
 }
 
+function generate_bounding_box(g) : { [val: string]: [excelintVector, excelintVector] } {
+    let bb = {};
+    for (let i of Object.keys(g)) {
+	console.log("length of formulas for " + i + " = " + g[i].length);
+	let xMin = 1000000;
+	let yMin = 1000000;
+	let xMax = -1000000;
+	let yMax = -1000000;
+	for (let j = 0; j < g[i].length; j++) {
+	    let x1 = g[i][j][0][0];
+	    let x2 = g[i][j][1][0];
+	    let y1 = g[i][j][0][1];
+	    let y2 = g[i][j][1][1];
+	    if (x2 > xMax) {
+		xMax = x2;
+	    }
+	    if (x1 < xMin) {
+		xMin = x1;
+	    }
+	    if (y2 > yMax) {
+		yMax = y2;
+	    }
+	    if (y1 < yMin) {
+		yMin = y1;
+	    }
+	}
+	bb[i] = [[xMin, yMin, 0], [xMax, yMax, 0]];
+	console.log("bounding rectangle = (" + xMin + ", " + yMin + "), (" + xMax + ", " + yMax + ")");
+    }
+    return bb;
+}
+
 function fix_grouped_formulas(g, newGnum) {
     for (let i of Object.keys(g)) {
-	if (true) {
-	    newGnum[i] = g[i].sort(sort_x_coord).map((x,_1,_2) =>
-						     { return [x[0].map((a,_1,_2) => Number(a)),
-							       x[1].map((a,_1,_2) => Number(a))]; });
-	} else {
-	    // The below is maybe too inefficient; possibly revisit.
-	    let newGstr = {};
-	    newGstr[i] = g[i].map((p, _1, _2) => { return fix_pair(p); });
-	    newGstr[i].sort(sort_x_coord);
-	    newGnum[i] = newGstr[i].map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
-							       x[1].map((a,_1,_2) => Number(a))]; });
-	}
+	newGnum[i] = g[i].sort(sort_x_coord).map((x,_1,_2) =>
+						 { return [x[0].map((a,_1,_2) => Number(a)),
+							   x[1].map((a,_1,_2) => Number(a))]; });
     }
 }
 
@@ -161,7 +185,8 @@ function find_all_matching_rectangles(thisKey: string,
 				      rect: [excelintVector, excelintVector],
 				      grouped_formulas: { [val: string]: Array<[excelintVector, excelintVector]> },
 				      x_ul : { [val: string]: Array<excelintVector> },
-				      x_lr : { [val: string]: Array<excelintVector> }) : Array<[number, [excelintVector, excelintVector]]>
+				      x_lr : { [val: string]: Array<excelintVector> },
+				      bb : { [val: string] : [excelintVector, excelintVector] }) : Array<[number, [excelintVector, excelintVector]]>
     {
 	const [base_ul, base_lr] = rect;
 	//    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
@@ -176,16 +201,48 @@ function find_all_matching_rectangles(thisKey: string,
 //	    if (true) { // rectangles_count % 1000 === 0) {
 		console.log("find_all_matching_rectangles, iteration " + rectangles_count);
 	    }
-	    const matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
-	    if (matches.length > 0) {
-		//	    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
+	    // Check bounding box.
+	    let box = bb[key];
+
+	    /*
+
+	      Don't bother processing any rectangle whose edges are
+	      outside the bounding box, since they could never be merged with any
+	      rectangle inside that box.
+
+
+                          [ lr_y + 1 < min_y ]
+
+                          +--------------+
+      [lr_x + 1 < min_x ] |   Bounding   |  [ max_x + 1 < ul_x ]
+	                  |      Box     |
+	                  +--------------+
+
+		          [ max_y + 1 < ul_y ]
+
+	     */
+	    
+	    if (((base_lr[0] + 1 < box[0][0]) // left
+		 || (base_lr[1] + 1 < box[0][1]) // top
+		 || (box[1][0] + 1 < base_ul[0]) // right
+		 || (box[1][1] + 1 < base_ul[1])))
+	    {
+		// Skip. Outside the bounding box.
+		
+	    } else {
+		
+		const matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
+		if (matches.length > 0) {
+//		    console.log("found matches for key "+key+" --> " + JSON.stringify(matches));
+		    match_list = match_list.concat(matches.map((item,_1,_2) => {
+			let metric = Colorize.fix_metric(parseFloat(thisKey), rect, parseFloat(key), item);
+			return [metric, rect, item];
+		    }));
+		}
 	    }
-	    match_list = match_list.concat(matches.map((item,_1,_2) => {
-		let metric = Colorize.fix_metric(parseFloat(thisKey), rect, parseFloat(key), item);
-		return [metric, rect, item];
-	    }));
 	}
-//	console.log("match_list = " + JSON.stringify(match_list));
+	//	console.log("match_list = " + JSON.stringify(match_list));
+//	t.split("done.");
 	return match_list;
     }
 
@@ -198,6 +255,7 @@ function dedup(arr) {
 
 
 export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Array<[excelintVector, excelintVector]> }) : Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
+    let t = new Timer("find_all_proposed_fixes");
     let all_matches = [];
     let count = 0;
     rectangles_count = 0;
@@ -209,9 +267,12 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 	x_ul[key] = aNum[key].map((i,_1,_2) => { let [p1,p2] = i; return p1;});
 	x_lr[key] = aNum[key].map((i,_1,_2) => { let [p1,p2] = i; return p2;});
     }
+    t.split("generated upper left and lower right arrays.");
+    let bb = generate_bounding_box(grouped_formulas);
+    t.split("generated bounding box.");
     for (let key of Object.keys(grouped_formulas)) {
 	for (let i = 0; i < aNum[key].length; i++) {
-	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr);
+	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr, bb);
 	    all_matches = all_matches.concat(matches);
 	    count++;
 	    if (count % 1000 == 0) {
@@ -233,6 +294,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
     });
     all_matches = dedup(all_matches);
  //   console.log("after: " + JSON.stringify(all_matches));
+    t.split("done.");
     return all_matches;
 }
 
