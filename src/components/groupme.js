@@ -67,7 +67,7 @@ function generate_bounding_box(g) {
             }
         }
         bb[i] = [[xMin, yMin, 0], [xMax, yMax, 0]];
-        console.log("bounding rectangle = (" + xMin + ", " + yMin + "), (" + xMax + ", " + yMax + ")");
+        //	console.log("bounding rectangle = (" + xMin + ", " + yMin + "), (" + xMax + ", " + yMax + ")");
     }
     return bb;
 }

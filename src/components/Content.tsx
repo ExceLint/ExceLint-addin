@@ -16,6 +16,7 @@ export interface ContentProps {
     currentFix : number;
     totalFixes : number;
     themFixes : Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>;
+    suspiciousCells : Array<[number, number, number]>;
     numFixes : number;
     selector : any;
 }
@@ -86,12 +87,17 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 }
 
 function DisplayFixes(props) {
-//    console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
+    //    console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
+    let str = "No suspicious cells.";
+    if (props.suspiciousCells.length > 0) {
+	str = "Suspicious cell count = " + props.suspiciousCells.length + ".";
+    }
+    str = ""; // disabling display for now.
     if (props.totalFixes > 0) {
 	const table = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
-	return <div>{table}</div>;
+	return <div>{str}{table}</div>;
     } else {
-	return <div></div>;
+	return <div>{str}</div>;
     }
 }
 
@@ -104,7 +110,8 @@ export class Content extends React.Component<ContentProps, any> {
 			   currentFix: props.currentFix,
 			   totalFixes: props.totalFixes,
 			   themFixes : props.themFixes,
-			   numFixes : props.numFixes };
+			   numFixes : props.numFixes,
+			   suspiciousCells : props.suspiciousCells };
 	}
 	// <p>{this.props.message}</p>
 
@@ -125,7 +132,7 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<br />
 			<br />
-			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} />
+			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} />
 			<br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.

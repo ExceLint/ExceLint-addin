@@ -30,7 +30,7 @@ export class ExcelUtils {
     }
     
 
-    public static get_rectangle(proposed_fixes: any, current_fix: number) : any {
+    public static get_rectangle(proposed_fixes: any, current_fix: number) : [string, string, string, string] {
 	if (!proposed_fixes) {
 	    return null;
 	}
@@ -292,8 +292,8 @@ export class ExcelUtils {
     }
     
     public static generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number, number]> } {
-//	origin_row = origin_row;
-//	origin_col = origin_col;
+	origin_row = origin_row;
+	origin_col = origin_col;
 	let refs = {};
 	let counter = 0;
 //	let all_deps = {};

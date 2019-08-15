@@ -84,25 +84,29 @@ var Colorize = /** @class */ (function () {
     };
     // Take all values and return an array of each row and column.
     // Note that for now, the last value of each tuple is set to 1.
-    Colorize.process_values = function (values, origin_col, origin_row) {
+    Colorize.process_values = function (values, formulas, origin_col, origin_row) {
         var value_array = [];
         var t = new timer_1.Timer("process_values");
         for (var i = 0; i < values.length; i++) {
             var row = values[i];
             for (var j = 0; j < row.length; j++) {
                 var cell = row[j].toString();
-                if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
+                //		console.log("formulas["+i+"]["+j+"] = (" + formulas[i][j] + ")");
+                // If the value is not from a formula, include it.
+                if ((cell.length > 0) && ((formulas[i][j][0] != "="))) {
                     var cellAsNumber = Number(cell).toString();
                     if (cellAsNumber === cell) {
                         // It's a number. Add it.
                         var adjustedX = j + origin_col + 1;
                         var adjustedY = i + origin_row + 1;
-                        value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+                        //			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+                        value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
                     }
                 }
             }
         }
         t.split("processed all values");
+        console.log("value_array = " + JSON.stringify(value_array));
         return value_array;
     };
     // Take in a list of [[row, col], color] pairs and group them,
@@ -154,19 +158,128 @@ var Colorize = /** @class */ (function () {
         }
         return output;
     };
-    Colorize.identify_groups = function (list) {
+    Colorize.identify_groups = function (theList) {
         var columnsort = function (a, b) { if (a[0] === b[0]) {
             return a[1] - b[1];
         }
         else {
             return a[0] - b[0];
         } };
-        var id = this.identify_ranges(list, columnsort);
+        var id = this.identify_ranges(theList, columnsort);
         var gr = this.group_ranges(id, true); // column-first
         // Now try to merge stuff with the same hash.
         var newGr1 = jsonclone_1.JSONclone.clone(gr);
         var mg = this.merge_groups(newGr1);
         return mg;
+    };
+    Colorize.processed_to_matrix = function (cols, rows, origin_col, origin_row, processed) {
+        // Invert the hash table.
+        // First, initialize a zero-filled matrix.
+        var matrix = new Array(cols);
+        for (var i = 0; i < cols; i++) {
+            matrix[i] = new Array(rows).fill(0);
+        }
+        // Now iterate through the processed formulas and update the matrix.
+        for (var _i = 0, processed_1 = processed; _i < processed_1.length; _i++) {
+            var item = processed_1[_i];
+            var _a = item[0], col = _a[0], row = _a[1], _ = _a[2], val = item[1];
+            // Yes, I know this is confusing. Will fix later.
+            //	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
+            matrix[row - origin_row - 1][col - origin_col - 1] = Number(val);
+        }
+        return matrix;
+    };
+    Colorize.stencilize = function (cols, rows, matrix) {
+        console.log("cols = " + cols + ", rows = " + rows);
+        var stencil = new Array(cols);
+        for (var i = 0; i < cols; i++) {
+            stencil[i] = new Array(rows).fill(0);
+        }
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                if (matrix[i][j] > 0) {
+                    stencil[i][j] = matrix[i][j];
+                }
+            }
+        }
+        // Compute the stencil while omitting the edges and corners.
+        for (var i = 1; i < cols - 1; i++) {
+            for (var j = 1; j < rows - 1; j++) {
+                if (matrix[i][j] > 0) {
+                    stencil[i][j] = matrix[i][j];
+                    stencil[i][j] += matrix[i - 1][j - 1] + matrix[i - 1][j] + matrix[i - 1][j + 1];
+                    stencil[i][j] += matrix[i][j - 1] + matrix[i][j + 1];
+                    stencil[i][j] += matrix[i + 1][j - 1] + matrix[i + 1][j] + matrix[i + 1][j + 1];
+                    var nonzeros = Number(matrix[i - 1][j - 1] > 0) +
+                        Number(matrix[i - 1][j] > 0) +
+                        Number(matrix[i - 1][j + 1] > 0) +
+                        Number(matrix[i][j - 1] > 0) +
+                        Number(matrix[i][j + 1] > 0) +
+                        Number(matrix[i + 1][j - 1] > 0) +
+                        Number(matrix[i + 1][j] > 0) +
+                        Number(matrix[i + 1][j + 1] > 0);
+                    stencil[i][j] /= (1 + nonzeros);
+                }
+            }
+        }
+        return stencil;
+    };
+    Colorize.compute_stencil_probabilities = function (cols, rows, matrix) {
+        var probs = new Array(cols);
+        for (var i = 0; i < cols; i++) {
+            probs[i] = new Array(rows).fill(0);
+        }
+        // Initialize the histogram to zero.
+        var counts = {};
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                counts[matrix[i][j]] = 0;
+            }
+        }
+        // Generate the counts.
+        var totalNonzeroes = 0;
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                if (matrix[i][j] > 0) {
+                    counts[matrix[i][j]] += 1;
+                    totalNonzeroes += 1;
+                }
+            }
+        }
+        // Now iterate over the counts to compute probabilities.
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                if (matrix[i][j] == 0) {
+                    probs[i][j] = 0;
+                }
+                else {
+                    probs[i][j] = counts[matrix[i][j]] / totalNonzeroes;
+                }
+            }
+        }
+        return probs;
+    };
+    Colorize.generate_suspicious_cells = function (cols, rows, matrix, probs, threshold) {
+        if (threshold === void 0) { threshold = 0.01; }
+        var cells = [];
+        var sumValues = 0;
+        var countValues = 0;
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                if (probs[i][j] > 0) {
+                    sumValues += matrix[i][j];
+                    countValues += 1;
+                    if (probs[i][j] <= threshold) {
+                        //			    console.log("Pushing " + i + ", " + j + " = " + probs[i][j] + ", threshold = " + threshold);
+                        cells.push([j + 1, i + 1, matrix[i][j]]);
+                    }
+                }
+            }
+        }
+        var avgValues = sumValues / countValues;
+        console.log("avg values = " + avgValues);
+        cells.sort(function (a, b) { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
+        return cells;
     };
     // Shannon entropy.
     Colorize.entropy = function (p) {
@@ -442,8 +555,8 @@ var Colorize = /** @class */ (function () {
             return this.Multiplier * (v0 + v1 + v2);
         }
         else {
-            var baseX = 7;
-            var baseY = 3;
+            var baseX = -7; // was 7
+            var baseY = -3; // was 3
             var v0 = vec[0] - baseX;
             v0 = v0 * v0;
             var v1 = vec[1] - baseY;

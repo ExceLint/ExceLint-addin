@@ -250,8 +250,8 @@ var ExcelUtils = /** @class */ (function () {
         return deps;
     };
     ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {
-        //	origin_row = origin_row;
-        //	origin_col = origin_col;
+        origin_row = origin_row;
+        origin_col = origin_col;
         var refs = {};
         var counter = 0;
         //	let all_deps = {};

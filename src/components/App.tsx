@@ -23,6 +23,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
     private proposed_fixes_length = 0;
+    private suspicious_cells : Array<[number, number, number]> = [[1,1,1], [2,2,2]];
     private current_fix = 0;
     private total_fixes = -1;
     private savedFormat: any = null;
@@ -45,7 +46,8 @@ export default class App extends React.Component<AppProps, AppState> {
 					       currentFix: this.current_fix,
 					       totalFixes: this.total_fixes,
 					       themFixes : this.proposed_fixes,
-					       numFixes : this.proposed_fixes_length });
+					       numFixes : this.proposed_fixes_length,
+					       suspiciousCells : this.suspicious_cells });
     }
 
     // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
@@ -153,6 +155,50 @@ export default class App extends React.Component<AppProps, AppState> {
     private saved_original_sheetname(id: string) : string {
 	return ExcelUtils.hash_sheet(id, 28) + this.originalSheetSuffix;
     }
+
+    /// Get suspicious cells.
+    private find_suspicious_cells(cols : number, rows: number,
+			     origin : [number, number, number],
+			     formulas, processed_formulas, data_values, threshold: number) {
+	let suspiciousCells;
+	{
+	    const formula_matrix = Colorize.processed_to_matrix(cols,
+								rows,
+								origin[0] - 1,
+								origin[1] - 1,
+								processed_formulas.concat(data_values));
+	    //									processed_formulas);
+		    
+	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
+	    
+	    
+	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
+	    console.log("data_values = " + JSON.stringify(data_values));
+	    
+	    
+	    const stencil = Colorize.stencilize(cols, rows, formula_matrix);
+	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
+	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
+	    console.log("probabilities = " + JSON.stringify(probs));
+	    
+	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, formula_matrix, probs, threshold);
+	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
+
+	    // Prune any cell that is in fact a formula.
+	    suspiciousCells = candidateSuspiciousCells.filter((c) => {
+		const theFormula = formulas[c[1]-1][c[0]-1];
+		if ((theFormula.length < 1) || (theFormula[0] != '=')) {
+		    return true;
+		} else {
+		    return false;
+		}
+	    });
+
+	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
+	}
+	return suspiciousCells;
+    }
+    
 
     /// Color the ranges using the specified color function.
     private process(grouped_ranges, currentWorksheet, colorfn, otherfn) {
@@ -299,6 +345,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
 	this.proposed_fixes = [];
+	this.suspicious_cells = [];
 	this.total_fixes = -1;
 	this.updateContent();
 	await context.sync();
@@ -478,60 +525,51 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("computed cell dependency for start");
 
 		const formulas = usedRange.formulas;
-		//		console.log("formulas = " + JSON.stringify(formulas));
-		let processed_formulas : any = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
+		console.log("formulas = " + JSON.stringify(formulas));
+		const values = usedRange.values;
+		const cols = values.length;
+		const rows = values[0].length;
 		
-		//		await setTimeout(() => {}, 0);
-		t.split("processed formulas");
-		//		await context.sync();
-		//		app.suspendScreenUpdatingUntilNextSync();
-		
-		//		console.log("UPPER LEFT CORNER = " + JSON.stringify(upperLeftCorner));
-		const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
-		t.split("generated all references");
-		await setTimeout(() => {}, 0);
-		const referenced_data = Colorize.color_all_data(refs);
-		const data_values = Colorize.process_values(usedRange.values, origin[0] - 1, origin[1] - 1);
-//		console.log("refs = " + JSON.stringify(refs));
-//		console.log("referenced_data = " + JSON.stringify(referenced_data));
+		const processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
+		let referenced_data;
+		let data_values;
+		{
+		    // Compute references (to color referenced data).
+		    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
+		    t.split("generated all references");
+		    
+		    
+		    await setTimeout(() => {}, 0);
+		    referenced_data = Colorize.color_all_data(refs);
+		    // console.log("referenced_data = " + JSON.stringify(referenced_data));
+		    data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
+		}
+
 		t.split("processed data");
 		await setTimeout(() => {}, 0);
 
-//		console.log("referenced_data = " + JSON.stringify(referenced_data));
+		
+
+		t.split("processed formulas");
+		
+
 
 		const grouped_data = Colorize.identify_groups(referenced_data);
 		t.split("identified groups");
-//		console.log("identified grouped_data: " + JSON.stringify(grouped_data));
+
 		const grouped_formulas = Colorize.identify_groups(processed_formulas);
-		
-		//		const grouped_formulas = Colorize.identify_groups(processed_formulas.concat(data_values)); // .concat(referenced_data));
-//		console.log("processed formulas = " + JSON.stringify(processed_formulas));
-//		console.log("grouped formulas = " + JSON.stringify(grouped_formulas, null, 2));
 		t.split("grouped formulas");
+		
 		await setTimeout(() => {}, 0);
 		
-		// Filter the proposed fixes:
-		// * If they don't all have the same format (pre-colorization), don't propose them as fixes.
-		
-
-		//		app.suspendScreenUpdatingUntilNextSync();
-		
-		//		console.log("backup sheetname = " + backupSheetname);
-		//		console.log(JSON.stringify(backupSheet));
-
-		// Walk through each proposed fix, checking to see if
-		// the merged range (that is, the applied fix) would
-		// include inconsistent formatting. If so, we prune
-		// it.
+		// Identify suspicious cells.
+		this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 0.2); // <-- threshold
 
 		/// Finally, apply colors.
 		
 		// Remove the background color from all cells.
  		let rangeFill = usedRange.format.fill;
 		rangeFill.clear();
-		
-		//		t.split("processed data");
-  		//this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
 		
 		// Make all numbers yellow; this will be the default value for unreferenced data.
 		if (numericRanges) {
@@ -581,20 +619,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		t.split("generated fixes");
 		this.total_fixes = formulas.length;
-		this.proposed_fixes_length = this.proposed_fixes.length; // Colorize.count_proposed_fixes(this.proposed_fixes);
+		this.proposed_fixes_length = this.proposed_fixes.length;
 
 		//		app.suspendScreenUpdatingUntilNextSync();
 		t.split("processed formulas");
 
-		/*
-		  for (let i = 0; i < this.proposed_fixes.length; i++) {
-		  let r = this.getRange(currentWorksheet, this.proposed_fixes, i);
-		  r.load(['format']);
-		  await context.sync();
-		  r.border.set({ 'weight': 'Thin', 'style' : 'Continuous', 'tintAndShade' : -1});
-		  }
-		*/
-		
 		this.current_fix = -1;
 		
 		// Protect the sheet against changes.
@@ -607,13 +636,14 @@ export default class App extends React.Component<AppProps, AppState> {
 
 
 		await context.sync();
+
 		/*		let currName = currentWorksheet.name;
 				currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
+
 		t.split("done");
 
 	    });
 	} catch (error) {
-	    //app.calculationMode = originalCalculationMode;
 	    console.log("Error: " + error);
 	    if (error instanceof OfficeExtension.Error) { 
 		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
@@ -677,6 +707,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		  return;
 		  }
 		*/
+		console.log(this.proposed_fixes);
 		let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
 		if (r) {
 		    r.select();
@@ -721,7 +752,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		<Header title='ExceLint' />
 		<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
 	    message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
-	    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} />
+	    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} />
 		
 	    </div>
 	);
