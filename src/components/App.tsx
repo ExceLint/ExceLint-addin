@@ -183,7 +183,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
 	    console.log("probabilities = " + JSON.stringify(probs));
 	    
-	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, formula_matrix, probs, threshold);
+	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
 	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
 
 	    // Prune any cell that is in fact a formula.

@@ -259,7 +259,7 @@ var Colorize = /** @class */ (function () {
         }
         return probs;
     };
-    Colorize.generate_suspicious_cells = function (cols, rows, matrix, probs, threshold) {
+    Colorize.generate_suspicious_cells = function (cols, rows, origin_col, origin_row, matrix, probs, threshold) {
         if (threshold === void 0) { threshold = 0.01; }
         var cells = [];
         var sumValues = 0;
@@ -271,7 +271,17 @@ var Colorize = /** @class */ (function () {
                     countValues += 1;
                     if (probs[i][j] <= threshold) {
                         //			    console.log("Pushing " + i + ", " + j + " = " + probs[i][j] + ", threshold = " + threshold);
-                        cells.push([j + 1, i + 1, matrix[i][j]]);
+                        // cells.push([j+1, i+1, matrix[i][j]]); // 3rd = actual value
+                        var adjustedX = j + origin_col + 1;
+                        var adjustedY = i + origin_row + 1;
+                        if (matrix[i][j] === 0) {
+                            // Keep zeroes intact.
+                            cells.push([adjustedX, adjustedY, "0"]); // 3rd = bogus hash for constants
+                        }
+                        else {
+                            console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j]);
+                            cells.push([adjustedX, adjustedY, "12345"]); // 3rd = bogus hash for constants
+                        }
                     }
                 }
             }

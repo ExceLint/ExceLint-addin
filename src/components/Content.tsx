@@ -23,29 +23,32 @@ export interface ContentProps {
     cellSelector : any;
 }
 
+const divStyle : any = {
+    height: '100px',
+    overflowY: 'auto',
+    overflowX: 'hidden'
+};
+
+const lineStyle : any = {
+    color: 'blue',
+    textAlign: 'left',
+    verticalAlign: 'middle'
+};
+
+const notSuspiciousStyle : any = {
+    color : 'red'
+};
+
 function makeTable(sheetName: string, arr, selector, current: number, numFixes : number) : any {
     if (numFixes === 0) {
 	numFixes = 1;
     }
-    const divStyle : any = {
-	height: '100px',
-	overflowY: 'auto',
-	overflowX: 'hidden'
-    };
-    const lineStyle : any = {
-	color: 'blue',
-	textAlign: 'left',
-	verticalAlign: 'middle'
-    };
-    const notSuspiciousStyle : any = {
-	color : 'red'
-    };
     const barWidth = 100;
     let counter = 0;
     if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
-	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
+//	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
 	    let r = ExcelUtils.get_rectangle(arr, i);
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
@@ -82,7 +85,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	if (counter > 0) {
 	    let table = [];
 	    let header = <tr><th align="left">Range</th><th align="left">Suspiciousness</th></tr>;
-	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div></div>);
+	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div></div>);
 	    return table;
 	}
     }
@@ -105,6 +108,7 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
 	verticalAlign: 'middle'
     };
     const notSuspiciousStyle : any = {
+//	fontStyle: 'italic',
 	color : 'red'
     };
     const barWidth = 100;
@@ -112,7 +116,7 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
     if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
-	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
+//	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
 	    //	    let r = ExcelUtils.get_rectangle(arr, i);
 	    let r = arr[i];
 	    if (r) {
@@ -137,7 +141,6 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
 		//		console.log("score is now = " + score);
 		let rangeDisplay = <b></b>;
 		let colName = ExcelUtils.column_index_to_name(col);
-		console.log("hey dawg current = " + current + ", i = " + i);
 		if (current === i) {
 		    rangeDisplay = <td style={{width:100}}><b>{colName}{row}</b></td>;
 		} else {
@@ -158,7 +161,7 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
 	if (counter > 0) {
 	    let table = [];
 	    let header = <tr><th align="left">Cell</th><th align="left">Suspiciousness</th></tr>;
-	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious cells in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div></div>);
+	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious cells in {sheetName}:<br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div><br /></div>);
 	    return table;
 	}
     }
@@ -217,7 +220,7 @@ export class Content extends React.Component<ContentProps, any> {
     render() {
 	let instructions = <div></div>;
 	if ((this.state.totalFixes <= 0) && (this.state.suspiciousCells.length === 0)) {
-	    instructions = <div>
+	    instructions = <div><br /><br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 		Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
 		<br /><br />
@@ -230,8 +233,6 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>&nbsp;
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} cellSelector={this.props.cellSelector} currentSuspiciousCell={this.state.currentSuspiciousCell} />
-		<br />
-		<br />
 			{instructions}
 		    
 <svg width="300" height="20">
