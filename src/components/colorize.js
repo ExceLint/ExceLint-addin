@@ -240,12 +240,14 @@ var Colorize = /** @class */ (function () {
         var totalNonzeroes = 0;
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                if (matrix[i][j] > 0) {
+                if (matrix[i][j] != 0) {
+                    console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] + "!");
                     counts[matrix[i][j]] += 1;
                     totalNonzeroes += 1;
                 }
             }
         }
+        console.log("**********************total non-zeroes = " + totalNonzeroes);
         // Now iterate over the counts to compute probabilities.
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
@@ -279,7 +281,7 @@ var Colorize = /** @class */ (function () {
                             cells.push([adjustedX, adjustedY, "0"]); // 3rd = bogus hash for constants
                         }
                         else {
-                            console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j]);
+                            console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
                             cells.push([adjustedX, adjustedY, "12345"]); // 3rd = bogus hash for constants
                         }
                     }

@@ -187,14 +187,19 @@ export default class App extends React.Component<AppProps, AppState> {
 	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
 
 	    // Prune any cell that is in fact a formula.
-	    suspiciousCells = candidateSuspiciousCells.filter((c) => {
-		const theFormula = formulas[c[1]-1][c[0]-1];
-		if ((theFormula.length < 1) || (theFormula[0] != '=')) {
-		    return true;
-		} else {
-		    return false;
-		}
-	    });
+
+	    if (typeof formulas !== 'undefined') {
+		suspiciousCells = candidateSuspiciousCells.filter((c) => {
+		    const theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
+		    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
+			return true;
+		    } else {
+			return false;
+		    }
+		});
+	    } else {
+		suspiciousCells = candidateSuspiciousCells;
+	    }
 
 	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
 	}
@@ -567,7 +572,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await setTimeout(() => {}, 0);
 		
 		// Identify suspicious cells.
-		this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 0.2); // <-- threshold
+		this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 0.05); // <-- threshold
 
 		/// Finally, apply colors.
 		
