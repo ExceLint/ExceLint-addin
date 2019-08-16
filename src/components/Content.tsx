@@ -17,8 +17,10 @@ export interface ContentProps {
     totalFixes : number;
     themFixes : Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]>;
     suspiciousCells : Array<[number, number, number]>;
+    currentSuspiciousCell : number;
     numFixes : number;
     selector : any;
+    cellSelector : any;
 }
 
 function makeTable(sheetName: string, arr, selector, current: number, numFixes : number) : any {
@@ -43,6 +45,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
     if (arr.length > 0) {
 	let children = [];
 	for (let i = 0; i < arr.length; i++) {
+	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
 	    let r = ExcelUtils.get_rectangle(arr, i);
 	    if (r) {
 		let [ col0, row0, col1, row1 ] = r;
@@ -64,9 +67,9 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		//		console.log("score is now = " + score);
 		let rangeDisplay = <b></b>;
 		if (current === i) {
-		    rangeDisplay = <td><b>{col0}{row0}:{col1}{row1}</b></td>;
+		    rangeDisplay = <td style={{width:100}}><b>{col0}{row0}:{col1}{row1}</b></td>;
 		} else {
-		    rangeDisplay = <td>{col0}{row0}:{col1}{row1}</td>;
+		    rangeDisplay = <td style={{width:100}}>{col0}{row0}:{col1}{row1}</td>;
 		}
 		const scoreStr = Math.round(score).toString() + "% suspicious";
 		let barColor = 'red';
@@ -86,6 +89,83 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
     return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
 }
 
+
+function makeTableSuspiciousCells(sheetName: string, arr, selector, current: number, numFixes : number) : any {
+    if (numFixes === 0) {
+	numFixes = 1;
+    }
+    const divStyle : any = {
+	height: '100px',
+	overflowY: 'auto',
+	overflowX: 'hidden'
+    };
+    const lineStyle : any = {
+	color: 'blue',
+	textAlign: 'left',
+	verticalAlign: 'middle'
+    };
+    const notSuspiciousStyle : any = {
+	color : 'red'
+    };
+    const barWidth = 100;
+    let counter = 0;
+    if (arr.length > 0) {
+	let children = [];
+	for (let i = 0; i < arr.length; i++) {
+	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
+	    //	    let r = ExcelUtils.get_rectangle(arr, i);
+	    let r = arr[i];
+	    if (r) {
+		let [ col, row, _val ] = r;
+		// Sort from largest to smallest (by making negative).
+//		console.log(JSON.stringify(r));
+		//		console.log("original score = " + arr[i][0]);
+		if (false) {
+		    let score = -arr[i][0] * barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
+		    //		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
+//		console.log("score = " + score);
+		    if (score > barWidth) {
+			score = barWidth;
+		    }
+		    //		score = barWidth - score; // Invert the ranking.
+		    // Skip really low scores.
+		    if (score < Colorize.reportingThreshold) {
+			continue;
+		    }
+		}
+		counter += 1;
+		//		console.log("score is now = " + score);
+		let rangeDisplay = <b></b>;
+		let colName = ExcelUtils.column_index_to_name(col);
+		console.log("hey dawg current = " + current + ", i = " + i);
+		if (current === i) {
+		    rangeDisplay = <td style={{width:100}}><b>{colName}{row}</b></td>;
+		} else {
+		    rangeDisplay = <td style={{width:100}}>{colName}{row}</td>;
+		}
+		let score = 49; // HACK FIXME
+		if (false) {
+		    const scoreStr = Math.round(score).toString() + "% suspicious";
+		    let barColor = 'red';
+		    if (Math.round(score) < 50) {
+			barColor = 'yellow';
+		    }
+		}
+		const scoreStr = "mildly suspicious";
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'yellow', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
+	    }
+	}
+	if (counter > 0) {
+	    let table = [];
+	    let header = <tr><th align="left">Cell</th><th align="left">Suspiciousness</th></tr>;
+	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious cells in {sheetName}:<br /><br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div></div>);
+	    return table;
+	}
+    }
+    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+}
+
+
 function DisplayFixes(props) {
     //    console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
     let str = "No suspicious cells.";
@@ -93,12 +173,21 @@ function DisplayFixes(props) {
 	str = "Suspicious cell count = " + props.suspiciousCells.length + ".";
     }
     str = ""; // disabling display for now.
+    let result1 = <div></div>;
     if (props.totalFixes > 0) {
 	const table = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
-	return <div>{str}{table}</div>;
+	result1 = <div><br />{str}{table}</div>;
     } else {
-	return <div>{str}</div>;
+	result1 = <div>{str}</div>;
     }
+    let result2 = <div></div>;
+    if (props.suspiciousCells.length > 0) {
+	const table = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
+	result2 = <div>{str}{table}</div>;
+    } else {
+	result2 = <div>{str}</div>;
+    }
+    return <div>{result1}{result2}</div>;
 }
 
 
@@ -111,7 +200,8 @@ export class Content extends React.Component<ContentProps, any> {
 			   totalFixes: props.totalFixes,
 			   themFixes : props.themFixes,
 			   numFixes : props.numFixes,
-			   suspiciousCells : props.suspiciousCells };
+			   suspiciousCells : props.suspiciousCells,
+			   currentSuspiciousCell : props.currentSuspiciousCell };
 	}
 	// <p>{this.props.message}</p>
 
@@ -125,20 +215,25 @@ export class Content extends React.Component<ContentProps, any> {
     
     
     render() {
+	let instructions = <div></div>;
+	if ((this.state.totalFixes <= 0) && (this.state.suspiciousCells.length === 0)) {
+	    instructions = <div>
+				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
+		Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
+		<br /><br />
+		</div>;
+	}
+
 		return (
 			<div id='content-main'>
 			<div className='padding'>
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click1}>{this.props.buttonLabel1}</Button>&nbsp;
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
-			<br />
-			<br />
-			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} />
-			<br />
-				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
-				Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
+			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} cellSelector={this.props.cellSelector} currentSuspiciousCell={this.state.currentSuspiciousCell} />
 		<br />
-				<br />
-			
+		<br />
+			{instructions}
+		    
 <svg width="300" height="20">
 <rect x="0" y="0" width="3.5714285714285716" height="20" fill="#ecaaae" />
 <rect x="3.5714285714285716" y="0" width="3.5714285714285716" height="20" fill="#74aff3" />

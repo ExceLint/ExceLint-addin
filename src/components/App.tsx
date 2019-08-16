@@ -23,8 +23,9 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
     private proposed_fixes_length = 0;
-    private suspicious_cells : Array<[number, number, number]> = [[1,1,1], [2,2,2]];
-    private current_fix = 0;
+    private suspicious_cells : Array<[number, number, number]> = [];
+    private current_suspicious_cell = -1;
+    private current_fix = -1;
     private total_fixes = -1;
     private savedFormat: any = null;
     private savedRange: string = null;
@@ -47,7 +48,8 @@ export default class App extends React.Component<AppProps, AppState> {
 					       totalFixes: this.total_fixes,
 					       themFixes : this.proposed_fixes,
 					       numFixes : this.proposed_fixes_length,
-					       suspiciousCells : this.suspicious_cells });
+					       suspiciousCells : this.suspicious_cells,
+					       currentSuspiciousCell : this.current_suspicious_cell });
     }
 
     // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
@@ -346,6 +348,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
 	this.proposed_fixes = [];
 	this.suspicious_cells = [];
+	this.current_fix = -1;
+	this.current_suspicious_cell = -1;
 	this.total_fixes = -1;
 	this.updateContent();
 	await context.sync();
@@ -625,6 +629,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("processed formulas");
 
 		this.current_fix = -1;
+		this.current_suspicious_cell = -1;
 		
 		// Protect the sheet against changes.
 		currentWorksheet.protection.protect();
@@ -713,7 +718,60 @@ export default class App extends React.Component<AppProps, AppState> {
 		    r.select();
 		}
 		this.current_fix = currentFix;
+		this.current_suspicious_cell = -1;
 		this.updateContent();
+		/*
+		  this.contentElement.current.setState({ currentFix: currentFix,
+		  totalFixes: this.total_fixes,
+		  themFixes : this.proposed_fixes });
+		*/
+	    });
+	} catch (error) {
+	    console.log("Error: " + error);
+	    if (error instanceof OfficeExtension.Error) { 
+		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
+	    }
+	}
+    }
+
+    selectCell = async (currentCell) => {
+	console.log("selectCell " + currentCell);
+	try {
+	    await Excel.run(async context => {
+		if (this.suspicious_cells.length == 0) {
+		    await this.restoreFormats(context);
+		    await this.setColor();
+ 		}
+		if (currentCell == -1) {
+		    this.current_suspicious_cell = -1;
+		    this.updateContent();
+		    return;
+		}
+		let app = context.workbook.application;
+		
+		let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+		currentWorksheet.load(['protection']);
+		await context.sync();
+		/*
+		  if (currentWorksheet.protection.protected) {
+		  // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
+		  return;
+		  }
+		*/
+		console.log("suspicious cells + " + JSON.stringify(this.suspicious_cells));
+
+		const col = this.suspicious_cells[currentCell][0];
+		const row = this.suspicious_cells[currentCell][1];
+		let rangeStr = ExcelUtils.column_index_to_name(col) + row;
+		rangeStr = rangeStr + ":" + rangeStr;
+		let r = currentWorksheet.getRange(rangeStr);
+		if (r) {
+		    r.select();
+		}
+		this.current_suspicious_cell = currentCell;
+		this.current_fix = -1;
+		this.updateContent();
+		console.log("setting is now " + this.current_suspicious_cell);
 		/*
 		  this.contentElement.current.setState({ currentFix: currentFix,
 		  totalFixes: this.total_fixes,
@@ -752,7 +810,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		<Header title='ExceLint' />
 		<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
 	    message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
-	    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} />
+	    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} cellSelector={this.selectCell} currentSuspiciousCell={this.current_suspicious_cell} />
 		
 	    </div>
 	);
