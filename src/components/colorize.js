@@ -100,7 +100,8 @@ var Colorize = /** @class */ (function () {
                         var adjustedX = j + origin_col + 1;
                         var adjustedY = i + origin_row + 1;
                         //			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
-                        value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+                        //			value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+                        value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
                     }
                 }
             }
@@ -292,7 +293,7 @@ var Colorize = /** @class */ (function () {
                         }
                         else {
                             console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
-                            cells.push([adjustedX, adjustedY, "12345"]); // 3rd = bogus hash for constants
+                            cells.push([adjustedX, adjustedY, Colorize.distinguishedZeroHash]); // 3rd = bogus hash for constants
                         }
                     }
                 }
@@ -456,7 +457,12 @@ var Colorize = /** @class */ (function () {
                 //		const sr1 = JSON.stringify(r1);
                 for (var _f = 0, _g = Object.keys(groups); _f < _g.length; _f++) {
                     var k2 = _g[_f];
-                    if (k1 === k2) {
+                    if ((k1 === k2) ||
+                        (k1 === Colorize.distinguishedZeroHash) ||
+                        (k2 === Colorize.distinguishedZeroHash)) {
+                        // Don't try to create fixes from within the
+                        // same hash values or using cells with no
+                        // dependencies.
                         continue;
                     }
                     for (var j = 0; j < groups[k2].length; j++) {
@@ -598,7 +604,7 @@ var Colorize = /** @class */ (function () {
     // A multiplier for the hash function.
     Colorize.Multiplier = 1; // 103037;
     // A hash string indicating no dependencies.
-    Colorize.distinguishedZeroHash = "0";
+    Colorize.distinguishedZeroHash = "12345";
     return Colorize;
 }());
 exports.Colorize = Colorize;

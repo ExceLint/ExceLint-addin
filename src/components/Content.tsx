@@ -171,11 +171,13 @@ function DisplayFixes(props) {
 	return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
     }
     const table1 = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
-    result1 = <div><br /><br />{table1}</div>;
+    result1 = <div><br /><br />{table1}<br /></div>;
     let result2 = <div></div>;
     const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
     result2 = <div>{table2}</div>;
-    return <div>{result1}{result2}</div>;
+    return <div>{result1}</div>;
+    // Temporarily disable display of suspicious cells while feature remains in development.
+//    return <div>{result1}{result2}</div>;
 }
 
 

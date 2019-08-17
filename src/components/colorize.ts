@@ -26,7 +26,7 @@ export class Colorize {
     private static Multiplier = 1; // 103037;
 
     // A hash string indicating no dependencies.
-    private static distinguishedZeroHash = "0";
+    private static distinguishedZeroHash = "12345";
 
     public static initialize() {
 	if (!this.initialized) {
@@ -126,7 +126,8 @@ export class Colorize {
 			const adjustedX = j + origin_col + 1;
 			const adjustedY = i + origin_row + 1;
 			//			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
-			value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+//			value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
+			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
 		    }
 		}
 	    }
@@ -332,7 +333,7 @@ export class Colorize {
 				cells.push([adjustedX, adjustedY, "0"]); // 3rd = bogus hash for constants
 			    } else {
 				console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
-				cells.push([adjustedX, adjustedY, "12345"]); // 3rd = bogus hash for constants
+				cells.push([adjustedX, adjustedY, Colorize.distinguishedZeroHash]); // 3rd = bogus hash for constants
 			    }
 			}
 		    }
@@ -511,7 +512,12 @@ export class Colorize {
 		const r1 : [excelintVector, excelintVector] = groups[k1][i];
 //		const sr1 = JSON.stringify(r1);
 		for (let k2 of Object.keys(groups)) {
-		    if (k1 === k2) {
+		    if ((k1 === k2) ||
+			(k1 === Colorize.distinguishedZeroHash) ||
+			(k2 === Colorize.distinguishedZeroHash)) {
+			// Don't try to create fixes from within the
+			// same hash values or using cells with no
+			// dependencies.
 			continue;
 		    }
 		    for (let j = 0; j < groups[k2].length; j++) {
