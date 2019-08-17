@@ -255,8 +255,8 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
 
-    saveFormats = async() => {
-	//	OfficeExtension.config.extendedErrorLogging = true;
+    saveFormats = async(wasPreviouslyProtected) => {
+	OfficeExtension.config.extendedErrorLogging = true;
 	await Excel.run(async context => {
 	    // First, load the current worksheet's name and id.
 	    let worksheets = context.workbook.worksheets;
@@ -272,12 +272,12 @@ export default class App extends React.Component<AppProps, AppState> {
 	    let oldBackupSheet = worksheets.getItemOrNullObject(oldBackupName);
 	    await context.sync();
 
-	    if (oldBackupSheet) {
+	    if (!oldBackupSheet.isNullObject) {
 		// There was an old backup sheet, which we now delete.
 		// Note that we first have to set its visibility to "hidden" or else we can't delete it!
 		oldBackupSheet.visibility = Excel.SheetVisibility.hidden;
 		oldBackupSheet.delete();
-		//		await context.sync();
+		await context.sync();
 		//		return;
 	    }
 
@@ -293,9 +293,15 @@ export default class App extends React.Component<AppProps, AppState> {
 	    // Ensure that we remain on the current worksheet.
 	    // This addresses an apparent bug in the client product.
 	    currentWorksheet.activate();
+	    await context.sync();
 
 	    // Finally, rename the backup sheet.
  	    newbackupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
+	    // If the original sheet was protected, protect the backup, too
+	    // (we use this to restore the original protection later, if needed).
+	    if (wasPreviouslyProtected) {
+		newbackupSheet.protection.protect();
+	    }
 
 	    await context.sync();
 	    console.log("saveFormats: copied out the formats");
@@ -303,64 +309,99 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     /// Restore formats from the saved hidden sheet corresponding to the active sheet's ID.
-    restoreFormats = async(context) => {
-	console.log("restoreFormats: begin");
-	let t = new Timer("restoreFormats");
-	
-	let worksheets = context.workbook.worksheets;
-	// Try to restore the format from the hidden sheet.
-	let currentWorksheet = worksheets.getActiveWorksheet();
-	this.sheetName = "";
+    restoreFormats = async() => {
 	try {
-	    currentWorksheet.protection.unprotect();
-	    await context.sync();
-	} catch(error) {
-	    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
-	    return;
-	}
-
-
-	let backupName = this.saved_original_sheetname(currentWorksheet.id);
-	// If it's there already, restore it.
-	try {
-	    let backupSheet = worksheets.getItemOrNullObject(backupName);
-	    if (backupSheet) {
-		// Get the current used range.
-		let destRange = currentWorksheet.getUsedRange(false) as any;
+	    await Excel.run(async context => {
+		console.log("restoreFormats: begin");
+		let t = new Timer("restoreFormats");
 		
-		// Clear all formatting.
-		destRange.load(['format']);
+		let worksheets = context.workbook.worksheets;
+		let currentWorksheet = worksheets.getActiveWorksheet();
+		this.sheetName = "";
+		currentWorksheet.load(['protection','id']);
 		await context.sync();
-		destRange.format.fill.clear();
 
+		// If the backup is there, restore it.
+		let backupName = this.saved_original_sheetname(currentWorksheet.id);
+		try {
+		    let backupSheet = worksheets.getItemOrNullObject(backupName);
+		    await context.sync();
+		    console.log("backupSheet = " + JSON.stringify(backupSheet));
+		    if (!backupSheet.isNullObject) {
+			// First, try to unprotect the current worksheet so we can restore into it.
+			try {
+			    currentWorksheet.protection.unprotect();
+			    await context.sync();
+			} catch(error) {
+			    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
+			    return;
+			}
+			// Get the current used range.
+			let destRange = currentWorksheet.getUsedRange(false) as any;
+			
+			// Clear all formatting.
+			destRange.load(['format']);
+			await context.sync();
+			destRange.format.fill.clear();
+			await context.sync();
+			
+			// Now get the used range again (the idea
+			// being that clearing the formats will
+			// potentially reduce the used range size).
+			destRange = currentWorksheet.getUsedRange(false) as any;
+			
+			// Grab the backup sheet info.
+			backupSheet.load(['format', 'address', 'protection']);
+			// Save previous protection status.
+			await context.sync();
+			const wasPreviouslyProtected = backupSheet.protection.protected;
+			backupSheet.protection.unprotect();
+			
+			let backupSheetUsedRange = backupSheet.getUsedRange(false) as any;
+			backupSheetUsedRange.load(['address']);
+ 			await context.sync();
+
+			// Now copy it all into the original worksheet.
+			console.log("copying out " + JSON.stringify(backupSheetUsedRange.address));
+			// destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
+			destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
+ 			await context.sync();
+			// We are done with the backup sheet: delete it.
+			backupSheet.visibility = Excel.SheetVisibility.hidden;
+			backupSheet.delete();
+
+			// If the original sheet was protected (which
+			// we know because we protected the backup),
+			// restore that protection.
+			
+			if (wasPreviouslyProtected) {
+			    currentWorksheet.protection.protect();
+			} else {
+			    currentWorksheet.protection.unprotect();
+			}
+			
+ 			await context.sync();
+		    } else {
+			console.log("restoreFormats: didn't find the sheet " + backupName);
+		    }
+		} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
+		this.proposed_fixes = [];
+		this.suspicious_cells = [];
+		this.current_fix = -1;
+		this.current_suspicious_cell = -1;
+		this.total_fixes = -1;
+		this.updateContent();
 		await context.sync();
-		// Now get the used range again.
-		destRange = currentWorksheet.getUsedRange(false) as any;
-
-		// Grab the backup sheet info.
-		backupSheet.load(['format', 'address']);
-		let backupSheetUsedRange = backupSheet.getUsedRange(false) as any;
-		backupSheetUsedRange.load(['address']);
- 		await context.sync();
-
-		console.log("copying out " + JSON.stringify(backupSheetUsedRange.address));
-		// destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
-		destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
- 		await context.sync();
-	    } else {
-		console.log("restoreFormats: didn't find the sheet " + backupName);
+		t.split("end");
+	    });
+	} catch (error) {
+	    console.log("Error: " + error);
+	    if (error instanceof OfficeExtension.Error) { 
+		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
 	    }
-	} catch(error) { console.log("restoreFormats: Nothing to restore: " + error); }
-	this.proposed_fixes = [];
-	this.suspicious_cells = [];
-	this.current_fix = -1;
-	this.current_suspicious_cell = -1;
-	this.total_fixes = -1;
-	this.updateContent();
-	await context.sync();
-	t.split("end");
+	}
     }
-
+   
 
     /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
     setColor = async () => {
@@ -376,13 +417,18 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("got protection");
 
 		// 		console.log('setColor: protection status = ' + currentWorksheet.protection.protected);
-		if (currentWorksheet.protection.protected) {
+		const wasPreviouslyProtected = currentWorksheet.protection.protected;
+		console.log("setColor: previously protected? = " + wasPreviouslyProtected);
+		try {
+		    currentWorksheet.protection.unprotect();
+		    await context.sync();
+		} catch(error) {
 		    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
 		    return;
 		}
-
+		
 		/// Save the formats so they can later be restored.
-		await this.saveFormats();
+		await this.saveFormats(wasPreviouslyProtected);
 
 		// Disable calculation for now.
 		let app = context.workbook.application;
@@ -673,32 +719,12 @@ export default class App extends React.Component<AppProps, AppState> {
 	}
     }
 
-    restoreFormatsAndColors = async () => {
-	//	    OfficeExtension.config.extendedErrorLogging = true;
-	try {
-	    await Excel.run(async context => {
-		//		    let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-		/*
-		  currentWorksheet.load(['name']);
-		  await context.sync();
-		  console.log("restoreFormatsAndColors: loaded names from current worksheet");
-		*/
-		await this.restoreFormats(context);
-	    });
-	} catch (error) {
-	    console.log("Error: " + error);
-	    if (error instanceof OfficeExtension.Error) { 
-		console.log("Debug info: " + JSON.stringify(error.debugInfo)); 
-	    }
-	}
-    }
-
     selectFix = async (currentFix) => {
 	console.log("selectFix " + currentFix);
 	try {
 	    await Excel.run(async context => {
 		if (this.total_fixes == -1) {
-		    await this.restoreFormats(context);
+		    await this.restoreFormats();
 		    await this.setColor();
  		}
 		if (currentFix == -1) {
@@ -744,7 +770,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	try {
 	    await Excel.run(async context => {
 		if (this.suspicious_cells.length == 0) {
-		    await this.restoreFormats(context);
+		    await this.restoreFormats();
 		    await this.setColor();
  		}
 		if (currentCell == -1) {
@@ -814,7 +840,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		<div className='ms-welcome'>
 		<Header title='ExceLint' />
 		<Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
-	    message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormatsAndColors}
+	    message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormats}
 	    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} cellSelector={this.selectCell} currentSuspiciousCell={this.current_suspicious_cell} />
 		
 	    </div>
