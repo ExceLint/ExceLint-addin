@@ -3,7 +3,7 @@ import { Button, ButtonType } from 'office-ui-fabric-react';
 import { ExcelUtils } from './excelutils';
 import { Colorize } from './colorize';
 
-// Checkbox
+const barWidth = 100;
 
 export interface ContentProps {
     message1: string;
@@ -43,7 +43,6 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
     if (numFixes === 0) {
 	numFixes = 1;
     }
-    const barWidth = 100;
     let counter = 0;
     if (arr.length > 0) {
 	let children = [];
@@ -90,6 +89,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	}
     }
     return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+//    return <div></div>; //  style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
 }
 
 
@@ -97,21 +97,6 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
     if (numFixes === 0) {
 	numFixes = 1;
     }
-    const divStyle : any = {
-	height: '100px',
-	overflowY: 'auto',
-	overflowX: 'hidden'
-    };
-    const lineStyle : any = {
-	color: 'blue',
-	textAlign: 'left',
-	verticalAlign: 'middle'
-    };
-    const notSuspiciousStyle : any = {
-//	fontStyle: 'italic',
-	color : 'red'
-    };
-    const barWidth = 100;
     let counter = 0;
     if (arr.length > 0) {
 	let children = [];
@@ -165,31 +150,31 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
 	    return table;
 	}
     }
-    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+    // return <div></div>;
+    return <div style={notSuspiciousStyle}>No suspicious cells found in {sheetName}.<br /><br /></div>;
 }
 
 
 function DisplayFixes(props) {
-    //    console.log("DisplayFixes: " + props.totalFixes + ", " + props.currentFix + ", " + JSON.stringify(props.themFixes));
-    let str = "No suspicious cells.";
-    if (props.suspiciousCells.length > 0) {
-	str = "Suspicious cell count = " + props.suspiciousCells.length + ".";
-    }
-    str = ""; // disabling display for now.
+//    console.log("DisplayFixes: " + props.totalFixes + ", " + props.suspiciousCells.length);
     let result1 = <div></div>;
-    if (props.totalFixes > 0) {
-	const table = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
-	result1 = <div><br />{str}{table}</div>;
-    } else {
-	result1 = <div>{str}</div>;
+    let str = "";
+    if ((props.totalFixes === 0) && (props.suspiciousCells.length === 0)) {
+	return <div style={notSuspiciousStyle}>No suspicious formulas or cells found in {props.sheetName}.<br /><br /></div>;
     }
+    if (props.totalFixes < 0) {
+	return <div></div>;
+    }
+    // OK, if we got here, we did some analysis.
+    if ((props.themFixes.length === 0) && (props.suspiciousCells.length === 0)) {
+	// We got nothing.
+	return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
+    }
+    const table1 = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
+    result1 = <div><br /><br />{table1}</div>;
     let result2 = <div></div>;
-    if (props.suspiciousCells.length > 0) {
-	const table = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
-	result2 = <div>{str}{table}</div>;
-    } else {
-	result2 = <div>{str}</div>;
-    }
+    const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
+    result2 = <div>{table2}</div>;
     return <div>{result1}{result2}</div>;
 }
 
@@ -219,8 +204,8 @@ export class Content extends React.Component<ContentProps, any> {
     
     render() {
 	let instructions = <div></div>;
-	if ((this.state.totalFixes <= 0) && (this.state.suspiciousCells.length === 0)) {
-	    instructions = <div><br /><br />
+	if ((this.state.themFixes.length === 0) && (this.state.suspiciousCells.length === 0)) {
+	    instructions = <div><br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 		Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
 		<br /><br />
