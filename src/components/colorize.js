@@ -182,10 +182,20 @@ var Colorize = /** @class */ (function () {
         // Now iterate through the processed formulas and update the matrix.
         for (var _i = 0, processed_1 = processed; _i < processed_1.length; _i++) {
             var item = processed_1[_i];
-            var _a = item[0], col = _a[0], row = _a[1], _ = _a[2], val = item[1];
+            var _a = item[0], col = _a[0], row = _a[1], isConstant = _a[2], val = item[1];
             // Yes, I know this is confusing. Will fix later.
             //	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
-            matrix[row - origin_row - 1][col - origin_col - 1] = Number(val);
+            var adjustedX = row - origin_row - 1;
+            var adjustedY = col - origin_col - 1;
+            var value = 12345;
+            if (isConstant === 1) {
+                // That means it was a constant.
+                // Set to a fixed value (as above).
+            }
+            else {
+                value = Number(val);
+            }
+            matrix[adjustedX][adjustedY] = value;
         }
         return matrix;
     };

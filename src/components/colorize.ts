@@ -210,10 +210,19 @@ export class Colorize {
 	}
 	// Now iterate through the processed formulas and update the matrix.
 	for (let item of processed) {
-	    const [[col, row, _], val] = item;
+	    const [[col, row, isConstant], val] = item;
 	    // Yes, I know this is confusing. Will fix later.
-//	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
-	    matrix[row-origin_row-1][col-origin_col-1] = Number(val);
+	    //	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
+	    const adjustedX = row-origin_row-1;
+	    const adjustedY = col-origin_col-1;
+	    let value = 12345;
+	    if (isConstant === 1) {
+		// That means it was a constant.
+		// Set to a fixed value (as above).
+	    } else {
+		value = Number(val);
+	    }
+	    matrix[adjustedX][adjustedY] = value;
 	}
 	return matrix;
     }
