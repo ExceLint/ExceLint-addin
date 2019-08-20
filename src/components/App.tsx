@@ -171,20 +171,20 @@ export default class App extends React.Component<AppProps, AppState> {
 								processed_formulas.concat(data_values));
 	    //									processed_formulas);
 		    
-	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
+//	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
 	    
 	    
-	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
-	    console.log("data_values = " + JSON.stringify(data_values));
+//	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
+//	    console.log("data_values = " + JSON.stringify(data_values));
 	    
 	    
 	    const stencil = Colorize.stencilize(cols, rows, formula_matrix);
-	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
+//	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
 	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
-	    console.log("probabilities = " + JSON.stringify(probs));
+//	    console.log("probabilities = " + JSON.stringify(probs));
 	    
 	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
-	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
+//	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
 
 	    // Prune any cell that is in fact a formula.
 
@@ -201,7 +201,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		suspiciousCells = candidateSuspiciousCells;
 	    }
 
-	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
+//	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
 	}
 	return suspiciousCells;
     }
@@ -516,13 +516,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		app.suspendApiCalculationUntilNextSync();
 
 		// Compute the number of cells in the range "usedRange".
-		// const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
+		const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
 		// console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
-		// const [ul1, ul2, ul3] = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
-		// const [lr1, lr2, lr3] = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+		const upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+		const lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
 		// let upperLeftCorner : [number, number] = [ul1, ul2];
 		// let lowerRightCorner : [number, number] = [lr1, lr2];
-		// let numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+		const numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
 		// let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
 		//		console.log("number of cells used = " + numberOfCellsUsed);
 
@@ -535,7 +535,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		// it when it takes less than a second (though that is
 		// total guesswork). Arbitrary threshold for now.
 		// Revisit if this gets fixed...
- 		if (false) { // FIXME numberOfCellsUsed < 2000) {
+ 		if (numberOfCellsUsed < 2000) {
 		    // Activate using numeric formula ranges when
 		    // there aren't "too many" cells.
 		    useNumericFormulaRanges = true;
@@ -548,13 +548,20 @@ export default class App extends React.Component<AppProps, AppState> {
 		    await context.sync();
 		    t.split("got numeric formula ranges");
 		}
+
+		let numericRanges = null;
+
+		console.log("number of cells used = " + numberOfCellsUsed);
 		
- 		let numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
+		if (numberOfCellsUsed < 2000) { // Check number of cells, as above.
+		    // For very large spreadsheets, this takes AGES.
+ 		    numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
-		await context.sync();
-		t.split("got numeric ranges");
-		
-		//		app.suspendScreenUpdatingUntilNextSync();
+		    await context.sync();
+		    t.split("got numeric ranges");
+		}
+
+//		app.suspendScreenUpdatingUntilNextSync();
 
 
 		if (displayComments) {
@@ -580,15 +587,32 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("computed cell dependency for start");
 
 		const formulas = usedRange.formulas;
-		console.log("formulas = " + JSON.stringify(formulas));
+		console.log("number of formulas = " + formulas.length);
+
+		let processed_formulas = [];
+		if (formulas.length > 10000) {
+		    console.log("too many formulas!");
+		} else {
+		
+		    t.split("about to process formulas");
+		    
+		    processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
+		    t.split("processed formulas");
+		}
+		
+		// console.log("formulas = " + JSON.stringify(formulas));
 		const values = usedRange.values;
+		console.log("number of values = " + values.length);
+		
+		let referenced_data = [];
+		let data_values = [];
 		const cols = values.length;
 		const rows = values[0].length;
 		
-		const processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
-		let referenced_data;
-		let data_values;
-		{
+		if (values.length > 10000) {
+		    console.log("too many values!");
+		} else {
+		    
 		    // Compute references (to color referenced data).
 		    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
 		    t.split("generated all references");
@@ -598,18 +622,16 @@ export default class App extends React.Component<AppProps, AppState> {
 		    referenced_data = Colorize.color_all_data(refs);
 		    // console.log("referenced_data = " + JSON.stringify(referenced_data));
 		    data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
+
+		    t.split("processed data");
+		    await setTimeout(() => {}, 0);
 		}
 
-		t.split("processed data");
-		await setTimeout(() => {}, 0);
-
+		console.log("1");
 		
-
-		t.split("processed formulas");
-		
-
-
 		const grouped_data = Colorize.identify_groups(referenced_data);
+   		console.log("2");
+
 		t.split("identified groups");
 
 		const grouped_formulas = Colorize.identify_groups(processed_formulas);
@@ -618,8 +640,13 @@ export default class App extends React.Component<AppProps, AppState> {
 		await setTimeout(() => {}, 0);
 		
 		// Identify suspicious cells.
-		this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 0.05); // <-- threshold
+		this.suspicious_cells = [];
 
+		if (values.length < 10000) {
+		    this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 0.05); // <-- threshold
+		}
+
+		
 		/// Finally, apply colors.
 		
 		// Remove the background color from all cells.
@@ -663,16 +690,19 @@ export default class App extends React.Component<AppProps, AppState> {
 		
 		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
-		t.split("about to adjust scores.");
-		
-		// Adjust the fix scores (downward) to take into account formatting in the original sheet.
-		await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
+		if (this.proposed_fixes.length > 0) {
+		    t.split("about to adjust scores.");
 
-		t.split("sorting fixes.");
+		    // Adjust the fix scores (downward) to take into account formatting in the original sheet.
+		    await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
+
+		    t.split("sorting fixes.");
 		
-		this.proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
+		    this.proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
 		
-		t.split("generated fixes");
+		    t.split("generated fixes");
+		}
+		
 		this.total_fixes = formulas.length;
 		this.proposed_fixes_length = this.proposed_fixes.length;
 
@@ -789,7 +819,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		  return;
 		  }
 		*/
-		console.log("suspicious cells + " + JSON.stringify(this.suspicious_cells));
+//		console.log("suspicious cells + " + JSON.stringify(this.suspicious_cells));
 
 		const col = this.suspicious_cells[currentCell][0];
 		const row = this.suspicious_cells[currentCell][1];

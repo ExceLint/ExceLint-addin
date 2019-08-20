@@ -43,7 +43,7 @@ function generate_bounding_box(g) {
     var bb = {};
     for (var _i = 0, _a = Object.keys(g); _i < _a.length; _i++) {
         var i = _a[_i];
-        console.log("length of formulas for " + i + " = " + g[i].length);
+        //	console.log("length of formulas for " + i + " = " + g[i].length);
         var xMin = 1000000;
         var yMin = 1000000;
         var xMax = -1000000;
@@ -278,8 +278,8 @@ exports.find_all_proposed_fixes = find_all_proposed_fixes;
 function test_find_all_proposed_fixes(grouped_formulas) {
     comparisons = 0;
     var all_fixes = find_all_proposed_fixes(grouped_formulas);
-    console.log("all matches = " + JSON.stringify(all_fixes));
-    console.log("comparisons = " + comparisons);
+    //    console.log("all matches = " + JSON.stringify(all_fixes));
+    //    console.log("comparisons = " + comparisons);
     var theLength = 0;
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
         var k = _a[_i];

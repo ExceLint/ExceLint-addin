@@ -46,7 +46,7 @@ function sort_y_coord(a,b) {
 function generate_bounding_box(g) : { [val: string]: [excelintVector, excelintVector] } {
     let bb = {};
     for (let i of Object.keys(g)) {
-	console.log("length of formulas for " + i + " = " + g[i].length);
+//	console.log("length of formulas for " + i + " = " + g[i].length);
 	let xMin = 1000000;
 	let yMin = 1000000;
 	let xMax = -1000000;
@@ -301,8 +301,8 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 export function test_find_all_proposed_fixes(grouped_formulas) {
     comparisons = 0;
     const all_fixes = find_all_proposed_fixes(grouped_formulas);
-    console.log("all matches = " + JSON.stringify(all_fixes));
-    console.log("comparisons = " + comparisons);
+//    console.log("all matches = " + JSON.stringify(all_fixes));
+//    console.log("comparisons = " + comparisons);
     let theLength = 0;
     for (let k of Object.keys(grouped_formulas)) {
 	theLength += grouped_formulas[k].length;
