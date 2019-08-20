@@ -33,6 +33,10 @@ export default class App extends React.Component<AppProps, AppState> {
     public state = {};
     private contentElement : any = null;
     private sheetName : string = "";
+
+    private numericFormulaRangeThreshold = 2000;
+    private formulasThreshold = 10000;
+    private valuesThreshold = 10000;
     
     constructor(props, context) {
 	super(props, context);
@@ -535,10 +539,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		// it when it takes less than a second (though that is
 		// total guesswork). Arbitrary threshold for now.
 		// Revisit if this gets fixed...
- 		if (numberOfCellsUsed < 2000) {
+ 		if (numberOfCellsUsed < this.numericFormulaRangeThreshold) {
 		    // Activate using numeric formula ranges when
 		    // there aren't "too many" cells.
 		    useNumericFormulaRanges = true;
+		} else {
+		    console.log("Too many cells to use numeric formula ranges.");
 		}
 		
 		let numericFormulaRanges = null;
@@ -590,8 +596,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		console.log("number of formulas = " + formulas.length);
 
 		let processed_formulas = [];
-		if (formulas.length > 10000) {
-		    console.log("too many formulas!");
+		if (formulas.length > this.formulasThreshold) {
+		    console.log("Too many formulas to perform formula analysis.");
 		} else {
 		
 		    t.split("about to process formulas");
@@ -609,8 +615,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		const cols = values.length;
 		const rows = values[0].length;
 		
-		if (values.length > 10000) {
-		    console.log("too many values!");
+		if (values.length > this.valuesThreshold) {
+		    console.log("Too many values to perform reference analysis.");
 		} else {
 		    
 		    // Compute references (to color referenced data).
@@ -627,10 +633,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    await setTimeout(() => {}, 0);
 		}
 
-		console.log("1");
-		
 		const grouped_data = Colorize.identify_groups(referenced_data);
-   		console.log("2");
 
 		t.split("identified groups");
 
