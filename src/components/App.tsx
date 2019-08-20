@@ -34,7 +34,8 @@ export default class App extends React.Component<AppProps, AppState> {
     private contentElement : any = null;
     private sheetName : string = "";
 
-    private numericFormulaRangeThreshold = 2000;
+    private numericFormulaRangeThreshold = 10000;
+    private numericRangeThreshold = 10000;
     private formulasThreshold = 10000;
     private valuesThreshold = 10000;
     
@@ -559,12 +560,14 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		console.log("number of cells used = " + numberOfCellsUsed);
 		
-		if (numberOfCellsUsed < 2000) { // Check number of cells, as above.
+		if (numberOfCellsUsed < this.numericRangeThreshold) { // Check number of cells, as above.
 		    // For very large spreadsheets, this takes AGES.
  		    numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
 									  Excel.SpecialCellValueType.numbers);
 		    await context.sync();
 		    t.split("got numeric ranges");
+		} else {
+		    console.log("Too many cells to use numeric ranges.");
 		}
 
 //		app.suspendScreenUpdatingUntilNextSync();
