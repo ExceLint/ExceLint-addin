@@ -133,7 +133,7 @@ export class Colorize {
 	    }
 	}
 	t.split("processed all values");
-	console.log("value_array = " + JSON.stringify(value_array));
+//	console.log("value_array = " + JSON.stringify(value_array));
 	return value_array;
     }
 
@@ -288,13 +288,13 @@ export class Colorize {
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
 		    if (matrix[i][j] != 0) {
-			console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] +  "!");
+//			console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] +  "!");
 			counts[matrix[i][j]] += 1;
 			totalNonzeroes += 1;
 		    }
 		}
 	    }
-	    console.log("**********************total non-zeroes = " + totalNonzeroes);
+//	    console.log("**********************total non-zeroes = " + totalNonzeroes);
 	    // Now iterate over the counts to compute probabilities.
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
@@ -332,7 +332,7 @@ export class Colorize {
 				// Keep zeroes intact.
 				cells.push([adjustedX, adjustedY, "0"]); // 3rd = bogus hash for constants
 			    } else {
-				console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
+//				console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
 				cells.push([adjustedX, adjustedY, Colorize.distinguishedZeroHash]); // 3rd = bogus hash for constants
 			    }
 			}
