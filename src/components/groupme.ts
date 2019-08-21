@@ -233,7 +233,8 @@ function find_all_matching_rectangles(thisKey: string,
 	    let box = bb[key];
 
 	    /* Since the keys are sorted in x-axis order,
-	       we can stop once we have gone too far on the x-axis to ever merge again. */
+	       we can stop once we have gone too far on the x-axis to ever merge again;
+	       mutatis mutandis for the y-axis. */
 
 	    if (true) { // early stopping
 		
@@ -353,7 +354,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 	all_matches = all_matches.map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
 							     x[1].map((a,_1,_2) => Number(a))]; });
     }
-    console.log("before: " + JSON.stringify(all_matches));
+//    console.log("before: " + JSON.stringify(all_matches));
     all_matches = all_matches.map((x, _1, _2) => {
 	if (numComparator(x[1], x[2]) < 0) {
 	    return [x[0], x[2], x[1]];
@@ -362,7 +363,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 	}
     });
     all_matches = dedup(all_matches);
-    console.log("after: " + JSON.stringify(all_matches));
+//    console.log("after: " + JSON.stringify(all_matches));
     t.split("done.");
     return all_matches;
 }
