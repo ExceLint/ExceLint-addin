@@ -250,8 +250,6 @@ var ExcelUtils = /** @class */ (function () {
         return deps;
     };
     ExcelUtils.generate_all_references = function (formulas, origin_col, origin_row) {
-        origin_row = origin_row;
-        origin_col = origin_col;
         var refs = {};
         var counter = 0;
         //	let all_deps = {};
@@ -266,11 +264,13 @@ var ExcelUtils = /** @class */ (function () {
                 if (counter % 1000 == 0) {
                     console.log(counter + " references down");
                 }
-                //		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+                console.log('origin_col = ' + origin_col + ', origin_row = ' + origin_row);
                 if (cell[0] === '=') { // It's a formula.
                     //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
                     var direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
-                    //		    console.log("direct_refs = " + direct_refs);
+                    //		    console.log("cell = " + JSON.stringify(cell));
+                    //		    console.log("direct_refs = " + JSON.stringify(direct_refs));
+                    //		    console.log(JSON.stringify(formulas));
                     for (var _i = 0, direct_refs_1 = direct_refs; _i < direct_refs_1.length; _i++) {
                         var dep = direct_refs_1[_i];
                         if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
@@ -279,8 +279,8 @@ var ExcelUtils = /** @class */ (function () {
                         else {
                             // Check to see if this is data or a formula.
                             // If it's not a formula, add it.
-                            var rowIndex = dep[1] - 1;
-                            var colIndex = dep[0] - 1;
+                            var rowIndex = dep[0] - origin_col - 1;
+                            var colIndex = dep[1] - origin_row - 1;
                             /*
                             console.log("cell = " + cell);
                             console.log("dep[0] = " + dep[0]);
@@ -289,11 +289,10 @@ var ExcelUtils = /** @class */ (function () {
                             console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
                             console.log("rowIndex = " + rowIndex);
                             console.log("colIndex = " + colIndex);  */
-                            var outsideFormulaRange = ((rowIndex >= formulas.length)
-                                || (colIndex >= formulas[0].length)
+                            var outsideFormulaRange = ((colIndex >= formulas.length)
+                                || (rowIndex >= formulas[0].length)
                                 || (rowIndex < 0)
                                 || (colIndex < 0));
-                            // DISABLE FOR NOW (Discard references to cells outside the formula range.)
                             if (true) {
                                 var addReference = false;
                                 if (outsideFormulaRange) {
@@ -301,14 +300,13 @@ var ExcelUtils = /** @class */ (function () {
                                 }
                                 else {
                                     // Only include non-formulas (if they are in the range).
-                                    var referentCell = formulas[rowIndex][colIndex];
+                                    var referentCell = formulas[colIndex][rowIndex];
+                                    //				    console.log("referent cell = " + JSON.stringify(referentCell));
                                     if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
                                         addReference = true;
                                     }
                                 }
                                 if (addReference) {
-                                    //				    dep[0] += origin_col;
-                                    //				    dep[1] += origin_row;
                                     var key = dep.join(',');
                                     //				    console.log("added reference to " + key);
                                     refs[key] = true;
