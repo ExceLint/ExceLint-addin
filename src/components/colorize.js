@@ -594,7 +594,8 @@ var Colorize = /** @class */ (function () {
         }
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     };
-    Colorize.reportingThreshold = 35; //  percent of bar
+    Colorize.reportingThreshold = 5; //  percent of bar
+    //    public static reportingThreshold = 35; //  percent of bar
     // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     // True iff this class been initialized.

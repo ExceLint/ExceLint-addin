@@ -214,6 +214,10 @@ function find_all_matching_rectangles(thisKey: string,
 	    ind = ind2;
 	    axis = 1;
 	}
+	if (ind > 0) {
+	    ind -= 1;
+	}
+	// ind = 0; // FIXME FIXME
 //	console.log("found the item " + JSON.stringify(rect) + " at position = " + ind);
 	for (let i = ind; i < keylist.length; i++) {
 	    const key = keylist[i];
@@ -231,21 +235,24 @@ function find_all_matching_rectangles(thisKey: string,
 	    /* Since the keys are sorted in x-axis order,
 	       we can stop once we have gone too far on the x-axis to ever merge again. */
 
-	    if (axis === 0) {
- 		/* [rect] ... [box]  */
-		// if left side of box is too far away from right-most edge of the rectangle
-		if (base_lr[0] + 1 < box[0][0]) {
-		    console.log("horizontal: breaking out");
-		    break;
-		}
-	    } else {
- 		/* [rect]
-                     ...
-		   [box]  */
-		// if the top side of box is too far away from bottom-most edge of the rectangle
-		if (base_lr[1] + 1 < box[0][1]) {
-		    console.log("vertical: breaking out");
-		    break;
+	    if (true) { // early stopping
+		
+		if (axis === 0) {
+ 		    /* [rect] ... [box]  */
+		    // if left side of box is too far away from right-most edge of the rectangle
+		    if (base_lr[0] + 1 < box[0][0]) {
+			console.log("horizontal: breaking out");
+			break;
+		    }
+		} else {
+ 		    /* [rect]
+                       ...
+		       [box]  */
+		    // if the top side of box is too far away from bottom-most edge of the rectangle
+		    if (base_lr[1] + 1 < box[0][1]) {
+			console.log("vertical: breaking out");
+			break;
+		    }
 		}
 	    }
 		
@@ -273,6 +280,7 @@ function find_all_matching_rectangles(thisKey: string,
 		 || (box[1][1] + 1 < base_ul[1])))
 	    {
 		// Skip. Outside the bounding box.
+		console.log("outside bounding box.");
 		
 	    } else {
 		
@@ -345,7 +353,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 	all_matches = all_matches.map((x,_1,_2) => { return [x[0].map((a,_1,_2) => Number(a)),
 							     x[1].map((a,_1,_2) => Number(a))]; });
     }
-//    console.log("before: " + JSON.stringify(all_matches));
+    console.log("before: " + JSON.stringify(all_matches));
     all_matches = all_matches.map((x, _1, _2) => {
 	if (numComparator(x[1], x[2]) < 0) {
 	    return [x[0], x[2], x[1]];
@@ -354,7 +362,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 	}
     });
     all_matches = dedup(all_matches);
- //   console.log("after: " + JSON.stringify(all_matches));
+    console.log("after: " + JSON.stringify(all_matches));
     t.split("done.");
     return all_matches;
 }

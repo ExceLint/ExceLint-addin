@@ -11,7 +11,8 @@ type excelintVector = [number, number, number];
 
 export class Colorize {
 
-    public static reportingThreshold = 35; //  percent of bar
+    public static reportingThreshold = 5; //  percent of bar
+//    public static reportingThreshold = 35; //  percent of bar
 
     // Color-blind friendly color palette.
     public static palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
