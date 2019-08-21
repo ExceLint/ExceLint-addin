@@ -1,6 +1,22 @@
 "use strict";
 exports.__esModule = true;
-function binsearch_helper(arr, start, end, v, comparator) {
+function binsearch_helper(A, T, comparator) {
+    var n = A.length;
+    var L = 0;
+    var R = n;
+    while (L < R) {
+        var m = Math.floor((L + R) / 2);
+        //        if (A[m] < T) {
+        if (comparator(A[m], T) < 0) {
+            L = m + 1;
+        }
+        else {
+            R = m;
+        }
+    }
+    return L;
+}
+function old_binsearch_helper(arr, start, end, v, comparator) {
     //    console.log("binsearch_helper: " + start + ", " + end + ", comparing against " + v);
     if (start >= end) {
         return -1; // not found
@@ -19,11 +35,11 @@ function binsearch_helper(arr, start, end, v, comparator) {
     }
     if (comparison < 0) {
         //	console.log("B");
-        return binsearch_helper(arr, midpoint + 1, end, v, comparator);
+        return old_binsearch_helper(arr, midpoint + 1, end, v, comparator);
     }
     else {
         //	console.log("C");
-        return binsearch_helper(arr, start, midpoint - 1, v, comparator);
+        return old_binsearch_helper(arr, start, midpoint - 1, v, comparator);
     }
 }
 // Find the index of the earliest occurrence of v in arr using binary search.
@@ -33,7 +49,7 @@ function binsearch(arr, v, comparator) {
     if (typeof comparator === "undefined") {
         //	console.log("undefined");
         comparator = (function (a, b) {
-            console.log("Comparing " + JSON.stringify(a) + " to " + JSON.stringify(b));
+            //	    console.log("Comparing " + JSON.stringify(a) + " to " + JSON.stringify(b));
             if (a === b) {
                 return 0;
             }
@@ -43,9 +59,23 @@ function binsearch(arr, v, comparator) {
             return 1;
         });
     }
-    return binsearch_helper(arr, 0, arr.length, v, comparator);
+    return binsearch_helper(arr, v, comparator);
 }
 exports.binsearch = binsearch;
+// Find the index of the earliest occurrence of v in arr using binary search.
+// Return -1 if not found.
+function strict_binsearch(arr, v, comparator) {
+    if (comparator === void 0) { comparator = undefined; }
+    var ind = binsearch_helper(arr, v, comparator);
+    if (ind === arr.length) {
+        return -1;
+    }
+    if (comparator(arr[ind], v) !== 0) {
+        return -1;
+    }
+    return ind;
+}
+exports.strict_binsearch = strict_binsearch;
 function test_binsearch() {
     // Random testing that checks if binary search is working properly.
     var iterations = 10000;
@@ -78,11 +108,12 @@ function test_binsearch() {
         }
         // Search for items NOT in the array (with exceedingly high probability).
         for (var j = 0; j < len; j++) {
-            var val = Math.random();
+            var val = Math.random() * len;
             var ind = binsearch(arr, val);
-            if (ind !== -1) {
+            if (((ind > 0) && (ind < arr.length) && (arr[ind - 1] > val)) ||
+                ((ind === 0) && (arr[ind] < val))) {
                 failures++;
-                console.log("Found an item which should almost certainly not be there: " + val);
+                console.log("Found an item which should almost certainly not be there: " + val + " at position " + ind);
                 console.log(JSON.stringify(arr));
             }
         }

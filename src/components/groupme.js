@@ -128,7 +128,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     var down = [x1, y2 + 1, 0];
     var matches = [];
     var ind = -1;
-    ind = binsearch_1.binsearch(rect_lrs, left, numComparator);
+    ind = binsearch_1.strict_binsearch(rect_lrs, left, numComparator);
     //	console.log("left = " + ind);
     if (ind != -1) {
         if (rect_uls[ind][1] === y1) {
@@ -136,7 +136,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
             matches.push(candidate);
         }
     }
-    ind = binsearch_1.binsearch(rect_lrs, up, numComparator);
+    ind = binsearch_1.strict_binsearch(rect_lrs, up, numComparator);
     //	console.log("up = " + ind);
     if (ind != -1) {
         if (rect_uls[ind][0] === x1) {
@@ -144,7 +144,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
             matches.push(candidate);
         }
     }
-    ind = binsearch_1.binsearch(rect_uls, right, numComparator);
+    ind = binsearch_1.strict_binsearch(rect_uls, right, numComparator);
     //	console.log("right = " + ind);
     if (ind != -1) {
         if (rect_lrs[ind][1] === y2) {
@@ -152,7 +152,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
             matches.push(candidate);
         }
     }
-    ind = binsearch_1.binsearch(rect_uls, down, numComparator);
+    ind = binsearch_1.strict_binsearch(rect_uls, down, numComparator);
     //	console.log("down = " + ind);
     if (ind != -1) {
         if (rect_lrs[ind][0] === x2) {
@@ -163,7 +163,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     return matches;
 }
 var rectangles_count = 0;
-function find_all_matching_rectangles(thisKey, rect, grouped_formulas, x_ul, x_lr, bb) {
+function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, x_ul, x_lr, bb) {
     var base_ul = rect[0], base_lr = rect[1];
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
     var match_list = [];
@@ -173,7 +173,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, x_ul, x_l
             return "continue";
         }
         rectangles_count++;
-        if (rectangles_count % 1000 === 0) {
+        if (rectangles_count % 10000 === 0) {
             //	    if (true) { // rectangles_count % 1000 === 0) {
             console.log("find_all_matching_rectangles, iteration " + rectangles_count);
         }
@@ -243,10 +243,15 @@ function find_all_proposed_fixes(grouped_formulas) {
     t.split("generated upper left and lower right arrays.");
     var bb = generate_bounding_box(grouped_formulas);
     t.split("generated bounding box.");
+    var keylist = Object.keys(grouped_formulas);
+    console.log("keylist was = " + JSON.stringify(keylist));
+    // Sort the keys by the x-axis of their bounding boxes.
+    keylist.sort(function (a, b) { return bb[b][0][0] - bb[a][0][0]; });
+    console.log("keylist now = " + JSON.stringify(keylist));
     for (var _b = 0, _c = Object.keys(grouped_formulas); _b < _c.length; _b++) {
         var key = _c[_b];
         for (var i = 0; i < aNum[key].length; i++) {
-            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, x_ul, x_lr, bb);
+            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylist, x_ul, x_lr, bb);
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 == 0) {

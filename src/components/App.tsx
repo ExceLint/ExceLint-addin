@@ -169,10 +169,12 @@ export default class App extends React.Component<AppProps, AppState> {
 			     formulas, processed_formulas, data_values, threshold: number) {
 	let suspiciousCells;
 	{
+	    data_values = data_values;
 	    const formula_matrix = Colorize.processed_to_matrix(cols,
 								rows,
 								origin[0] - 1,
 								origin[1] - 1,
+//								processed_formulas);
 								processed_formulas.concat(data_values));
 	    //									processed_formulas);
 		    
@@ -625,7 +627,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // Compute references (to color referenced data).
 		    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
 		    t.split("generated all references");
-		    
+//		    console.log("refs = " + JSON.stringify(refs));
 		    
 		    await setTimeout(() => {}, 0);
 		    referenced_data = Colorize.color_all_data(refs);
