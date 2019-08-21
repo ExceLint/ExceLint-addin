@@ -187,13 +187,19 @@ function find_all_matching_rectangles(thisKey: string,
 				      keylist : Array<string>,
 				      x_ul : { [val: string]: Array<excelintVector> },
 				      x_lr : { [val: string]: Array<excelintVector> },
-				      bb : { [val: string] : [excelintVector, excelintVector] }) : Array<[number, [excelintVector, excelintVector]]>
+				      bb : { [val: string] : [excelintVector, excelintVector] },
+				      bbs : Array<[excelintVector, excelintVector]>) : Array<[number, [excelintVector, excelintVector]]>
     {
 	const [base_ul, base_lr] = rect;
 	//    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
 	let match_list = [];
 	let a = grouped_formulas;
-	for (let key of Object.keys(a)) {
+//	console.log("total formulas = " + keylist.length);
+//	console.log(JSON.stringify(bbs));
+	const ind = binsearch(bbs, rect, ((a, b) => { return a[0][0] - b[0][0]; }));
+//	console.log("found the item " + JSON.stringify(rect) + " at position = " + ind);
+	for (let i = ind; i < keylist.length; i++) {
+	    const key = keylist[i];
 	    if (key === thisKey) {
 		continue;
 	    }
@@ -205,6 +211,17 @@ function find_all_matching_rectangles(thisKey: string,
 	    // Check bounding box.
 	    let box = bb[key];
 
+	    /* Since the keys are sorted in x-axis order,
+	       we can stop once we have gone too far on the x-axis to ever merge again. */
+
+	    /* [rect] ... [box]  */
+
+	    // if left side of box is too far away from right-most edge of the rectangle
+	    if (base_lr[0] + 1 < box[0][0]) {
+		console.log("breaking out");
+		break;
+	    }
+		
 	    /*
 
 	      Don't bother processing any rectangle whose edges are
@@ -244,6 +261,7 @@ function find_all_matching_rectangles(thisKey: string,
 	}
 	//	console.log("match_list = " + JSON.stringify(match_list));
 //	t.split("done.");
+	console.log("find_all_matching_rectangles, iteration " + rectangles_count);
 	return match_list;
     }
 
@@ -274,14 +292,16 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
     let keylist = Object.keys(grouped_formulas);
     
     console.log("keylist was = " + JSON.stringify(keylist));
-    // Sort the keys by the x-axis of their bounding boxes.
-    keylist.sort((a, b) => { return bb[b][0][0] - bb[a][0][0]; });
+    // Sort the keys by the x-axis of the upper-left corner of their bounding boxes.
+    keylist.sort((a, b) => { return bb[a][0][0] - bb[b][0][0]; });
+    const bbs = keylist.map((item,_1,_2) => { return bb[item]; });
 
+    
     console.log("keylist now = " + JSON.stringify(keylist));
     
     for (let key of Object.keys(grouped_formulas)) {
 	for (let i = 0; i < aNum[key].length; i++) {
-	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylist, x_ul, x_lr, bb);
+	    const matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylist, x_ul, x_lr, bb, bbs);
 	    all_matches = all_matches.concat(matches);
 	    count++;
 	    if (count % 1000 == 0) {

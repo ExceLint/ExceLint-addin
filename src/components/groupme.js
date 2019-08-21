@@ -163,12 +163,16 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     return matches;
 }
 var rectangles_count = 0;
-function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, x_ul, x_lr, bb) {
+function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, x_ul, x_lr, bb, bbs) {
     var base_ul = rect[0], base_lr = rect[1];
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
     var match_list = [];
     var a = grouped_formulas;
-    var _loop_1 = function (key) {
+    //	console.log("total formulas = " + keylist.length);
+    //	console.log(JSON.stringify(bbs));
+    var ind = binsearch_1.binsearch(bbs, rect, (function (a, b) { return a[0][0] - b[0][0]; }));
+    var _loop_1 = function (i) {
+        var key = keylist[i];
         if (key === thisKey) {
             return "continue";
         }
@@ -179,6 +183,14 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, 
         }
         // Check bounding box.
         var box = bb[key];
+        /* Since the keys are sorted in x-axis order,
+           we can stop once we have gone too far on the x-axis to ever merge again. */
+        /* [rect] ... [box]  */
+        // if left side of box is too far away from right-most edge of the rectangle
+        if (base_lr[0] + 1 < box[0][0]) {
+            console.log("breaking out");
+            return "break";
+        }
         /*
 
           Don't bother processing any rectangle whose edges are
@@ -213,12 +225,15 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, 
             }
         }
     };
-    for (var _i = 0, _a = Object.keys(a); _i < _a.length; _i++) {
-        var key = _a[_i];
-        _loop_1(key);
+    //	console.log("found the item " + JSON.stringify(rect) + " at position = " + ind);
+    for (var i = ind; i < keylist.length; i++) {
+        var state_1 = _loop_1(i);
+        if (state_1 === "break")
+            break;
     }
     //	console.log("match_list = " + JSON.stringify(match_list));
     //	t.split("done.");
+    console.log("find_all_matching_rectangles, iteration " + rectangles_count);
     return match_list;
 }
 // Returns an array with all duplicated entries removed.
@@ -245,13 +260,14 @@ function find_all_proposed_fixes(grouped_formulas) {
     t.split("generated bounding box.");
     var keylist = Object.keys(grouped_formulas);
     console.log("keylist was = " + JSON.stringify(keylist));
-    // Sort the keys by the x-axis of their bounding boxes.
-    keylist.sort(function (a, b) { return bb[b][0][0] - bb[a][0][0]; });
+    // Sort the keys by the x-axis of the upper-left corner of their bounding boxes.
+    keylist.sort(function (a, b) { return bb[a][0][0] - bb[b][0][0]; });
+    var bbs = keylist.map(function (item, _1, _2) { return bb[item]; });
     console.log("keylist now = " + JSON.stringify(keylist));
     for (var _b = 0, _c = Object.keys(grouped_formulas); _b < _c.length; _b++) {
         var key = _c[_b];
         for (var i = 0; i < aNum[key].length; i++) {
-            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylist, x_ul, x_lr, bb);
+            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylist, x_ul, x_lr, bb, bbs);
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 == 0) {
