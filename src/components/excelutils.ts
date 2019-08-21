@@ -307,7 +307,7 @@ export class ExcelUtils {
 		    console.log(counter + " references down");
 		}
 
-		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
+//		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
 		if (cell[0] === '=') { // It's a formula.
 		    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
 		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row); // was just 0,0....  origin_col, origin_row);

@@ -200,7 +200,7 @@ function find_all_matching_rectangles(thisKey: string,
 //	console.log(JSON.stringify(bbs));
 	const ind1 = binsearch(bbsX, rect, ((a, b) => { return a[0][0] - b[0][0]; }));
 	const ind2 = binsearch(bbsY, rect, ((a, b) => { return a[0][1] - b[0][1]; }));
-	console.log("ind1 = " + ind1 + ", ind2 = " + ind2);
+//	console.log("ind1 = " + ind1 + ", ind2 = " + ind2);
 	// Pick the coordinate axis that takes us the furthest in the list.
 	let keylist;
 	let axis;
@@ -242,7 +242,7 @@ function find_all_matching_rectangles(thisKey: string,
  		    /* [rect] ... [box]  */
 		    // if left side of box is too far away from right-most edge of the rectangle
 		    if (base_lr[0] + 1 < box[0][0]) {
-			console.log("horizontal: breaking out");
+//			console.log("horizontal: breaking out");
 			break;
 		    }
 		} else {
@@ -251,7 +251,7 @@ function find_all_matching_rectangles(thisKey: string,
 		       [box]  */
 		    // if the top side of box is too far away from bottom-most edge of the rectangle
 		    if (base_lr[1] + 1 < box[0][1]) {
-			console.log("vertical: breaking out");
+//			console.log("vertical: breaking out");
 			break;
 		    }
 		}
@@ -281,7 +281,7 @@ function find_all_matching_rectangles(thisKey: string,
 		 || (box[1][1] + 1 < base_ul[1])))
 	    {
 		// Skip. Outside the bounding box.
-		console.log("outside bounding box.");
+//		console.log("outside bounding box.");
 		
 	    } else {
 		
@@ -297,7 +297,7 @@ function find_all_matching_rectangles(thisKey: string,
 	}
 	//	console.log("match_list = " + JSON.stringify(match_list));
 //	t.split("done.");
-	console.log("find_all_matching_rectangles, iteration " + rectangles_count);
+///	console.log("find_all_matching_rectangles, iteration " + rectangles_count);
 	return match_list;
     }
 

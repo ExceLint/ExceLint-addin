@@ -172,7 +172,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
     //	console.log(JSON.stringify(bbs));
     var ind1 = binsearch_1.binsearch(bbsX, rect, (function (a, b) { return a[0][0] - b[0][0]; }));
     var ind2 = binsearch_1.binsearch(bbsY, rect, (function (a, b) { return a[0][1] - b[0][1]; }));
-    console.log("ind1 = " + ind1 + ", ind2 = " + ind2);
+    //	console.log("ind1 = " + ind1 + ", ind2 = " + ind2);
     // Pick the coordinate axis that takes us the furthest in the list.
     var keylist;
     var axis;
@@ -210,7 +210,6 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
                 /* [rect] ... [box]  */
                 // if left side of box is too far away from right-most edge of the rectangle
                 if (base_lr[0] + 1 < box[0][0]) {
-                    console.log("horizontal: breaking out");
                     return "break";
                 }
             }
@@ -220,7 +219,6 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
                    [box]  */
                 // if the top side of box is too far away from bottom-most edge of the rectangle
                 if (base_lr[1] + 1 < box[0][1]) {
-                    console.log("vertical: breaking out");
                     return "break";
                 }
             }
@@ -247,7 +245,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
             || (box[1][0] + 1 < base_ul[0]) // right
             || (box[1][1] + 1 < base_ul[1]))) {
             // Skip. Outside the bounding box.
-            console.log("outside bounding box.");
+            //		console.log("outside bounding box.");
         }
         else {
             var matches = matching_rectangles(base_ul, base_lr, x_ul[key], x_lr[key]);
@@ -269,7 +267,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
     }
     //	console.log("match_list = " + JSON.stringify(match_list));
     //	t.split("done.");
-    console.log("find_all_matching_rectangles, iteration " + rectangles_count);
+    ///	console.log("find_all_matching_rectangles, iteration " + rectangles_count);
     return match_list;
 }
 // Returns an array with all duplicated entries removed.
