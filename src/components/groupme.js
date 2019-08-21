@@ -163,14 +163,30 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     return matches;
 }
 var rectangles_count = 0;
-function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, x_ul, x_lr, bb, bbs) {
+function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX, keylistY, x_ul, x_lr, bb, bbsX, bbsY) {
     var base_ul = rect[0], base_lr = rect[1];
     //    console.log("Looking for matches of " + JSON.stringify(base_ul) + ", " + JSON.stringify(base_lr));
     var match_list = [];
     var a = grouped_formulas;
     //	console.log("total formulas = " + keylist.length);
     //	console.log(JSON.stringify(bbs));
-    var ind = binsearch_1.binsearch(bbs, rect, (function (a, b) { return a[0][0] - b[0][0]; }));
+    var ind1 = binsearch_1.binsearch(bbsX, rect, (function (a, b) { return a[0][0] - b[0][0]; }));
+    var ind2 = binsearch_1.binsearch(bbsY, rect, (function (a, b) { return a[0][1] - b[0][1]; }));
+    console.log("ind1 = " + ind1 + ", ind2 = " + ind2);
+    // Pick the coordinate axis that takes us the furthest in the list.
+    var keylist;
+    var axis;
+    var ind;
+    if (ind1 > ind2) {
+        keylist = keylistX;
+        ind = ind1;
+        axis = 0;
+    }
+    else {
+        keylist = keylistY;
+        ind = ind2;
+        axis = 1;
+    }
     var _loop_1 = function (i) {
         var key = keylist[i];
         if (key === thisKey) {
@@ -185,11 +201,23 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylist, 
         var box = bb[key];
         /* Since the keys are sorted in x-axis order,
            we can stop once we have gone too far on the x-axis to ever merge again. */
-        /* [rect] ... [box]  */
-        // if left side of box is too far away from right-most edge of the rectangle
-        if (base_lr[0] + 1 < box[0][0]) {
-            console.log("breaking out");
-            return "break";
+        if (axis === 0) {
+            /* [rect] ... [box]  */
+            // if left side of box is too far away from right-most edge of the rectangle
+            if (base_lr[0] + 1 < box[0][0]) {
+                console.log("horizontal: breaking out");
+                return "break";
+            }
+        }
+        else {
+            /* [rect]
+                         ...
+               [box]  */
+            // if the top side of box is too far away from bottom-most edge of the rectangle
+            if (base_lr[1] + 1 < box[0][1]) {
+                console.log("vertical: breaking out");
+                return "break";
+            }
         }
         /*
 
@@ -258,16 +286,20 @@ function find_all_proposed_fixes(grouped_formulas) {
     t.split("generated upper left and lower right arrays.");
     var bb = generate_bounding_box(grouped_formulas);
     t.split("generated bounding box.");
-    var keylist = Object.keys(grouped_formulas);
-    console.log("keylist was = " + JSON.stringify(keylist));
+    var keylistX = Object.keys(grouped_formulas);
+    //    console.log("keylist was = " + JSON.stringify(keylist));
     // Sort the keys by the x-axis of the upper-left corner of their bounding boxes.
-    keylist.sort(function (a, b) { return bb[a][0][0] - bb[b][0][0]; });
-    var bbs = keylist.map(function (item, _1, _2) { return bb[item]; });
-    console.log("keylist now = " + JSON.stringify(keylist));
+    keylistX.sort(function (a, b) { return bb[a][0][0] - bb[b][0][0]; });
+    var bbsX = keylistX.map(function (item, _1, _2) { return bb[item]; });
+    var keylistY = Object.keys(grouped_formulas);
+    // Sort the keys by the y-axis of the upper-left corner of their bounding boxes.
+    keylistY.sort(function (a, b) { return bb[a][0][1] - bb[b][0][1]; });
+    var bbsY = keylistY.map(function (item, _1, _2) { return bb[item]; });
+    //    console.log("keylist now = " + JSON.stringify(keylist));
     for (var _b = 0, _c = Object.keys(grouped_formulas); _b < _c.length; _b++) {
         var key = _c[_b];
         for (var i = 0; i < aNum[key].length; i++) {
-            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylist, x_ul, x_lr, bb, bbs);
+            var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylistX, keylistY, x_ul, x_lr, bb, bbsX, bbsY);
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 == 0) {
