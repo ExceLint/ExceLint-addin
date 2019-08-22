@@ -240,20 +240,13 @@ var Colorize = /** @class */ (function () {
         for (var i = 0; i < cols; i++) {
             probs[i] = new Array(rows).fill(0);
         }
-        // Initialize the histogram to zero.
-        var counts = {};
-        for (var i = 0; i < cols; i++) {
-            for (var j = 0; j < rows; j++) {
-                counts[matrix[i][j]] = 0;
-            }
-        }
         // Generate the counts.
         var totalNonzeroes = 0;
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
                 if (matrix[i][j] != 0) {
                     //			console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] +  "!");
-                    counts[matrix[i][j]] += 1;
+                    probs[i][j] += 1;
                     totalNonzeroes += 1;
                 }
             }
@@ -262,14 +255,23 @@ var Colorize = /** @class */ (function () {
         // Now iterate over the counts to compute probabilities.
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                if (matrix[i][j] == 0) {
-                    probs[i][j] = 0;
-                }
-                else {
-                    probs[i][j] = counts[matrix[i][j]] / totalNonzeroes;
+                probs[i][j] /= totalNonzeroes;
+            }
+        }
+        //	    console.log("probs = " + JSON.stringify(probs));
+        var totalEntropy = 0;
+        var total = 0;
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                total += probs[i][j];
+                if (probs[i][j] > 0) {
+                    totalEntropy += this.entropy(probs[i][j]);
                 }
             }
         }
+        //	    let totalEntropy = probs.reduce((total, num) => Number(total) + Number(num), 0); // this.entropy(num); });
+        console.log("total probability = " + total);
+        console.log("total entropy = " + totalEntropy);
         return probs;
     };
     Colorize.generate_suspicious_cells = function (cols, rows, origin_col, origin_row, matrix, probs, threshold) {

@@ -276,20 +276,13 @@ export class Colorize {
 	    for (let i = 0; i < cols; i++) {
 		probs[i] = new Array(rows).fill(0);
 	    }
-	    // Initialize the histogram to zero.
-	    let counts = {};
-	    for (let i = 0; i < cols; i++) {
-		for (let j = 0; j < rows; j++) {
-		    counts[matrix[i][j]] = 0;
-		}
-	    }
 	    // Generate the counts.
 	    let totalNonzeroes = 0;
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
 		    if (matrix[i][j] != 0) {
 //			console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] +  "!");
-			counts[matrix[i][j]] += 1;
+			probs[i][j] += 1;
 			totalNonzeroes += 1;
 		    }
 		}
@@ -298,13 +291,23 @@ export class Colorize {
 	    // Now iterate over the counts to compute probabilities.
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
-		    if (matrix[i][j] == 0) {
-			probs[i][j] = 0;
-		    } else {
-			probs[i][j] = counts[matrix[i][j]] / totalNonzeroes;
+		    probs[i][j] /= totalNonzeroes;
+		}
+	    }
+//	    console.log("probs = " + JSON.stringify(probs));
+	    let totalEntropy = 0;
+	    let total = 0;
+	    for (let i = 0; i < cols; i++) {
+		for (let j = 0; j < rows; j++) {
+		    total += probs[i][j];
+		    if (probs[i][j] > 0) {
+			totalEntropy += this.entropy(probs[i][j]);
 		    }
 		}
 	    }
+	    //	    let totalEntropy = probs.reduce((total, num) => Number(total) + Number(num), 0); // this.entropy(num); });
+	    console.log("total probability = " + total);
+	    console.log("total entropy = " + totalEntropy);
 	    return probs;
 	}
     
