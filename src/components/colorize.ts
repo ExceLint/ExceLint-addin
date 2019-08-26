@@ -12,6 +12,7 @@ type excelintVector = [number, number, number];
 export class Colorize {
 
     public static reportingThreshold = 35; //  percent of bar
+    public static suspiciousCellsReportingThreshold = 80; //  percent of bar
 
     // Color-blind friendly color palette.
     public static palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
@@ -125,8 +126,6 @@ export class Colorize {
 			// It's a number. Add it.
 			const adjustedX = j + origin_col + 1;
 			const adjustedY = i + origin_row + 1;
-			//			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
-//			value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
 			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
 		    }
 		}
@@ -216,10 +215,11 @@ export class Colorize {
 	    //	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
 	    const adjustedX = row-origin_row-1;
 	    const adjustedY = col-origin_col-1;
-	    let value = 12345;
+	    let value = Number(Colorize.distinguishedZeroHash);
 	    if (isConstant === 1) {
 		// That means it was a constant.
 		// Set to a fixed value (as above).
+//		value = ; // FIXME????
 	    } else {
 		value = Number(val);
 	    }
@@ -227,50 +227,56 @@ export class Colorize {
 	}
 	return matrix;
     }
-    
+
     
     public static stencilize(cols: number, rows: number,
 			     matrix : Array<Array<number>>) : Array<Array<number>>
 	{
+	    
 	    console.log("cols = " + cols + ", rows = " + rows);
-	let stencil = new Array(cols);
-	for (let i = 0; i < cols; i++) {
-	    stencil[i] = new Array(rows).fill(0);
-	}
-	for (let i = 0; i < cols; i++) {
-	    for (let j = 0; j < rows; j++) {
-		if (matrix[i][j] > 0) {
-		    stencil[i][j] = matrix[i][j];
+	    //	    console.log("matrix = " + JSON.stringify(matrix));
+	    let stencil = new Array(cols);
+	    for (let i = 0; i < cols; i++) {
+		stencil[i] = new Array(rows).fill(0);
+	    }
+	    for (let i = 0; i < cols; i++) {
+		for (let j = 0; j < rows; j++) {
+		    stencil[i][j] = 1; // FIXME: this is if we are counting total number of different objects. // matrix[i][j];
 		}
 	    }
-	}
-	
+	    
 	// Compute the stencil while omitting the edges and corners.
 	for (let i = 1; i < cols-1; i++) {
 	    for (let j = 1; j < rows-1; j++) {
-		if (matrix[i][j] > 0) {
-		    stencil[i][j] = matrix[i][j];
-		    stencil[i][j] += matrix[i-1][j-1] + matrix[i-1][j] + matrix[i-1][j+1];
-		    stencil[i][j] += matrix[i][j-1] + matrix[i][j+1];
-		    stencil[i][j] += matrix[i+1][j-1] + matrix[i+1][j] + matrix[i+1][j+1];
-		    let nonzeros =
-			Number(matrix[i-1][j-1] > 0) +
-			Number(matrix[i-1][j] > 0) +
-			Number(matrix[i-1][j+1] > 0) +
-			Number(matrix[i][j-1] > 0) +
-			Number(matrix[i][j+1] > 0) +
-			Number(matrix[i+1][j-1] > 0) +
-			Number(matrix[i+1][j] > 0) +
-			Number(matrix[i+1][j+1] > 0);
-		    stencil[i][j] /= (1 + nonzeros);
+		//if (matrix[i][j] !== 0) { // FIXME was >
+		// 3x3 window around the center.
+		console.log("i = " + i + ", j = " + j);
+		const win = [matrix[i-1][j-1], matrix[i][j-1], matrix[i+1][j-1],
+			     matrix[i-1][j],   matrix[i][j],   matrix[i+1][j],
+			     matrix[i-1][j+1], matrix[i][j+1], matrix[i+1][j+1]];
+		console.log(JSON.stringify(win));
+		const sum = win.reduce((total,a) => total + a);
+		const nonzeros = win.reduce((total, a) => { if (Number(a) > 0) { return total + 1; } else { return total; }});
+		if (nonzeros > 0) {
+		    const mean = sum / nonzeros;
+		    const variance = win.reduce((total, a) => total + (a - mean) * (a - mean));
+		    let counts = {};
+		    win.forEach(el => counts[el] = 1  + (counts[el] || 0));
+		    delete counts[0];
+		    stencil[i][j] = Object.keys(counts).length; // variance; //  mean;
+		    stencil[i][j] = mean;
 		}
+		// Avoid math issues by rounding so we only use the first two significant digit past the decimal point.
+		stencil[i][j] = Math.round(stencil[i][j] * 100) / 100;
+		// }
 	    }
 	}
+//	    console.log("Stencil = " + JSON.stringify(stencil));
 	return stencil;
     }
 
     public static compute_stencil_probabilities(cols: number, rows: number,
-						matrix : Array<Array<number>>) : Array<Array<number>>
+						stencil : Array<Array<number>>) : Array<Array<number>>
 	{
 	    let probs = new Array(cols);
 	    for (let i = 0; i < cols; i++) {
@@ -278,36 +284,68 @@ export class Colorize {
 	    }
 	    // Generate the counts.
 	    let totalNonzeroes = 0;
+	    let counts = {};
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
-		    if (matrix[i][j] != 0) {
-//			console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] +  "!");
-			probs[i][j] += 1;
+//		    if (stencil[i][j] != 0) {
+			//			console.log("************* found " + stencil[i][j] + " = " + counts[stencil[i][j]] +  "!");
+			counts[stencil[i][j]] = (counts[stencil[i][j]] + 1) || 1;
+		    //			probs[i][j] += stencil[i][j];
+		    if (stencil[i][j] != 0) {
 			totalNonzeroes += 1;
 		    }
+//		    } else {
+//			counts[stencil[i][j]] = 0;
+//		    }
 		}
 	    }
+	    
+	    console.log("counts = " + JSON.stringify(counts));
+	    
 //	    console.log("**********************total non-zeroes = " + totalNonzeroes);
 	    // Now iterate over the counts to compute probabilities.
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
-		    probs[i][j] /= totalNonzeroes;
+		    probs[i][j] = counts[stencil[i][j]] / totalNonzeroes;
 		}
 	    }
+	    
 //	    console.log("probs = " + JSON.stringify(probs));
+	    
 	    let totalEntropy = 0;
 	    let total = 0;
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
-		    total += probs[i][j];
-		    if (probs[i][j] > 0) {
-			totalEntropy += this.entropy(probs[i][j]);
+		    if (stencil[i][j] > 0) {
+			total += counts[stencil[i][j]];
 		    }
 		}
 	    }
-	    //	    let totalEntropy = probs.reduce((total, num) => Number(total) + Number(num), 0); // this.entropy(num); });
+
+	    for (let i = 0; i < cols; i++) {
+		for (let j = 0; j < rows; j++) {
+		    if (counts[stencil[i][j]] > 0) {
+			totalEntropy += this.entropy(counts[stencil[i][j]] / total);
+		    }
+		}
+	    }
+	    
+	    const normalizedEntropy = totalEntropy / Math.log2(totalNonzeroes);
+
+	    // Now discount the probabilities by weighing them by the normalized total entropy.
+	    if (false) {
+		for (let i = 0; i < cols; i++) {
+		    for (let j = 0; j < rows; j++) {
+			probs[i][j] *= normalizedEntropy;
+			//			totalEntropy += this.entropy(probs[i][j]);
+		    }
+		}
+	    }
+
+//	    console.log("new probs = " + JSON.stringify(probs));
 	    console.log("total probability = " + total);
 	    console.log("total entropy = " + totalEntropy);
+	    console.log("normalized entropy = " + normalizedEntropy);
 	    return probs;
 	}
     
@@ -318,25 +356,23 @@ export class Colorize {
 					    probs : Array<Array<number>>,
 					    threshold = 0.01) : Array<excelintVector>
 	{
+	    console.log("threshold = " + threshold);
 	    let cells = [];
 	    let sumValues = 0;
 	    let countValues = 0;
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
+		    const adjustedX = j + origin_col + 1;
+		    const adjustedY = i + origin_row + 1;
+		    console.log("examining " + i + " " + j + " = " + matrix[i][j] + " (" + adjustedX + ", " + adjustedY + ")");
 		    if (probs[i][j] > 0) {
+			console.log("found one at " + i + " " + j + " = " + probs[i][j]);
 			sumValues += matrix[i][j];
 			countValues += 1;
 			if (probs[i][j] <= threshold) {
-//			    console.log("Pushing " + i + ", " + j + " = " + probs[i][j] + ", threshold = " + threshold);
-			    // cells.push([j+1, i+1, matrix[i][j]]); // 3rd = actual value
-			    const adjustedX = j + origin_col + 1;
-			    const adjustedY = i + origin_row + 1;
-			    if (matrix[i][j] === 0) {
-				// Keep zeroes intact.
-				cells.push([adjustedX, adjustedY, "0"]); // 3rd = bogus hash for constants
-			    } else {
-//				console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
-				cells.push([adjustedX, adjustedY, Colorize.distinguishedZeroHash]); // 3rd = bogus hash for constants
+			    if (matrix[i][j] != 0) {
+				// Never push an empty cell.
+				cells.push([adjustedX, adjustedY, probs[i][j]]);
 			    }
 			}
 		    }
@@ -345,6 +381,7 @@ export class Colorize {
 	    const avgValues = sumValues / countValues;
 	    console.log("avg values = " + avgValues);
 	    cells.sort((a, b) => { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
+	    //	    console.log("cells = " + JSON.stringify(cells));
 	    return cells;
 	}
     

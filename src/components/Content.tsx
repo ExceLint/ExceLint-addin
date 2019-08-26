@@ -88,7 +88,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	    return table;
 	}
     }
-    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.</div>;
 //    return <div></div>; //  style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
 }
 
@@ -105,22 +105,16 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
 	    //	    let r = ExcelUtils.get_rectangle(arr, i);
 	    let r = arr[i];
 	    if (r) {
-		let [ col, row, _val ] = r;
+		let [ col, row, val ] = r;
+//		console.log("value = " + val);
+		let score = (1.0 - val) * barWidth;
 		// Sort from largest to smallest (by making negative).
-//		console.log(JSON.stringify(r));
-		//		console.log("original score = " + arr[i][0]);
-		if (false) {
-		    let score = -arr[i][0] * barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
-		    //		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
-//		console.log("score = " + score);
-		    if (score > barWidth) {
-			score = barWidth;
-		    }
-		    //		score = barWidth - score; // Invert the ranking.
-		    // Skip really low scores.
-		    if (score < Colorize.reportingThreshold) {
-			continue;
-		    }
+		if (score > barWidth) {
+		    score = barWidth;
+		}
+		// Skip really low scores.
+		if (score < Colorize.suspiciousCellsReportingThreshold) {
+		    continue;
 		}
 		counter += 1;
 		//		console.log("score is now = " + score);
@@ -131,22 +125,20 @@ function makeTableSuspiciousCells(sheetName: string, arr, selector, current: num
 		} else {
 		    rangeDisplay = <td style={{width:100}}>{colName}{row}</td>;
 		}
-		let score = 49; // HACK FIXME
-		if (false) {
-		    const scoreStr = Math.round(score).toString() + "% suspicious";
-		    let barColor = 'red';
-		    if (Math.round(score) < 50) {
-			barColor = 'yellow';
-		    }
+		const scoreStr = Math.round(score).toString() + "% suspicious";
+		let barColor = 'red';
+		if (Math.round(score) < 50) {
+		    barColor = 'yellow';
 		}
-		const scoreStr = "mildly suspicious";
-		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'yellow', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
+//		const scoreStr = "mildly suspicious";
+		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: barColor, display:'inline-block'}}>&nbsp;</td><td title={scoreStr} style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
+//		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'yellow', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
 	    }
 	}
 	if (counter > 0) {
 	    let table = [];
 	    let header = <tr><th align="left">Cell</th><th align="left">Suspiciousness</th></tr>;
-	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious cells in {sheetName}:<br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div><br /></div>);
+	    table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious cells in {sheetName} (<b>EXPERIMENTAL!</b>):<br /><div style={divStyle}><table style={{width:'300px'}}><tbody>{header}{children}</tbody></table></div><br /></div>);
 	    return table;
 	}
     }
@@ -160,7 +152,7 @@ function DisplayFixes(props) {
     let result1 = <div></div>;
     let str = "";
     if ((props.totalFixes === 0) && (props.suspiciousCells.length === 0)) {
-	return <div style={notSuspiciousStyle}>No suspicious formulas or cells found in {props.sheetName}.<br /><br /></div>;
+	return <div style={notSuspiciousStyle}>Nothing suspicious found in {props.sheetName}.<br /><br /></div>;
     }
     if (props.totalFixes < 0) {
 	return <div></div>;
@@ -171,13 +163,13 @@ function DisplayFixes(props) {
 	return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
     }
     const table1 = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
-    result1 = <div><br /><br />{table1}<br /></div>;
+    result1 = <div><br /><br />{table1}</div>;
     let result2 = <div></div>;
     const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
     result2 = <div>{table2}</div>;
-    return <div>{result1}</div>;
+//    return <div>{result1}</div>;
     // Temporarily disable display of suspicious cells while feature remains in development.
-//    return <div>{result1}{result2}</div>;
+    return <div>{result1}{result2}</div>;
 }
 
 

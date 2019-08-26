@@ -38,6 +38,7 @@ export default class App extends React.Component<AppProps, AppState> {
     private numericRangeThreshold = 10000;
     private formulasThreshold = 10000;
     private valuesThreshold = 10000;
+    private suspiciousCellsThreshold = 1 - Colorize.suspiciousCellsReportingThreshold / 100; // Must be more rare than this fraction.
     
     constructor(props, context) {
 	super(props, context);
@@ -178,37 +179,48 @@ export default class App extends React.Component<AppProps, AppState> {
 								processed_formulas.concat(data_values));
 	    //									processed_formulas);
 		    
-//	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
+	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
 	    
 	    
-//	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
-//	    console.log("data_values = " + JSON.stringify(data_values));
+	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
+	    console.log("data_values = " + JSON.stringify(data_values));
 	    
 	    
 	    const stencil = Colorize.stencilize(cols, rows, formula_matrix);
-//	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
+	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
 	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
-//	    console.log("probabilities = " + JSON.stringify(probs));
+	    console.log("probabilities = " + JSON.stringify(probs));
 	    
 	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
-//	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
+	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
 
 	    // Prune any cell that is in fact a formula.
 
 	    if (typeof formulas !== 'undefined') {
+		let totalFormulaWeight = 0;
 		suspiciousCells = candidateSuspiciousCells.filter((c) => {
 		    const theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
+		    console.log("Checking theFormula = " + JSON.stringify(theFormula) + " for cell " + JSON.stringify(c));
 		    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
 			return true;
 		    } else {
+			// It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
+			console.log("REMOVING " + JSON.stringify(c));
+			totalFormulaWeight += c[2];
 			return false;
 		    }
 		});
+		console.log("total formula weight = " + totalFormulaWeight);
+		// Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
+		const multiplier = 1 / (1 - totalFormulaWeight);
+		console.log("before thresholding: suspicious cells = " + JSON.stringify(suspiciousCells));
+		suspiciousCells = suspiciousCells.map((c) => [c[0], c[1], c[2] * multiplier]);
+		suspiciousCells = suspiciousCells.filter((c) => c[2] <= threshold );
 	    } else {
 		suspiciousCells = candidateSuspiciousCells;
 	    }
 
-//	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
+	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
 	}
 	return suspiciousCells;
     }
@@ -651,7 +663,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.suspicious_cells = [];
 
 		if (values.length < 10000) {
-		    this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 0.05); // <-- threshold
+		    this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, this.suspiciousCellsThreshold);
 		}
 
 		

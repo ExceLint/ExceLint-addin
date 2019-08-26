@@ -99,8 +99,6 @@ var Colorize = /** @class */ (function () {
                         // It's a number. Add it.
                         var adjustedX = j + origin_col + 1;
                         var adjustedY = i + origin_row + 1;
-                        //			value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
-                        //			value_array.push([[adjustedX, adjustedY, 1], cell]); // Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
                         value_array.push([[adjustedX, adjustedY, 1], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
                     }
                 }
@@ -188,10 +186,11 @@ var Colorize = /** @class */ (function () {
             //	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
             var adjustedX = row - origin_row - 1;
             var adjustedY = col - origin_col - 1;
-            var value = 12345;
+            var value = Number(Colorize.distinguishedZeroHash);
             if (isConstant === 1) {
                 // That means it was a constant.
                 // Set to a fixed value (as above).
+                //		value = ; // FIXME????
             }
             else {
                 value = Number(val);
@@ -202,60 +201,80 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.stencilize = function (cols, rows, matrix) {
         console.log("cols = " + cols + ", rows = " + rows);
+        //	    console.log("matrix = " + JSON.stringify(matrix));
         var stencil = new Array(cols);
         for (var i = 0; i < cols; i++) {
             stencil[i] = new Array(rows).fill(0);
         }
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                if (matrix[i][j] > 0) {
-                    stencil[i][j] = matrix[i][j];
-                }
+                stencil[i][j] = 1; // FIXME: this is if we are counting total number of different objects. // matrix[i][j];
             }
         }
         // Compute the stencil while omitting the edges and corners.
         for (var i = 1; i < cols - 1; i++) {
-            for (var j = 1; j < rows - 1; j++) {
-                if (matrix[i][j] > 0) {
-                    stencil[i][j] = matrix[i][j];
-                    stencil[i][j] += matrix[i - 1][j - 1] + matrix[i - 1][j] + matrix[i - 1][j + 1];
-                    stencil[i][j] += matrix[i][j - 1] + matrix[i][j + 1];
-                    stencil[i][j] += matrix[i + 1][j - 1] + matrix[i + 1][j] + matrix[i + 1][j + 1];
-                    var nonzeros = Number(matrix[i - 1][j - 1] > 0) +
-                        Number(matrix[i - 1][j] > 0) +
-                        Number(matrix[i - 1][j + 1] > 0) +
-                        Number(matrix[i][j - 1] > 0) +
-                        Number(matrix[i][j + 1] > 0) +
-                        Number(matrix[i + 1][j - 1] > 0) +
-                        Number(matrix[i + 1][j] > 0) +
-                        Number(matrix[i + 1][j + 1] > 0);
-                    stencil[i][j] /= (1 + nonzeros);
+            var _loop_1 = function (j) {
+                //if (matrix[i][j] !== 0) { // FIXME was >
+                // 3x3 window around the center.
+                console.log("i = " + i + ", j = " + j);
+                var win = [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+                    matrix[i - 1][j], matrix[i][j], matrix[i + 1][j],
+                    matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
+                console.log(JSON.stringify(win));
+                var sum = win.reduce(function (total, a) { return total + a; });
+                var nonzeros = win.reduce(function (total, a) { if (Number(a) > 0) {
+                    return total + 1;
                 }
+                else {
+                    return total;
+                } });
+                if (nonzeros > 0) {
+                    var mean_1 = sum / nonzeros;
+                    var variance = win.reduce(function (total, a) { return total + (a - mean_1) * (a - mean_1); });
+                    var counts_1 = {};
+                    win.forEach(function (el) { return counts_1[el] = 1 + (counts_1[el] || 0); });
+                    delete counts_1[0];
+                    stencil[i][j] = Object.keys(counts_1).length; // variance; //  mean;
+                    stencil[i][j] = mean_1;
+                }
+                // Avoid math issues by rounding so we only use the first two significant digit past the decimal point.
+                stencil[i][j] = Math.round(stencil[i][j] * 100) / 100;
+            };
+            for (var j = 1; j < rows - 1; j++) {
+                _loop_1(j);
             }
         }
+        //	    console.log("Stencil = " + JSON.stringify(stencil));
         return stencil;
     };
-    Colorize.compute_stencil_probabilities = function (cols, rows, matrix) {
+    Colorize.compute_stencil_probabilities = function (cols, rows, stencil) {
         var probs = new Array(cols);
         for (var i = 0; i < cols; i++) {
             probs[i] = new Array(rows).fill(0);
         }
         // Generate the counts.
         var totalNonzeroes = 0;
+        var counts = {};
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                if (matrix[i][j] != 0) {
-                    //			console.log("************* found " + matrix[i][j] + " = " + counts[matrix[i][j]] +  "!");
-                    probs[i][j] += 1;
+                //		    if (stencil[i][j] != 0) {
+                //			console.log("************* found " + stencil[i][j] + " = " + counts[stencil[i][j]] +  "!");
+                counts[stencil[i][j]] = (counts[stencil[i][j]] + 1) || 1;
+                //			probs[i][j] += stencil[i][j];
+                if (stencil[i][j] != 0) {
                     totalNonzeroes += 1;
                 }
+                //		    } else {
+                //			counts[stencil[i][j]] = 0;
+                //		    }
             }
         }
+        console.log("counts = " + JSON.stringify(counts));
         //	    console.log("**********************total non-zeroes = " + totalNonzeroes);
         // Now iterate over the counts to compute probabilities.
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                probs[i][j] /= totalNonzeroes;
+                probs[i][j] = counts[stencil[i][j]] / totalNonzeroes;
             }
         }
         //	    console.log("probs = " + JSON.stringify(probs));
@@ -263,39 +282,53 @@ var Colorize = /** @class */ (function () {
         var total = 0;
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                total += probs[i][j];
-                if (probs[i][j] > 0) {
-                    totalEntropy += this.entropy(probs[i][j]);
+                if (stencil[i][j] > 0) {
+                    total += counts[stencil[i][j]];
                 }
             }
         }
-        //	    let totalEntropy = probs.reduce((total, num) => Number(total) + Number(num), 0); // this.entropy(num); });
+        for (var i = 0; i < cols; i++) {
+            for (var j = 0; j < rows; j++) {
+                if (counts[stencil[i][j]] > 0) {
+                    totalEntropy += this.entropy(counts[stencil[i][j]] / total);
+                }
+            }
+        }
+        var normalizedEntropy = totalEntropy / Math.log2(totalNonzeroes);
+        // Now discount the probabilities by weighing them by the normalized total entropy.
+        if (false) {
+            for (var i = 0; i < cols; i++) {
+                for (var j = 0; j < rows; j++) {
+                    probs[i][j] *= normalizedEntropy;
+                    //			totalEntropy += this.entropy(probs[i][j]);
+                }
+            }
+        }
+        //	    console.log("new probs = " + JSON.stringify(probs));
         console.log("total probability = " + total);
         console.log("total entropy = " + totalEntropy);
+        console.log("normalized entropy = " + normalizedEntropy);
         return probs;
     };
     Colorize.generate_suspicious_cells = function (cols, rows, origin_col, origin_row, matrix, probs, threshold) {
         if (threshold === void 0) { threshold = 0.01; }
+        console.log("threshold = " + threshold);
         var cells = [];
         var sumValues = 0;
         var countValues = 0;
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
+                var adjustedX = j + origin_col + 1;
+                var adjustedY = i + origin_row + 1;
+                console.log("examining " + i + " " + j + " = " + matrix[i][j] + " (" + adjustedX + ", " + adjustedY + ")");
                 if (probs[i][j] > 0) {
+                    console.log("found one at " + i + " " + j + " = " + probs[i][j]);
                     sumValues += matrix[i][j];
                     countValues += 1;
                     if (probs[i][j] <= threshold) {
-                        //			    console.log("Pushing " + i + ", " + j + " = " + probs[i][j] + ", threshold = " + threshold);
-                        // cells.push([j+1, i+1, matrix[i][j]]); // 3rd = actual value
-                        var adjustedX = j + origin_col + 1;
-                        var adjustedY = i + origin_row + 1;
-                        if (matrix[i][j] === 0) {
-                            // Keep zeroes intact.
-                            cells.push([adjustedX, adjustedY, "0"]); // 3rd = bogus hash for constants
-                        }
-                        else {
-                            //				console.log("value at [" + (adjustedX) + "][" + (adjustedY) + "] = " + matrix[i][j] + " -- " + probs[i][j]);
-                            cells.push([adjustedX, adjustedY, Colorize.distinguishedZeroHash]); // 3rd = bogus hash for constants
+                        if (matrix[i][j] != 0) {
+                            // Never push an empty cell.
+                            cells.push([adjustedX, adjustedY, probs[i][j]]);
                         }
                     }
                 }
@@ -304,6 +337,7 @@ var Colorize = /** @class */ (function () {
         var avgValues = sumValues / countValues;
         console.log("avg values = " + avgValues);
         cells.sort(function (a, b) { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
+        //	    console.log("cells = " + JSON.stringify(cells));
         return cells;
     };
     // Shannon entropy.
@@ -597,6 +631,7 @@ var Colorize = /** @class */ (function () {
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     };
     Colorize.reportingThreshold = 35; //  percent of bar
+    Colorize.suspiciousCellsReportingThreshold = 80; //  percent of bar
     // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     // True iff this class been initialized.
