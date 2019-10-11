@@ -8,6 +8,12 @@ var groupme_1 = require("./groupme");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
+    Colorize.setReportingThreshold = function (value) {
+        Colorize.reportingThreshold = value;
+    };
+    Colorize.getReportingThreshold = function () {
+        return Colorize.reportingThreshold;
+    };
     Colorize.initialize = function () {
         if (!this.initialized) {
             // Create the color palette array.
@@ -53,7 +59,8 @@ var Colorize = /** @class */ (function () {
                         var vec = vec_array.reduce(reducer);
                         if (JSON.stringify(vec) === base_vector) {
                             // No dependencies! Use a distinguished value.
-                            output.push([[adjustedX, adjustedY, 0], Colorize.distinguishedZeroHash]);
+                            // FIXME RESTORE THIS output.push([[adjustedX, adjustedY, 0], Colorize.distinguishedZeroHash]);
+                            output.push([[adjustedX, adjustedY, 0], vec.toString()]);
                         }
                         else {
                             var hash = this.hash_vector(vec);
@@ -206,44 +213,152 @@ var Colorize = /** @class */ (function () {
         for (var i = 0; i < cols; i++) {
             stencil[i] = new Array(rows).fill(0);
         }
-        for (var i = 0; i < cols; i++) {
-            for (var j = 0; j < rows; j++) {
-                stencil[i][j] = 1; // FIXME: this is if we are counting total number of different objects. // matrix[i][j];
+        // Middle (common-case)
+        var winMM = function (i, j) {
+            console.log("MM: " + i + ", " + j);
+            return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+                matrix[i - 1][j], matrix[i][j], matrix[i + 1][j],
+                matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
+        };
+        /// Literal corner cases.
+        var winTL = function (i, j) {
+            console.log("TL");
+            return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
+                matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
+                matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
+        };
+        var winBL = function (i, j) {
+            console.log("BL");
+            return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+                matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
+                matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1]];
+        };
+        var winTR = function (i, j) {
+            console.log("TR");
+            return [matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1],
+                matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
+                matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1]];
+        };
+        var winBR = function (i, j) {
+            console.log("BR");
+            return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
+                matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
+                matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1]];
+        };
+        /// Literal edge cases
+        var winT = function (i, j) {
+            console.log("T");
+            return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
+                matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
+                matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
+        };
+        var winR = function (i, j) {
+            console.log("R: " + i + ", " + j);
+            return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
+                matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
+                matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1]];
+        };
+        var winL = function (i, j) {
+            console.log("L");
+            return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+                matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
+                matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
+        };
+        var winB = function (i, j) {
+            console.log("B");
+            return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
+                matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
+                matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1]];
+        };
+        var stencilFunction = function (win, i, j) {
+            var theWin = win(j, i); // NOTE reversal!
+            if (theWin.reduce(function (total, a) { return (a === null) || (Boolean(total)); }, false)) {
+                // There's a null.
+                console.log("busted: " + JSON.stringify(win(i, j)));
             }
-        }
-        // Compute the stencil while omitting the edges and corners.
+            var sum = theWin.reduce(function (total, a) { return total + a; }, 0);
+            var nonzeros = theWin.reduce(function (total, a) { if (Number(a) > 0) {
+                return total + 1;
+            }
+            else {
+                return total;
+            } }, 0);
+            if (nonzeros > 0) {
+                var mean = sum / nonzeros;
+                //			const variance = win.reduce((total, a) => total + (a - mean) * (a - mean));
+                //			let counts = {};
+                //			win.forEach(el => counts[el] = 1  + (counts[el] || 0));
+                //			delete counts[0];
+                // stencil[i][j] = Object.keys(counts).length; // variance; //  mean;
+                stencil[i][j] = mean;
+            }
+            // Avoid math issues by rounding so we only use the first two significant digits past the decimal point.
+            stencil[i][j] = Math.round(stencil[i][j] * 100) / 100;
+        };
+        var win;
+        var win_counts = {};
+        //	    for (let i = 0; i < cols; i++) {
+        //		for (let j = 0; j < rows; j++) {
         for (var i = 1; i < cols - 1; i++) {
-            var _loop_1 = function (j) {
-                //if (matrix[i][j] !== 0) { // FIXME was >
-                // 3x3 window around the center.
-                console.log("i = " + i + ", j = " + j);
-                var win = [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
-                    matrix[i - 1][j], matrix[i][j], matrix[i + 1][j],
-                    matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-                console.log(JSON.stringify(win));
-                var sum = win.reduce(function (total, a) { return total + a; });
-                var nonzeros = win.reduce(function (total, a) { if (Number(a) > 0) {
-                    return total + 1;
-                }
-                else {
-                    return total;
-                } });
-                if (nonzeros > 0) {
-                    var mean_1 = sum / nonzeros;
-                    var variance = win.reduce(function (total, a) { return total + (a - mean_1) * (a - mean_1); });
-                    var counts_1 = {};
-                    win.forEach(function (el) { return counts_1[el] = 1 + (counts_1[el] || 0); });
-                    delete counts_1[0];
-                    stencil[i][j] = Object.keys(counts_1).length; // variance; //  mean;
-                    stencil[i][j] = mean_1;
-                }
-                // Avoid math issues by rounding so we only use the first two significant digit past the decimal point.
-                stencil[i][j] = Math.round(stencil[i][j] * 100) / 100;
-            };
             for (var j = 1; j < rows - 1; j++) {
-                _loop_1(j);
+                win = null;
+                switch (i) {
+                    case 0:
+                        switch (j) {
+                            case 0:
+                                win = winTL;
+                                win_counts["TL"] = 1 + (win_counts["TL"] || 0);
+                                break;
+                            case rows - 1:
+                                win = winTR;
+                                win_counts["TR"] = 1 + (win_counts["TR"] || 0);
+                                break;
+                            default:
+                                win = winT;
+                                win_counts["T"] = 1 + (win_counts["T"] || 0);
+                                break;
+                        }
+                        break;
+                    case cols - 1:
+                        switch (j) {
+                            case 0:
+                                win = winBL;
+                                win_counts["BL"] = 1 + (win_counts["BL"] || 0);
+                                break;
+                            case rows - 1:
+                                win = winBR;
+                                win_counts["BR"] = 1 + (win_counts["BR"] || 0);
+                                break;
+                            default:
+                                win = winB;
+                                win_counts["B"] = 1 + (win_counts["B"] || 0);
+                                break;
+                        }
+                        break;
+                    default:
+                        switch (j) {
+                            case 0:
+                                win = winL;
+                                win_counts["L"] = 1 + (win_counts["L"] || 0);
+                                break;
+                            case rows - 1:
+                                win = winR;
+                                win_counts["R"] = 1 + (win_counts["R"] || 0);
+                                break;
+                            default:
+                                win = winMM;
+                                win_counts["MM"] = 1 + (win_counts["MM"] || 0);
+                                break;
+                        }
+                }
+                stencilFunction(win, i, j);
+                //		    if (win === winR) {
+                //			console.log(JSON.stringify(win(i,j)));
+                //			console.log("stencil[" + i + "][" + j + "] = " + stencil[i][j]);
+                //		    }
             }
         }
+        console.log(JSON.stringify(win_counts));
         //	    console.log("Stencil = " + JSON.stringify(stencil));
         return stencil;
     };
@@ -257,16 +372,10 @@ var Colorize = /** @class */ (function () {
         var counts = {};
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
-                //		    if (stencil[i][j] != 0) {
-                //			console.log("************* found " + stencil[i][j] + " = " + counts[stencil[i][j]] +  "!");
                 counts[stencil[i][j]] = (counts[stencil[i][j]] + 1) || 1;
-                //			probs[i][j] += stencil[i][j];
                 if (stencil[i][j] != 0) {
                     totalNonzeroes += 1;
                 }
-                //		    } else {
-                //			counts[stencil[i][j]] = 0;
-                //		    }
             }
         }
         console.log("counts = " + JSON.stringify(counts));
@@ -320,13 +429,14 @@ var Colorize = /** @class */ (function () {
             for (var j = 0; j < rows; j++) {
                 var adjustedX = j + origin_col + 1;
                 var adjustedY = i + origin_row + 1;
-                console.log("examining " + i + " " + j + " = " + matrix[i][j] + " (" + adjustedX + ", " + adjustedY + ")");
+                //		    console.log("examining " + i + " " + j + " = " + matrix[i][j] + " (" + adjustedX + ", " + adjustedY + ")");
                 if (probs[i][j] > 0) {
-                    console.log("found one at " + i + " " + j + " = " + probs[i][j]);
                     sumValues += matrix[i][j];
                     countValues += 1;
                     if (probs[i][j] <= threshold) {
+                        console.log("found one at " + i + " " + j + " = [" + matrix[i][j] + "] (" + adjustedX + ", " + adjustedY + "): p = " + probs[i][j]);
                         if (matrix[i][j] != 0) {
+                            console.log("PUSHED!");
                             // Never push an empty cell.
                             cells.push([adjustedX, adjustedY, probs[i][j]]);
                         }
@@ -631,7 +741,7 @@ var Colorize = /** @class */ (function () {
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     };
     Colorize.reportingThreshold = 35; //  percent of bar
-    Colorize.suspiciousCellsReportingThreshold = 80; //  percent of bar
+    Colorize.suspiciousCellsReportingThreshold = 85; //  percent of bar
     // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     // True iff this class been initialized.

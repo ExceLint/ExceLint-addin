@@ -337,7 +337,7 @@ exports.find_all_proposed_fixes = find_all_proposed_fixes;
 function test_find_all_proposed_fixes(grouped_formulas) {
     comparisons = 0;
     var all_fixes = find_all_proposed_fixes(grouped_formulas);
-    //    console.log("all matches = " + JSON.stringify(all_fixes));
+    console.log("all matches = " + JSON.stringify(all_fixes));
     //    console.log("comparisons = " + comparisons);
     var theLength = 0;
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {

@@ -38,7 +38,7 @@ export default class App extends React.Component<AppProps, AppState> {
     private numericRangeThreshold = 10000;
     private formulasThreshold = 10000;
     private valuesThreshold = 10000;
-    private suspiciousCellsThreshold = 1 - Colorize.suspiciousCellsReportingThreshold / 100; // Must be more rare than this fraction.
+//    private suspiciousCellsThreshold = 1 - Colorize.suspiciousCellsReportingThreshold / 100; // Must be more rare than this fraction.
     
     constructor(props, context) {
 	super(props, context);
@@ -106,11 +106,12 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	    let score = fixes[k][0];
 
+	    // EDB: DISABLE PRUNING HERE
 	    // Skip fixes whose score is already below the threshold.
-	    if (-score < (Colorize.reportingThreshold / 100)) {
+//	    if (-score < (Colorize.getReportingThreshold() / 100)) {
 //		console.log("too low: " + (-score));
-		continue;
-	    }
+//		continue;
+//	    }
 	    
 	    // Sort the fixes.
 	    // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
@@ -663,7 +664,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		this.suspicious_cells = [];
 
 		if (values.length < 10000) {
-		    this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, this.suspiciousCellsThreshold);
+		    this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
 		}
 
 		
@@ -793,7 +794,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		  return;
 		  }
 		*/
-		console.log(this.proposed_fixes);
+//		console.log(this.proposed_fixes);
 		let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
 		if (r) {
 		    r.select();

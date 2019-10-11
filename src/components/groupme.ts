@@ -371,7 +371,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 export function test_find_all_proposed_fixes(grouped_formulas) {
     comparisons = 0;
     const all_fixes = find_all_proposed_fixes(grouped_formulas);
-//    console.log("all matches = " + JSON.stringify(all_fixes));
+    console.log("all matches = " + JSON.stringify(all_fixes));
 //    console.log("comparisons = " + comparisons);
     let theLength = 0;
     for (let k of Object.keys(grouped_formulas)) {

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Button, ButtonType } from 'office-ui-fabric-react';
+import { Slider } from 'office-ui-fabric-react/lib/Slider';
 import { ExcelUtils } from './excelutils';
 import { Colorize } from './colorize';
 
@@ -62,9 +63,9 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		}
 //		score = barWidth - score; // Invert the ranking.
 		// Skip really low scores.
-		if (score < Colorize.reportingThreshold) {
-		    continue;
-		}
+//		if (score < Colorize.getReportingThreshold()) {
+//		    continue;
+//		}
 		counter += 1;
 		//		console.log("score is now = " + score);
 		let rangeDisplay = <b></b>;
@@ -162,14 +163,21 @@ function DisplayFixes(props) {
 	// We got nothing.
 	return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
     }
-    const table1 = makeTable(props.sheetName, props.themFixes, props.selector, props.currentFix, props.numFixes);
+    // Filter out fixes whose score is below the threshold.
+    let filteredFixes = props.themFixes.filter((c) => {
+	console.log("c = " + JSON.stringify(c));
+	let score = -c[0];
+	return (score >= Colorize.getReportingThreshold() / 100);
+    });
+    
+    const table1 = makeTable(props.sheetName, filteredFixes, props.selector, props.currentFix, filteredFixes.length);
     result1 = <div><br /><br />{table1}</div>;
     let result2 = <div></div>;
     const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
     result2 = <div>{table2}</div>;
-//    return <div>{result1}</div>;
     // Temporarily disable display of suspicious cells while feature remains in development.
-    return <div>{result1}{result2}</div>;
+    return <div>{result1}</div>;
+    // return <div>{result1}{result2}</div>;
 }
 
 
@@ -213,7 +221,18 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} cellSelector={this.props.cellSelector} currentSuspiciousCell={this.state.currentSuspiciousCell} />
 			{instructions}
-		    
+
+		    		    <Slider
+		    label="Suspiciousness threshold (%)"
+		    min={0}
+		    max={100}
+		    step={1}
+		    defaultValue={Colorize.getReportingThreshold()}
+		    showValue={true}
+		    onChange={(value: number) => { Colorize.setReportingThreshold(value); this.forceUpdate(); }}
+			/>
+			<br />
+
 <svg width="300" height="20">
 <rect x="0" y="0" width="3.5714285714285716" height="20" fill="#ecaaae" />
 <rect x="3.5714285714285716" y="0" width="3.5714285714285716" height="20" fill="#74aff3" />
