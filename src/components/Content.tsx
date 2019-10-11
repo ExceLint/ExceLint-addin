@@ -89,7 +89,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 	    return table;
 	}
     }
-    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.</div>;
+    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /></div>;
 //    return <div></div>; //  style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
 }
 
@@ -152,32 +152,31 @@ function DisplayFixes(props) {
 //    console.log("DisplayFixes: " + props.totalFixes + ", " + props.suspiciousCells.length);
     let result1 = <div></div>;
     let str = "";
-    if ((props.totalFixes === 0) && (props.suspiciousCells.length === 0)) {
-	return <div style={notSuspiciousStyle}>Nothing suspicious found in {props.sheetName}.<br /><br /></div>;
-    }
-    if (props.totalFixes < 0) {
-	return <div></div>;
-    }
-    // OK, if we got here, we did some analysis.
-    if ((props.themFixes.length === 0) && (props.suspiciousCells.length === 0)) {
-	// We got nothing.
-	return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
-    }
     // Filter out fixes whose score is below the threshold.
     let filteredFixes = props.themFixes.filter((c) => {
 //	console.log("c = " + JSON.stringify(c));
 	let score = -c[0];
 	return (score >= Colorize.getReportingThreshold() / 100);
     });
-    
+    if (true) {
+	// No fixes = no actual analysis run.
+	if (props.themFixes.length <= 0) {
+	    return <div></div>;
+	}
+	// OK, if we got here, we did some analysis.
+	if ((filteredFixes.length === 0) && (props.suspiciousCells.length === 0)) {
+	    // We got nothing.
+	    return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
+	}
+    }
     const table1 = makeTable(props.sheetName, filteredFixes, props.selector, props.currentFix, filteredFixes.length);
     result1 = <div><br /><br />{table1}</div>;
-    let result2 = <div></div>;
-    const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
-    result2 = <div>{table2}</div>;
     // Temporarily disable display of suspicious cells while feature remains in development.
+    ///    let result2 = <div></div>;
+    ///    const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
+    ///    result2 = <div>{table2}</div>;
+    /// return <div>{result1}{result2}</div>;
     return <div>{result1}</div>;
-    // return <div>{result1}{result2}</div>;
 }
 
 
@@ -206,14 +205,25 @@ export class Content extends React.Component<ContentProps, any> {
     
     render() {
 	let instructions = <div></div>;
+	let slider = <div></div>;
 	if ((this.state.themFixes.length === 0) && (this.state.suspiciousCells.length === 0)) {
 	    instructions = <div><br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
 		Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
 		<br /><br />
 		</div>;
+	} else {
+	    slider = <div><Slider
+	    label="Suspiciousness threshold (%)"
+	    min={0}
+	    max={100}
+	    step={1}
+	    defaultValue={Colorize.getReportingThreshold()}
+	    showValue={true}
+	    onChange={(value: number) => { Colorize.setReportingThreshold(value); this.forceUpdate(); }}
+		/></div>;
 	}
-
+	
 		return (
 			<div id='content-main'>
 			<div className='padding'>
@@ -221,16 +231,8 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} cellSelector={this.props.cellSelector} currentSuspiciousCell={this.state.currentSuspiciousCell} />
 			{instructions}
-
-		    		    <Slider
-		    label="Suspiciousness threshold (%)"
-		    min={0}
-		    max={100}
-		    step={1}
-		    defaultValue={Colorize.getReportingThreshold()}
-		    showValue={true}
-		    onChange={(value: number) => { Colorize.setReportingThreshold(value); this.forceUpdate(); }}
-			/>
+		    {slider}
+		    
 			<br />
 
 <svg width="300" height="20">
