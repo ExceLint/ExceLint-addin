@@ -165,7 +165,7 @@ function DisplayFixes(props) {
     }
     // Filter out fixes whose score is below the threshold.
     let filteredFixes = props.themFixes.filter((c) => {
-	console.log("c = " + JSON.stringify(c));
+//	console.log("c = " + JSON.stringify(c));
 	let score = -c[0];
 	return (score >= Colorize.getReportingThreshold() / 100);
     });
