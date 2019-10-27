@@ -90,7 +90,7 @@ export class Colorize {
 			} else {
 			    const hash = this.hash_vector(vec);
 			    const str = hash.toString();
-//			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
 			    output.push([[adjustedX, adjustedY, 0], str]);
 			}
 		    }
@@ -668,7 +668,7 @@ export class Colorize {
 	}
 
     public static hash_vector(vec: Array<number>): number {
-	const useL1norm = false;
+	const useL1norm = true; // false;
 	if (useL1norm) {
 	    const baseX = 0; // 7;
 	    const baseY = 0; // 3;
@@ -690,6 +690,133 @@ export class Colorize {
 	}
 	//	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     }
+
+    public static adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row) : any
+    {
+	let proposed_fixes = [];
+	for (let k in fixes) {
+	    // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
+	    // entropy, and two ranges:
+	    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
+	    
+//	    console.log("fix = " + JSON.stringify(fixes[k]));
+
+	    let score = fixes[k][0];
+
+	    // EDB: DISABLE PRUNING HERE
+	    // Skip fixes whose score is already below the threshold.
+//	    if (-score < (Colorize.getReportingThreshold() / 100)) {
+//		console.log("too low: " + (-score));
+//		continue;
+//	    }
+	    
+	    // Sort the fixes.
+	    // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
+	    // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
+	    // (which is 1 more than Excel needs right now).
+	    const firstPadded  = fixes[k][1].map((a) => a.toString().padStart(10,'0'));
+	    const secondPadded = fixes[k][2].map((a) => a.toString().padStart(10,'0'));
+	    
+	    const first  = (firstPadded < secondPadded) ? fixes[k][1] : fixes[k][2];
+	    const second = (firstPadded < secondPadded) ? fixes[k][2] : fixes[k][1];
+
+	    const [[ax1, ay1], [ax2, ay2]] = first;
+	    const [[bx1, by1], [bx2, by2]] = second;
+	    
+	    const col0 = ax1 - origin_col - 1; // ExcelUtils.column_index_to_name(ax1);
+	    const row0 = ay1 - origin_row - 1; //.toString();
+	    const col1 = bx2 - origin_col - 1; // ExcelUtils.column_index_to_name(bx2);
+	    const row1 = by2 - origin_row - 1; // .toString();
+
+//	    console.log("length = " + propertiesToGet.value.length);
+//	    console.log("width = " + propertiesToGet.value[0].length);
+	    let sameFormats = true;
+	    const firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
+//	    console.log(firstFormat);
+//	    console.log(JSON.stringify(fixes));
+	    for (let i = row0; i <= row1; i++) {
+		for (let j = col0; j <= col1; j++) {
+//		    		    console.log("checking " + i + ", " + j);
+		    const str = JSON.stringify(propertiesToGet.value[i][j]);
+//		    console.log(str);
+		    if (str !== firstFormat) {
+			sameFormats = false;
+			break;
+		    }
+		}
+	    }
+//	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
+
+//	    console.log("sameFormats? " + sameFormats);
+	    if (!sameFormats) {
+		score = score * 0.5; // This should be parameterized; plus we could have more nuance...
+	    }
+	    proposed_fixes.push([score, first, second]);
+	}
+	return proposed_fixes;
+    }
+    
+    public static find_suspicious_cells(cols : number, rows: number,
+					origin : [number, number, number],
+					formulas, processed_formulas, data_values, threshold: number) {
+	let suspiciousCells;
+	{
+	    data_values = data_values;
+	    const formula_matrix = Colorize.processed_to_matrix(cols,
+								rows,
+								origin[0] - 1,
+								origin[1] - 1,
+//								processed_formulas);
+								processed_formulas.concat(data_values));
+	    //									processed_formulas);
+		    
+	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
+	    
+	    
+	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
+	    console.log("data_values = " + JSON.stringify(data_values));
+	    
+	    
+	    const stencil = Colorize.stencilize(cols, rows, formula_matrix);
+	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
+	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
+	    console.log("probabilities = " + JSON.stringify(probs));
+	    
+	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
+	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
+
+	    // Prune any cell that is in fact a formula.
+
+	    if (typeof formulas !== 'undefined') {
+		let totalFormulaWeight = 0;
+		suspiciousCells = candidateSuspiciousCells.filter((c) => {
+		    const theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
+		    console.log("Checking theFormula = " + JSON.stringify(theFormula) + " for cell " + JSON.stringify(c));
+		    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
+			return true;
+		    } else {
+			// It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
+			console.log("REMOVING " + JSON.stringify(c));
+			totalFormulaWeight += c[2];
+			return false;
+		    }
+		});
+		console.log("total formula weight = " + totalFormulaWeight);
+		// Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
+		const multiplier = 1 / (1 - totalFormulaWeight);
+		console.log("before thresholding: suspicious cells = " + JSON.stringify(suspiciousCells));
+		suspiciousCells = suspiciousCells.map((c) => [c[0], c[1], c[2] * multiplier]);
+		suspiciousCells = suspiciousCells.filter((c) => c[2] <= threshold );
+	    } else {
+		suspiciousCells = candidateSuspiciousCells;
+	    }
+
+	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
+	}
+	return suspiciousCells;
+    }
+
+    
 }
 
 //console.log(this.dependencies('$C$2:$E$5', 10, 10));

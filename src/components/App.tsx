@@ -29,7 +29,6 @@ export default class App extends React.Component<AppProps, AppState> {
     private total_fixes = -1;
     private savedFormat: any = null;
     private savedRange: string = null;
-    private originalSheetSuffix : string = "_EL";
     public state = {};
     private contentElement : any = null;
     private sheetName : string = "";
@@ -58,11 +57,15 @@ export default class App extends React.Component<AppProps, AppState> {
 					       currentSuspiciousCell : this.current_suspicious_cell });
     }
 
+    private adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row) : any
+    {
+	return Colorize.adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row);
+    }
+    
     // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
     adjust_fix_scores = async(context, backupSheet, origin_col, origin_row) => {
 	let t = new Timer("adjust_fix_scores");
 	const fixes = this.proposed_fixes;
-	this.proposed_fixes = [];
 
 	let usedRange = backupSheet.getUsedRange(false) as any;
 	
@@ -96,139 +99,22 @@ export default class App extends React.Component<AppProps, AppState> {
 	t.split("got formatting info.");
 	
 //	console.log(JSON.stringify(propertiesToGet.value));
-	
-	for (let k in fixes) {
-	    // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
-	    // entropy, and two ranges:
-	    //    upper-left corner of range (column, row), lower-right corner of range (column, row)
-	    
-//	    console.log("fix = " + JSON.stringify(fixes[k]));
-
-	    let score = fixes[k][0];
-
-	    // EDB: DISABLE PRUNING HERE
-	    // Skip fixes whose score is already below the threshold.
-//	    if (-score < (Colorize.getReportingThreshold() / 100)) {
-//		console.log("too low: " + (-score));
-//		continue;
-//	    }
-	    
-	    // Sort the fixes.
-	    // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
-	    // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
-	    // (which is 1 more than Excel needs right now).
-	    const firstPadded  = fixes[k][1].map((a) => a.toString().padStart(10,'0'));
-	    const secondPadded = fixes[k][2].map((a) => a.toString().padStart(10,'0'));
-	    
-	    const first  = (firstPadded < secondPadded) ? fixes[k][1] : fixes[k][2];
-	    const second = (firstPadded < secondPadded) ? fixes[k][2] : fixes[k][1];
-
-	    const [[ax1, ay1], [ax2, ay2]] = first;
-	    const [[bx1, by1], [bx2, by2]] = second;
-	    
-	    const col0 = ax1 - origin_col - 1; // ExcelUtils.column_index_to_name(ax1);
-	    const row0 = ay1 - origin_row - 1; //.toString();
-	    const col1 = bx2 - origin_col - 1; // ExcelUtils.column_index_to_name(bx2);
-	    const row1 = by2 - origin_row - 1; // .toString();
-
-//	    console.log("length = " + propertiesToGet.value.length);
-//	    console.log("width = " + propertiesToGet.value[0].length);
-	    let sameFormats = true;
-	    const firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
-//	    console.log(firstFormat);
-//	    console.log(JSON.stringify(fixes));
-	    for (let i = row0; i <= row1; i++) {
-		for (let j = col0; j <= col1; j++) {
-//		    		    console.log("checking " + i + ", " + j);
-		    const str = JSON.stringify(propertiesToGet.value[i][j]);
-//		    console.log(str);
-		    if (str !== firstFormat) {
-			sameFormats = false;
-			break;
-		    }
-		}
-	    }
-//	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
-
-//	    console.log("sameFormats? " + sameFormats);
-	    if (!sameFormats) {
-		score = score * 0.5; // This should be parameterized; plus we could have more nuance...
-	    }
-	    this.proposed_fixes.push([score, first, second]);
-	}
+	this.proposed_fixes = this.adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row);
 	t.split("done.");
     }
 
 
-    /// Get the saved formats for this sheet (by its unique identifier).
-    private saved_original_sheetname(id: string) : string {
-	return ExcelUtils.hash_sheet(id, 28) + this.originalSheetSuffix;
-    }
-
     /// Get suspicious cells.
     private find_suspicious_cells(cols : number, rows: number,
 			     origin : [number, number, number],
-			     formulas, processed_formulas, data_values, threshold: number) {
-	let suspiciousCells;
-	{
-	    data_values = data_values;
-	    const formula_matrix = Colorize.processed_to_matrix(cols,
-								rows,
-								origin[0] - 1,
-								origin[1] - 1,
-//								processed_formulas);
-								processed_formulas.concat(data_values));
-	    //									processed_formulas);
-		    
-	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
-	    
-	    
-	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
-	    console.log("data_values = " + JSON.stringify(data_values));
-	    
-	    
-	    const stencil = Colorize.stencilize(cols, rows, formula_matrix);
-	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
-	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
-	    console.log("probabilities = " + JSON.stringify(probs));
-	    
-	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
-	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
-
-	    // Prune any cell that is in fact a formula.
-
-	    if (typeof formulas !== 'undefined') {
-		let totalFormulaWeight = 0;
-		suspiciousCells = candidateSuspiciousCells.filter((c) => {
-		    const theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
-		    console.log("Checking theFormula = " + JSON.stringify(theFormula) + " for cell " + JSON.stringify(c));
-		    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
-			return true;
-		    } else {
-			// It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
-			console.log("REMOVING " + JSON.stringify(c));
-			totalFormulaWeight += c[2];
-			return false;
-		    }
-		});
-		console.log("total formula weight = " + totalFormulaWeight);
-		// Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
-		const multiplier = 1 / (1 - totalFormulaWeight);
-		console.log("before thresholding: suspicious cells = " + JSON.stringify(suspiciousCells));
-		suspiciousCells = suspiciousCells.map((c) => [c[0], c[1], c[2] * multiplier]);
-		suspiciousCells = suspiciousCells.filter((c) => c[2] <= threshold );
-	    } else {
-		suspiciousCells = candidateSuspiciousCells;
-	    }
-
-	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
-	}
-	return suspiciousCells;
+				  formulas, processed_formulas, data_values, threshold: number)
+    {
+	return Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, threshold);
     }
     
 
     /// Color the ranges using the specified color function.
-    private process(grouped_ranges, currentWorksheet, colorfn, otherfn) {
+    private color_ranges(grouped_ranges, currentWorksheet, colorfn, otherfn) {
 	const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
 	// Process the ranges.
 	let hash_index = 0;
@@ -288,7 +174,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    this.sheetName = currentWorksheet.name;
 
 	    // Find any old backup sheet corresponding to this id.
-	    const oldBackupName = this.saved_original_sheetname(currentWorksheet.id);
+	    const oldBackupName = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
 	    let oldBackupSheet = worksheets.getItemOrNullObject(oldBackupName);
 	    await context.sync();
 
@@ -316,7 +202,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	    await context.sync();
 
 	    // Finally, rename the backup sheet.
- 	    newbackupSheet.name = this.saved_original_sheetname(currentWorksheet.id);
+ 	    newbackupSheet.name = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
 	    // If the original sheet was protected, protect the backup, too
 	    // (we use this to restore the original protection later, if needed).
 	    if (wasPreviouslyProtected) {
@@ -342,7 +228,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 
 		// If the backup is there, restore it.
-		let backupName = this.saved_original_sheetname(currentWorksheet.id);
+		let backupName = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
 		try {
 		    let backupSheet = worksheets.getItemOrNullObject(backupName);
 		    await context.sync();
@@ -687,14 +573,14 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 		
 		// Just color referenced data gray.
-		this.process(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{});
+		this.color_ranges(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, ()=>{});
 
 		// And color the formulas.
-		this.process(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
+		this.color_ranges(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, ()=>{});
 
 		// Color referenced data based on its formula's color.
 		// DISABLED.
-		///    this.process(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
+		///    this.color_ranges(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
 
 		await context.sync();
 
@@ -702,7 +588,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		t.split("saved formats");
 		
 		// Grab the backup sheet for use in looking up the formats.
-		const backupSheetname = this.saved_original_sheetname(currentWorksheet.id);
+		const backupSheetname = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
 		let worksheets = context.workbook.worksheets;
 		let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
 		await context.sync();

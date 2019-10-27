@@ -6,6 +6,10 @@ var rectangleutils_1 = require("./rectangleutils");
 var ExcelUtils = /** @class */ (function () {
     function ExcelUtils() {
     }
+    // Get the saved formats for this sheet (by its unique identifier).
+    ExcelUtils.saved_original_sheetname = function (id) {
+        return this.hash_sheet(id, 28) + this.originalSheetSuffix;
+    };
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     ExcelUtils.hash_sheet = function (uid, maxlen) {
         if (maxlen === void 0) { maxlen = 31; }
@@ -336,6 +340,7 @@ var ExcelUtils = /** @class */ (function () {
     // Same with sheet name references.
     ExcelUtils.formulas_with_quoted_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
     ExcelUtils.formulas_with_unquoted_sheetnames = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    ExcelUtils.originalSheetSuffix = "_EL";
     return ExcelUtils;
 }());
 exports.ExcelUtils = ExcelUtils;

@@ -22,6 +22,13 @@ export class ExcelUtils {
     // Same with sheet name references.
     private static formulas_with_quoted_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
     private static formulas_with_unquoted_sheetnames = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    private static originalSheetSuffix : string = "_EL";
+    
+    // Get the saved formats for this sheet (by its unique identifier).
+    public static saved_original_sheetname(id: string) : string {
+	return this.hash_sheet(id, 28) + this.originalSheetSuffix;
+    }
+    
     
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     public static hash_sheet(uid: string, maxlen: number = 31) : string {

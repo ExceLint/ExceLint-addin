@@ -65,7 +65,7 @@ var Colorize = /** @class */ (function () {
                         else {
                             var hash = this.hash_vector(vec);
                             var str = hash.toString();
-                            //			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+                            console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
                             output.push([[adjustedX, adjustedY, 0], str]);
                         }
                     }
@@ -629,7 +629,7 @@ var Colorize = /** @class */ (function () {
         }
     };
     Colorize.hash_vector = function (vec) {
-        var useL1norm = false;
+        var useL1norm = true; // false;
         if (useL1norm) {
             var baseX = 0; // 7;
             var baseY = 0; // 3;
@@ -651,6 +651,107 @@ var Colorize = /** @class */ (function () {
             return this.Multiplier * Math.sqrt(v0 + v1 + v2);
         }
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
+    };
+    Colorize.adjust_proposed_fixes = function (fixes, propertiesToGet, origin_col, origin_row) {
+        var proposed_fixes = [];
+        for (var k in fixes) {
+            // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
+            // entropy, and two ranges:
+            //    upper-left corner of range (column, row), lower-right corner of range (column, row)
+            //	    console.log("fix = " + JSON.stringify(fixes[k]));
+            var score = fixes[k][0];
+            // EDB: DISABLE PRUNING HERE
+            // Skip fixes whose score is already below the threshold.
+            //	    if (-score < (Colorize.getReportingThreshold() / 100)) {
+            //		console.log("too low: " + (-score));
+            //		continue;
+            //	    }
+            // Sort the fixes.
+            // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
+            // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
+            // (which is 1 more than Excel needs right now).
+            var firstPadded = fixes[k][1].map(function (a) { return a.toString().padStart(10, '0'); });
+            var secondPadded = fixes[k][2].map(function (a) { return a.toString().padStart(10, '0'); });
+            var first = (firstPadded < secondPadded) ? fixes[k][1] : fixes[k][2];
+            var second = (firstPadded < secondPadded) ? fixes[k][2] : fixes[k][1];
+            var _a = first[0], ax1 = _a[0], ay1 = _a[1], _b = first[1], ax2 = _b[0], ay2 = _b[1];
+            var _c = second[0], bx1 = _c[0], by1 = _c[1], _d = second[1], bx2 = _d[0], by2 = _d[1];
+            var col0 = ax1 - origin_col - 1; // ExcelUtils.column_index_to_name(ax1);
+            var row0 = ay1 - origin_row - 1; //.toString();
+            var col1 = bx2 - origin_col - 1; // ExcelUtils.column_index_to_name(bx2);
+            var row1 = by2 - origin_row - 1; // .toString();
+            //	    console.log("length = " + propertiesToGet.value.length);
+            //	    console.log("width = " + propertiesToGet.value[0].length);
+            var sameFormats = true;
+            var firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
+            //	    console.log(firstFormat);
+            //	    console.log(JSON.stringify(fixes));
+            for (var i = row0; i <= row1; i++) {
+                for (var j = col0; j <= col1; j++) {
+                    //		    		    console.log("checking " + i + ", " + j);
+                    var str = JSON.stringify(propertiesToGet.value[i][j]);
+                    //		    console.log(str);
+                    if (str !== firstFormat) {
+                        sameFormats = false;
+                        break;
+                    }
+                }
+            }
+            //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
+            //	    console.log("sameFormats? " + sameFormats);
+            if (!sameFormats) {
+                score = score * 0.5; // This should be parameterized; plus we could have more nuance...
+            }
+            proposed_fixes.push([score, first, second]);
+        }
+        return proposed_fixes;
+    };
+    Colorize.find_suspicious_cells = function (cols, rows, origin, formulas, processed_formulas, data_values, threshold) {
+        var suspiciousCells;
+        {
+            data_values = data_values;
+            var formula_matrix = Colorize.processed_to_matrix(cols, rows, origin[0] - 1, origin[1] - 1, 
+            //								processed_formulas);
+            processed_formulas.concat(data_values));
+            //									processed_formulas);
+            console.log("formula_matrix = " + JSON.stringify(formula_matrix));
+            console.log("processed_formulas = " + JSON.stringify(processed_formulas));
+            console.log("data_values = " + JSON.stringify(data_values));
+            var stencil = Colorize.stencilize(cols, rows, formula_matrix);
+            console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
+            var probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
+            console.log("probabilities = " + JSON.stringify(probs));
+            var candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
+            console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
+            // Prune any cell that is in fact a formula.
+            if (typeof formulas !== 'undefined') {
+                var totalFormulaWeight_1 = 0;
+                suspiciousCells = candidateSuspiciousCells.filter(function (c) {
+                    var theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
+                    console.log("Checking theFormula = " + JSON.stringify(theFormula) + " for cell " + JSON.stringify(c));
+                    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
+                        return true;
+                    }
+                    else {
+                        // It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
+                        console.log("REMOVING " + JSON.stringify(c));
+                        totalFormulaWeight_1 += c[2];
+                        return false;
+                    }
+                });
+                console.log("total formula weight = " + totalFormulaWeight_1);
+                // Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
+                var multiplier_1 = 1 / (1 - totalFormulaWeight_1);
+                console.log("before thresholding: suspicious cells = " + JSON.stringify(suspiciousCells));
+                suspiciousCells = suspiciousCells.map(function (c) { return [c[0], c[1], c[2] * multiplier_1]; });
+                suspiciousCells = suspiciousCells.filter(function (c) { return c[2] <= threshold; });
+            }
+            else {
+                suspiciousCells = candidateSuspiciousCells;
+            }
+            console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
+        }
+        return suspiciousCells;
     };
     Colorize.reportingThreshold = 35; //  percent of bar
     Colorize.suspiciousCellsReportingThreshold = 85; //  percent of bar
