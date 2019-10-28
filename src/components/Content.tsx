@@ -222,6 +222,7 @@ export class Content extends React.Component<ContentProps, any> {
 		<br /><br />
 		</div>;
 	} else {
+	    instructions = <div style={notSuspiciousStyle}><em>Advanced settings:</em></div>;
 	    slider1 = <div><Slider
 	    label="Suspiciousness threshold (%)"
 	    min={0}
