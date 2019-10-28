@@ -54,8 +54,13 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		let [ col0, row0, col1, row1 ] = r;
 		// Sort from largest to smallest (by making negative).
 //		console.log(JSON.stringify(r));
-//		console.log("original score = " + arr[i][0]);
-		let score = -arr[i][0] * barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
+		//		console.log("original score = " + arr[i][0]);
+		let score = -arr[i][0];
+		if (!arr[i][3]) { // Different formats.
+		    score *= (100 - Colorize.getFormattingDiscount()) / 100;
+		}
+		
+		score *= barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 //		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 //		console.log("score = " + score);
 		if (score > barWidth) {
@@ -154,8 +159,11 @@ function DisplayFixes(props) {
     let str = "";
     // Filter out fixes whose score is below the threshold.
     let filteredFixes = props.themFixes.filter((c) => {
-//	console.log("c = " + JSON.stringify(c));
+	//	console.log("c = " + JSON.stringify(c));
 	let score = -c[0];
+	if (!c[3]) { // Different formats.
+	    score *= (100 - Colorize.getFormattingDiscount()) / 100;
+	}
 	return (score >= Colorize.getReportingThreshold() / 100);
     });
     if (true) {
@@ -166,7 +174,7 @@ function DisplayFixes(props) {
 	// OK, if we got here, we did some analysis.
 	if ((filteredFixes.length === 0) && (props.suspiciousCells.length === 0)) {
 	    // We got nothing.
-	    return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.</div>;
+	    return <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.<br /><br /></div>;
 	}
     }
     const table1 = makeTable(props.sheetName, filteredFixes, props.selector, props.currentFix, filteredFixes.length);
@@ -205,7 +213,8 @@ export class Content extends React.Component<ContentProps, any> {
     
     render() {
 	let instructions = <div></div>;
-	let slider = <div></div>;
+	let slider1 = <div></div>;
+	let slider2 = <div></div>;
 	if ((this.state.themFixes.length === 0) && (this.state.suspiciousCells.length === 0)) {
 	    instructions = <div><br />
 				Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
@@ -213,7 +222,7 @@ export class Content extends React.Component<ContentProps, any> {
 		<br /><br />
 		</div>;
 	} else {
-	    slider = <div><Slider
+	    slider1 = <div><Slider
 	    label="Suspiciousness threshold (%)"
 	    min={0}
 	    max={100}
@@ -221,6 +230,15 @@ export class Content extends React.Component<ContentProps, any> {
 	    defaultValue={Colorize.getReportingThreshold()}
 	    showValue={true}
 	    onChange={(value: number) => { Colorize.setReportingThreshold(value); this.forceUpdate(); }}
+		/></div>;
+	    slider2 = <div><Slider
+	    label="Impact of different formats (%)"
+	    min={0}
+	    max={100}
+	    step={1}
+	    defaultValue={Colorize.getFormattingDiscount()}
+	    showValue={true}
+	    onChange={(value: number) => { Colorize.setFormattingDiscount(value); this.forceUpdate(); }}
 		/></div>;
 	}
 	
@@ -231,7 +249,8 @@ export class Content extends React.Component<ContentProps, any> {
 			<Button className='ms-button' buttonType={ButtonType.primary} onClick={this.props.click2}>{this.props.buttonLabel2}</Button>
 			<DisplayFixes sheetName={this.state.sheetName} currentFix={this.state.currentFix} totalFixes={this.state.totalFixes} themFixes={this.state.themFixes} selector={this.props.selector} numFixes={this.state.numFixes} suspiciousCells={this.state.suspiciousCells} cellSelector={this.props.cellSelector} currentSuspiciousCell={this.state.currentSuspiciousCell} />
 			{instructions}
-		    {slider}
+		    {slider1}
+		    {slider2}
 		    
 			<br />
 

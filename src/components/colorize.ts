@@ -13,6 +13,7 @@ export class Colorize {
 
     public static reportingThreshold = 35; //  percent of bar
     public static suspiciousCellsReportingThreshold = 85; //  percent of bar
+    public static formattingDiscount = 50; // percent of discount: 100% means different formats = not suspicious at all
 
     public static setReportingThreshold(value: number) {
 	Colorize.reportingThreshold = value;
@@ -20,6 +21,14 @@ export class Colorize {
 
     public static getReportingThreshold() : number {
 	return Colorize.reportingThreshold;
+    }
+
+    public static setFormattingDiscount(value: number) {
+	Colorize.formattingDiscount = value;
+    }
+
+    public static getFormattingDiscount() : number {
+	return Colorize.formattingDiscount;
     }
 
     // Color-blind friendly color palette.
@@ -749,9 +758,9 @@ export class Colorize {
 
 //	    console.log("sameFormats? " + sameFormats);
 	    if (!sameFormats) {
-		score = score * 0.5; // This should be parameterized; plus we could have more nuance...
+		score = score * (100 - this.formattingDiscount) / 100; // This should be parameterized; plus we could have more nuance...
 	    }
-	    proposed_fixes.push([score, first, second]);
+	    proposed_fixes.push([score, first, second, sameFormats]);
 	}
 	return proposed_fixes;
     }

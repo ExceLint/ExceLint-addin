@@ -14,6 +14,12 @@ var Colorize = /** @class */ (function () {
     Colorize.getReportingThreshold = function () {
         return Colorize.reportingThreshold;
     };
+    Colorize.setFormattingDiscount = function (value) {
+        Colorize.formattingDiscount = value;
+    };
+    Colorize.getFormattingDiscount = function () {
+        return Colorize.formattingDiscount;
+    };
     Colorize.initialize = function () {
         if (!this.initialized) {
             // Create the color palette array.
@@ -700,9 +706,9 @@ var Colorize = /** @class */ (function () {
             //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
             //	    console.log("sameFormats? " + sameFormats);
             if (!sameFormats) {
-                score = score * 0.5; // This should be parameterized; plus we could have more nuance...
+                score = score * (100 - this.formattingDiscount) / 100; // This should be parameterized; plus we could have more nuance...
             }
-            proposed_fixes.push([score, first, second]);
+            proposed_fixes.push([score, first, second, sameFormats]);
         }
         return proposed_fixes;
     };
@@ -755,6 +761,7 @@ var Colorize = /** @class */ (function () {
     };
     Colorize.reportingThreshold = 35; //  percent of bar
     Colorize.suspiciousCellsReportingThreshold = 85; //  percent of bar
+    Colorize.formattingDiscount = 50; // percent of discount: 100% means different formats = not suspicious at all
     // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     // True iff this class been initialized.
