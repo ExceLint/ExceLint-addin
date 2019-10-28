@@ -705,9 +705,6 @@ var Colorize = /** @class */ (function () {
             }
             //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
             //	    console.log("sameFormats? " + sameFormats);
-            if (!sameFormats) {
-                score = score * (100 - this.formattingDiscount) / 100; // This should be parameterized; plus we could have more nuance...
-            }
             proposed_fixes.push([score, first, second, sameFormats]);
         }
         return proposed_fixes;

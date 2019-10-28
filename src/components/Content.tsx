@@ -54,12 +54,12 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes :
 		let [ col0, row0, col1, row1 ] = r;
 		// Sort from largest to smallest (by making negative).
 //		console.log(JSON.stringify(r));
-		//		console.log("original score = " + arr[i][0]);
 		let score = -arr[i][0];
+		console.log("original score = " + score);
 		if (!arr[i][3]) { // Different formats.
 		    score *= (100 - Colorize.getFormattingDiscount()) / 100;
 		}
-		
+		console.log("score now = " + score);
 		score *= barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 //		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
 //		console.log("score = " + score);
