@@ -149,6 +149,30 @@ var ExcelUtils = /** @class */ (function () {
         //	console.log("extract_sheet_range failed to match " + str);
         return ExcelUtils.extract_sheet_cell(str);
     };
+    ExcelUtils.make_range_string = function (theRange) {
+        var r = theRange;
+        var col0 = r[0][0];
+        var row0 = r[0][1];
+        var col1 = r[1][0];
+        var row1 = r[1][1];
+        if ((col0 === 0) && (row0 === 0) && (r[0][2] != 0)) {
+            // Not a real dependency. Skip.
+            console.log("NOT A REAL DEPENDENCY: " + col1 + "," + row1);
+            return "";
+        }
+        else if ((col0 < 0) || (row0 < 0) || (col1 < 0) || (row1 < 0)) {
+            // Defensive programming.
+            console.log("WARNING: FOUND NEGATIVE VALUES.");
+            return "";
+        }
+        else {
+            var colname0 = ExcelUtils.column_index_to_name(col0);
+            var colname1 = ExcelUtils.column_index_to_name(col1);
+            //		    console.log("process: about to get range " + colname0 + row0 + ":" + colname1 + row1);
+            var rangeStr = colname0 + row0 + ':' + colname1 + row1;
+            return rangeStr;
+        }
+    };
     ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row) {
         //	console.log("looking for dependencies in " + range);
         var found_pair = null;

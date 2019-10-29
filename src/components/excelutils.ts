@@ -174,6 +174,31 @@ export class ExcelUtils {
 	return ExcelUtils.extract_sheet_cell(str);
     }
 
+    public static make_range_string(theRange: Array<[number, number, number]>) : string {
+	const r = theRange;
+	const col0 = r[0][0];
+	const row0 = r[0][1];
+	const col1 = r[1][0];
+	const row1 = r[1][1];
+	
+	if ((col0 === 0) && (row0 === 0) && (r[0][2] != 0)) {
+	    // Not a real dependency. Skip.
+	    console.log("NOT A REAL DEPENDENCY: " + col1 + "," + row1);
+	    return "";
+	} else if ((col0 < 0) || (row0 < 0) || (col1 < 0) || (row1 < 0)) {
+	    // Defensive programming.
+	    console.log("WARNING: FOUND NEGATIVE VALUES.");
+	    return "";
+	} else {
+	
+	    const colname0 = ExcelUtils.column_index_to_name(col0);
+	    const colname1 = ExcelUtils.column_index_to_name(col1);
+	    //		    console.log("process: about to get range " + colname0 + row0 + ":" + colname1 + row1);
+	    const rangeStr = colname0 + row0 + ':' + colname1 + row1;
+	    return rangeStr;
+	}
+    }
+    
     private static all_cell_dependencies(range: string, origin_col: number, origin_row: number): Array<[number, number,number]> {
 
 //	console.log("looking for dependencies in " + range);

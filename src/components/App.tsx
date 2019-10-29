@@ -104,15 +104,6 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
 
-    /// Get suspicious cells.
-    private find_suspicious_cells(cols : number, rows: number,
-			     origin : [number, number, number],
-				  formulas, processed_formulas, data_values, threshold: number)
-    {
-	return Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, threshold);
-    }
-    
-
     /// Color the ranges using the specified color function.
     private color_ranges(grouped_ranges, currentWorksheet, colorfn, otherfn) {
 	const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
@@ -123,28 +114,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		const v = grouped_ranges[hash];
 		//		console.log("v = " + JSON.stringify(v));
 		for (let theRange of v) {
-		    const r = theRange;
-		    const col0 = r[0][0];
-		    const row0 = r[0][1];
-		    const col1 = r[1][0];
-		    const row1 = r[1][1];
-
-		    if ((col0 === 0) && (row0 === 0) && (r[0][2] != 0)) {
-			// Not a real dependency. Skip.
-			console.log("NOT A REAL DEPENDENCY: " + col1 + "," + row1);
-			continue;
-		    }
-		    if ((col0 < 0) || (row0 < 0) || (col1 < 0) || (row1 < 0)) {
-			// Defensive programming.
-			console.log("WARNING: FOUND NEGATIVE VALUES.");
-			continue;
-		    }
-		    
-		    const colname0 = ExcelUtils.column_index_to_name(col0);
-		    const colname1 = ExcelUtils.column_index_to_name(col1);
-		    //		    console.log("process: about to get range " + colname0 + row0 + ":" + colname1 + row1);
-		    const rangeStr = colname0 + row0 + ':' + colname1 + row1;
+		    const rangeStr = ExcelUtils.make_range_string(theRange);
 		    let range = currentWorksheet.getRange(rangeStr);
+		    if (range.length === 0) {
+			continue;
+		    }
 		    const color = colorfn(hash_index);
 		    if (color == '#FFFFFF') {
 			range.format.fill.clear();
@@ -350,23 +324,9 @@ export default class App extends React.Component<AppProps, AppState> {
 		await context.sync();
 		t.split("got address");
 		
-//		console.log(JSON.stringify(usedRange.values[0][0]));
-		let displayComments = false;
+//		let displayComments = false;
 
-		// Use the upper-left hand corner of the used range as
-		// an "Easter Egg" to unlock certain functionality.
-		
-		if (usedRange.values[0][0] === 42) {
-		    displayComments = true;
-		}
-
-		if (displayComments) {
-		    // Test.
-		    /*		    const sheet = context.workbook.worksheets.getItem("Comments");
-		    // currentWorksheet.load(['comments']);
-		    sheet.comments.add("A COMMENT", "A1");
-		    */
-		    console.log("A comment!");
+/*
 
 		    // Display all the named ranges (this should eventually be sent over for processing).
 		    // See https://docs.microsoft.com/en-us/javascript/api/excel/excel.nameditemcollection?view=office-js
@@ -375,45 +335,11 @@ export default class App extends React.Component<AppProps, AppState> {
 		    currentWorksheet.names.load(['items']);
 		    await context.sync();
 		    console.log(JSON.stringify(currentWorksheet.names.items));
-		}
+*/
 		
-		// 		app.suspendScreenUpdatingUntilNextSync();
-		
-
-		//		console.log("setColor: usedRange = " + JSON.stringify(usedRange.address));
-
-		/*
-		  let condFormats = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.conditionalFormats);
-		  await context.sync();
-		  if (condFormats) {
-		  condFormats.load(['cellValue']);
-		  await context.sync();
-		  
-		  condFormats.cellValue.load(['format']);
-		  await context.sync();
-		  condFormats.cellValue.format.clear();
-		  
-		  }
-		*/
-		
-		//		await context.sync(); // FOR DEBUGGING
-		//		console.log('setColor: loaded used range');
-		if (true) {
-		    usedRange.load(['formulas', 'format', 'values']); // FIX ME FIX ME REMOVE VALUES LATER
-		    // usedRange.load(['formulas', 'format', 'formulasR1C1']);
-		    await context.sync();
-		    t.split("load from used range = " + usedRange.address);
-		} else {
-		    usedRange.load(['formulas']);
-		    await context.sync(); // FOR DEBUGGING
-
-		    t.split("loaded formulas from used range");
-		    
-		    usedRange.load(['format']);
-		    await context.sync(); // FOR DEBUGGING
-		    
-		    t.split("loaded formats from used range");
-		}
+		usedRange.load(['formulas', 'format']);
+		await context.sync();
+		t.split("load from used range = " + usedRange.address);
 
 		// Now start colorizing.
 		
@@ -423,15 +349,9 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		// Compute the number of cells in the range "usedRange".
 		const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
-		// console.log("usedRangeAddresses = " + JSON.stringify(usedRangeAddresses));
 		const upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
 		const lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
-		// let upperLeftCorner : [number, number] = [ul1, ul2];
-		// let lowerRightCorner : [number, number] = [lr1, lr2];
 		const numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
-		// let diagonal = RectangleUtils.diagonal([upperLeftCorner, lowerRightCorner]);
-		//		console.log("number of cells used = " + numberOfCellsUsed);
-
 		
 		let useNumericFormulaRanges = false;
 
@@ -471,33 +391,16 @@ export default class App extends React.Component<AppProps, AppState> {
 		    console.log("Too many cells to use numeric ranges.");
 		}
 
-//		app.suspendScreenUpdatingUntilNextSync();
-
-
-		if (displayComments) {
-		    console.log("SETTING");
-		    //			let range = currentWorksheet.getRange("B1");
-		    //			range.values = [[ 42 ]];
-		    let len = usedRange.values.length;
-		    let width = usedRange.values[0].length; // we assume it's a rectangular array.
-		    let row = Array(width).fill(42);
-		    let rows = Array(len).fill(row);
-		    console.log(rows);
-		    usedRange.values = rows;
-		    await context.sync();
-		}
-		
+	
 		const usedRangeAddress = usedRange.address;
+		const formulas         = usedRange.formulas;
+		const values           = usedRange.values;
 
-		//		t.split("set numbers to yellow, etc.");
+		///// from here, move out //////
 
 		const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 		const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
- 		console.log("setColor: cell dependency = " + origin);
 		t.split("computed cell dependency for start");
-
-		const formulas = usedRange.formulas;
-		console.log("number of formulas = " + formulas.length);
 
 		let processed_formulas = [];
 		if (formulas.length > this.formulasThreshold) {
@@ -509,10 +412,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		    processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
 		    t.split("processed formulas");
 		}
+		const useTimeouts = false;
 		
-		// console.log("formulas = " + JSON.stringify(formulas));
-		const values = usedRange.values;
-		console.log("number of values = " + values.length);
 		
 		let referenced_data = [];
 		let data_values = [];
@@ -527,14 +428,15 @@ export default class App extends React.Component<AppProps, AppState> {
 		    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
 		    t.split("generated all references");
 //		    console.log("refs = " + JSON.stringify(refs));
+
+		    if (useTimeouts) { await setTimeout(() => {}, 0); }
 		    
-		    await setTimeout(() => {}, 0);
 		    referenced_data = Colorize.color_all_data(refs);
 		    // console.log("referenced_data = " + JSON.stringify(referenced_data));
 		    data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
 
 		    t.split("processed data");
-		    await setTimeout(() => {}, 0);
+		    if (useTimeouts) { await setTimeout(() => {}, 0); }
 		}
 
 		const grouped_data = Colorize.identify_groups(referenced_data);
@@ -543,15 +445,18 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		const grouped_formulas = Colorize.identify_groups(processed_formulas);
 		t.split("grouped formulas");
-		
-		await setTimeout(() => {}, 0);
+
+		if (useTimeouts) { await setTimeout(() => {}, 0); }
 		
 		// Identify suspicious cells.
 		this.suspicious_cells = [];
 
 		if (values.length < 10000) {
-		    this.suspicious_cells = this.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+		    this.suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
 		}
+
+		////// to here, should be clear without timeouts.
+
 
 		
 		/// Finally, apply colors.
