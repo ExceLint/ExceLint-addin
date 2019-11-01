@@ -15,6 +15,9 @@ export class Colorize {
     public static suspiciousCellsReportingThreshold = 85; //  percent of bar
     public static formattingDiscount = 50; // percent of discount: 100% means different formats = not suspicious at all
 
+    private static formulasThreshold = 10000;
+    private static valuesThreshold = 10000;
+    
     public static setReportingThreshold(value: number) {
 	Colorize.reportingThreshold = value;
     }
@@ -478,6 +481,67 @@ export class Colorize {
 	    //	    console.log("cells = " + JSON.stringify(cells));
 	    return cells;
 	}
+
+
+    public static process_suspicious(usedRangeAddress : string,
+			       formulas : Array<Array<string>>,
+			       values : Array<Array<string>>) : [any, any, any] {
+	let t = new Timer("foo");
+	
+	const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
+	const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
+	t.split("computed cell dependency for start");
+	
+	let processed_formulas = [];
+	if (formulas.length > this.formulasThreshold) {
+	    console.log("Too many formulas to perform formula analysis.");
+	} else {
+	    
+	    t.split("about to process formulas");
+	    
+	    processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
+	    t.split("processed formulas");
+	}
+	const useTimeouts = false;
+		
+	let referenced_data = [];
+	let data_values = [];
+	const cols = values.length;
+	const rows = values[0].length;
+		
+	if (values.length > this.valuesThreshold) {
+	    console.log("Too many values to perform reference analysis.");
+	} else {
+	    
+	    // Compute references (to color referenced data).
+	    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
+	    t.split("generated all references");
+	    //		    console.log("refs = " + JSON.stringify(refs));
+	    
+	    referenced_data = Colorize.color_all_data(refs);
+	    // console.log("referenced_data = " + JSON.stringify(referenced_data));
+	    data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
+	    
+	    t.split("processed data");
+	}
+	
+	const grouped_data = Colorize.identify_groups(referenced_data);
+
+	t.split("identified groups");
+	
+	const grouped_formulas = Colorize.identify_groups(processed_formulas);
+	t.split("grouped formulas");
+	
+	// Identify suspicious cells.
+	let suspicious_cells = [];
+	
+	if (values.length < 10000) {
+	    suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+	}
+
+	return [suspicious_cells, grouped_formulas, grouped_data];
+	////// to here, should be clear without timeouts.
+    }
     
     
     // Shannon entropy.

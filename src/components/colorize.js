@@ -456,6 +456,50 @@ var Colorize = /** @class */ (function () {
         //	    console.log("cells = " + JSON.stringify(cells));
         return cells;
     };
+    Colorize.process_suspicious = function (usedRangeAddress, formulas, values) {
+        var t = new timer_1.Timer("foo");
+        var _a = excelutils_1.ExcelUtils.extract_sheet_cell(usedRangeAddress), sheetName = _a[0], startCell = _a[1];
+        var origin = excelutils_1.ExcelUtils.cell_dependency(startCell, 0, 0);
+        t.split("computed cell dependency for start");
+        var processed_formulas = [];
+        if (formulas.length > this.formulasThreshold) {
+            console.log("Too many formulas to perform formula analysis.");
+        }
+        else {
+            t.split("about to process formulas");
+            processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
+            t.split("processed formulas");
+        }
+        var useTimeouts = false;
+        var referenced_data = [];
+        var data_values = [];
+        var cols = values.length;
+        var rows = values[0].length;
+        if (values.length > this.valuesThreshold) {
+            console.log("Too many values to perform reference analysis.");
+        }
+        else {
+            // Compute references (to color referenced data).
+            var refs = excelutils_1.ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
+            t.split("generated all references");
+            //		    console.log("refs = " + JSON.stringify(refs));
+            referenced_data = Colorize.color_all_data(refs);
+            // console.log("referenced_data = " + JSON.stringify(referenced_data));
+            data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
+            t.split("processed data");
+        }
+        var grouped_data = Colorize.identify_groups(referenced_data);
+        t.split("identified groups");
+        var grouped_formulas = Colorize.identify_groups(processed_formulas);
+        t.split("grouped formulas");
+        // Identify suspicious cells.
+        var suspicious_cells = [];
+        if (values.length < 10000) {
+            suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+        }
+        return [suspicious_cells, grouped_formulas, grouped_data];
+        ////// to here, should be clear without timeouts.
+    };
     // Shannon entropy.
     Colorize.entropy = function (p) {
         return -p * Math.log2(p);
@@ -759,6 +803,8 @@ var Colorize = /** @class */ (function () {
     Colorize.reportingThreshold = 35; //  percent of bar
     Colorize.suspiciousCellsReportingThreshold = 85; //  percent of bar
     Colorize.formattingDiscount = 50; // percent of discount: 100% means different formats = not suspicious at all
+    Colorize.formulasThreshold = 10000;
+    Colorize.valuesThreshold = 10000;
     // Color-blind friendly color palette.
     Colorize.palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
     // True iff this class been initialized.

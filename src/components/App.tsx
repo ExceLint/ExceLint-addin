@@ -35,8 +35,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
     private numericFormulaRangeThreshold = 10000;
     private numericRangeThreshold = 10000;
-    private formulasThreshold = 10000;
-    private valuesThreshold = 10000;
 //    private suspiciousCellsThreshold = 1 - Colorize.suspiciousCellsReportingThreshold / 100; // Must be more rare than this fraction.
     
     constructor(props, context) {
@@ -281,7 +279,6 @@ export default class App extends React.Component<AppProps, AppState> {
 	    }
 	}
     }
-   
 
     /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
     setColor = async () => {
@@ -396,68 +393,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		const formulas         = usedRange.formulas;
 		const values           = usedRange.values;
 
-		///// from here, move out //////
-
-		const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-		const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
-		t.split("computed cell dependency for start");
-
-		let processed_formulas = [];
-		if (formulas.length > this.formulasThreshold) {
-		    console.log("Too many formulas to perform formula analysis.");
-		} else {
-		
-		    t.split("about to process formulas");
-		    
-		    processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
-		    t.split("processed formulas");
-		}
-		const useTimeouts = false;
-		
-		
-		let referenced_data = [];
-		let data_values = [];
-		const cols = values.length;
-		const rows = values[0].length;
-		
-		if (values.length > this.valuesThreshold) {
-		    console.log("Too many values to perform reference analysis.");
-		} else {
-		    
-		    // Compute references (to color referenced data).
-		    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
-		    t.split("generated all references");
-//		    console.log("refs = " + JSON.stringify(refs));
-
-		    if (useTimeouts) { await setTimeout(() => {}, 0); }
-		    
-		    referenced_data = Colorize.color_all_data(refs);
-		    // console.log("referenced_data = " + JSON.stringify(referenced_data));
-		    data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
-
-		    t.split("processed data");
-		    if (useTimeouts) { await setTimeout(() => {}, 0); }
-		}
-
-		const grouped_data = Colorize.identify_groups(referenced_data);
-
-		t.split("identified groups");
-
-		const grouped_formulas = Colorize.identify_groups(processed_formulas);
-		t.split("grouped formulas");
-
-		if (useTimeouts) { await setTimeout(() => {}, 0); }
-		
-		// Identify suspicious cells.
-		this.suspicious_cells = [];
-
-		if (values.length < 10000) {
-		    this.suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
-		}
-
-		////// to here, should be clear without timeouts.
-
-
+		let [suspicious_cells, grouped_formulas, grouped_data] = Colorize.process_suspicious(usedRangeAddress, formulas, values);
+		this.suspicious_cells = suspicious_cells;
 		
 		/// Finally, apply colors.
 		
@@ -504,6 +441,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		if (this.proposed_fixes.length > 0) {
 		    t.split("about to adjust scores.");
+		    const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
+		    const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
 
 		    // Adjust the fix scores (downward) to take into account formatting in the original sheet.
 		    await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
