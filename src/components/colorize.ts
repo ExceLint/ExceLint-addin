@@ -96,7 +96,7 @@ export class Colorize {
 			} else {
 			    const hash = this.hash_vector(vec);
 			    const str = hash.toString();
-			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+//			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
 			    output.push([[adjustedX, adjustedY, 0], str]);
 			}
 		    }
@@ -242,7 +242,7 @@ export class Colorize {
 			     matrix : Array<Array<number>>) : Array<Array<number>>
 	{
 	    
-	    console.log("cols = " + cols + ", rows = " + rows);
+//	    console.log("cols = " + cols + ", rows = " + rows);
 	    //	    console.log("matrix = " + JSON.stringify(matrix));
 	    let stencil = new Array(cols);
 	    for (let i = 0; i < cols; i++) {
@@ -251,7 +251,7 @@ export class Colorize {
 	    
 
 	    // Middle (common-case)
-	    const winMM = (i, j) => { console.log("MM: " + i + ", " + j); return [matrix[i-1][j-1], matrix[i][j-1], matrix[i+1][j-1],
+	    const winMM = (i, j) => { /* console.log("MM: " + i + ", " + j); */ return [matrix[i-1][j-1], matrix[i][j-1], matrix[i+1][j-1],
 								 matrix[i-1][j],   matrix[i][j],   matrix[i+1][j],
 								 matrix[i-1][j+1], matrix[i][j+1], matrix[i+1][j+1]]; }
 	    

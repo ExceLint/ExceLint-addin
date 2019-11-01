@@ -66,7 +66,7 @@ var Colorize = /** @class */ (function () {
                         else {
                             var hash = this.hash_vector(vec);
                             var str = hash.toString();
-                            console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+                            //			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
                             output.push([[adjustedX, adjustedY, 0], str]);
                         }
                     }
@@ -202,7 +202,7 @@ var Colorize = /** @class */ (function () {
         return matrix;
     };
     Colorize.stencilize = function (cols, rows, matrix) {
-        console.log("cols = " + cols + ", rows = " + rows);
+        //	    console.log("cols = " + cols + ", rows = " + rows);
         //	    console.log("matrix = " + JSON.stringify(matrix));
         var stencil = new Array(cols);
         for (var i = 0; i < cols; i++) {
@@ -210,7 +210,6 @@ var Colorize = /** @class */ (function () {
         }
         // Middle (common-case)
         var winMM = function (i, j) {
-            console.log("MM: " + i + ", " + j);
             return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
                 matrix[i - 1][j], matrix[i][j], matrix[i + 1][j],
                 matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
