@@ -55,11 +55,6 @@ export default class App extends React.Component<AppProps, AppState> {
 					       currentSuspiciousCell : this.current_suspicious_cell });
     }
 
-    private adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row) : any
-    {
-	return Colorize.adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row);
-    }
-    
     // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
     adjust_fix_scores = async(context, backupSheet, origin_col, origin_row) => {
 	let t = new Timer("adjust_fix_scores");
@@ -97,7 +92,7 @@ export default class App extends React.Component<AppProps, AppState> {
 	t.split("got formatting info.");
 	
 //	console.log(JSON.stringify(propertiesToGet.value));
-	this.proposed_fixes = this.adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row);
+	this.proposed_fixes = Colorize.adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row);
 	t.split("done.");
     }
 
