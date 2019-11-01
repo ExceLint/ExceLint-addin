@@ -29,7 +29,7 @@ export class ExcelUtils {
 	return this.hash_sheet(id, 28) + this.originalSheetSuffix;
     }
     
-    
+
     // Convert the UID string into a hashed version using SHA256, truncated to a max length.
     public static hash_sheet(uid: string, maxlen: number = 31) : string {
 	// We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
@@ -57,6 +57,17 @@ export class ExcelUtils {
 	}
     }
 
+    // Take a range string and compute the number of cells.
+    public static get_number_of_cells(address: string) : number {
+	// Compute the number of cells in the range "usedRange".
+	const usedRangeAddresses = ExcelUtils.extract_sheet_range(address);
+	const upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+	const lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+	const numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+	return numberOfCellsUsed;
+    }
+    
+    
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     public static column_name_to_index(name: string): number {
         if (name.length === 1) { // optimizing for the overwhelmingly common case

@@ -37,24 +37,19 @@ var Colorize = /** @class */ (function () {
     };
     // Generate dependence vectors and their hash for all formulas.
     Colorize.process_formulas = function (formulas, origin_col, origin_row) {
-        //	console.log("***** PROCESS FORMULAS *****");
         var base_vector = JSON.stringify(excelutils_1.ExcelUtils.baseVector());
         var reducer = function (acc, curr) { return [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]]; };
         var output = [];
-        //	console.log("process_formulas: " + JSON.stringify(formulas));
         // Compute the vectors for all of the formulas.
         for (var i = 0; i < formulas.length; i++) {
             var row = formulas[i];
             for (var j = 0; j < row.length; j++) {
                 var cell = row[j].toString();
-                //		console.log("checking [" + cell + "]...");
                 // If it's a formula, process it.
                 if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
-                    //		    console.log("processing cell " + JSON.stringify(cell) + " in process_formulas");
                     var vec_array = excelutils_1.ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
                     var adjustedX = j + origin_col + 1;
                     var adjustedY = i + origin_row + 1;
-                    // 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
                     if (vec_array.length == 0) {
                         if (cell[0] === '=') {
                             // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
@@ -78,7 +73,6 @@ var Colorize = /** @class */ (function () {
                 }
             }
         }
-        //	console.log(JSON.stringify(all_deps));
         return output;
     };
     // Returns all referenced data so it can be colored later.
@@ -104,7 +98,6 @@ var Colorize = /** @class */ (function () {
             var row = values[i];
             for (var j = 0; j < row.length; j++) {
                 var cell = row[j].toString();
-                //		console.log("formulas["+i+"]["+j+"] = (" + formulas[i][j] + ")");
                 // If the value is not from a formula, include it.
                 if ((cell.length > 0) && ((formulas[i][j][0] != "="))) {
                     var cellAsNumber = Number(cell).toString();
@@ -118,7 +111,6 @@ var Colorize = /** @class */ (function () {
             }
         }
         t.split("processed all values");
-        //	console.log("value_array = " + JSON.stringify(value_array));
         return value_array;
     };
     // Take in a list of [[row, col], color] pairs and group them,
@@ -134,9 +126,7 @@ var Colorize = /** @class */ (function () {
         // Now sort them all.
         for (var _a = 0, _b = Object.keys(groups); _a < _b.length; _a++) {
             var k = _b[_a];
-            //	console.log(k);
             groups[k].sort(sortfn);
-            //	console.log(groups[k]);
         }
         return groups;
     };
@@ -203,7 +193,6 @@ var Colorize = /** @class */ (function () {
             if (isConstant === 1) {
                 // That means it was a constant.
                 // Set to a fixed value (as above).
-                //		value = ; // FIXME????
             }
             else {
                 value = Number(val);
@@ -457,7 +446,11 @@ var Colorize = /** @class */ (function () {
         return cells;
     };
     Colorize.process_suspicious = function (usedRangeAddress, formulas, values) {
-        var t = new timer_1.Timer("foo");
+        console.log("process_suspicious:");
+        console.log(JSON.stringify(usedRangeAddress));
+        console.log(JSON.stringify(formulas));
+        console.log(JSON.stringify(values));
+        var t = new timer_1.Timer("process_suspicious");
         var _a = excelutils_1.ExcelUtils.extract_sheet_cell(usedRangeAddress), sheetName = _a[0], startCell = _a[1];
         var origin = excelutils_1.ExcelUtils.cell_dependency(startCell, 0, 0);
         t.split("computed cell dependency for start");
@@ -497,7 +490,13 @@ var Colorize = /** @class */ (function () {
         if (values.length < 10000) {
             suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
         }
-        return [suspicious_cells, grouped_formulas, grouped_data];
+        var proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
+        console.log("results:");
+        console.log(JSON.stringify(suspicious_cells));
+        console.log(JSON.stringify(grouped_formulas));
+        console.log(JSON.stringify(grouped_data));
+        console.log(JSON.stringify(proposed_fixes));
+        return [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes];
         ////// to here, should be clear without timeouts.
     };
     // Shannon entropy.

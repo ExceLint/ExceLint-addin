@@ -36,6 +36,15 @@ var ExcelUtils = /** @class */ (function () {
             return null;
         }
     };
+    // Take a range string and compute the number of cells.
+    ExcelUtils.get_number_of_cells = function (address) {
+        // Compute the number of cells in the range "usedRange".
+        var usedRangeAddresses = ExcelUtils.extract_sheet_range(address);
+        var upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
+        var lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
+        var numberOfCellsUsed = rectangleutils_1.RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+        return numberOfCellsUsed;
+    };
     // Convert an Excel column name (a string of alphabetical charcaters) into a number.
     ExcelUtils.column_name_to_index = function (name) {
         if (name.length === 1) { // optimizing for the overwhelmingly common case

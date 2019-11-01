@@ -29,18 +29,15 @@ export default class App extends React.Component<AppProps, AppState> {
     private total_fixes = -1;
     private savedFormat: any = null;
     private savedRange: string = null;
-    public state = {};
     private contentElement : any = null;
     private sheetName : string = "";
 
     private numericFormulaRangeThreshold = 10000;
     private numericRangeThreshold = 10000;
-//    private suspiciousCellsThreshold = 1 - Colorize.suspiciousCellsReportingThreshold / 100; // Must be more rare than this fraction.
     
     constructor(props, context) {
 	super(props, context);
 	Colorize.initialize();
-	this.state = {};
 	this.contentElement = React.createRef();
     }
 
@@ -62,10 +59,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
 	let usedRange = backupSheet.getUsedRange(false) as any;
 	
-//	const cell = context.workbook.getActiveCell();
-
 	// Define the cell properties to get by setting the matching LoadOptions to true.
-	const propertiesToGet = usedRange.getCellProperties({ // cell.getCellProperties({
+	const propertiesToGet = usedRange.getCellProperties({
 	    numberFormat : true,
             format: {
 		fill: {
@@ -91,7 +86,6 @@ export default class App extends React.Component<AppProps, AppState> {
 	await context.sync();
 	t.split("got formatting info.");
 	
-//	console.log(JSON.stringify(propertiesToGet.value));
 	this.proposed_fixes = Colorize.adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row);
 	t.split("done.");
     }
@@ -339,11 +333,7 @@ export default class App extends React.Component<AppProps, AppState> {
  		app.suspendScreenUpdatingUntilNextSync();
 		app.suspendApiCalculationUntilNextSync();
 
-		// Compute the number of cells in the range "usedRange".
-		const usedRangeAddresses = ExcelUtils.extract_sheet_range(usedRange.address);
-		const upperLeftCorner = ExcelUtils.cell_dependency(usedRangeAddresses[1], 0, 0);
-		const lowerRightCorner = ExcelUtils.cell_dependency(usedRangeAddresses[2], 0, 0);
-		const numberOfCellsUsed = RectangleUtils.area([upperLeftCorner, lowerRightCorner]);
+		const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
 		
 		let useNumericFormulaRanges = false;
 
@@ -388,8 +378,10 @@ export default class App extends React.Component<AppProps, AppState> {
 		const formulas         = usedRange.formulas;
 		const values           = usedRange.values;
 
-		let [suspicious_cells, grouped_formulas, grouped_data] = Colorize.process_suspicious(usedRangeAddress, formulas, values);
+		let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
+		    = Colorize.process_suspicious(usedRangeAddress, formulas, values);
 		this.suspicious_cells = suspicious_cells;
+		this.proposed_fixes = proposed_fixes;
 		
 		/// Finally, apply colors.
 		
@@ -432,8 +424,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
 		t.split("about to iterate through fixes.");
 		
-		this.proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
-
 		if (this.proposed_fixes.length > 0) {
 		    t.split("about to adjust scores.");
 		    const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);

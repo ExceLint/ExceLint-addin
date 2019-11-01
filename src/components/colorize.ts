@@ -68,26 +68,20 @@ export class Colorize {
 
     // Generate dependence vectors and their hash for all formulas.
     public static process_formulas(formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[excelintVector, string]> {
-//	console.log("***** PROCESS FORMULAS *****");
 	const base_vector = JSON.stringify(ExcelUtils.baseVector());
 	const reducer = (acc:[number,number,number],curr:[number,number,number]) : [number,number,number] => [acc[0] + curr[0], acc[1] + curr[1], acc[2] + curr[2]];
 	let output: Array<[[number, number,number], string]> = [];
 
-//	console.log("process_formulas: " + JSON.stringify(formulas));
-	
 	// Compute the vectors for all of the formulas.
 	for (let i = 0; i < formulas.length; i++) {
 	    const row = formulas[i];
 	    for (let j = 0; j < row.length; j++) {
 		const cell = row[j].toString();
-//		console.log("checking [" + cell + "]...");
 		// If it's a formula, process it.
 		if ((cell.length > 0)) { // FIXME MAYBE  && (row[j][0] === '=')) {
-//		    console.log("processing cell " + JSON.stringify(cell) + " in process_formulas");
 		    const vec_array = ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
 		    const adjustedX = j + origin_col + 1;
 		    const adjustedY = i + origin_row + 1;
-// 		    console.log("vec_array WAS = " + JSON.stringify(vec_array));
 		    if (vec_array.length == 0) {
 			if (cell[0] === '=') {
 			    // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
@@ -109,14 +103,13 @@ export class Colorize {
 		}
 	    }
 	}
-//	console.log(JSON.stringify(all_deps));
 	return output;
     }
 
 
     // Returns all referenced data so it can be colored later.
     public static color_all_data(refs: { [dep: string]: Array<excelintVector> }) : Array<[excelintVector, string]>
-    { // , processed_formulas: Array<[excelintVector, string]>) {
+    {
 	let t = new Timer("color_all_data");
 	let referenced_data = [];
 	for (let refvec of Object.keys(refs)) {
@@ -139,7 +132,6 @@ export class Colorize {
 	    const row = values[i];
 	    for (let j = 0; j < row.length; j++) {
 		const cell = row[j].toString();
-//		console.log("formulas["+i+"]["+j+"] = (" + formulas[i][j] + ")");
 		// If the value is not from a formula, include it.
 		if ((cell.length > 0) && ((formulas[i][j][0] != "="))) {
 		    const cellAsNumber = Number(cell).toString();
@@ -153,7 +145,6 @@ export class Colorize {
 	    }
 	}
 	t.split("processed all values");
-//	console.log("value_array = " + JSON.stringify(value_array));
 	return value_array;
     }
 
@@ -171,9 +162,7 @@ export class Colorize {
 	}
 	// Now sort them all.
 	for (let k of Object.keys(groups)) {
-	    //	console.log(k);
 	    groups[k].sort(sortfn);
-	    //	console.log(groups[k]);
 	}
 	return groups;
     }
@@ -240,7 +229,6 @@ export class Colorize {
 	    if (isConstant === 1) {
 		// That means it was a constant.
 		// Set to a fixed value (as above).
-//		value = ; // FIXME????
 	    } else {
 		value = Number(val);
 	    }
@@ -484,9 +472,16 @@ export class Colorize {
 
 
     public static process_suspicious(usedRangeAddress : string,
-			       formulas : Array<Array<string>>,
-			       values : Array<Array<string>>) : [any, any, any] {
-	let t = new Timer("foo");
+				     formulas : Array<Array<string>>,
+				     values : Array<Array<string>>) : [any, any, any, any]
+    {
+
+	console.log("process_suspicious:");
+	console.log(JSON.stringify(usedRangeAddress));
+	console.log(JSON.stringify(formulas));
+	console.log(JSON.stringify(values));
+	
+	let t = new Timer("process_suspicious");
 	
 	const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 	const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
@@ -539,7 +534,15 @@ export class Colorize {
 	    suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
 	}
 
-	return [suspicious_cells, grouped_formulas, grouped_data];
+	const proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
+	
+	console.log("results:");
+	console.log(JSON.stringify(suspicious_cells));
+	console.log(JSON.stringify(grouped_formulas));
+	console.log(JSON.stringify(grouped_data));
+	console.log(JSON.stringify(proposed_fixes));
+
+	return [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes];
 	////// to here, should be clear without timeouts.
     }
     
