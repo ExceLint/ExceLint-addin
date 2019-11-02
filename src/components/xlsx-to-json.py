@@ -14,11 +14,6 @@ import json
 import time
 import random
 import openpyxl
-from operator import mul
-from collections import namedtuple
-import operator
-import itertools
-import functools
 import io
 import os
 import sys
@@ -47,9 +42,23 @@ def process_sheet(worksheet, datatype="f"):
         processed.append(r)
     return processed
 
+# Get styles
+
+
+def process_sheet_styles(worksheet):
+    processed = []
+    for row in worksheet.rows:
+        r = []
+        for cell in row:
+            v = ""
+            if type(cell).__name__ != 'MergedCell':
+                v = str([cell.font, cell.fill, cell.border])
+            r.append(v)
+        processed.append(r)
+    return processed
+
+
 # Process every sheet in a workbook
-
-
 def process_workbook(fname):
     with open(fname, 'rb') as f:
         in_mem_file = io.BytesIO(f.read())
@@ -65,6 +74,9 @@ def process_workbook(fname):
         formulas = process_sheet(worksheet, "f")
         values = process_sheet(worksheet, "n")
 
+        # Get the styles of each cell.
+        styles = process_sheet_styles(worksheet)
+
         # Now get the sheet range info.
         numRows = len(formulas)
         numCols = len(formulas[0])
@@ -75,7 +87,8 @@ def process_workbook(fname):
             "workbookName": fname,
             "usedRangeAddress": sheetRange,
             "formulas": formulas,
-            "values": values
+            "values": values,
+            "styles": styles
         }
 
         return output

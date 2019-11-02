@@ -50,7 +50,7 @@ var Colorize = /** @class */ (function () {
                     var vec_array = excelutils_1.ExcelUtils.all_dependencies(i, j, origin_row + i, origin_col + j, formulas);
                     var adjustedX = j + origin_col + 1;
                     var adjustedY = i + origin_row + 1;
-                    if (vec_array.length == 0) {
+                    if (vec_array.length === 0) {
                         if (cell[0] === '=') {
                             // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
                             output.push([[adjustedX, adjustedY, 0], Colorize.distinguishedZeroHash]);
@@ -725,13 +725,13 @@ var Colorize = /** @class */ (function () {
             //	    console.log("length = " + propertiesToGet.value.length);
             //	    console.log("width = " + propertiesToGet.value[0].length);
             var sameFormats = true;
-            var firstFormat = JSON.stringify(propertiesToGet.value[row0][col0]);
+            var firstFormat = JSON.stringify(propertiesToGet[row0][col0]);
             //	    console.log(firstFormat);
             //	    console.log(JSON.stringify(fixes));
             for (var i = row0; i <= row1; i++) {
                 for (var j = col0; j <= col1; j++) {
                     //		    		    console.log("checking " + i + ", " + j);
-                    var str = JSON.stringify(propertiesToGet.value[i][j]);
+                    var str = JSON.stringify(propertiesToGet[i][j]);
                     //		    console.log(str);
                     if (str !== firstFormat) {
                         sameFormats = false;
@@ -761,7 +761,7 @@ var Colorize = /** @class */ (function () {
                 var totalFormulaWeight_1 = 0;
                 suspiciousCells = candidateSuspiciousCells.filter(function (c) {
                     var theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
-                    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
+                    if ((theFormula.length < 1) || (theFormula[0] !== '=')) {
                         return true;
                     }
                     else {
