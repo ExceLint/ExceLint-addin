@@ -25,7 +25,7 @@ var Timer = /** @class */ (function () {
     Timer.prototype.split = function (location) {
         var curr = this.perf.now();
         var elapsed = curr - this.splitTimeMS;
-        console.log("timer: " + this.name + " @ " + location + " : = " + this.roundMe(elapsed) + " (total = " + this.roundMe(curr - this.startTimeMS) + ")");
+        console.warn("timer: " + this.name + " @ " + location + " : = " + this.roundMe(elapsed) + " (total = " + this.roundMe(curr - this.startTimeMS) + ")");
         this.splitTimeMS = curr;
     };
     Timer.prototype.elapsedTime = function () {

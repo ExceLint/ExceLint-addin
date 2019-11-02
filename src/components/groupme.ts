@@ -310,7 +310,7 @@ function dedup(arr) {
 
 
 export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Array<[excelintVector, excelintVector]> }) : Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
-    let t = new Timer("find_all_proposed_fixes");
+//    let t = new Timer("find_all_proposed_fixes");
     let all_matches = [];
     let count = 0;
     rectangles_count = 0;
@@ -322,9 +322,9 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
 	x_ul[key] = aNum[key].map((i,_1,_2) => { let [p1,p2] = i; return p1;});
 	x_lr[key] = aNum[key].map((i,_1,_2) => { let [p1,p2] = i; return p2;});
     }
-    t.split("generated upper left and lower right arrays.");
+//   t.split("generated upper left and lower right arrays.");
     let bb = generate_bounding_box(grouped_formulas);
-    t.split("generated bounding box.");
+//    t.split("generated bounding box.");
     let keylistX = Object.keys(grouped_formulas);
     
 //    console.log("keylist was = " + JSON.stringify(keylist));
@@ -364,7 +364,7 @@ export function find_all_proposed_fixes(grouped_formulas : { [val: string]: Arra
     });
     all_matches = dedup(all_matches);
 //    console.log("after: " + JSON.stringify(all_matches));
-    t.split("done.");
+//    t.split("done.");
     return all_matches;
 }
 

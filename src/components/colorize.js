@@ -77,7 +77,7 @@ var Colorize = /** @class */ (function () {
     };
     // Returns all referenced data so it can be colored later.
     Colorize.color_all_data = function (refs) {
-        var t = new timer_1.Timer("color_all_data");
+        //	let t = new Timer("color_all_data");
         var referenced_data = [];
         for (var _i = 0, _a = Object.keys(refs); _i < _a.length; _i++) {
             var refvec = _a[_i];
@@ -86,14 +86,14 @@ var Colorize = /** @class */ (function () {
             var col = Number(rv[1]);
             referenced_data.push([[row, col, 0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
         }
-        t.split("processed all data");
+        //	t.split("processed all data");
         return referenced_data;
     };
     // Take all values and return an array of each row and column.
     // Note that for now, the last value of each tuple is set to 1.
     Colorize.process_values = function (values, formulas, origin_col, origin_row) {
         var value_array = [];
-        var t = new timer_1.Timer("process_values");
+        //	let t = new Timer("process_values");
         for (var i = 0; i < values.length; i++) {
             var row = values[i];
             for (var j = 0; j < row.length; j++) {
@@ -110,7 +110,7 @@ var Colorize = /** @class */ (function () {
                 }
             }
         }
-        t.split("processed all values");
+        //	t.split("processed all values");
         return value_array;
     };
     // Take in a list of [[row, col], color] pairs and group them,
@@ -268,7 +268,7 @@ var Colorize = /** @class */ (function () {
             var theWin = win(j, i); // NOTE reversal!
             if (theWin.reduce(function (total, a) { return (a === null) || (Boolean(total)); }, false)) {
                 // There's a null.
-                console.log("busted: " + JSON.stringify(win(i, j)));
+                //		    console.log("busted: " + JSON.stringify(win(i, j)));
             }
             var sum = theWin.reduce(function (total, a) { return total + a; }, 0);
             var nonzeros = theWin.reduce(function (total, a) { if (Number(a) > 0) {
@@ -352,7 +352,7 @@ var Colorize = /** @class */ (function () {
                 //		    }
             }
         }
-        console.log(JSON.stringify(win_counts));
+        //	    console.log(JSON.stringify(win_counts));
         //	    console.log("Stencil = " + JSON.stringify(stencil));
         return stencil;
     };
@@ -372,8 +372,6 @@ var Colorize = /** @class */ (function () {
                 }
             }
         }
-        console.log("counts = " + JSON.stringify(counts));
-        //	    console.log("**********************total non-zeroes = " + totalNonzeroes);
         // Now iterate over the counts to compute probabilities.
         for (var i = 0; i < cols; i++) {
             for (var j = 0; j < rows; j++) {
@@ -407,15 +405,10 @@ var Colorize = /** @class */ (function () {
                 }
             }
         }
-        //	    console.log("new probs = " + JSON.stringify(probs));
-        console.log("total probability = " + total);
-        console.log("total entropy = " + totalEntropy);
-        console.log("normalized entropy = " + normalizedEntropy);
         return probs;
     };
     Colorize.generate_suspicious_cells = function (cols, rows, origin_col, origin_row, matrix, probs, threshold) {
         if (threshold === void 0) { threshold = 0.01; }
-        console.log("threshold = " + threshold);
         var cells = [];
         var sumValues = 0;
         var countValues = 0;
@@ -439,28 +432,28 @@ var Colorize = /** @class */ (function () {
             }
         }
         var avgValues = sumValues / countValues;
-        console.log("avg values = " + avgValues);
         cells.sort(function (a, b) { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
         //	    console.log("cells = " + JSON.stringify(cells));
         return cells;
     };
     Colorize.process_suspicious = function (usedRangeAddress, formulas, values) {
-        console.log("process_suspicious:");
-        console.log(JSON.stringify(usedRangeAddress));
-        console.log(JSON.stringify(formulas));
-        console.log(JSON.stringify(values));
+        if (false) {
+            console.log("process_suspicious:");
+            console.log(JSON.stringify(usedRangeAddress));
+            console.log(JSON.stringify(formulas));
+            console.log(JSON.stringify(values));
+        }
         var t = new timer_1.Timer("process_suspicious");
         var _a = excelutils_1.ExcelUtils.extract_sheet_cell(usedRangeAddress), sheetName = _a[0], startCell = _a[1];
         var origin = excelutils_1.ExcelUtils.cell_dependency(startCell, 0, 0);
-        t.split("computed cell dependency for start");
         var processed_formulas = [];
         if (formulas.length > this.formulasThreshold) {
             console.log("Too many formulas to perform formula analysis.");
         }
         else {
-            t.split("about to process formulas");
+            //	    t.split("about to process formulas");
             processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
-            t.split("processed formulas");
+            //	    t.split("processed formulas");
         }
         var useTimeouts = false;
         var referenced_data = [];
@@ -473,28 +466,29 @@ var Colorize = /** @class */ (function () {
         else {
             // Compute references (to color referenced data).
             var refs = excelutils_1.ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
-            t.split("generated all references");
-            //		    console.log("refs = " + JSON.stringify(refs));
+            //	    t.split("generated all references");
             referenced_data = Colorize.color_all_data(refs);
             // console.log("referenced_data = " + JSON.stringify(referenced_data));
             data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
-            t.split("processed data");
+            // t.split("processed data");
         }
         var grouped_data = Colorize.identify_groups(referenced_data);
-        t.split("identified groups");
+        //	t.split("identified groups");
         var grouped_formulas = Colorize.identify_groups(processed_formulas);
-        t.split("grouped formulas");
+        //	t.split("grouped formulas");
         // Identify suspicious cells.
         var suspicious_cells = [];
         if (values.length < 10000) {
             suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
         }
         var proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
-        console.log("results:");
-        console.log(JSON.stringify(suspicious_cells));
-        console.log(JSON.stringify(grouped_formulas));
-        console.log(JSON.stringify(grouped_data));
-        console.log(JSON.stringify(proposed_fixes));
+        if (false) {
+            console.log("results:");
+            console.log(JSON.stringify(suspicious_cells));
+            console.log(JSON.stringify(grouped_formulas));
+            console.log(JSON.stringify(grouped_data));
+            console.log(JSON.stringify(proposed_fixes));
+        }
         return [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes];
         ////// to here, should be clear without timeouts.
     };
@@ -609,12 +603,12 @@ var Colorize = /** @class */ (function () {
         return new_fixes;
     };
     Colorize.generate_proposed_fixes = function (groups) {
-        var t = new timer_1.Timer("generate_proposed_fixes");
-        t.split("about to find.");
+        //	let t = new Timer("generate_proposed_fixes");
+        //	t.split("about to find.");
         var proposed_fixes_new = groupme_1.find_all_proposed_fixes(groups);
-        t.split("sorting fixes.");
+        //	t.split("sorting fixes.");
         proposed_fixes_new.sort(function (a, b) { return a[0] - b[0]; });
-        t.split("done.");
+        //	t.split("done.");
         //	console.log(JSON.stringify(proposed_fixes_new));
         return proposed_fixes_new;
     };
@@ -759,42 +753,31 @@ var Colorize = /** @class */ (function () {
             //								processed_formulas);
             processed_formulas.concat(data_values));
             //									processed_formulas);
-            console.log("formula_matrix = " + JSON.stringify(formula_matrix));
-            console.log("processed_formulas = " + JSON.stringify(processed_formulas));
-            console.log("data_values = " + JSON.stringify(data_values));
             var stencil = Colorize.stencilize(cols, rows, formula_matrix);
-            console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
             var probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
-            console.log("probabilities = " + JSON.stringify(probs));
             var candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
-            console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
             // Prune any cell that is in fact a formula.
             if (typeof formulas !== 'undefined') {
                 var totalFormulaWeight_1 = 0;
                 suspiciousCells = candidateSuspiciousCells.filter(function (c) {
                     var theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
-                    console.log("Checking theFormula = " + JSON.stringify(theFormula) + " for cell " + JSON.stringify(c));
                     if ((theFormula.length < 1) || (theFormula[0] != '=')) {
                         return true;
                     }
                     else {
                         // It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
-                        console.log("REMOVING " + JSON.stringify(c));
                         totalFormulaWeight_1 += c[2];
                         return false;
                     }
                 });
-                console.log("total formula weight = " + totalFormulaWeight_1);
                 // Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
                 var multiplier_1 = 1 / (1 - totalFormulaWeight_1);
-                console.log("before thresholding: suspicious cells = " + JSON.stringify(suspiciousCells));
                 suspiciousCells = suspiciousCells.map(function (c) { return [c[0], c[1], c[2] * multiplier_1]; });
                 suspiciousCells = suspiciousCells.filter(function (c) { return c[2] <= threshold; });
             }
             else {
                 suspiciousCells = candidateSuspiciousCells;
             }
-            console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
         }
         return suspiciousCells;
     };
@@ -816,6 +799,3 @@ var Colorize = /** @class */ (function () {
     return Colorize;
 }());
 exports.Colorize = Colorize;
-//console.log(this.dependencies('$C$2:$E$5', 10, 10));
-//console.log(this.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
-//console.log(this.hash_vector(this.dependencies('$C$2:$E$5', 10, 10)));

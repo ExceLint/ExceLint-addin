@@ -30,7 +30,7 @@ export class Timer {
     public split(location: string): void {
 	let curr = this.perf.now();
 	let elapsed = curr - this.splitTimeMS;
-	console.log("timer: " + this.name + " @ " + location + " : = " + this.roundMe(elapsed) + " (total = " + this.roundMe(curr - this.startTimeMS) + ")");
+	console.warn("timer: " + this.name + " @ " + location + " : = " + this.roundMe(elapsed) + " (total = " + this.roundMe(curr - this.startTimeMS) + ")");
 	this.splitTimeMS = curr;
     }
 

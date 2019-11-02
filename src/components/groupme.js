@@ -2,7 +2,6 @@
 exports.__esModule = true;
 var binsearch_1 = require("./binsearch");
 var colorize_1 = require("./colorize");
-var timer_1 = require("./timer");
 // Enable reasonable comparisons of numbers by converting them to zero-padded strings
 // so that 9 < 56 (because "0009" < "0056").
 function fix(n) {
@@ -276,7 +275,7 @@ function dedup(arr) {
     return arr.filter(function (e) { return !(t[e] = e in t); });
 }
 function find_all_proposed_fixes(grouped_formulas) {
-    var t = new timer_1.Timer("find_all_proposed_fixes");
+    //    let t = new Timer("find_all_proposed_fixes");
     var all_matches = [];
     var count = 0;
     rectangles_count = 0;
@@ -289,9 +288,9 @@ function find_all_proposed_fixes(grouped_formulas) {
         x_ul[key] = aNum[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p1; });
         x_lr[key] = aNum[key].map(function (i, _1, _2) { var p1 = i[0], p2 = i[1]; return p2; });
     }
-    t.split("generated upper left and lower right arrays.");
+    //   t.split("generated upper left and lower right arrays.");
     var bb = generate_bounding_box(grouped_formulas);
-    t.split("generated bounding box.");
+    //    t.split("generated bounding box.");
     var keylistX = Object.keys(grouped_formulas);
     //    console.log("keylist was = " + JSON.stringify(keylist));
     // Sort the keys by the x-axis of the upper-left corner of their bounding boxes.
@@ -330,7 +329,7 @@ function find_all_proposed_fixes(grouped_formulas) {
     });
     all_matches = dedup(all_matches);
     //    console.log("after: " + JSON.stringify(all_matches));
-    t.split("done.");
+    //    t.split("done.");
     return all_matches;
 }
 exports.find_all_proposed_fixes = find_all_proposed_fixes;

@@ -110,7 +110,7 @@ export class Colorize {
     // Returns all referenced data so it can be colored later.
     public static color_all_data(refs: { [dep: string]: Array<excelintVector> }) : Array<[excelintVector, string]>
     {
-	let t = new Timer("color_all_data");
+//	let t = new Timer("color_all_data");
 	let referenced_data = [];
 	for (let refvec of Object.keys(refs)) {
 	    const rv = refvec.split(',');
@@ -118,7 +118,7 @@ export class Colorize {
 	    const col = Number(rv[1]);
 	    referenced_data.push([[row,col,0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
 	}
-	t.split("processed all data");
+//	t.split("processed all data");
 	return referenced_data;
     }
 
@@ -127,7 +127,7 @@ export class Colorize {
     // Note that for now, the last value of each tuple is set to 1.
     public static process_values(values: Array<Array<string>>, formulas: Array<Array<string>>, origin_col: number, origin_row: number) : Array<[excelintVector, string]> {
 	let value_array = [];
-	let t = new Timer("process_values");
+//	let t = new Timer("process_values");
 	for (let i = 0; i < values.length; i++) {
 	    const row = values[i];
 	    for (let j = 0; j < row.length; j++) {
@@ -144,7 +144,7 @@ export class Colorize {
 		}
 	    }
 	}
-	t.split("processed all values");
+//	t.split("processed all values");
 	return value_array;
     }
 
@@ -294,7 +294,7 @@ export class Colorize {
 		const theWin = win(j, i); // NOTE reversal!
 		if (theWin.reduce((total, a) => (a === null) || (Boolean(total)), false)) {
 		    // There's a null.
-		    console.log("busted: " + JSON.stringify(win(i, j)));
+//		    console.log("busted: " + JSON.stringify(win(i, j)));
 		}
 		const sum = theWin.reduce((total,a) => total + a, 0);
 		const nonzeros = theWin.reduce((total, a) => { if (Number(a) > 0) { return total + 1; } else { return total; }}, 0);
@@ -359,7 +359,7 @@ export class Colorize {
 		}
 	    }
 
-	    console.log(JSON.stringify(win_counts));
+//	    console.log(JSON.stringify(win_counts));
 	    
 //	    console.log("Stencil = " + JSON.stringify(stencil));
 	return stencil;
@@ -384,9 +384,6 @@ export class Colorize {
 		}
 	    }
 	    
-	    console.log("counts = " + JSON.stringify(counts));
-	    
-//	    console.log("**********************total non-zeroes = " + totalNonzeroes);
 	    // Now iterate over the counts to compute probabilities.
 	    for (let i = 0; i < cols; i++) {
 		for (let j = 0; j < rows; j++) {
@@ -425,11 +422,6 @@ export class Colorize {
 		    }
 		}
 	    }
-
-//	    console.log("new probs = " + JSON.stringify(probs));
-	    console.log("total probability = " + total);
-	    console.log("total entropy = " + totalEntropy);
-	    console.log("normalized entropy = " + normalizedEntropy);
 	    return probs;
 	}
     
@@ -440,7 +432,6 @@ export class Colorize {
 					    probs : Array<Array<number>>,
 					    threshold = 0.01) : Array<excelintVector>
 	{
-	    console.log("threshold = " + threshold);
 	    let cells = [];
 	    let sumValues = 0;
 	    let countValues = 0;
@@ -464,7 +455,6 @@ export class Colorize {
 		}
 	    }
 	    const avgValues = sumValues / countValues;
-	    console.log("avg values = " + avgValues);
 	    cells.sort((a, b) => { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
 	    //	    console.log("cells = " + JSON.stringify(cells));
 	    return cells;
@@ -475,27 +465,26 @@ export class Colorize {
 				     formulas : Array<Array<string>>,
 				     values : Array<Array<string>>) : [any, any, any, any]
     {
-
-	console.log("process_suspicious:");
-	console.log(JSON.stringify(usedRangeAddress));
-	console.log(JSON.stringify(formulas));
-	console.log(JSON.stringify(values));
+	if (false) {
+	    console.log("process_suspicious:");
+	    console.log(JSON.stringify(usedRangeAddress));
+	    console.log(JSON.stringify(formulas));
+	    console.log(JSON.stringify(values));
+	}
 	
 	let t = new Timer("process_suspicious");
-	
+
 	const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
 	const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
-	t.split("computed cell dependency for start");
 	
 	let processed_formulas = [];
 	if (formulas.length > this.formulasThreshold) {
 	    console.log("Too many formulas to perform formula analysis.");
 	} else {
 	    
-	    t.split("about to process formulas");
-	    
+//	    t.split("about to process formulas");
 	    processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
-	    t.split("processed formulas");
+//	    t.split("processed formulas");
 	}
 	const useTimeouts = false;
 		
@@ -510,22 +499,21 @@ export class Colorize {
 	    
 	    // Compute references (to color referenced data).
 	    const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
-	    t.split("generated all references");
-	    //		    console.log("refs = " + JSON.stringify(refs));
+	    //	    t.split("generated all references");
 	    
 	    referenced_data = Colorize.color_all_data(refs);
 	    // console.log("referenced_data = " + JSON.stringify(referenced_data));
 	    data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
 	    
-	    t.split("processed data");
+	    // t.split("processed data");
 	}
 	
 	const grouped_data = Colorize.identify_groups(referenced_data);
 
-	t.split("identified groups");
+//	t.split("identified groups");
 	
 	const grouped_formulas = Colorize.identify_groups(processed_formulas);
-	t.split("grouped formulas");
+//	t.split("grouped formulas");
 	
 	// Identify suspicious cells.
 	let suspicious_cells = [];
@@ -536,11 +524,13 @@ export class Colorize {
 
 	const proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 	
-	console.log("results:");
-	console.log(JSON.stringify(suspicious_cells));
-	console.log(JSON.stringify(grouped_formulas));
-	console.log(JSON.stringify(grouped_data));
-	console.log(JSON.stringify(proposed_fixes));
+	if (false) {
+	    console.log("results:");
+	    console.log(JSON.stringify(suspicious_cells));
+	    console.log(JSON.stringify(grouped_formulas));
+	    console.log(JSON.stringify(grouped_data));
+	    console.log(JSON.stringify(proposed_fixes));
+	}
 
 	return [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes];
 	////// to here, should be clear without timeouts.
@@ -671,12 +661,12 @@ export class Colorize {
 
     public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
     Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
-	let t = new Timer("generate_proposed_fixes");
-	t.split("about to find.");
+//	let t = new Timer("generate_proposed_fixes");
+//	t.split("about to find.");
 	let proposed_fixes_new = find_all_proposed_fixes(groups);
-	t.split("sorting fixes.");
+//	t.split("sorting fixes.");
 	proposed_fixes_new.sort((a, b) => { return a[0] - b[0]; });
-	t.split("done.");
+//	t.split("done.");
 //	console.log(JSON.stringify(proposed_fixes_new));
 	return proposed_fixes_new;
     }
@@ -843,20 +833,10 @@ export class Colorize {
 								processed_formulas.concat(data_values));
 	    //									processed_formulas);
 		    
-	    console.log("formula_matrix = " + JSON.stringify(formula_matrix));
-	    
-	    
-	    console.log("processed_formulas = " + JSON.stringify(processed_formulas));
-	    console.log("data_values = " + JSON.stringify(data_values));
-	    
-	    
 	    const stencil = Colorize.stencilize(cols, rows, formula_matrix);
-	    console.log("stencilized formula_matrix = " + JSON.stringify(stencil));
 	    const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
-	    console.log("probabilities = " + JSON.stringify(probs));
 	    
 	    const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
-	    console.log("suspicious cells before = " + JSON.stringify(candidateSuspiciousCells));
 
 	    // Prune any cell that is in fact a formula.
 
@@ -864,34 +844,24 @@ export class Colorize {
 		let totalFormulaWeight = 0;
 		suspiciousCells = candidateSuspiciousCells.filter((c) => {
 		    const theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
-		    console.log("Checking theFormula = " + JSON.stringify(theFormula) + " for cell " + JSON.stringify(c));
 		    if ((theFormula.length < 1) || (theFormula[0] != '=')) {
 			return true;
 		    } else {
 			// It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
-			console.log("REMOVING " + JSON.stringify(c));
 			totalFormulaWeight += c[2];
 			return false;
 		    }
 		});
-		console.log("total formula weight = " + totalFormulaWeight);
 		// Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
 		const multiplier = 1 / (1 - totalFormulaWeight);
-		console.log("before thresholding: suspicious cells = " + JSON.stringify(suspiciousCells));
 		suspiciousCells = suspiciousCells.map((c) => [c[0], c[1], c[2] * multiplier]);
 		suspiciousCells = suspiciousCells.filter((c) => c[2] <= threshold );
 	    } else {
 		suspiciousCells = candidateSuspiciousCells;
 	    }
-
-	    console.log("suspicious cells after = " + JSON.stringify(suspiciousCells));
 	}
 	return suspiciousCells;
     }
 
     
 }
-
-//console.log(this.dependencies('$C$2:$E$5', 10, 10));
-//console.log(this.dependencies('$A$123,A1:B$12,$A12:$B$14', 10, 10));
-//console.log(this.hash_vector(this.dependencies('$C$2:$E$5', 10, 10)));
