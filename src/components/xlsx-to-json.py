@@ -28,6 +28,10 @@ import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
+# process a single worksheet
+#   datatype = "f" --> functions
+#   datatype = "n" --> numeric values
+
 
 def process_sheet(worksheet, datatype="f"):
     processed = []
@@ -42,6 +46,8 @@ def process_sheet(worksheet, datatype="f"):
             r.append(v)
         processed.append(r)
     return processed
+
+# Process every sheet in a workbook
 
 
 def process_workbook(fname):
@@ -66,6 +72,7 @@ def process_workbook(fname):
         sheetRange = sheetname + "!A1:" + lastColName + str(numRows)
 
         output = {
+            "workbookName": fname,
             "usedRangeAddress": sheetRange,
             "formulas": formulas,
             "values": values
@@ -74,45 +81,16 @@ def process_workbook(fname):
         return output
 
 
-def process_dir(inputdir):
-    processed_files = []
-    fnames = os.listdir(inputdir)
-    # random.shuffle(fnames)
-    for fname in fnames:
-        # Skip subdirectories.
-        if os.path.isdir(os.path.join(inputdir, fname)):
-            continue
-        # print(f"[{count}] processing {fname}", file=sys.stderr)
-        try:
-            processed_files.append(process_workbook(
-                os.path.join(args.inputdir, fname)))
-        except Exception:  # as error:
-            pass
-    return processed_files
-
 # Process command line for file or directory.
 
-
 parser = argparse.ArgumentParser('xlsx-to-json.py')
-parser.add_argument('--input', help='Process a single input .xlsx file.')
-parser.add_argument(
-    '--inputdir', help='Process an entire directory of .xlsx files.')
+parser.add_argument('--input', help='Process an input .xlsx file.')
 args = parser.parse_args()
 
-# Must be exactly one of either --input or --inputdir.
-if args.input is None and args.inputdir is None:
+if args.input is None:
     parser.print_help()
     exit(-1)
 
-if args.input is not None and args.inputdir is not None:
-    parser.print_help()
-    exit(-1)
-
-if args.inputdir is not None:
-    outputs = process_dir(args.inputdir)
-    # Not sure what to do with a whole directory... FIX ME
-    print(outputs)
-else:
-    output = process_workbook(args.input)
-    str = json.dumps(output)
-    print(str)
+output = process_workbook(args.input)
+str = json.dumps(output)
+print(str)
