@@ -444,9 +444,9 @@ export class Colorize {
 			sumValues += matrix[i][j];
 			countValues += 1;
 			if (probs[i][j] <= threshold) {
-			    console.log("found one at " + i + " " + j + " = [" + matrix[i][j] + "] (" + adjustedX + ", " + adjustedY + "): p = " + probs[i][j]);
+			    // console.log("found one at " + i + " " + j + " = [" + matrix[i][j] + "] (" + adjustedX + ", " + adjustedY + "): p = " + probs[i][j]);
 			    if (matrix[i][j] != 0) {
-				console.log("PUSHED!");
+				// console.log("PUSHED!");
 				// Never push an empty cell.
 				cells.push([adjustedX, adjustedY, probs[i][j]]);
 			    }
