@@ -52,7 +52,8 @@ def process_sheet_styles(worksheet):
         for cell in row:
             v = ""
             if type(cell).__name__ != 'MergedCell':
-                v = str([cell.font, cell.fill, cell.border])
+                v = str(
+                    [cell.font.sz, cell.border.outline])
             r.append(v)
         processed.append(r)
     return processed
