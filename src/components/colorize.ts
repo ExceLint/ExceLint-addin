@@ -490,7 +490,7 @@ export class Colorize {
 
         let processed_formulas = [];
         if (formulas.length > this.formulasThreshold) {
-            console.log("Too many formulas to perform formula analysis.");
+            console.warn('Too many formulas to perform formula analysis.');
         } else {
 
             //	    t.split("about to process formulas");
@@ -505,7 +505,7 @@ export class Colorize {
         const rows = values[0].length;
 
         if (values.length > this.valuesThreshold) {
-            console.log("Too many values to perform reference analysis.");
+            console.warn('Too many values to perform reference analysis.');
         } else {
 
             // Compute references (to color referenced data).
@@ -536,7 +536,7 @@ export class Colorize {
         const proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
         if (false) {
-            console.log("results:");
+            console.log('results:');
             console.log(JSON.stringify(suspicious_cells));
             console.log(JSON.stringify(grouped_formulas));
             console.log(JSON.stringify(grouped_data));
@@ -544,7 +544,6 @@ export class Colorize {
         }
 
         return [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes];
-        ////// to here, should be clear without timeouts.
     }
 
 
@@ -589,8 +588,8 @@ export class Colorize {
     // Iterate through the size of proposed fixes.
     public static count_proposed_fixes(fixes: Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]>): number {
         let count = 0;
+        // tslint:disable-next-line: forin
         for (let k in fixes) {
-            //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
             const [f11, f12] = fixes[k][1];
             const [f21, f22] = fixes[k][2];
             count += RectangleUtils.diagonal([[f11[0], f11[1], 0], [f12[0], f12[1], 0]]);
@@ -608,6 +607,7 @@ export class Colorize {
         let front = {};
         let back = {};
         // Build up the front and back dictionaries.
+        // tslint:disable-next-line: forin
         for (let k in fixes) {
             // Sort the fixes so the smaller array (further up and
             // to the left) always comes first.
@@ -623,6 +623,7 @@ export class Colorize {
         // Now iterate through one, looking for hits on the other.
         let new_fixes = [];
         let merged = {};
+        // tslint:disable-next-line: forin
         for (let k in fixes) {
             const original_score = fixes[k][0];
             if (-original_score < (Colorize.reportingThreshold / 100)) {
@@ -634,14 +635,10 @@ export class Colorize {
                 // No match. Just merge them.
                 new_fixes.push(fixes[k]);
             } else {
-                //		    console.log("**** original score = " + original_score);
                 if ((!merged[this_front_str]) && (this_front_str in back)) {
-                    //			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
-                    // FIXME. This calculation may not make sense.			
+                    // FIXME: does this score make sense? Verify mathematically.
                     let newscore = -original_score * JSON.parse(back[this_front_str][0]);
-                    //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
                     const new_fix = [newscore, fixes[k][1], back[this_front_str][1]];
-                    //			console.log("pushing " + JSON.stringify(new_fix));
                     new_fixes.push(new_fix);
                     merged[this_front_str] = true;
                     // FIXME? testing below. The idea is to not keep merging things (for now).
@@ -683,29 +680,25 @@ export class Colorize {
         : { [val: string]: Array<[excelintVector, excelintVector]> } {
         for (let k of Object.keys(groups)) {
             const g = groups[k].slice();
-            groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
+            groups[k] = this.merge_individual_groups(g);
         }
         return groups;
     }
 
     public static merge_individual_groups(group: Array<[excelintVector, excelintVector]>)
         : Array<[excelintVector, excelintVector]> {
-        let t = new Timer("merge_individual_groups");
+        let t = new Timer('merge_individual_groups');
         let numIterations = 0;
         group = group.sort();
-        //        console.log(JSON.stringify(group));
         while (true) {
-            // console.log("iteration "+numIterations);
             let merged_one = false;
             let deleted_rectangles = {};
             let updated_rectangles = [];
-            let working_group = group.slice(); // JSON.parse(JSON.stringify(group));
+            let working_group = group.slice();
             while (working_group.length > 0) {
                 const head = working_group.shift();
                 for (let i = 0; i < working_group.length; i++) {
-                    //                    console.log("comparing " + head + " and " + working_group[i]);
                     if (RectangleUtils.is_mergeable(head, working_group[i])) {
-                        //console.log("friendly!" + head + " -- " + working_group[i]);
                         updated_rectangles.push(RectangleUtils.bounding_box(head, working_group[i]));
                         deleted_rectangles[JSON.stringify(head)] = true;
                         deleted_rectangles[JSON.stringify(working_group[i])] = true;
@@ -713,9 +706,6 @@ export class Colorize {
                         break;
                     }
                 }
-                //                if (!merged_one) {
-                //                    updated_rectangles.push(head);
-                //                }
             }
             for (let i = 0; i < group.length; i++) {
                 if (!(JSON.stringify(group[i]) in deleted_rectangles)) {
@@ -723,18 +713,14 @@ export class Colorize {
                 }
             }
             updated_rectangles.sort();
-            // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-            //            console.log('group = ' + JSON.stringify(group));
             if (!merged_one) {
-                // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-                //		    t.split("done, " + numIterations + " iterations.");
                 return updated_rectangles;
             }
-            group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
+            group = updated_rectangles.slice();
             numIterations++;
-            if (numIterations > 2000) { // This is hack to guarantee convergence.
-                console.log("Too many iterations; abandoning this group.")
-                t.split("done, " + numIterations + " iterations.");
+            if (numIterations > 2000) { // This is a hack to guarantee convergence.
+                console.log('Too many iterations; abandoning this group.')
+                t.split('done, ' + numIterations + ' iterations.');
                 return [[[-1, -1, 0], [-1, -1, 0]]];
             }
         }
@@ -764,23 +750,16 @@ export class Colorize {
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     }
 
+    // Discount proposed fixes if they have different formats.
     public static adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row): any {
         let proposed_fixes = [];
+        // tslint:disable-next-line: forin
         for (let k in fixes) {
             // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
             // entropy, and two ranges:
             //    upper-left corner of range (column, row), lower-right corner of range (column, row)
 
-            //	    console.log("fix = " + JSON.stringify(fixes[k]));
-
             let score = fixes[k][0];
-
-            // EDB: DISABLE PRUNING HERE
-            // Skip fixes whose score is already below the threshold.
-            //	    if (-score < (Colorize.getReportingThreshold() / 100)) {
-            //		console.log("too low: " + (-score));
-            //		continue;
-            //	    }
 
             // Sort the fixes.
             // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
@@ -795,31 +774,23 @@ export class Colorize {
             const [[ax1, ay1], [ax2, ay2]] = first;
             const [[bx1, by1], [bx2, by2]] = second;
 
-            const col0 = ax1 - origin_col - 1; // ExcelUtils.column_index_to_name(ax1);
-            const row0 = ay1 - origin_row - 1; //.toString();
-            const col1 = bx2 - origin_col - 1; // ExcelUtils.column_index_to_name(bx2);
-            const row1 = by2 - origin_row - 1; // .toString();
+            const col0 = ax1 - origin_col - 1;
+            const row0 = ay1 - origin_row - 1;
+            const col1 = bx2 - origin_col - 1;
+            const row1 = by2 - origin_row - 1;
 
-            //	    console.log("length = " + propertiesToGet.value.length);
-            //	    console.log("width = " + propertiesToGet.value[0].length);
+            // Now check whether the formats are all the same or not.
             let sameFormats = true;
             const firstFormat = JSON.stringify(propertiesToGet[row0][col0]);
-            //	    console.log(firstFormat);
-            //	    console.log(JSON.stringify(fixes));
             for (let i = row0; i <= row1; i++) {
                 for (let j = col0; j <= col1; j++) {
-                    //		    		    console.log("checking " + i + ", " + j);
                     const str = JSON.stringify(propertiesToGet[i][j]);
-                    //		    console.log(str);
                     if (str !== firstFormat) {
                         sameFormats = false;
                         break;
                     }
                 }
             }
-            //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
-
-            //	    console.log("sameFormats? " + sameFormats);
             proposed_fixes.push([score, first, second, sameFormats]);
         }
         return proposed_fixes;

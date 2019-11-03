@@ -448,7 +448,7 @@ var Colorize = /** @class */ (function () {
         var origin = excelutils_1.ExcelUtils.cell_dependency(startCell, 0, 0);
         var processed_formulas = [];
         if (formulas.length > this.formulasThreshold) {
-            console.log("Too many formulas to perform formula analysis.");
+            console.warn('Too many formulas to perform formula analysis.');
         }
         else {
             //	    t.split("about to process formulas");
@@ -461,7 +461,7 @@ var Colorize = /** @class */ (function () {
         var cols = values.length;
         var rows = values[0].length;
         if (values.length > this.valuesThreshold) {
-            console.log("Too many values to perform reference analysis.");
+            console.warn('Too many values to perform reference analysis.');
         }
         else {
             // Compute references (to color referenced data).
@@ -483,14 +483,13 @@ var Colorize = /** @class */ (function () {
         }
         var proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
         if (false) {
-            console.log("results:");
+            console.log('results:');
             console.log(JSON.stringify(suspicious_cells));
             console.log(JSON.stringify(grouped_formulas));
             console.log(JSON.stringify(grouped_data));
             console.log(JSON.stringify(proposed_fixes));
         }
         return [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes];
-        ////// to here, should be clear without timeouts.
     };
     // Shannon entropy.
     Colorize.entropy = function (p) {
@@ -527,8 +526,8 @@ var Colorize = /** @class */ (function () {
     // Iterate through the size of proposed fixes.
     Colorize.count_proposed_fixes = function (fixes) {
         var count = 0;
+        // tslint:disable-next-line: forin
         for (var k in fixes) {
-            //	    console.log("FIX FIX FIX fixes[k] = " + JSON.stringify(fixes[k][1]));
             var _a = fixes[k][1], f11 = _a[0], f12 = _a[1];
             var _b = fixes[k][2], f21 = _b[0], f22 = _b[1];
             count += rectangleutils_1.RectangleUtils.diagonal([[f11[0], f11[1], 0], [f12[0], f12[1], 0]]);
@@ -544,6 +543,7 @@ var Colorize = /** @class */ (function () {
         var front = {};
         var back = {};
         // Build up the front and back dictionaries.
+        // tslint:disable-next-line: forin
         for (var k in fixes) {
             // Sort the fixes so the smaller array (further up and
             // to the left) always comes first.
@@ -559,6 +559,7 @@ var Colorize = /** @class */ (function () {
         // Now iterate through one, looking for hits on the other.
         var new_fixes = [];
         var merged = {};
+        // tslint:disable-next-line: forin
         for (var k in fixes) {
             var original_score = fixes[k][0];
             if (-original_score < (Colorize.reportingThreshold / 100)) {
@@ -571,14 +572,10 @@ var Colorize = /** @class */ (function () {
                 new_fixes.push(fixes[k]);
             }
             else {
-                //		    console.log("**** original score = " + original_score);
                 if ((!merged[this_front_str]) && (this_front_str in back)) {
-                    //			console.log("**** (1) merging " + this_front_str + " with " + JSON.stringify(back[this_front_str]));
-                    // FIXME. This calculation may not make sense.			
+                    // FIXME: does this score make sense? Verify mathematically.
                     var newscore = -original_score * JSON.parse(back[this_front_str][0]);
-                    //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(back[this_front_str][1]));
                     var new_fix = [newscore, fixes[k][1], back[this_front_str][1]];
-                    //			console.log("pushing " + JSON.stringify(new_fix));
                     new_fixes.push(new_fix);
                     merged[this_front_str] = true;
                     // FIXME? testing below. The idea is to not keep merging things (for now).
@@ -616,27 +613,23 @@ var Colorize = /** @class */ (function () {
         for (var _i = 0, _a = Object.keys(groups); _i < _a.length; _i++) {
             var k = _a[_i];
             var g = groups[k].slice();
-            groups[k] = this.merge_individual_groups(g); // JSON.parse(JSON.stringify(groups[k])));
+            groups[k] = this.merge_individual_groups(g);
         }
         return groups;
     };
     Colorize.merge_individual_groups = function (group) {
-        var t = new timer_1.Timer("merge_individual_groups");
+        var t = new timer_1.Timer('merge_individual_groups');
         var numIterations = 0;
         group = group.sort();
-        //        console.log(JSON.stringify(group));
         while (true) {
-            // console.log("iteration "+numIterations);
             var merged_one = false;
             var deleted_rectangles = {};
             var updated_rectangles = [];
-            var working_group = group.slice(); // JSON.parse(JSON.stringify(group));
+            var working_group = group.slice();
             while (working_group.length > 0) {
                 var head = working_group.shift();
                 for (var i = 0; i < working_group.length; i++) {
-                    //                    console.log("comparing " + head + " and " + working_group[i]);
                     if (rectangleutils_1.RectangleUtils.is_mergeable(head, working_group[i])) {
-                        //console.log("friendly!" + head + " -- " + working_group[i]);
                         updated_rectangles.push(rectangleutils_1.RectangleUtils.bounding_box(head, working_group[i]));
                         deleted_rectangles[JSON.stringify(head)] = true;
                         deleted_rectangles[JSON.stringify(working_group[i])] = true;
@@ -644,9 +637,6 @@ var Colorize = /** @class */ (function () {
                         break;
                     }
                 }
-                //                if (!merged_one) {
-                //                    updated_rectangles.push(head);
-                //                }
             }
             for (var i = 0; i < group.length; i++) {
                 if (!(JSON.stringify(group[i]) in deleted_rectangles)) {
@@ -654,18 +644,14 @@ var Colorize = /** @class */ (function () {
                 }
             }
             updated_rectangles.sort();
-            // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-            //            console.log('group = ' + JSON.stringify(group));
             if (!merged_one) {
-                // console.log('updated rectangles = ' + JSON.stringify(updated_rectangles));
-                //		    t.split("done, " + numIterations + " iterations.");
                 return updated_rectangles;
             }
-            group = updated_rectangles.slice(); // JSON.parse(JSON.stringify(updated_rectangles));
+            group = updated_rectangles.slice();
             numIterations++;
-            if (numIterations > 2000) { // This is hack to guarantee convergence.
-                console.log("Too many iterations; abandoning this group.");
-                t.split("done, " + numIterations + " iterations.");
+            if (numIterations > 2000) { // This is a hack to guarantee convergence.
+                console.log('Too many iterations; abandoning this group.');
+                t.split('done, ' + numIterations + ' iterations.');
                 return [[[-1, -1, 0], [-1, -1, 0]]];
             }
         }
@@ -694,20 +680,15 @@ var Colorize = /** @class */ (function () {
         }
         //	return this.Multiplier * (Math.sqrt(v0 + v1) + v2);
     };
+    // Discount proposed fixes if they have different formats.
     Colorize.adjust_proposed_fixes = function (fixes, propertiesToGet, origin_col, origin_row) {
         var proposed_fixes = [];
+        // tslint:disable-next-line: forin
         for (var k in fixes) {
             // Format of proposed fixes =, e.g., [-3.016844756293869, [[5,7],[5,11]],[[6,7],[6,11]]]
             // entropy, and two ranges:
             //    upper-left corner of range (column, row), lower-right corner of range (column, row)
-            //	    console.log("fix = " + JSON.stringify(fixes[k]));
             var score = fixes[k][0];
-            // EDB: DISABLE PRUNING HERE
-            // Skip fixes whose score is already below the threshold.
-            //	    if (-score < (Colorize.getReportingThreshold() / 100)) {
-            //		console.log("too low: " + (-score));
-            //		continue;
-            //	    }
             // Sort the fixes.
             // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
             // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
@@ -718,29 +699,22 @@ var Colorize = /** @class */ (function () {
             var second = (firstPadded < secondPadded) ? fixes[k][2] : fixes[k][1];
             var _a = first[0], ax1 = _a[0], ay1 = _a[1], _b = first[1], ax2 = _b[0], ay2 = _b[1];
             var _c = second[0], bx1 = _c[0], by1 = _c[1], _d = second[1], bx2 = _d[0], by2 = _d[1];
-            var col0 = ax1 - origin_col - 1; // ExcelUtils.column_index_to_name(ax1);
-            var row0 = ay1 - origin_row - 1; //.toString();
-            var col1 = bx2 - origin_col - 1; // ExcelUtils.column_index_to_name(bx2);
-            var row1 = by2 - origin_row - 1; // .toString();
-            //	    console.log("length = " + propertiesToGet.value.length);
-            //	    console.log("width = " + propertiesToGet.value[0].length);
+            var col0 = ax1 - origin_col - 1;
+            var row0 = ay1 - origin_row - 1;
+            var col1 = bx2 - origin_col - 1;
+            var row1 = by2 - origin_row - 1;
+            // Now check whether the formats are all the same or not.
             var sameFormats = true;
             var firstFormat = JSON.stringify(propertiesToGet[row0][col0]);
-            //	    console.log(firstFormat);
-            //	    console.log(JSON.stringify(fixes));
             for (var i = row0; i <= row1; i++) {
                 for (var j = col0; j <= col1; j++) {
-                    //		    		    console.log("checking " + i + ", " + j);
                     var str = JSON.stringify(propertiesToGet[i][j]);
-                    //		    console.log(str);
                     if (str !== firstFormat) {
                         sameFormats = false;
                         break;
                     }
                 }
             }
-            //	    const sameFormats = propertiesToGet.value.every((val,_,arr) => { return val.every((v,_,__) => { return JSON.stringify(v) === JSON.stringify(arr[0][0]); }); })
-            //	    console.log("sameFormats? " + sameFormats);
             proposed_fixes.push([score, first, second, sameFormats]);
         }
         return proposed_fixes;
