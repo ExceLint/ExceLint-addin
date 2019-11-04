@@ -107,7 +107,7 @@ for (var i = 0; i < inp.worksheets.length; i++) {
     var elapsed = myTimer.elapsedTime();
     var out = {
         'sheetName': sheet.sheetName,
-        'suspiciousCells': suspicious_cells,
+        //        'suspiciousCells': suspicious_cells,
         //        'groupedFormulas': grouped_formulas,
         //        'groupedData': grouped_data,
         'proposedFixes': adjusted_fixes,

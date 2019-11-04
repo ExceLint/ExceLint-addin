@@ -479,7 +479,8 @@ var Colorize = /** @class */ (function () {
         // Identify suspicious cells.
         var suspicious_cells = [];
         if (values.length < 10000) {
-            suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+            // Disabled for now. FIXME
+            // suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
         }
         var proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
         if (false) {

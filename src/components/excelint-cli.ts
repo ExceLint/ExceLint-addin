@@ -126,7 +126,7 @@ for (let i = 0; i < inp.worksheets.length; i++) {
 
     const out = {
         'sheetName': sheet.sheetName,
-        'suspiciousCells': suspicious_cells,
+        //        'suspiciousCells': suspicious_cells,
         //        'groupedFormulas': grouped_formulas,
         //        'groupedData': grouped_data,
         'proposedFixes': adjusted_fixes,
