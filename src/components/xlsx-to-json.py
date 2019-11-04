@@ -76,7 +76,6 @@ def process_sheet_styles(worksheet):
             v = ""
             if type(cell).__name__ != 'MergedCell':
                 v = str([vars(cell.font), vars(cell.fill), vars(cell.border)])
-                v = 'FIXME'
             r.append(v)
         processed.append(r)
     return processed
