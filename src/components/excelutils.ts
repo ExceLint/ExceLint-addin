@@ -347,7 +347,7 @@ export class ExcelUtils {
 		let cell = row[j];
 		counter++;
 		if (counter % 1000 == 0) {
-		    console.log(counter + " references down");
+//		    console.log(counter + " references down");
 		}
 
 //		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
