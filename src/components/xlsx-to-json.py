@@ -19,6 +19,7 @@ import os
 import sys
 import argparse
 import warnings
+import pprint
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -45,15 +46,36 @@ def process_sheet(worksheet, datatype="f"):
 # Get styles
 
 
+properties = {'format': {
+    'fill': {
+        'color': True
+    },
+    'border': {
+        'color': True,
+        'style': True,
+        'weight': True
+    },
+    'font': {
+        'color': True,
+        'style': True,
+        'weight': True,
+        'bold': True,
+        'italic': True,
+        'name': True
+    }
+}
+}
+
+
 def process_sheet_styles(worksheet):
     processed = []
+    pp = pprint.PrettyPrinter(indent=8, depth=8)
     for row in worksheet.rows:
         r = []
         for cell in row:
             v = ""
             if type(cell).__name__ != 'MergedCell':
-                v = str(
-                    [cell.font.sz, cell.border.outline])
+                v = str([vars(cell.font), vars(cell.fill), vars(cell.border)])
             r.append(v)
         processed.append(r)
     return processed
