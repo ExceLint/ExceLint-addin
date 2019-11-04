@@ -8,7 +8,7 @@ var Timer = /** @class */ (function () {
             this.perf = {
                 now: function () {
                     var _a = process.hrtime(), secs = _a[0], nanosecs = _a[1];
-                    return ((secs * 1e9) + nanosecs) / 1e6;
+                    return ((secs * 1e9) + nanosecs) / 1e3;
                 }
             };
         }

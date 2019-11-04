@@ -5,6 +5,9 @@
 'use strict';
 let fs = require('fs');
 import { Colorize } from './colorize';
+import { Timer } from './timer';
+
+// import { values } from '@uifabric/utilities';
 
 // Set to true to use the hard-coded example below.
 const useExample = false;
@@ -49,28 +52,32 @@ let inp = null;
 if (useExample) {
     // A simple example.
     inp = {
-        usedRangeAddress: 'Sheet1!E12:E21',
-        formulas: [
-            ['=D12'], ['=D13'],
-            ['=D14'], ['=D15'],
-            ['=D16'], ['=D17'],
-            ['=D18'], ['=D19'],
-            ['=D20'], ['=C21']
-        ],
-        values: [
-            ['0'], ['0'],
-            ['0'], ['0'],
-            ['0'], ['0'],
-            ['0'], ['0'],
-            ['0'], ['0']
-        ],
-        styles: [
-            [''], [''],
-            [''], [''],
-            [''], [''],
-            [''], [''],
-            [''], ['']
-        ],
+        workbookName: 'example',
+        worksheets: [{
+            sheetname: 'Sheet1',
+            usedRangeAddress: 'Sheet1!E12:E21',
+            formulas: [
+                ['=D12'], ['=D13'],
+                ['=D14'], ['=D15'],
+                ['=D16'], ['=D17'],
+                ['=D18'], ['=D19'],
+                ['=D20'], ['=C21']
+            ],
+            values: [
+                ['0'], ['0'],
+                ['0'], ['0'],
+                ['0'], ['0'],
+                ['0'], ['0'],
+                ['0'], ['0']
+            ],
+            styles: [
+                [''], [''],
+                [''], [''],
+                [''], [''],
+                [''], [''],
+                [''], ['']
+            ]
+        }]
     };
 } else {
     // Read from file.
@@ -78,33 +85,55 @@ if (useExample) {
     inp = JSON.parse(content);
 }
 
-// Get suspicious cells and proposed fixes, among others.
-let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
-    = Colorize.process_suspicious(inp.usedRangeAddress, inp.formulas, inp.values);
-
-// Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
-// NB: origin_col and origin_row currently hard-coded at 0,0.
-
-proposed_fixes = Colorize.adjust_proposed_fixes(proposed_fixes, inp.styles, 0, 0);
-
-// Adjust the proposed fixes for real (just adjusting the scores downwards by the formatting discount).
-let adjusted_fixes = [];
-// tslint:disable-next-line: forin
-for (let ind = 0; ind < proposed_fixes.length; ind++) {
-    const f = proposed_fixes[ind];
-    const [score, first, second, sameFormat] = f;
-    let adjusted_score = -score;
-    if (!sameFormat) {
-        adjusted_score *= (100 - formattingDiscount) / 100;
-    }
-    adjusted_fixes.push([adjusted_score, first, second]);
+let output = {
+    'workbookName': inp['workbookName'],
+    'worksheets': []
 }
 
-let out = {
-    'suspiciousCells': suspicious_cells,
-    'groupedFormulas': grouped_formulas,
-    'groupedData': grouped_data,
-    'proposedFixes': adjusted_fixes
-};
+for (let i = 0; i < inp.worksheets.length; i++) {
+    const sheet = inp.worksheets[i];
 
-console.log(JSON.stringify(out, null, '\t'));
+    // Skip empty sheets.
+    if ((sheet.formulas.length === 0) && (sheet.values.length === 0)) {
+        continue;
+    }
+
+    const myTimer = new Timer('excelint');
+
+    // Get suspicious cells and proposed fixes, among others.
+    let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
+        = Colorize.process_suspicious(sheet.usedRangeAddress, sheet.formulas, sheet.values);
+
+    // Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
+    // NB: origin_col and origin_row currently hard-coded at 0,0.
+
+    proposed_fixes = Colorize.adjust_proposed_fixes(proposed_fixes, sheet.styles, 0, 0);
+
+    // Adjust the proposed fixes for real (just adjusting the scores downwards by the formatting discount).
+    let adjusted_fixes = [];
+    // tslint:disable-next-line: forin
+    for (let ind = 0; ind < proposed_fixes.length; ind++) {
+        const f = proposed_fixes[ind];
+        const [score, first, second, sameFormat] = f;
+        let adjusted_score = -score;
+        if (!sameFormat) {
+            adjusted_score *= (100 - formattingDiscount) / 100;
+        }
+        adjusted_fixes.push([adjusted_score, first, second]);
+    }
+
+    const elapsed = myTimer.elapsedTime();
+
+    const out = {
+        'sheetName': sheet.sheetName,
+        'suspiciousCells': suspicious_cells,
+        //        'groupedFormulas': grouped_formulas,
+        //        'groupedData': grouped_data,
+        'proposedFixes': adjusted_fixes,
+        'elapsedTimeSeconds': elapsed / 1e6
+    };
+
+    output.worksheets.push(out);
+}
+
+console.log(JSON.stringify(output, null, '\t'));

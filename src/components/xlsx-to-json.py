@@ -76,6 +76,7 @@ def process_sheet_styles(worksheet):
             v = ""
             if type(cell).__name__ != 'MergedCell':
                 v = str([vars(cell.font), vars(cell.fill), vars(cell.border)])
+                v = 'FIXME'
             r.append(v)
         processed.append(r)
     return processed
@@ -86,11 +87,11 @@ def process_workbook(fname):
     with open(fname, 'rb') as f:
         in_mem_file = io.BytesIO(f.read())
     workbook = openpyxl.load_workbook(in_mem_file, read_only=False)
-    if workbook.active is not None:
-        sheets = [workbook.active]
-    else:
-        sheets = workbook.worksheets
-    for worksheet in sheets:
+    output = {
+        "workbookName": fname,
+        "worksheets": []
+    }
+    for worksheet in workbook.worksheets:
         sheetname = worksheet.title
 
         # Extract formulas and numeric values.
@@ -101,20 +102,21 @@ def process_workbook(fname):
         styles = process_sheet_styles(worksheet)
 
         # Now get the sheet range info.
-        numRows = len(formulas)
-        numCols = len(formulas[0])
+        numRows = worksheet.max_row
+        numCols = worksheet.max_column
+
         lastColName = openpyxl.utils.cell.get_column_letter(numCols)
         sheetRange = sheetname + "!A1:" + lastColName + str(numRows)
 
-        output = {
-            "workbookName": fname,
+        output["worksheets"].append({
+            "sheetName": sheetname,
             "usedRangeAddress": sheetRange,
             "formulas": formulas,
             "values": values,
             "styles": styles
-        }
+        })
 
-        return output
+    return output
 
 
 # Process command line for file or directory.
