@@ -86,7 +86,6 @@ let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
 // NB: origin_col and origin_row currently hard-coded at 0,0.
 
 proposed_fixes = Colorize.adjust_proposed_fixes(proposed_fixes, inp.styles, 0, 0);
-console.log(proposed_fixes);
 
 // Adjust the proposed fixes for real (just adjusting the scores downwards by the formatting discount).
 let adjusted_fixes = [];

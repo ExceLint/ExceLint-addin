@@ -75,7 +75,6 @@ var _a = colorize_1.Colorize.process_suspicious(inp.usedRangeAddress, inp.formul
 // Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
 // NB: origin_col and origin_row currently hard-coded at 0,0.
 proposed_fixes = colorize_1.Colorize.adjust_proposed_fixes(proposed_fixes, inp.styles, 0, 0);
-console.log(proposed_fixes);
 // Adjust the proposed fixes for real (just adjusting the scores downwards by the formatting discount).
 var adjusted_fixes = [];
 // tslint:disable-next-line: forin
