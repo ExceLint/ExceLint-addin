@@ -690,6 +690,11 @@ var Colorize = /** @class */ (function () {
             // entropy, and two ranges:
             //    upper-left corner of range (column, row), lower-right corner of range (column, row)
             var score = fixes[k][0];
+            // Get rid of scores below 0.01.
+            if ((-score * 100) < 1) {
+                // console.log("trimmed " + (-score));
+                continue;
+            }
             // Sort the fixes.
             // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
             // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
