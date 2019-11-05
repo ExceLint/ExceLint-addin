@@ -154,6 +154,7 @@ def process_workbook(fname):
         "workbookName": fname,
         "worksheets": []
     }
+    trimmed = False
     for worksheet in workbook.worksheets:
         sheetname = worksheet.title
 
@@ -164,6 +165,7 @@ def process_workbook(fname):
         if numRows > 100 or numCols > 100:
             origRows = numRows
             origCols = numCols
+            trimmed = True
             # Big sheet.
             # Worth the effort to see if we can trim it.
             if numRows < numCols:
@@ -195,6 +197,10 @@ def process_workbook(fname):
             "values": values,
             "styles": styles
         })
+
+    # Save if trimmed
+    if trimmed:
+        workbook.save(fname)
 
     return output
 
