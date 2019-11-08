@@ -199,8 +199,8 @@ def process_workbook(fname):
         })
 
     # Save if trimmed
-    if trimmed:
-        workbook.save(fname)
+#    if trimmed:
+#        workbook.save(fname)
 
     return output
 

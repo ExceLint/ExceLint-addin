@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('fs');
+import { ExcelUtils } from './excelutils';
 
 const fname = 'annotations.json';
 const content = fs.readFileSync(fname);
@@ -22,10 +23,10 @@ for (let i = 0; i < inp.length; i++) {
 	};
     }
     if (inp[i]["BugKind"] in formulaErrors) {
-	// Add it.
-	// Convert address to column number, row number.
-	// FIXME
-	out[workbookName][sheetName]["bugs"].push(inp[i]["Address"]);
+	// Add it, converting to (row, col, ...) format.
+	const addr = inp[i]["Address"];
+	const cell_dep = ExcelUtils.cell_dependency(addr, 0, 0);
+	out[workbookName][sheetName]["bugs"].push(cell_dep);
 	out[workbookName][sheetName]["bugs"].sort();
     }
 }

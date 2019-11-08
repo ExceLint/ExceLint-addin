@@ -1,5 +1,7 @@
 'use strict';
+exports.__esModule = true;
 var fs = require('fs');
+var excelutils_1 = require("./excelutils");
 var fname = 'annotations.json';
 var content = fs.readFileSync(fname);
 var inp = JSON.parse(content);
@@ -19,8 +21,10 @@ for (var i = 0; i < inp.length; i++) {
         };
     }
     if (inp[i]["BugKind"] in formulaErrors) {
-        // Add it.
-        out[workbookName][sheetName]["bugs"].push(inp[i]["Address"]);
+        // Add it, converting to (row, col, ...) format.
+        var addr = inp[i]["Address"];
+        var cell_dep = excelutils_1.ExcelUtils.cell_dependency(addr, 0, 0);
+        out[workbookName][sheetName]["bugs"].push(cell_dep);
         out[workbookName][sheetName]["bugs"].sort();
     }
 }

@@ -4,8 +4,23 @@
 
 'use strict';
 let fs = require('fs');
+let path = require('path');
 import { Colorize } from './colorize';
 import { Timer } from './timer';
+
+type excelintVector = [number, number, number];
+
+function expand(first : excelintVector, second : excelintVector) : Array<excelintVector> {
+    const [fcol, frow] = first;
+    const [scol, srow] = second;
+    let expanded : Array<excelintVector> = [];
+    for (let i = fcol; i <= scol; i++) {
+	for (let j = frow; j <= srow; j++) {
+	    expanded.push([i, j, 0]);
+	}
+    }
+    return expanded;
+}
 
 // import { values } from '@uifabric/utilities';
 
@@ -85,8 +100,11 @@ if (useExample) {
     inp = JSON.parse(content);
 }
 
+let annotated_bugs = fs.readFileSync('annotations-processed.json');
+let bugs = JSON.parse(annotated_bugs);
+    
 let output = {
-    'workbookName': inp['workbookName'],
+    'workbookName': path.basename(inp['workbookName']),
     'worksheets': []
 }
 
@@ -133,7 +151,52 @@ for (let i = 0; i < inp.worksheets.length; i++) {
         'elapsedTimeSeconds': elapsed / 1e6
     };
 
-    output.worksheets.push(out);
+    // Compute precision and recall of proposed fixes, if we have annotated ground truth.
+    const workbookBasename = path.basename(inp['workbookName']);
+    if (workbookBasename in bugs) {
+	if (sheet.sheetName in bugs[workbookBasename]) {
+//	    console.log(JSON.stringify(bugs[workbookBasename][sheet.sheetName]));
+	    const trueBugs = bugs[workbookBasename][sheet.sheetName]["bugs"];
+	    const totalTrueBugs = trueBugs.length;
+	    // Build list of bugs.
+//	    console.log("proposed fixes = " + JSON.stringify(out["proposedFixes"]));
+	    let foundBugs : any = out["proposedFixes"].map(x => {
+		//		console.log("x = " + JSON.stringify(x));
+		if (x[0] > 0.6) { // threshold! FIXME
+		    return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
+		} else {
+		    return [];
+		}
+	    });
+	    foundBugs = foundBugs.flat(1);
+//	    console.log("true bugs = " + JSON.stringify(trueBugs));
+//	    console.log("found bugs = " + JSON.stringify(foundBugs));
+	    const trueBugsJSON = trueBugs.map(x => JSON.stringify(x));
+	    const foundBugsJSON = foundBugs.map(x => JSON.stringify(x));
+	    const truePositives = trueBugsJSON.filter(value => foundBugsJSON.includes(value)).map(x => JSON.parse(x));
+	    const falsePositives = foundBugsJSON.filter(value => !trueBugsJSON.includes(value)).map(x => JSON.parse(x));
+	    const falseNegatives = trueBugsJSON.filter(value => !foundBugsJSON.includes(value)).map(x => JSON.parse(x));
+	    if (foundBugs.length > 0) {
+//		console.log("true positives = " + JSON.stringify(truePositives));
+//		console.log("false positives = " + JSON.stringify(falsePositives));
+		const precision = truePositives.length / (truePositives.length + falsePositives.length);
+//		console.log("precision = " + precision);
+		out["precision"] = precision;
+	    }
+	    if (trueBugs.length > 0) {
+		const recall = truePositives.length / (falseNegatives.length + truePositives.length);
+//		console.log("recall = " + recall);
+		out["recall"] = recall;
+	    }
+//	    const totalFoundBugs = out["proposedFixes"].length; // FIXME NOT REALLY
+//	    console.log("total true bugs = " + totalTrueBugs + ", totalFound = " + totalFoundBugs);
+//	    console.log("DOH");
+	}
+
+	output.worksheets.push(out);
+	
+    }
+    
 }
 
 console.log(JSON.stringify(output, null, '\t'));
