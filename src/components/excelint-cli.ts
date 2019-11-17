@@ -105,7 +105,7 @@ let bugs = JSON.parse(annotated_bugs);
     
 let output = {
     'workbookName': path.basename(inp['workbookName']),
-    'worksheets': []
+    'worksheets' : {}
 }
 
 for (let i = 0; i < inp.worksheets.length; i++) {
@@ -143,7 +143,7 @@ for (let i = 0; i < inp.worksheets.length; i++) {
     const elapsed = myTimer.elapsedTime();
 
     const out = {
-        'sheetName': sheet.sheetName,
+        // 'sheetName': sheet.sheetName,
         //        'suspiciousCells': suspicious_cells,
         //        'groupedFormulas': grouped_formulas,
         //        'groupedData': grouped_data,
@@ -162,7 +162,7 @@ for (let i = 0; i < inp.worksheets.length; i++) {
 //	    console.log("proposed fixes = " + JSON.stringify(out["proposedFixes"]));
 	    let foundBugs : any = out["proposedFixes"].map(x => {
 		//		console.log("x = " + JSON.stringify(x));
-		if (x[0] > 0.6) { // threshold! FIXME
+		if (x[0] > 0.20) { // threshold! FIXME
 		    return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
 		} else {
 		    return [];
@@ -193,9 +193,9 @@ for (let i = 0; i < inp.worksheets.length; i++) {
 //	    console.log("DOH");
 	}
 
-	output.worksheets.push(out);
-	
     }
+
+    output.worksheets[sheet.sheetName] = out;
     
 }
 

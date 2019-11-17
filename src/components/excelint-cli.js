@@ -92,7 +92,7 @@ var annotated_bugs = fs.readFileSync('annotations-processed.json');
 var bugs = JSON.parse(annotated_bugs);
 var output = {
     'workbookName': path.basename(inp['workbookName']),
-    'worksheets': []
+    'worksheets': {}
 };
 var _loop_1 = function (i) {
     var sheet = inp.worksheets[i];
@@ -120,7 +120,7 @@ var _loop_1 = function (i) {
     }
     var elapsed = myTimer.elapsedTime();
     var out = {
-        'sheetName': sheet.sheetName,
+        // 'sheetName': sheet.sheetName,
         //        'suspiciousCells': suspicious_cells,
         //        'groupedFormulas': grouped_formulas,
         //        'groupedData': grouped_data,
@@ -138,7 +138,7 @@ var _loop_1 = function (i) {
             //	    console.log("proposed fixes = " + JSON.stringify(out["proposedFixes"]));
             var foundBugs = out["proposedFixes"].map(function (x) {
                 //		console.log("x = " + JSON.stringify(x));
-                if (x[0] > 0.6) { // threshold! FIXME
+                if (x[0] > 0.20) { // threshold! FIXME
                     return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
                 }
                 else {
@@ -169,8 +169,8 @@ var _loop_1 = function (i) {
             //	    console.log("total true bugs = " + totalTrueBugs + ", totalFound = " + totalFoundBugs);
             //	    console.log("DOH");
         }
-        output.worksheets.push(out);
     }
+    output.worksheets[sheet.sheetName] = out;
 };
 for (var i = 0; i < inp.worksheets.length; i++) {
     _loop_1(i);
