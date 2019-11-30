@@ -67,7 +67,7 @@ def stencil_computation(arr, operator, base):
     new_arr = [[0 for c in range(0,ncols)] for r in range(0,nrows)]
     # Define stencils by their coordinates (x offset, y offset).
     stencil = [(-1,-1), (-1,0), (-1,1), (0,-1), (0, 0), (0,1), (1,-1), (1,0), (1,1)]
-
+    
     # Define boundary condition stencils by clipping the stencil at
     # the boundaries (edges and then corners).
     # NOTE: we REFLECT the stencil here so it is always the same size.
@@ -185,7 +185,24 @@ def primal_matrix(mat):
         ret_mat.append(ret_array)
     return ret_mat
 
-print(primal_array([1,2,3,4,5,1,2,3,4,5,1]))
+
+"""Substitute each MATRIX entry with a (fixed) 'one-hot' number."""
+def onehot_matrix(mat):
+    onehot_array = {}
+    nth = 0
+    ret_mat = []
+    for arr in mat:
+        ret_array = []
+        for i in arr:
+            if i not in onehot_array:
+                onehot = 1 << nth
+                onehot_array[i] = onehot
+                nth += 1
+            ret_array += [onehot_array[i]]
+        ret_mat.append(ret_array)
+    return ret_mat
+
+# print(primal_array([1,2,3,4,5,1,2,3,4,5,1]))
 
 def plus(x,y):
     return x+y
@@ -203,17 +220,28 @@ from collections import Counter
 
 # Use one-hot encoding.
 
-arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,2,1,1],[1,1,1,1,1]]
-print(arr)
+# arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+#arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
+arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
+
+usePrimeEncoding = True # False
+useOneHotEncoding = False
 
 # Use n-th prime encoding.
 
-#arr = [[1,2,2,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,3,1,1],[1,1,1,1,1]]
-prime_encoding = primal_matrix(arr)
-arr = prime_encoding
-print("prime encoding = " + str(arr))
+if usePrimeEncoding:
+    #arr = [[1,2,2,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,3,1,1],[1,1,1,1,1]]
+    prime_encoding = primal_matrix(arr)
+    arr = prime_encoding
+    print("prime encoding = " + str(arr))
+    arr = stencil_computation(arr, times, 1)
 
-arr = stencil_computation(arr, times, 1)
+if useOneHotEncoding:
+    arr = onehot_matrix(arr)
+    print("onehot = " + str(arr))
+    arr = stencil_computation(arr, bitor, 0)
+
+    
 # arr = stencil_computation(arr, bitor, 0)
 # arr = stencil_computation(arr, plus, 0)
 z=arr
