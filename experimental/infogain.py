@@ -136,14 +136,12 @@ def nthprime(n):
     # Use a memorized table.
     if n in primes:
         return primes[n]
-    if n == 0:
+    if n == 0 or n == 1:
         primes[0] = 2
-        return 2
-    if n == 1:
         primes[1] = 3
-        return 3
-    curr_prime = primes[len(primes)-1]
-    for i in range(len(primes)-1, n+1):
+        return primes[n]
+    for i in range(len(primes), n+1):
+        curr_prime = primes[i-1]
         # Find the next prime number and record it.
         summand = 2
         while not isprime(summand + curr_prime):
@@ -168,7 +166,6 @@ def primal_array(arr):
             prime = nthprime(nth)
             nth += 1
             prime_array[i] = prime
-            print("prime_array = " + str(prime_array))
         ret_array += [prime_array[i]]
     return ret_array
 
@@ -180,11 +177,10 @@ def primal_matrix(mat):
     for arr in mat:
         ret_array = []
         for i in arr:
-            print("i = " + str(i))
             if i not in prime_array:
                 prime = nthprime(nth)
-                nth += 1
                 prime_array[i] = prime
+                nth += 1
             ret_array += [prime_array[i]]
         ret_mat.append(ret_array)
     return ret_mat
@@ -207,16 +203,17 @@ from collections import Counter
 
 # Use one-hot encoding.
 
-arr = [[1,1,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,2,1,1],[1,1,1,1,1]]
+arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,2,1,1],[1,1,1,1,1]]
 print(arr)
 
 # Use n-th prime encoding.
 
-arr = [[1,2,2,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,3,1,1],[1,1,1,1,1]]
+#arr = [[1,2,2,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,3,1,1],[1,1,1,1,1]]
 prime_encoding = primal_matrix(arr)
-print("prime encoding = " + str(prime_encoding))
+arr = prime_encoding
+print("prime encoding = " + str(arr))
 
-arr = stencil_computation(prime_encoding, times, 1)
+arr = stencil_computation(arr, times, 1)
 # arr = stencil_computation(arr, bitor, 0)
 # arr = stencil_computation(arr, plus, 0)
 z=arr
