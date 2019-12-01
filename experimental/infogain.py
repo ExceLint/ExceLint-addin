@@ -57,7 +57,7 @@ def apply_stencil(stencil, arr, i, j, base, operator):
         # actually the row (y-coord) and the second is the column
         # (x-coord).
         v = operator(v, arr[i + y][j + x])
-    return v
+    return v # (v / len(stencil)) # FIXME?
     
 def stencil_computation(arr, operator, base):
     # Array is 2D
@@ -66,36 +66,37 @@ def stencil_computation(arr, operator, base):
     # Make a new array of zeroes of the same size.
     new_arr = [[0 for c in range(0,ncols)] for r in range(0,nrows)]
     # Define stencils by their coordinates (x offset, y offset).
-    stencil = [(-1,-1), (-1,0), (-1,1), (0,-1), (0, 0), (0,1), (1,-1), (1,0), (1,1)]
+    # nine-point stencil
+    # stencil = [(-1,-1), (-1,0), (-1,1), (0,-1), (0, 0), (0,1), (1,-1), (1,0), (1,1)]
+
+    # cross stencil (five-points)
+    stencil = [(-1,0), (0,-1), (0, 0), (1,0), (0,1)]
     
     # Define boundary condition stencils by clipping the stencil at
     # the boundaries (edges and then corners).
     # NOTE: we REFLECT the stencil here so it is always the same size.
 
-    # stencil_right    = [(x,y) for (x,y) in stencil if x <= 0]
-    stencil_right    = [(x,y) for (x,y) in stencil if x <= 0] + [(-x,y) for (x,y) in stencil if x > 0]
+    reflectStencils = False # True
     
-    # stencil_left     = [(x,y) for (x,y) in stencil if x >= 0]
-    stencil_left     = [(x,y) for (x,y) in stencil if x >= 0] + [(-x,y) for (x,y) in stencil if x < 0]
-    
-    # stencil_top      = [(x,y) for (x,y) in stencil if y >= 0]
-    stencil_top      = [(x,y) for (x,y) in stencil if y >= 0] + [(x,-y) for (x,y) in stencil if y < 0]
-    
-    # stencil_bottom   = [(x,y) for (x,y) in stencil if y <= 0]
-    stencil_bottom   = [(x,y) for (x,y) in stencil if y <= 0] + [(x,-y) for (x,y) in stencil if y > 0]
-    
-    # stencil_topleft  = [(x,y) for (x,y) in stencil_top if x >= 0]
-    stencil_topleft  = [(x,y) for (x,y) in stencil_top if x >= 0] + [(-x,y) for (x,y) in stencil_top if x < 0]
-    
-    # stencil_topright = [(x,y) for (x,y) in stencil_top if x <= 0]
-    stencil_topright = [(x,y) for (x,y) in stencil_top if x <= 0] + [(-x,y) for (x,y) in stencil_top if x > 0]
-    
-    # stencil_bottomleft  = [(x,y) for (x,y) in stencil_bottom if x >= 0]
-    stencil_bottomleft  = [(x,y) for (x,y) in stencil_bottom if x >= 0] + [(-x,y) for (x,y) in stencil_bottom if x < 0]
-    
-    # stencil_bottomright = [(x,y) for (x,y) in stencil_bottom if x <= 0]
-    stencil_bottomright = [(x,y) for (x,y) in stencil_bottom if x <= 0] + [(-x,y) for (x,y) in stencil_bottom if x > 0]
-    
+    stencil_right    = [(x,y) for (x,y) in stencil if x <= 0] # + [(-x,y) for (x,y) in stencil if x > 0]
+    stencil_left     = [(x,y) for (x,y) in stencil if x >= 0] # + [(-x,y) for (x,y) in stencil if x < 0]
+    stencil_top      = [(x,y) for (x,y) in stencil if y >= 0] # + [(x,-y) for (x,y) in stencil if y < 0]
+    stencil_bottom   = [(x,y) for (x,y) in stencil if y <= 0] # + [(x,-y) for (x,y) in stencil if y > 0]
+    stencil_topleft  = [(x,y) for (x,y) in stencil_top if x >= 0] # + [(-x,y) for (x,y) in stencil_top if x < 0]
+    stencil_topright = [(x,y) for (x,y) in stencil_top if x <= 0] # + [(-x,y) for (x,y) in stencil_top if x > 0]
+    stencil_bottomleft  = [(x,y) for (x,y) in stencil_bottom if x >= 0] # + [(-x,y) for (x,y) in stencil_bottom if x < 0]
+    stencil_bottomright = [(x,y) for (x,y) in stencil_bottom if x <= 0] # + [(-x,y) for (x,y) in stencil_bottom if x > 0]
+
+    if reflectStencils:
+        stencil_right    += [(-x,y) for (x,y) in stencil if x > 0]
+        stencil_left     += [(-x,y) for (x,y) in stencil if x < 0]
+        stencil_top      += [(x,-y) for (x,y) in stencil if y < 0]
+        stencil_bottom   += [(x,-y) for (x,y) in stencil if y > 0]
+        stencil_topleft  += [(-x,y) for (x,y) in stencil_top if x < 0]
+        stencil_topright += [(-x,y) for (x,y) in stencil_top if x > 0]
+        stencil_bottomleft  += [(-x,y) for (x,y) in stencil_bottom if x < 0]
+        stencil_bottomright += [(-x,y) for (x,y) in stencil_bottom if x > 0]
+
     # Interior
     for i in range(1,ncols-1):
         for j in range(1,nrows-1):
@@ -222,10 +223,12 @@ from collections import Counter
 
 # arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
 #arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
-arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
+arr = [[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
 
-usePrimeEncoding = True # False
-useOneHotEncoding = False
+usePrimeEncoding = False
+useOneHotEncoding = True
+
+assert usePrimeEncoding ^ useOneHotEncoding, "Exactly one encoding should be used."
 
 # Use n-th prime encoding.
 
