@@ -57,7 +57,7 @@ def apply_stencil(stencil, arr, i, j, base, operator):
         # actually the row (y-coord) and the second is the column
         # (x-coord).
         v = operator(v, arr[i + y][j + x])
-    return v # (v / len(stencil)) # FIXME?
+    return (v / len(stencil)) # FIXME?
     
 def stencil_computation(arr, operator, base):
     # Array is 2D
@@ -66,18 +66,33 @@ def stencil_computation(arr, operator, base):
     # Make a new array of zeroes of the same size.
     new_arr = [[0 for c in range(0,ncols)] for r in range(0,nrows)]
     # Define stencils by their coordinates (x offset, y offset).
-    # nine-point stencil
-    # stencil = [(-1,-1), (-1,0), (-1,1), (0,-1), (0, 0), (0,1), (1,-1), (1,0), (1,1)]
 
-    # cross stencil (five-points)
-    stencil = [(-1,0), (0,-1), (0, 0), (1,0), (0,1)]
+    useNinePointStencil = False
+    useEightPointStencil = True
+    useFivePointStencil = False
+    useOnePointStencil = False
+
+    reflectStencils = False # True # False # True
+
+    assert useNinePointStencil ^ useEightPointStencil ^ useFivePointStencil ^ useOnePointStencil, "Exactly one stencil choice should be used."
+    
+    if useNinePointStencil:
+        stencil = [(-1,-1), (-1,0), (-1,1), (0,-1), (0, 0), (0,1), (1,-1), (1,0), (1,1)]
+
+    if useEightPointStencil:
+        stencil = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
+        
+    if useFivePointStencil:
+        # cross stencil (five-points)
+        stencil = [(-1,0), (0,-1), (0, 0), (1,0), (0,1)]
+
+    if useOnePointStencil:
+        stencil = [(0,0)]
     
     # Define boundary condition stencils by clipping the stencil at
     # the boundaries (edges and then corners).
     # NOTE: we REFLECT the stencil here so it is always the same size.
 
-    reflectStencils = False # True
-    
     stencil_right    = [(x,y) for (x,y) in stencil if x <= 0] # + [(-x,y) for (x,y) in stencil if x > 0]
     stencil_left     = [(x,y) for (x,y) in stencil if x >= 0] # + [(-x,y) for (x,y) in stencil if x < 0]
     stencil_top      = [(x,y) for (x,y) in stencil if y >= 0] # + [(x,-y) for (x,y) in stencil if y < 0]
@@ -222,11 +237,14 @@ from collections import Counter
 # Use one-hot encoding.
 
 # arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
-#arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
-arr = [[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
+#arr = [[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+#arr = [[1,2,3,4,1],[1,2,8,3,1],[4,5,3,2,4],[5,2,3,4,1],[1,3,4,2,1]]
+#arr = [[1,2,2,2,2],[2,2,8,2,2],[2,2,2,2,4],[2,2,2,1,1],[2,2,2,2,1]]
+#arr = [[1,4,4,2,3],[5,6,7,100,9],[10,11,12,13,14],[15,16,8,17,18],[19,20,21,22,23]]
 
-usePrimeEncoding = False
-useOneHotEncoding = True
+usePrimeEncoding =  True # False
+useOneHotEncoding = False
 
 assert usePrimeEncoding ^ useOneHotEncoding, "Exactly one encoding should be used."
 
