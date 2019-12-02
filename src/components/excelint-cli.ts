@@ -27,12 +27,25 @@ function expand(first : excelintVector, second : excelintVector) : Array<excelin
 // Set to true to use the hard-coded example below.
 const useExample = false;
 
+const usageString = 'Usage: $0 <command> [options]';
+
+const defaultFormattingDiscount = Colorize.getFormattingDiscount();
+const defaultReportingThreshold = Colorize.getReportingThreshold();
+
 // Process command-line arguments.
-const args = require('yargs').argv;
+const args = require('yargs')
+    .usage(usageString)
+    .command('input', 'Input from FILENAME (.json file).')
+    .alias('i','input')
+    .nargs('input',1)
+    .demandOption(['i'])
+    .command('formattingDiscount', 'Set discount for formatting differences (default = ' + defaultFormattingDiscount + ').')
+    .command('reportingThreshold', 'Set the threshold % for reporting suspicious formulas (default = ' + defaultReportingThreshold + ').')
+    .help('h')
+    .alias('h','help')
+    .argv;
 
 if (args.help) {
-    console.log('--input FILENAME             Input from FILENAME (.json file).');
-    console.log('--formattingDiscount DISC    Set discount for formatting differences (default = 0).');
     process.exit(0);
 }
 
@@ -45,7 +58,7 @@ if (args.input) {
 
 // argument:
 // formattingDiscount = amount of impact of formatting on fix reporting (0-100%).
-let formattingDiscount = 0;
+let formattingDiscount = defaultFormattingDiscount;
 if (args.formattingDiscount) {
     formattingDiscount = args.formattingDiscount;
 }
@@ -57,6 +70,23 @@ if (formattingDiscount > 100) {
     formattingDiscount = 100;
 }
 Colorize.setFormattingDiscount(formattingDiscount);
+
+
+
+// As above, but for reporting threshold.
+let reportingThreshold = defaultReportingThreshold;
+if (args.reportingThreshold) {
+    reportingThreshold = args.reportingThreshold;
+}
+// Ensure formatting discount is within range (0-100, inclusive).
+if (reportingThreshold < 0) {
+    reportingThreshold = 0;
+}
+if (reportingThreshold > 100) {
+    reportingThreshold = 100;
+}
+Colorize.setReportingThreshold(reportingThreshold);
+
 
 //
 // Ready to start processing.
@@ -137,7 +167,9 @@ for (let i = 0; i < inp.worksheets.length; i++) {
         if (!sameFormat) {
             adjusted_score *= (100 - formattingDiscount) / 100;
         }
-        adjusted_fixes.push([adjusted_score, first, second]);
+	if (adjusted_score * 100 >= reportingThreshold) {
+            adjusted_fixes.push([adjusted_score, first, second]);
+	}
     }
 
     const elapsed = myTimer.elapsedTime();

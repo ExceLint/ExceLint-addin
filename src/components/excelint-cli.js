@@ -21,11 +21,22 @@ function expand(first, second) {
 // import { values } from '@uifabric/utilities';
 // Set to true to use the hard-coded example below.
 var useExample = false;
+var usageString = 'Usage: $0 <command> [options]';
+var defaultFormattingDiscount = colorize_1.Colorize.getFormattingDiscount();
+var defaultReportingThreshold = colorize_1.Colorize.getReportingThreshold();
 // Process command-line arguments.
-var args = require('yargs').argv;
+var args = require('yargs')
+    .usage(usageString)
+    .command('input', 'Input from FILENAME (.json file).')
+    .alias('i', 'input')
+    .nargs('input', 1)
+    .demandOption(['i'])
+    .command('formattingDiscount', 'Set discount for formatting differences (default = ' + defaultFormattingDiscount + ').')
+    .command('reportingThreshold', 'Set the threshold % for reporting suspicious formulas (default = ' + defaultReportingThreshold + ').')
+    .help('h')
+    .alias('h', 'help')
+    .argv;
 if (args.help) {
-    console.log('--input FILENAME             Input from FILENAME (.json file).');
-    console.log('--formattingDiscount DISC    Set discount for formatting differences (default = 0).');
     process.exit(0);
 }
 // argument:
@@ -36,7 +47,7 @@ if (args.input) {
 }
 // argument:
 // formattingDiscount = amount of impact of formatting on fix reporting (0-100%).
-var formattingDiscount = 0;
+var formattingDiscount = defaultFormattingDiscount;
 if (args.formattingDiscount) {
     formattingDiscount = args.formattingDiscount;
 }
@@ -48,6 +59,19 @@ if (formattingDiscount > 100) {
     formattingDiscount = 100;
 }
 colorize_1.Colorize.setFormattingDiscount(formattingDiscount);
+// As above, but for reporting threshold.
+var reportingThreshold = defaultReportingThreshold;
+if (args.reportingThreshold) {
+    reportingThreshold = args.reportingThreshold;
+}
+// Ensure formatting discount is within range (0-100, inclusive).
+if (reportingThreshold < 0) {
+    reportingThreshold = 0;
+}
+if (reportingThreshold > 100) {
+    reportingThreshold = 100;
+}
+colorize_1.Colorize.setReportingThreshold(reportingThreshold);
 //
 // Ready to start processing.
 //
@@ -116,7 +140,9 @@ var _loop_1 = function (i) {
         if (!sameFormat) {
             adjusted_score *= (100 - formattingDiscount) / 100;
         }
-        adjusted_fixes.push([adjusted_score, first, second]);
+        if (adjusted_score * 100 >= reportingThreshold) {
+            adjusted_fixes.push([adjusted_score, first, second]);
+        }
     }
     var elapsed = myTimer.elapsedTime();
     var out = {
