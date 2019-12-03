@@ -41,6 +41,8 @@ const args = require('yargs')
     .alias('d', 'directory')
     .command('formattingDiscount', 'Set discount for formatting differences (default = ' + defaultFormattingDiscount + ').')
     .command('reportingThreshold', 'Set the threshold % for reporting suspicious formulas (default = ' + defaultReportingThreshold + ').')
+    .command('suppressOutput', 'Don\'t output the processed JSON input to stdout.')
+    .command('sweep', 'Perform a parameter sweep and report the best settings overall.')
     .help('h')
     .alias('h', 'help')
     .argv;
@@ -137,103 +139,135 @@ if (useExample) {
 let annotated_bugs = fs.readFileSync('annotations-processed.json');
 let bugs = JSON.parse(annotated_bugs);
 
-console.log('yo yo yp');
-
 let base = '';
 if (args.directory) {
     base = args.directory + '/';
 }
 
-for (let fname of allFiles) {
-    console.log('fname = ' + fname);
-    // Read from file.
-    let content = fs.readFileSync(base + fname);
-    inp = JSON.parse(content);
-
-    let output = {
-        'workbookName': path.basename(inp['workbookName']),
-        'worksheets': {}
-    };
-
-    for (let i = 0; i < inp.worksheets.length; i++) {
-        const sheet = inp.worksheets[i];
-
-        // Skip empty sheets.
-        if ((sheet.formulas.length === 0) && (sheet.values.length === 0)) {
-            continue;
+let parameters = [[formattingDiscount, reportingThreshold]];
+if (args.sweep) {
+    const step = 10;
+    for (let i = 0; i <= 100; i += step) {
+        for (let j = 0; j <= 100; j += step) {
+            parameters.push([i, j]);
         }
+    }
+}
 
-        const myTimer = new Timer('excelint');
+let f1scores = [];
 
-        // Get suspicious cells and proposed fixes, among others.
-        let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
-            = Colorize.process_suspicious(sheet.usedRangeAddress, sheet.formulas, sheet.values);
+for (let parms of parameters) {
+    formattingDiscount = parms[0];
+    Colorize.setFormattingDiscount(formattingDiscount);
+    reportingThreshold = parms[1];
+    Colorize.setReportingThreshold(reportingThreshold);
 
-        // Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
-        // NB: origin_col and origin_row currently hard-coded at 0,0.
+    let scores = [];
 
-        proposed_fixes = Colorize.adjust_proposed_fixes(proposed_fixes, sheet.styles, 0, 0);
+    for (let fname of allFiles) {
+        console.log('fname = ' + fname);
+        // Read from file.
+        let content = fs.readFileSync(base + fname);
+        inp = JSON.parse(content);
 
-        // Adjust the proposed fixes for real (just adjusting the scores downwards by the formatting discount).
-        let adjusted_fixes = [];
-        // tslint:disable-next-line: forin
-        for (let ind = 0; ind < proposed_fixes.length; ind++) {
-            const f = proposed_fixes[ind];
-            const [score, first, second, sameFormat] = f;
-            let adjusted_score = -score;
-            if (!sameFormat) {
-                adjusted_score *= (100 - formattingDiscount) / 100;
-            }
-            if (adjusted_score * 100 >= reportingThreshold) {
-                adjusted_fixes.push([adjusted_score, first, second]);
-            }
-        }
-
-        const elapsed = myTimer.elapsedTime();
-
-        const out = {
-            // 'sheetName': sheet.sheetName,
-            //        'suspiciousCells': suspicious_cells,
-            //        'groupedFormulas': grouped_formulas,
-            //        'groupedData': grouped_data,
-            'proposedFixes': adjusted_fixes,
-            'elapsedTimeSeconds': elapsed / 1e6
+        let output = {
+            'workbookName': path.basename(inp['workbookName']),
+            'worksheets': {}
         };
 
-        // Compute precision and recall of proposed fixes, if we have annotated ground truth.
-        const workbookBasename = path.basename(inp['workbookName']);
-        if (workbookBasename in bugs) {
-            if (sheet.sheetName in bugs[workbookBasename]) {
-                const trueBugs = bugs[workbookBasename][sheet.sheetName]['bugs'];
-                const totalTrueBugs = trueBugs.length;
-                // Build list of bugs.
-                let foundBugs: any = out['proposedFixes'].map(x => {
-                    if (x[0] >= (reportingThreshold / 100)) {
-                        return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
-                    } else {
-                        return [];
-                    }
-                });
-                foundBugs = foundBugs.flat(1);
-                const trueBugsJSON = trueBugs.map(x => JSON.stringify(x));
-                const foundBugsJSON = foundBugs.map(x => JSON.stringify(x));
-                const truePositives = trueBugsJSON.filter(value => foundBugsJSON.includes(value)).map(x => JSON.parse(x));
-                const falsePositives = foundBugsJSON.filter(value => !trueBugsJSON.includes(value)).map(x => JSON.parse(x));
-                const falseNegatives = trueBugsJSON.filter(value => !foundBugsJSON.includes(value)).map(x => JSON.parse(x));
-                if (foundBugs.length > 0) {
-                    const precision = truePositives.length / (truePositives.length + falsePositives.length);
-                    out['precision'] = precision;
+        for (let i = 0; i < inp.worksheets.length; i++) {
+            const sheet = inp.worksheets[i];
+
+            // Skip empty sheets.
+            if ((sheet.formulas.length === 0) && (sheet.values.length === 0)) {
+                continue;
+            }
+
+            const myTimer = new Timer('excelint');
+
+            // Get suspicious cells and proposed fixes, among others.
+            let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
+                = Colorize.process_suspicious(sheet.usedRangeAddress, sheet.formulas, sheet.values);
+
+            // Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
+            // NB: origin_col and origin_row currently hard-coded at 0,0.
+
+            proposed_fixes = Colorize.adjust_proposed_fixes(proposed_fixes, sheet.styles, 0, 0);
+
+            // Adjust the proposed fixes for real (just adjusting the scores downwards by the formatting discount).
+            let adjusted_fixes = [];
+            // tslint:disable-next-line: forin
+            for (let ind = 0; ind < proposed_fixes.length; ind++) {
+                const f = proposed_fixes[ind];
+                const [score, first, second, sameFormat] = f;
+                let adjusted_score = -score;
+                if (!sameFormat) {
+                    adjusted_score *= (100 - formattingDiscount) / 100;
                 }
-                if (trueBugs.length > 0) {
-                    const recall = truePositives.length / (falseNegatives.length + truePositives.length);
-                    out['recall'] = recall;
+                if (adjusted_score * 100 >= reportingThreshold) {
+                    adjusted_fixes.push([adjusted_score, first, second]);
                 }
             }
 
+            const elapsed = myTimer.elapsedTime();
+
+            const out = {
+                // 'sheetName': sheet.sheetName,
+                //        'suspiciousCells': suspicious_cells,
+                //        'groupedFormulas': grouped_formulas,
+                //        'groupedData': grouped_data,
+                'proposedFixes': adjusted_fixes,
+                'elapsedTimeSeconds': elapsed / 1e6
+            };
+
+            // Compute precision and recall of proposed fixes, if we have annotated ground truth.
+            const workbookBasename = path.basename(inp['workbookName']);
+            if (workbookBasename in bugs) {
+                if (sheet.sheetName in bugs[workbookBasename]) {
+                    const trueBugs = bugs[workbookBasename][sheet.sheetName]['bugs'];
+                    const totalTrueBugs = trueBugs.length;
+                    // Build list of bugs.
+                    let foundBugs: any = out['proposedFixes'].map(x => {
+                        if (x[0] >= (reportingThreshold / 100)) {
+                            return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
+                        } else {
+                            return [];
+                        }
+                    });
+                    foundBugs = foundBugs.flat(1);
+                    const trueBugsJSON = trueBugs.map(x => JSON.stringify(x));
+                    const foundBugsJSON = foundBugs.map(x => JSON.stringify(x));
+                    const truePositives = trueBugsJSON.filter(value => foundBugsJSON.includes(value)).map(x => JSON.parse(x));
+                    const falsePositives = foundBugsJSON.filter(value => !trueBugsJSON.includes(value)).map(x => JSON.parse(x));
+                    const falseNegatives = trueBugsJSON.filter(value => !foundBugsJSON.includes(value)).map(x => JSON.parse(x));
+                    let precision = 0;
+                    let recall = 0;
+                    if (foundBugs.length > 0) {
+                        precision = truePositives.length / (truePositives.length + falsePositives.length);
+                        out['precision'] = precision;
+                    }
+                    if (trueBugs.length > 0) {
+                        recall = truePositives.length / (falseNegatives.length + truePositives.length);
+                        out['recall'] = recall;
+                    }
+                    if (precision + recall > 0) {
+                        // F1 score: https://en.wikipedia.org/wiki/F1_score
+                        const f1score = (2 * precision * recall) / (precision + recall);
+                        scores.push(f1score);
+                    }
+                }
+            }
+            output.worksheets[sheet.sheetName] = out;
         }
-
-        output.worksheets[sheet.sheetName] = out;
-
+        if (!args.suppressOutput) {
+            console.log(JSON.stringify(output, null, '\t'));
+        }
     }
-    console.log(JSON.stringify(output, null, '\t'));
+    let averageScores = 0;
+    if (scores.length > 0) {
+        averageScores = scores.reduce((a, b) => a + b, 0) / scores.length;
+    }
+    f1scores.push([formattingDiscount, reportingThreshold, averageScores]);
 }
+f1scores.sort((a, b) => { if (a[2] < b[2]) { return -1; }; if (a[2] > b[2]) { return 1; } return 0; });
+console.log(JSON.stringify(f1scores));
