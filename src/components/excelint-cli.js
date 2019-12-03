@@ -58,7 +58,7 @@ if (args.input) {
 // argument:
 // formattingDiscount = amount of impact of formatting on fix reporting (0-100%).
 var formattingDiscount = defaultFormattingDiscount;
-if (args.formattingDiscount) {
+if ('formattingDiscount' in args) {
     formattingDiscount = args.formattingDiscount;
 }
 // Ensure formatting discount is within range (0-100, inclusive).
@@ -71,7 +71,7 @@ if (formattingDiscount > 100) {
 colorize_1.Colorize.setFormattingDiscount(formattingDiscount);
 // As above, but for reporting threshold.
 var reportingThreshold = defaultReportingThreshold;
-if (args.reportingThreshold) {
+if ('reportingThreshold' in args) {
     reportingThreshold = args.reportingThreshold;
 }
 // Ensure formatting discount is within range (0-100, inclusive).
@@ -123,7 +123,7 @@ var base = '';
 if (args.directory) {
     base = args.directory + '/';
 }
-var parameters = [[formattingDiscount, reportingThreshold]];
+var parameters = [];
 if (args.sweep) {
     var step = 10;
     for (var i = 0; i <= 100; i += step) {
@@ -131,6 +131,9 @@ if (args.sweep) {
             parameters.push([i, j]);
         }
     }
+}
+else {
+    parameters = [[formattingDiscount, reportingThreshold]];
 }
 var f1scores = [];
 for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
@@ -243,4 +246,15 @@ f1scores.sort(function (a, b) { if (a[2] < b[2]) {
 } ; if (a[2] > b[2]) {
     return 1;
 } return 0; });
+// Now find the lowest threshold with the highest F1 score.
+var maxScore = f1scores.reduce(function (a, b) { if (a[2] > b[2]) {
+    return a[2];
+}
+else {
+    return b[2];
+} });
+console.log('maxScore = ' + maxScore);
+// Find the first one with the max.
+var firstMax = f1scores.find(function (item) { return item[2] === maxScore; });
+console.log('first max = ' + firstMax);
 console.log(JSON.stringify(f1scores));
