@@ -85,6 +85,7 @@ class Stencil:
 
     reflectStencils = True  # False
 
+    @staticmethod
     def apply_stencil(stencil, arr, i, j, base, operator):
         v = base
         for (x,y) in stencil:
@@ -94,6 +95,7 @@ class Stencil:
             v = operator(v, arr[i + y][j + x])
         return v # (v / len(stencil)) # FIXME?
         
+    @staticmethod
     def stencil_computation(arr, operator, base):
         # Array is 2D
         nrows = len(arr)
