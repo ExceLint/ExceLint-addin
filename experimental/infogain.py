@@ -1,15 +1,12 @@
 import math
 
 def normalized_entropy(counts):
-    if len(counts) <= 1:
-        return 0
-    total = 0
-    for i in range(0,len(counts)):
-        total += counts[i]
+    total = sum(counts)
     entropy = 0
     for i in range(0,len(counts)):
         freq = counts[i] / total
-        entropy += -freq * math.log2(freq)
+        if freq != 0:
+            entropy -= freq * math.log2(freq)
     return entropy / math.log2(total)
 
 
@@ -37,6 +34,13 @@ import random
 
 # compute odds that a randomly chosen item will NOT be as rare or rarer than the item at the given index
 def salience(counts, index):
+    total = sum(counts)
+    p_index = counts[index] / total
+    salience = (1 - p_index) * (1-normalized_entropy(counts))
+    print("salience of " + str(counts[index]) + " in " + str(counts) + " = " + str(salience))
+    return salience
+
+    print("normalized entropy = " + str(normalized_entropy(counts)))
     # Compute:
     #   numerator   = total number of counts <= counts[index].
     #   denominator = total of all counts.
@@ -50,14 +54,14 @@ def salience(counts, index):
 
 
 def apply_stencil(stencil, arr, i, j, base, operator):
-#    print(len(stencil))
+    print(len(stencil))
     v = base
     for (x,y) in stencil:
         # Transform x and y here, since the first coordinate is
         # actually the row (y-coord) and the second is the column
         # (x-coord).
         v = operator(v, arr[i + y][j + x])
-    return (v / len(stencil)) # FIXME?
+    return v # (v / len(stencil)) # FIXME?
     
 def stencil_computation(arr, operator, base):
     # Array is 2D
@@ -68,11 +72,11 @@ def stencil_computation(arr, operator, base):
     # Define stencils by their coordinates (x offset, y offset).
 
     useNinePointStencil = False
-    useEightPointStencil = True
-    useFivePointStencil = False
+    useEightPointStencil = False
+    useFivePointStencil = True
     useOnePointStencil = False
 
-    reflectStencils = False # True # False # True
+    reflectStencils = True # False # True
 
     assert useNinePointStencil ^ useEightPointStencil ^ useFivePointStencil ^ useOnePointStencil, "Exactly one stencil choice should be used."
     
@@ -91,7 +95,7 @@ def stencil_computation(arr, operator, base):
     
     # Define boundary condition stencils by clipping the stencil at
     # the boundaries (edges and then corners).
-    # NOTE: we REFLECT the stencil here so it is always the same size.
+    # NOTE: we optionally REFLECT the stencil here so it is always the same size.
 
     stencil_right    = [(x,y) for (x,y) in stencil if x <= 0] # + [(-x,y) for (x,y) in stencil if x > 0]
     stencil_left     = [(x,y) for (x,y) in stencil if x >= 0] # + [(-x,y) for (x,y) in stencil if x < 0]
@@ -107,10 +111,10 @@ def stencil_computation(arr, operator, base):
         stencil_left     += [(-x,y) for (x,y) in stencil if x < 0]
         stencil_top      += [(x,-y) for (x,y) in stencil if y < 0]
         stencil_bottom   += [(x,-y) for (x,y) in stencil if y > 0]
-        stencil_topleft  += [(-x,y) for (x,y) in stencil_top if x < 0]
-        stencil_topright += [(-x,y) for (x,y) in stencil_top if x > 0]
-        stencil_bottomleft  += [(-x,y) for (x,y) in stencil_bottom if x < 0]
-        stencil_bottomright += [(-x,y) for (x,y) in stencil_bottom if x > 0]
+        stencil_topleft  += [(-x,y) for (x,y) in stencil_top if x < 0] + [(x,-y) for (x,y) in stencil_left if y < 0] 
+        stencil_topright += [(-x,y) for (x,y) in stencil_top if x > 0] + [(x,-y) for (x,y) in stencil_right if y < 0]
+        stencil_bottomleft  += [(-x,y) for (x,y) in stencil_bottom if x < 0] + [(x,-y) for (x,y) in stencil_left if y > 0]
+        stencil_bottomright += [(-x,y) for (x,y) in stencil_bottom if x > 0] + [(x,-y) for (x,y) in stencil_right if y > 0]
 
     # Interior
     for i in range(1,ncols-1):
@@ -127,8 +131,8 @@ def stencil_computation(arr, operator, base):
         new_arr[i][ncols-1]   = apply_stencil(stencil_right, arr, i, ncols-1, base, operator)
     # Corners
     new_arr[0][0]             = apply_stencil(stencil_topleft, arr, 0, 0, base, operator)
-    new_arr[nrows-1][0]       = apply_stencil(stencil_bottomleft, arr, nrows-1, 0, base, operator)
     new_arr[0][ncols-1]       = apply_stencil(stencil_topright, arr, 0, ncols-1, base, operator)
+    new_arr[nrows-1][0]       = apply_stencil(stencil_bottomleft, arr, nrows-1, 0, base, operator)
     new_arr[nrows-1][ncols-1] = apply_stencil(stencil_bottomright, arr, nrows-1, ncols-1, base, operator)
     return new_arr
 
@@ -236,8 +240,22 @@ from collections import Counter
 
 # Use one-hot encoding.
 
-# arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
-arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
+#print(normalized_entropy([1000,1]))
+print(salience([1000,1], 1))
+print(salience([1000,1], 0))
+print(salience([1,1], 0))
+print(salience([1,2], 0))
+print(salience([1,20000], 0))
+print(salience([1,2,2], 0))
+print(salience([1,2,2,2,2], 0))
+print(salience([1,2,2,2,2,2,2,2,2], 0))
+
+arr = [[1 for i in range(0,10)] for i in range(0,10)]
+arr[3][5] = 14
+
+#arr = [[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
+#arr = [[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[4,4,4,4,4],[5,5,5,5,5]]
+# arr = [[1,4,4,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1]]
 #arr = [[1,1,1,1,1],[1,1,8,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]
 #arr = [[1,2,3,4,1],[1,2,8,3,1],[4,5,3,2,4],[5,2,3,4,1],[1,3,4,2,1]]
 #arr = [[1,2,2,2,2],[2,2,8,2,2],[2,2,2,2,4],[2,2,2,1,1],[2,2,2,2,1]]
@@ -271,7 +289,6 @@ print(z)
 # Compute salience for the whole array, post stencil.
 # Flatten array.
 flat_z = [item for sublist in z for item in sublist]
-print("flat z = " + str(flat_z))
 # Get counts.
 counts = Counter(flat_z)
 # Convert to an array
