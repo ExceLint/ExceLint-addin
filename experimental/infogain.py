@@ -78,9 +78,9 @@ class InfoGain:
 class Stencil:
 
     # Pick one of these stencils, whose names should be self-explanatory.
-    useNinePointStencil = False
+    useNinePointStencil = True
     useEightPointStencil = False  # exclude the center
-    useFivePointStencil = True
+    useFivePointStencil = False
     useOnePointStencil = False
 
     reflectStencils = True  # False
@@ -170,20 +170,6 @@ class Stencil:
 
 
 class Encoder:
-
-    """Substitute each array entry with a (fixed) prime number."""
-    def primal_array(arr):
-        prime_array = {}
-        ret_array = []
-        nth = 0
-        for i in arr:
-            print("i = " + str(i))
-            if i not in prime_array:
-                prime = Primal.nthprime(nth)
-                nth += 1
-                prime_array[i] = prime
-            ret_array += [prime_array[i]]
-        return ret_array
 
     """Substitute each MATRIX entry with a (fixed) prime number."""
     @staticmethod
