@@ -19,3 +19,108 @@ export class InfoGain {
         return salience;
     }
 }
+
+export class Stencil {
+
+    private static reflectStencils = true;
+    private static ninePointStencil: Array<[number, number]> = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 0], [0, 1], [1, -1], [1, 0], [1, 1]];
+
+    private static stencil = Stencil.ninePointStencil;
+    private static stencil_right: Array<[number, number]>;
+    private static stencil_left: Array<[number, number]>;
+    private static stencil_top: Array<[number, number]>;
+    private static stencil_bottom: Array<[number, number]>;
+    private static stencil_topleft: Array<[number, number]>;
+    private static stencil_topright: Array<[number, number]>;
+    private static stencil_bottomleft: Array<[number, number]>;
+    private static stencil_bottomright: Array<[number, number]>;
+
+    private static initialized = false;
+
+    public static initialize(): void {
+        if (!Stencil.initialized) {
+            //  Define boundary condition stencils by clipping the stencil at
+            // the boundaries(edges and then corners).
+            // NOTE: we optionally REFLECT the stencil here so it is always the same size.
+            Stencil.stencil_right = Stencil.stencil.filter(([x, _]) => {
+                return (x <= 0);
+            });
+            Stencil.stencil_left = Stencil.stencil.filter(([x, _]) => {
+                return (x >= 0);
+            });
+            Stencil.stencil_top = Stencil.stencil.filter(([_, y]) => {
+                return (y >= 0);
+            });
+            Stencil.stencil_bottom = Stencil.stencil.filter(([_, y]) => {
+                return (y <= 0);
+            });
+            Stencil.stencil_topleft = Stencil.stencil_top.filter(([x, _]) => {
+                return (x >= 0);
+            });
+            Stencil.stencil_topright = Stencil.stencil_top.filter(([x, _]) => {
+                return (x <= 0);
+            });
+            Stencil.stencil_bottomleft = Stencil.stencil_bottom.filter(([x, _]) => {
+                return (x >= 0);
+            });
+            Stencil.stencil_bottomright = Stencil.stencil_bottom.filter(([x, _]) => {
+                return (x <= 0);
+            });
+            Stencil.initialized = true;
+        }
+        if (Stencil.reflectStencils) {
+            /*          stencil_right += [(-x, y) for (x, y) in stencil if x > 0]
+                        stencil_left += [(-x, y) for (x, y) in stencil if x < 0]
+                        stencil_top += [(x, -y) for (x, y) in stencil if y < 0]
+                        stencil_bottom += [(x, -y) for (x, y) in stencil if y > 0]
+                        stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0]+[(x, -y) for (x, y) in stencil_left if y < 0]
+                        stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
+                        stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
+                        stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]            
+                        ;
+                        */
+        }
+    }
+
+    private static apply_stencil(stencil, arr: Array<Array<number>>, i: number, j: number, base: number, operator: any): number {
+        let v = base;
+        for (let ind = 0; ind < stencil.length; ind++) {
+            let [x, y] = stencil[ind];
+            // Transform x and y here, since the first coordinate is
+            // actually the row(y - coord) and the second is the column
+            // (x - coord).
+            v = operator(v, arr[i + y][j + x]);
+        }
+        return v; // (v / len(stencil)) # FIXME ?
+    }
+
+    public static stencil_computation(arr: Array<Array<number>>, operator: any, base: number): Array<Array<number>> {
+        Stencil.initialize();
+        const nrows = arr.length;
+        const ncols = arr[0].length;
+        let new_arr = arr.slice();
+        // Interior
+        for (let i = 1; i < ncols - 1; i++) {
+            for (let j = 1; j < nrows - 1; j++) {
+                new_arr[i][j] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator)
+            }
+        }
+        // Edges
+        // Top and bottom
+        for (let j = 1; j < ncols - 1; j++) {
+            new_arr[0][j] = Stencil.apply_stencil(Stencil.stencil_top, arr, 0, j, base, operator);
+            new_arr[nrows - 1][j] = Stencil.apply_stencil(Stencil.stencil_bottom, arr, nrows - 1, j, base, operator);
+        }
+        // Left and right
+        for (let i = 1; i < nrows - 1; i++) {
+            new_arr[i][0] = Stencil.apply_stencil(Stencil.stencil_left, arr, i, 0, base, operator);
+            new_arr[i][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_right, arr, i, ncols - 1, base, operator);
+        }
+        // Corners
+        new_arr[0][0] = Stencil.apply_stencil(Stencil.stencil_topleft, arr, 0, 0, base, operator);
+        new_arr[0][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_topright, arr, 0, ncols - 1, base, operator);
+        new_arr[nrows - 1][0] = Stencil.apply_stencil(Stencil.stencil_bottomleft, arr, nrows - 1, 0, base, operator);
+        new_arr[nrows - 1][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_bottomright, arr, nrows - 1, ncols - 1, base, operator);
+        return new_arr;
+    }
+}
