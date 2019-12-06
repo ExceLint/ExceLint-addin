@@ -231,10 +231,13 @@ else:
             continue
         if fname.endswith("xlsx") and not fname.startswith("~$"):
             print("processing " + fname)
-            output = process_workbook(args.directory, fname)
-            s = json.dumps(output)
-            output_fname = fname.replace(".xlsx", ".json")
-            with open(os.path.join(args.directory, output_fname), "w") as f:
-                f.write(s)
+            try:
+                output = process_workbook(args.directory, fname)
+                s = json.dumps(output)
+                output_fname = fname.replace(".xlsx", ".json")
+                with open(os.path.join(args.directory, output_fname), "w") as f:
+                    f.write(s)
+            except:
+                pass
 
         

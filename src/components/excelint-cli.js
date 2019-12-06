@@ -159,9 +159,13 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             if ((sheet.formulas.length === 0) && (sheet.values.length === 0)) {
                 return "continue";
             }
+            // Get rid of multiple exclamation points in the used range address,
+            // as these interfere with later regexp parsing.
+            var usedRangeAddress = sheet.usedRangeAddress;
+            usedRangeAddress = usedRangeAddress.replace(/!(!+)/, '!');
             var myTimer = new timer_1.Timer('excelint');
             // Get suspicious cells and proposed fixes, among others.
-            var _a = colorize_1.Colorize.process_suspicious(sheet.usedRangeAddress, sheet.formulas, sheet.values), suspicious_cells = _a[0], grouped_formulas = _a[1], grouped_data = _a[2], proposed_fixes = _a[3];
+            var _a = colorize_1.Colorize.process_suspicious(usedRangeAddress, sheet.formulas, sheet.values), suspicious_cells = _a[0], grouped_formulas = _a[1], grouped_data = _a[2], proposed_fixes = _a[3];
             // Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
             // NB: origin_col and origin_row currently hard-coded at 0,0.
             proposed_fixes = colorize_1.Colorize.adjust_proposed_fixes(proposed_fixes, sheet.styles, 0, 0);

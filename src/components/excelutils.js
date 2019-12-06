@@ -134,7 +134,7 @@ var ExcelUtils = /** @class */ (function () {
                 }
             }
         }
-        // console.log("cell is "+cell);
+        console.log("cell is " + cell + ", origin_col=" + origin_col + ", origin_row=" + origin_row);
         throw new Error('We should never get here.');
         return [0, 0, 0];
     };
@@ -196,6 +196,7 @@ var ExcelUtils = /** @class */ (function () {
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
             if (found_pair) {
+                console.log("found_pair " + found_pair);
                 //		console.log('all_cell_dependencies --> ' + found_pair);
                 var first_cell = found_pair[1];
                 //		console.log(' first_cell = ' + first_cell);
@@ -230,6 +231,7 @@ var ExcelUtils = /** @class */ (function () {
                 //	    console.log(found_pair);
                 var first_cell = singleton[1];
                 //                console.log(first_cell);
+                console.log("first_cell = " + first_cell);
                 var vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.

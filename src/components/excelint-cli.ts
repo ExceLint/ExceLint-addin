@@ -184,11 +184,16 @@ for (let parms of parameters) {
                 continue;
             }
 
+            // Get rid of multiple exclamation points in the used range address,
+            // as these interfere with later regexp parsing.
+            let usedRangeAddress = sheet.usedRangeAddress;
+            usedRangeAddress = usedRangeAddress.replace(/!(!+)/, '!');
+
             const myTimer = new Timer('excelint');
 
             // Get suspicious cells and proposed fixes, among others.
             let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
-                = Colorize.process_suspicious(sheet.usedRangeAddress, sheet.formulas, sheet.values);
+                = Colorize.process_suspicious(usedRangeAddress, sheet.formulas, sheet.values);
 
             // Adjust the fixes based on font stuff. We should allow parameterization here for weighting (as for thresholding).
             // NB: origin_col and origin_row currently hard-coded at 0,0.
