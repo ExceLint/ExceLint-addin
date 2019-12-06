@@ -146,8 +146,9 @@ def process_sheet_styles(worksheet):
 
 
 # Process every sheet in a workbook
-def process_workbook(fname):
-    with open(fname, 'rb') as f:
+def process_workbook(dirname, fname):
+    qname = os.path.join(dirname, fname)
+    with open(qname, 'rb') as f:
         in_mem_file = io.BytesIO(f.read())
     workbook = openpyxl.load_workbook(in_mem_file, read_only=False)
     output = {
@@ -209,12 +210,31 @@ def process_workbook(fname):
 
 parser = argparse.ArgumentParser('xlsx-to-json.py')
 parser.add_argument('--input', help='Process an input .xlsx file.')
+# TODO: specify file output
+parser.add_argument('--directory', help='Process all .xlsx files in a directory.')
+
 args = parser.parse_args()
 
-if args.input is None:
+if args.input is None and args.directory is None:
     parser.print_help()
     exit(-1)
 
-output = process_workbook(args.input)
-str = json.dumps(output)
-print(str)
+if args.directory is None:
+    output = process_workbook('.', args.input)
+    s = json.dumps(output)
+    print(s)
+else:
+    fnames = os.listdir(args.directory)
+    for fname in fnames:
+        # Skip subdirectories
+        if os.path.isdir(os.path.join(args.directory, fname)):
+            continue
+        if fname.endswith("xlsx") and not fname.startswith("~$"):
+            print("processing " + fname)
+            output = process_workbook(args.directory, fname)
+            s = json.dumps(output)
+            output_fname = fname.replace(".xlsx", ".json")
+            with open(os.path.join(args.directory, output_fname), "w") as f:
+                f.write(s)
+
+        
