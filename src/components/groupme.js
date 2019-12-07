@@ -201,7 +201,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
         rectangles_count++;
         if (rectangles_count % 10000 === 0) {
             //	    if (true) { // rectangles_count % 1000 === 0) {
-            console.log('find_all_matching_rectangles, iteration ' + rectangles_count);
+            //            console.log('find_all_matching_rectangles, iteration ' + rectangles_count);
         }
         // Check bounding box.
         var box = bb[key];
@@ -312,7 +312,7 @@ function find_all_proposed_fixes(grouped_formulas) {
             all_matches = all_matches.concat(matches);
             count++;
             if (count % 1000 === 0) {
-                console.log('find_all_proposed_fixes, iteration ' + count);
+                //                console.log('find_all_proposed_fixes, iteration ' + count);
             }
         }
     }
