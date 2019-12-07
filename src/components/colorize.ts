@@ -700,11 +700,16 @@ export class Colorize {
                 const head = working_group.shift();
                 for (let i = 0; i < working_group.length; i++) {
                     if (RectangleUtils.is_mergeable(head, working_group[i])) {
-                        updated_rectangles.push(RectangleUtils.bounding_box(head, working_group[i]));
-                        deleted_rectangles[JSON.stringify(head)] = true;
-                        deleted_rectangles[JSON.stringify(working_group[i])] = true;
-                        merged_one = true;
-                        break;
+                        const head_str = JSON.stringify(head);
+                        const working_group_i_str = JSON.stringify(working_group[i]);
+                        // NB: 12/7/19 New check below, used to be unconditional.
+                        if ((!(head_str in deleted_rectangles)) && (!(working_group_i_str in deleted_rectangles))) {
+                            updated_rectangles.push(RectangleUtils.bounding_box(head, working_group[i]));
+                            deleted_rectangles[head_str] = true;
+                            deleted_rectangles[working_group_i_str] = true;
+                            merged_one = true;
+                            break; // was disabled
+                        }
                     }
                 }
             }
@@ -726,6 +731,7 @@ export class Colorize {
             }
         }
     }
+
 
     public static hash_vector(vec: Array<number>): number {
         const useL1norm = true; // false;

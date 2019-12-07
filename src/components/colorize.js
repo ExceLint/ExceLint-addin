@@ -631,11 +631,15 @@ var Colorize = /** @class */ (function () {
                 var head = working_group.shift();
                 for (var i = 0; i < working_group.length; i++) {
                     if (rectangleutils_1.RectangleUtils.is_mergeable(head, working_group[i])) {
-                        updated_rectangles.push(rectangleutils_1.RectangleUtils.bounding_box(head, working_group[i]));
-                        deleted_rectangles[JSON.stringify(head)] = true;
-                        deleted_rectangles[JSON.stringify(working_group[i])] = true;
-                        merged_one = true;
-                        break;
+                        var head_str = JSON.stringify(head);
+                        var working_group_i_str = JSON.stringify(working_group[i]);
+                        if ((!(head_str in deleted_rectangles)) && (!(working_group_i_str in deleted_rectangles))) {
+                            updated_rectangles.push(rectangleutils_1.RectangleUtils.bounding_box(head, working_group[i]));
+                            deleted_rectangles[head_str] = true;
+                            deleted_rectangles[working_group_i_str] = true;
+                            merged_one = true;
+                            break; // was disabled
+                        }
                     }
                 }
             }
