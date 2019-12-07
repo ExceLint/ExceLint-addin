@@ -2,25 +2,29 @@
 exports.__esModule = true;
 var binsearch_1 = require("./binsearch");
 var colorize_1 = require("./colorize");
+/*
 // Enable reasonable comparisons of numbers by converting them to zero-padded strings
 // so that 9 < 56 (because "0009" < "0056").
 function fix(n) {
     return n.toString().padStart(10, '0');
 }
+
 // Apply fixes to an array.
 function fix_array(arr) {
-    return arr.map(function (x, _1, _2) { return fix(x); });
+    return arr.map((x, _1, _2) => { return fix(x); });
 }
+
 // Apply fixes to a pair.
 function fix_pair(p) {
-    var p1 = p[0], p2 = p[1];
+    const [p1, p2] = p;
     return [fix_array(p1), fix_array(p2)];
 }
+*/
 // A comparison function to sort by x-coordinate.
 function sort_x_coord(a, b) {
     var a1 = a[0], a2 = a[1];
     var b1 = b[0], b2 = b[1];
-    if (a1[0] != b1[0]) {
+    if (a1[0] !== b1[0]) {
         return (a1[0] - b1[0]);
     }
     else {
@@ -31,7 +35,7 @@ function sort_x_coord(a, b) {
 function sort_y_coord(a, b) {
     var a1 = a[0], a2 = a[1];
     var b1 = b[0], b2 = b[1];
-    if (a1[1] != b1[1]) {
+    if (a1[1] !== b1[1]) {
         return (a1[1] - b1[1]);
     }
     else {
@@ -129,7 +133,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     var ind = -1;
     ind = binsearch_1.strict_binsearch(rect_lrs, left, numComparator);
     //	console.log("left = " + ind);
-    if (ind != -1) {
+    if (ind !== -1) {
         if (rect_uls[ind][1] === y1) {
             var candidate = [rect_uls[ind], rect_lrs[ind]];
             matches.push(candidate);
@@ -137,7 +141,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     }
     ind = binsearch_1.strict_binsearch(rect_lrs, up, numComparator);
     //	console.log("up = " + ind);
-    if (ind != -1) {
+    if (ind !== -1) {
         if (rect_uls[ind][0] === x1) {
             var candidate = [rect_uls[ind], rect_lrs[ind]];
             matches.push(candidate);
@@ -145,7 +149,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     }
     ind = binsearch_1.strict_binsearch(rect_uls, right, numComparator);
     //	console.log("right = " + ind);
-    if (ind != -1) {
+    if (ind !== -1) {
         if (rect_lrs[ind][1] === y2) {
             var candidate = [rect_uls[ind], rect_lrs[ind]];
             matches.push(candidate);
@@ -153,7 +157,7 @@ function matching_rectangles(rect_ul, rect_lr, rect_uls, rect_lrs) {
     }
     ind = binsearch_1.strict_binsearch(rect_uls, down, numComparator);
     //	console.log("down = " + ind);
-    if (ind != -1) {
+    if (ind !== -1) {
         if (rect_lrs[ind][0] === x2) {
             var candidate = [rect_uls[ind], rect_lrs[ind]];
             matches.push(candidate);
@@ -197,7 +201,7 @@ function find_all_matching_rectangles(thisKey, rect, grouped_formulas, keylistX,
         rectangles_count++;
         if (rectangles_count % 10000 === 0) {
             //	    if (true) { // rectangles_count % 1000 === 0) {
-            console.log("find_all_matching_rectangles, iteration " + rectangles_count);
+            console.log('find_all_matching_rectangles, iteration ' + rectangles_count);
         }
         // Check bounding box.
         var box = bb[key];
@@ -307,8 +311,8 @@ function find_all_proposed_fixes(grouped_formulas) {
             var matches = find_all_matching_rectangles(key, aNum[key][i], aNum, keylistX, keylistY, x_ul, x_lr, bb, bbsX, bbsY);
             all_matches = all_matches.concat(matches);
             count++;
-            if (count % 1000 == 0) {
-                console.log("find_all_proposed_fixes, iteration " + count);
+            if (count % 1000 === 0) {
+                console.log('find_all_proposed_fixes, iteration ' + count);
             }
         }
     }
@@ -336,14 +340,14 @@ exports.find_all_proposed_fixes = find_all_proposed_fixes;
 function test_find_all_proposed_fixes(grouped_formulas) {
     comparisons = 0;
     var all_fixes = find_all_proposed_fixes(grouped_formulas);
-    console.log("all matches = " + JSON.stringify(all_fixes));
+    console.log('all matches = ' + JSON.stringify(all_fixes));
     //    console.log("comparisons = " + comparisons);
     var theLength = 0;
     for (var _i = 0, _a = Object.keys(grouped_formulas); _i < _a.length; _i++) {
         var k = _a[_i];
         theLength += grouped_formulas[k].length;
     }
-    console.log("total length of grouped_formulas = " + theLength);
+    console.log('total length of grouped_formulas = ' + theLength);
 }
 exports.test_find_all_proposed_fixes = test_find_all_proposed_fixes;
 //let r = require('./grouped_formulas.js');

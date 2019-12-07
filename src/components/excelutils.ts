@@ -22,7 +22,7 @@ export class ExcelUtils {
     // Same with sheet name references.
     private static formulas_with_quoted_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
     private static formulas_with_unquoted_sheetnames = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
-    private static originalSheetSuffix: string = "_EL";
+    private static originalSheetSuffix: string = '_EL';
 
     // Get the saved formats for this sheet (by its unique identifier).
     public static saved_original_sheetname(id: string): string {
@@ -158,7 +158,7 @@ export class ExcelUtils {
             }
         }
 
-        console.log("cell is " + cell + ", origin_col=" + origin_col + ", origin_row=" + origin_row);
+        console.log('cell is ' + cell + ', origin_col = ' + origin_col + ', origin_row = ' + origin_row);
         throw new Error('We should never get here.');
         return [0, 0, 0];
     }
@@ -192,14 +192,14 @@ export class ExcelUtils {
         const col1 = r[1][0];
         const row1 = r[1][1];
 
-        if ((col0 === 0) && (row0 === 0) && (r[0][2] != 0)) {
+        if ((col0 === 0) && (row0 === 0) && (r[0][2] !== 0)) {
             // Not a real dependency. Skip.
-            console.log("NOT A REAL DEPENDENCY: " + col1 + "," + row1);
-            return "";
+            console.log('NOT A REAL DEPENDENCY: ' + col1 + ',' + row1);
+            return '';
         } else if ((col0 < 0) || (row0 < 0) || (col1 < 0) || (row1 < 0)) {
             // Defensive programming.
-            console.log("WARNING: FOUND NEGATIVE VALUES.");
-            return "";
+            console.log('WARNING: FOUND NEGATIVE VALUES.');
+            return '';
         } else {
 
             const colname0 = ExcelUtils.column_index_to_name(col0);
@@ -230,7 +230,7 @@ export class ExcelUtils {
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
             if (found_pair) {
-                console.log("found_pair " + found_pair);
+                //                console.log("found_pair " + found_pair);
                 //		console.log('all_cell_dependencies --> ' + found_pair);
                 let first_cell = found_pair[1];
                 //		console.log(' first_cell = ' + first_cell);
@@ -269,7 +269,7 @@ export class ExcelUtils {
                 //	    console.log(found_pair);
                 let first_cell = singleton[1];
                 //                console.log(first_cell);
-                console.log("first_cell = " + first_cell);
+                // console.log("first_cell = " + first_cell);
                 let vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.
@@ -302,7 +302,7 @@ export class ExcelUtils {
         return [0, 0, 0];
     }
 
-    /// Get all the numeric values out into an array of vectors (row, col, 
+    /// Get all the numeric values out into an array of vectors (row, col,
     /*    public static all_numbers(origin_row: number, origin_col: number, values: Array<Array<string>>) : Array<[number, number,number]> {
         for (let i = 0; i < formulas.length; i++) {
     //	    console.log("now examining row " + i);
@@ -327,7 +327,7 @@ export class ExcelUtils {
         // Check if this cell is a formula.
         const cell = formulas[row][col];
         //	console.log("cell[" + col + "][" + row + "] =" + cell);
-        if ((cell.length > 1) && (cell[0] === "=")) {
+        if ((cell.length > 1) && (cell[0] === '=')) {
             // It is. Compute the dependencies.
             //	    console.log("ALL CELL DEPENDENCIES");
             deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
@@ -347,7 +347,7 @@ export class ExcelUtils {
                 //		console.log("now examining column " + j);
                 let cell = row[j];
                 counter++;
-                if (counter % 1000 == 0) {
+                if (counter % 1000 === 0) {
                     //		    console.log(counter + " references down");
                 }
 
@@ -359,7 +359,7 @@ export class ExcelUtils {
                     //		    console.log("direct_refs = " + JSON.stringify(direct_refs));
                     //		    console.log(JSON.stringify(formulas));
                     for (let dep of direct_refs) {
-                        if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] != 0)) {
+                        if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] !== 0)) {
                             // Not a real reference. Skip.
                         } else {
                             // Check to see if this is data or a formula.
@@ -386,7 +386,7 @@ export class ExcelUtils {
                                     // Only include non-formulas (if they are in the range).
                                     const referentCell = formulas[colIndex][rowIndex];
                                     //				    console.log("referent cell = " + JSON.stringify(referentCell));
-                                    if ((referentCell !== undefined) && (referentCell[0] !== "=")) {
+                                    if ((referentCell !== undefined) && (referentCell[0] !== '=')) {
                                         addReference = true;
                                     }
                                 }

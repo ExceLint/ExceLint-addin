@@ -76,7 +76,7 @@ export class Stencil {
                         stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0]+[(x, -y) for (x, y) in stencil_left if y < 0]
                         stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
                         stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
-                        stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]            
+                        stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
                         ;
                         */
         }
@@ -102,7 +102,7 @@ export class Stencil {
         // Interior
         for (let i = 1; i < ncols - 1; i++) {
             for (let j = 1; j < nrows - 1; j++) {
-                new_arr[i][j] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator)
+                new_arr[i][j] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator);
             }
         }
         // Edges

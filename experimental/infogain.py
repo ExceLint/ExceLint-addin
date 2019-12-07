@@ -74,7 +74,7 @@ class InfoGain:
         p_index = counts[index] / total
         salience = (1 - p_index) * (1-InfoGain.normalized_entropy(counts))
         return salience
-
+    
 class Stencil:
 
     # Pick one of these stencils, whose names should be self-explanatory.
@@ -228,8 +228,16 @@ from collections import Counter
 print(InfoGain.salience([1000,1], 1))
 print(InfoGain.salience([1000,1], 0))
 print(InfoGain.salience([1,1], 0))
-print(InfoGain.salience([1,2], 0))
+print(InfoGain.salience([1,1,1], 0))
+print("trying a range:")
+s = 0
+for x in range(0,4):
+    v = InfoGain.salience([1,10,1,1], x)
+    s += v
+    print(v)
+print("--- : sum = " + str(s))
 print(InfoGain.salience([1,20000], 0))
+print(InfoGain.salience([1,2], 0))
 print(InfoGain.salience([1,2,2], 0))
 print(InfoGain.salience([1,2,2,2,2], 0))
 print(InfoGain.salience([1,2,2,2,2,2,2,2,2], 0))

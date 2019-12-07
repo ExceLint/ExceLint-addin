@@ -42,6 +42,7 @@ const args = require('yargs')
     .command('formattingDiscount', 'Set discount for formatting differences (default = ' + defaultFormattingDiscount + ').')
     .command('reportingThreshold', 'Set the threshold % for reporting suspicious formulas (default = ' + defaultReportingThreshold + ').')
     .command('suppressOutput', 'Don\'t output the processed JSON input to stdout.')
+    .command('noElapsedTime', 'Suppress elapsed time output (for regression testing).')
     .command('sweep', 'Perform a parameter sweep and report the best settings overall.')
     .help('h')
     .alias('h', 'help')
@@ -57,7 +58,7 @@ if (args.directory) {
     // Load up all files to process.
     allFiles = fs.readdirSync(args.directory).filter((x: string) => x.endsWith('.json'));
 }
-console.log(JSON.stringify(allFiles));
+//console.log(JSON.stringify(allFiles));
 
 // argument:
 // input = filename. Default file is standard input.
@@ -156,6 +157,7 @@ if (args.sweep) {
 }
 
 let f1scores = [];
+let outputs = [];
 
 for (let parms of parameters) {
     formattingDiscount = parms[0];
@@ -166,7 +168,6 @@ for (let parms of parameters) {
     let scores = [];
 
     for (let fname of allFiles) {
-        console.log('fname = ' + fname);
         // Read from file.
         let content = fs.readFileSync(base + fname);
         inp = JSON.parse(content);
@@ -215,8 +216,10 @@ for (let parms of parameters) {
                 }
             }
 
-            const elapsed = myTimer.elapsedTime();
-
+            let elapsed = myTimer.elapsedTime();
+            if (args.noElapsedTime) {
+                elapsed = 0; // Dummy value, used for regression testing.
+            }
             const out = {
                 // 'sheetName': sheet.sheetName,
                 //        'suspiciousCells': suspicious_cells,
@@ -265,9 +268,7 @@ for (let parms of parameters) {
             }
             output.worksheets[sheet.sheetName] = out;
         }
-        if (!args.suppressOutput) {
-            console.log(JSON.stringify(output, null, '\t'));
-        }
+        outputs.push(output);
     }
     let averageScores = 0;
     if (scores.length > 0) {
@@ -275,11 +276,14 @@ for (let parms of parameters) {
     }
     f1scores.push([formattingDiscount, reportingThreshold, averageScores]);
 }
-f1scores.sort((a, b) => { if (a[2] < b[2]) { return -1; }; if (a[2] > b[2]) { return 1; } return 0; });
+f1scores.sort((a, b) => { if (a[2] < b[2]) { return -1; } if (a[2] > b[2]) { return 1; } return 0; });
 // Now find the lowest threshold with the highest F1 score.
 const maxScore = f1scores.reduce((a, b) => { if (a[2] > b[2]) { return a[2]; } else { return b[2]; } });
-console.log('maxScore = ' + maxScore);
+//console.log('maxScore = ' + maxScore);
 // Find the first one with the max.
 const firstMax = f1scores.find(item => { return item[2] === maxScore; });
-console.log('first max = ' + firstMax);
+//console.log('first max = ' + firstMax);
+if (!args.suppressOutput) {
+    console.log(JSON.stringify(outputs, null, '\t'));
+}
 console.log(JSON.stringify(f1scores));

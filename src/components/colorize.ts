@@ -35,7 +35,7 @@ export class Colorize {
     }
 
     // Color-blind friendly color palette.
-    public static palette = ["#ecaaae", "#74aff3", "#d8e9b2", "#deb1e0", "#9ec991", "#adbce9", "#e9c59a", "#71cdeb", "#bfbb8a", "#94d9df", "#91c7a8", "#b4efd3", "#80b6aa", "#9bd1c6"]; // removed "#73dad1", 
+    public static palette = ['#ecaaae', '#74aff3', '#d8e9b2', '#deb1e0', '#9ec991', '#adbce9', '#e9c59a', '#71cdeb', '#bfbb8a', '#94d9df', '#91c7a8', '#b4efd3', '#80b6aa', '#9bd1c6']; // removed '#73dad1'
 
     // True iff this class been initialized.
     private static initialized = false;
@@ -47,7 +47,7 @@ export class Colorize {
     private static Multiplier = 1; // 103037;
 
     // A hash string indicating no dependencies.
-    private static distinguishedZeroHash = "12345";
+    private static distinguishedZeroHash = '12345';
 
     public static initialize() {
         if (!this.initialized) {
@@ -96,7 +96,7 @@ export class Colorize {
                         } else {
                             const hash = this.hash_vector(vec);
                             const str = hash.toString();
-                            //			    console.log("hash for " + adjustedX + ", " + adjustedY + " = " + str);
+                            //			    console.log('hash for ' + adjustedX + ', ' + adjustedY + ' = ' + str);
                             output.push([[adjustedX, adjustedY, 0], str]);
                         }
                     }
@@ -109,7 +109,7 @@ export class Colorize {
 
     // Returns all referenced data so it can be colored later.
     public static color_all_data(refs: { [dep: string]: Array<excelintVector> }): Array<[excelintVector, string]> {
-        //	let t = new Timer("color_all_data");
+        //	let t = new Timer('color_all_data');
         let referenced_data = [];
         for (let refvec of Object.keys(refs)) {
             const rv = refvec.split(',');
@@ -117,7 +117,7 @@ export class Colorize {
             const col = Number(rv[1]);
             referenced_data.push([[row, col, 0], Colorize.distinguishedZeroHash]); // See comment at top of function declaration.
         }
-        //	t.split("processed all data");
+        //	t.split('processed all data');
         return referenced_data;
     }
 
@@ -126,13 +126,13 @@ export class Colorize {
     // Note that for now, the last value of each tuple is set to 1.
     public static process_values(values: Array<Array<string>>, formulas: Array<Array<string>>, origin_col: number, origin_row: number): Array<[excelintVector, string]> {
         let value_array = [];
-        //	let t = new Timer("process_values");
+        //	let t = new Timer('process_values');
         for (let i = 0; i < values.length; i++) {
             const row = values[i];
             for (let j = 0; j < row.length; j++) {
                 const cell = row[j].toString();
                 // If the value is not from a formula, include it.
-                if ((cell.length > 0) && ((formulas[i][j][0] != "="))) {
+                if ((cell.length > 0) && ((formulas[i][j][0] !== '='))) {
                     const cellAsNumber = Number(cell).toString();
                     if (cellAsNumber === cell) {
                         // It's a number. Add it.
@@ -143,7 +143,7 @@ export class Colorize {
                 }
             }
         }
-        //	t.split("processed all values");
+        //	t.split('processed all values');
         return value_array;
     }
 
@@ -220,7 +220,7 @@ export class Colorize {
         for (let item of processed) {
             const [[col, row, isConstant], val] = item;
             // Yes, I know this is confusing. Will fix later.
-            //	    console.log("C) cols = " + rows + ", rows = " + cols + "; row = " + row + ", col = " + col);
+            //	    console.log('C) cols = ' + rows + ', rows = ' + cols + '; row = ' + row + ', col = ' + col);
             const adjustedX = row - origin_row - 1;
             const adjustedY = col - origin_col - 1;
             let value = Number(Colorize.distinguishedZeroHash);
@@ -239,8 +239,8 @@ export class Colorize {
     public static stencilize(cols: number, rows: number,
         matrix: Array<Array<number>>): Array<Array<number>> {
 
-        //	    console.log("cols = " + cols + ", rows = " + rows);
-        //	    console.log("matrix = " + JSON.stringify(matrix));
+        //	    console.log('cols = ' + cols + ', rows = ' + rows);
+        //	    console.log('matrix = ' + JSON.stringify(matrix));
         let stencil = new Array(cols);
         for (let i = 0; i < cols; i++) {
             stencil[i] = new Array(rows).fill(0);
@@ -248,67 +248,67 @@ export class Colorize {
 
 
         // Middle (common-case)
-        const winMM = (i, j) => { /* console.log("MM: " + i + ", " + j); */ return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+        const winMM = (i, j) => { /* console.log('MM: ' + i + ', ' + j); */ return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
         matrix[i - 1][j], matrix[i][j], matrix[i + 1][j],
         matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        }
+        };
 
         /// Literal corner cases.
 
         const winTL = (i, j) => {
-            console.log("TL"); return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
+            console.log('TL'); return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
             matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
             matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        }
+        };
 
         const winBL = (i, j) => {
-            console.log("BL"); return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+            console.log('BL'); return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
             matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
             matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1]];
-        }
+        };
 
         const winTR = (i, j) => {
-            console.log("TR"); return [matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1],
+            console.log('TR'); return [matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1],
             matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
             matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1]];
-        }
+        };
 
         const winBR = (i, j) => {
-            console.log("BR"); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
+            console.log('BR'); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
             matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
             matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1]];
-        }
+        };
 
         /// Literal edge cases
         const winT = (i, j) => {
-            console.log("T"); return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
+            console.log('T'); return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
             matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
             matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        }
+        };
 
         const winR = (i, j) => {
-            console.log("R: " + i + ", " + j); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
+            console.log('R: ' + i + ', ' + j); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
             matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
             matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1]];
-        }
+        };
 
         const winL = (i, j) => {
-            console.log("L"); return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
+            console.log('L'); return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
             matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
             matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        }
+        };
 
         const winB = (i, j) => {
-            console.log("B"); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
+            console.log('B'); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
             matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
             matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1]];
-        }
+        };
 
         const stencilFunction = (win, i, j) => {
             const theWin = win(j, i); // NOTE reversal!
             if (theWin.reduce((total, a) => (a === null) || (Boolean(total)), false)) {
                 // There's a null.
-                //		    console.log("busted: " + JSON.stringify(win(i, j)));
+                //		    console.log('busted: ' + JSON.stringify(win(i, j)));
             }
             const sum = theWin.reduce((total, a) => total + a, 0);
             const nonzeros = theWin.reduce((total, a) => { if (Number(a) > 0) { return total + 1; } else { return total; } }, 0);
@@ -338,44 +338,44 @@ export class Colorize {
                     case 0:
                         switch (j) {
                             case 0:
-                                win = winTL; win_counts["TL"] = 1 + (win_counts["TL"] || 0); break;
+                                win = winTL; win_counts['TL'] = 1 + (win_counts['TL'] || 0); break;
                             case rows - 1:
-                                win = winTR; win_counts["TR"] = 1 + (win_counts["TR"] || 0); break;
+                                win = winTR; win_counts['TR'] = 1 + (win_counts['TR'] || 0); break;
                             default:
-                                win = winT; win_counts["T"] = 1 + (win_counts["T"] || 0); break;
+                                win = winT; win_counts['T'] = 1 + (win_counts['T'] || 0); break;
                         }
                         break;
                     case cols - 1:
                         switch (j) {
                             case 0:
-                                win = winBL; win_counts["BL"] = 1 + (win_counts["BL"] || 0); break;
+                                win = winBL; win_counts['BL'] = 1 + (win_counts['BL'] || 0); break;
                             case rows - 1:
-                                win = winBR; win_counts["BR"] = 1 + (win_counts["BR"] || 0); break;
+                                win = winBR; win_counts['BR'] = 1 + (win_counts['BR'] || 0); break;
                             default:
-                                win = winB; win_counts["B"] = 1 + (win_counts["B"] || 0); break;
+                                win = winB; win_counts['B'] = 1 + (win_counts['B'] || 0); break;
                         }
                         break;
                     default:
                         switch (j) {
                             case 0:
-                                win = winL; win_counts["L"] = 1 + (win_counts["L"] || 0); break;
+                                win = winL; win_counts['L'] = 1 + (win_counts['L'] || 0); break;
                             case rows - 1:
-                                win = winR; win_counts["R"] = 1 + (win_counts["R"] || 0); break;
+                                win = winR; win_counts['R'] = 1 + (win_counts['R'] || 0); break;
                             default:
-                                win = winMM; win_counts["MM"] = 1 + (win_counts["MM"] || 0); break;
+                                win = winMM; win_counts['MM'] = 1 + (win_counts['MM'] || 0); break;
                         }
                 }
                 stencilFunction(win, i, j);
                 //		    if (win === winR) {
                 //			console.log(JSON.stringify(win(i,j)));
-                //			console.log("stencil[" + i + "][" + j + "] = " + stencil[i][j]);
+                //			console.log('stencil[' + i + '][' + j + '] = ' + stencil[i][j]);
                 //		    }
             }
         }
 
         //	    console.log(JSON.stringify(win_counts));
 
-        //	    console.log("Stencil = " + JSON.stringify(stencil));
+        //	    console.log('Stencil = ' + JSON.stringify(stencil));
         return stencil;
     }
 
@@ -391,7 +391,7 @@ export class Colorize {
         for (let i = 0; i < cols; i++) {
             for (let j = 0; j < rows; j++) {
                 counts[stencil[i][j]] = (counts[stencil[i][j]] + 1) || 1;
-                if (stencil[i][j] != 0) {
+                if (stencil[i][j] !== 0) {
                     totalNonzeroes += 1;
                 }
             }
@@ -404,7 +404,7 @@ export class Colorize {
             }
         }
 
-        //	    console.log("probs = " + JSON.stringify(probs));
+        //	    console.log('probs = ' + JSON.stringify(probs));
 
         let totalEntropy = 0;
         let total = 0;
@@ -451,14 +451,14 @@ export class Colorize {
             for (let j = 0; j < rows; j++) {
                 const adjustedX = j + origin_col + 1;
                 const adjustedY = i + origin_row + 1;
-                //		    console.log("examining " + i + " " + j + " = " + matrix[i][j] + " (" + adjustedX + ", " + adjustedY + ")");
+                //		    console.log('examining ' + i + ' ' + j + ' = ' + matrix[i][j] + ' (' + adjustedX + ', ' + adjustedY + ')');
                 if (probs[i][j] > 0) {
                     sumValues += matrix[i][j];
                     countValues += 1;
                     if (probs[i][j] <= threshold) {
-                        // console.log("found one at " + i + " " + j + " = [" + matrix[i][j] + "] (" + adjustedX + ", " + adjustedY + "): p = " + probs[i][j]);
-                        if (matrix[i][j] != 0) {
-                            // console.log("PUSHED!");
+                        // console.log('found one at ' + i + ' ' + j + ' = [' + matrix[i][j] + '] (' + adjustedX + ', ' + adjustedY + '): p = ' + probs[i][j]);
+                        if (matrix[i][j] !== 0) {
+                            // console.log('PUSHED!');
                             // Never push an empty cell.
                             cells.push([adjustedX, adjustedY, probs[i][j]]);
                         }
@@ -468,7 +468,7 @@ export class Colorize {
         }
         const avgValues = sumValues / countValues;
         cells.sort((a, b) => { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
-        //	    console.log("cells = " + JSON.stringify(cells));
+        //	    console.log('cells = ' + JSON.stringify(cells));
         return cells;
     }
 
@@ -477,13 +477,13 @@ export class Colorize {
         formulas: Array<Array<string>>,
         values: Array<Array<string>>): [any, any, any, any] {
         if (false) {
-            console.log("process_suspicious:");
+            console.log('process_suspicious:');
             console.log(JSON.stringify(usedRangeAddress));
             console.log(JSON.stringify(formulas));
             console.log(JSON.stringify(values));
         }
 
-        let t = new Timer("process_suspicious");
+        let t = new Timer('process_suspicious');
 
         const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
         const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
@@ -493,9 +493,9 @@ export class Colorize {
             console.warn('Too many formulas to perform formula analysis.');
         } else {
 
-            //	    t.split("about to process formulas");
+            //	    t.split('about to process formulas');
             processed_formulas = Colorize.process_formulas(formulas, origin[0] - 1, origin[1] - 1);
-            //	    t.split("processed formulas");
+            //	    t.split('processed formulas');
         }
         const useTimeouts = false;
 
@@ -510,21 +510,21 @@ export class Colorize {
 
             // Compute references (to color referenced data).
             const refs = ExcelUtils.generate_all_references(formulas, origin[0] - 1, origin[1] - 1);
-            //	    t.split("generated all references");
+            //	    t.split('generated all references');
 
             referenced_data = Colorize.color_all_data(refs);
-            // console.log("referenced_data = " + JSON.stringify(referenced_data));
+            // console.log('referenced_data = ' + JSON.stringify(referenced_data));
             data_values = Colorize.process_values(values, formulas, origin[0] - 1, origin[1] - 1);
 
-            // t.split("processed data");
+            // t.split('processed data');
         }
 
         const grouped_data = Colorize.identify_groups(referenced_data);
 
-        //	t.split("identified groups");
+        //	t.split('identified groups');
 
         const grouped_formulas = Colorize.identify_groups(processed_formulas);
-        //	t.split("grouped formulas");
+        //	t.split('grouped formulas');
 
         // Identify suspicious cells.
         let suspicious_cells = [];
@@ -553,7 +553,7 @@ export class Colorize {
         return -p * Math.log2(p);
     }
 
-    // Take two counts and compute the normalized entropy difference that would result if these were "merged".
+    // Take two counts and compute the normalized entropy difference that would result if these were 'merged'.
     public static entropydiff(oldcount1, oldcount2) {
         const total = oldcount1 + oldcount2;
         const prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
@@ -566,7 +566,7 @@ export class Colorize {
         target: [excelintVector, excelintVector],
         merge_with_norm: number,
         merge_with: [excelintVector, excelintVector]): number {
-        //	console.log("fix_metric: " + target_norm + ", " + JSON.stringify(target) + ", " + merge_with_norm + ", " + JSON.stringify(merge_with));
+        //	console.log('fix_metric: ' + target_norm + ', ' + JSON.stringify(target) + ', ' + merge_with_norm + ', ' + JSON.stringify(merge_with));
         const [t1, t2] = target;
         const [m1, m2] = merge_with;
         const n_target = RectangleUtils.area([[t1[0], t1[1], 0], [t2[0], t2[1], 0]]);
@@ -648,12 +648,12 @@ export class Colorize {
                 }
                 if ((!merged[this_back_str]) && (this_back_str in front)) {
                     // this_back_str in front
-                    //			console.log("**** (2) merging " + this_back_str + " with " + JSON.stringify(front[this_back_str]));
+                    //			console.log('**** (2) merging ' + this_back_str + ' with ' + JSON.stringify(front[this_back_str]));
                     // FIXME. This calculation may not make sense.
                     const newscore = -original_score * JSON.parse(front[this_back_str][0]);
-                    //			console.log("pushing " + JSON.stringify(fixes[k][1]) + " with " + JSON.stringify(front[this_back_str][1]));
+                    //			console.log('pushing ' + JSON.stringify(fixes[k][1]) + ' with ' + JSON.stringify(front[this_back_str][1]));
                     const new_fix = [newscore, fixes[k][1], front[this_back_str][2]];
-                    //			console.log("pushing " + JSON.stringify(new_fix));
+                    //			console.log('pushing ' + JSON.stringify(new_fix));
                     new_fixes.push(new_fix);
                     merged[this_back_str] = true;
                     // FIXME? testing below.
@@ -667,12 +667,12 @@ export class Colorize {
 
     public static generate_proposed_fixes(groups: { [val: string]: Array<[excelintVector, excelintVector]> }):
         Array<[number, [excelintVector, excelintVector], [excelintVector, excelintVector]]> {
-        //	let t = new Timer("generate_proposed_fixes");
-        //	t.split("about to find.");
+        //	let t = new Timer('generate_proposed_fixes');
+        //	t.split('about to find.');
         let proposed_fixes_new = find_all_proposed_fixes(groups);
-        //	t.split("sorting fixes.");
+        //	t.split('sorting fixes.');
         proposed_fixes_new.sort((a, b) => { return a[0] - b[0]; });
-        //	t.split("done.");
+        //	t.split('done.');
         //	console.log(JSON.stringify(proposed_fixes_new));
         return proposed_fixes_new;
     }
@@ -720,7 +720,7 @@ export class Colorize {
             group = updated_rectangles.slice();
             numIterations++;
             if (numIterations > 2000) { // This is a hack to guarantee convergence.
-                console.log('Too many iterations; abandoning this group.')
+                console.log('Too many iterations; abandoning this group.');
                 t.split('done, ' + numIterations + ' iterations.');
                 return [[[-1, -1, 0], [-1, -1, 0]]];
             }
@@ -763,11 +763,11 @@ export class Colorize {
             let score = fixes[k][0];
             // Get rid of scores below 0.01.
             if ((-score * 100) < 1) {
-                // console.log("trimmed " + (-score));
+                // console.log('trimmed ' + (-score));
                 continue;
             }
             // Sort the fixes.
-            // This is a pain because if we don't pad appropriately, [1,9] is "less than" [1,10]. (Seriously.)
+            // This is a pain because if we don't pad appropriately, [1,9] is 'less than' [1,10]. (Seriously.)
             // So we make sure that numbers are always left padded with zeroes to make the number 10 digits long
             // (which is 1 more than Excel needs right now).
             const firstPadded = fixes[k][1].map((a) => a.toString().padStart(10, '0'));

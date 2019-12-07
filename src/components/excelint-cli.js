@@ -35,6 +35,7 @@ var args = require('yargs')
     .command('formattingDiscount', 'Set discount for formatting differences (default = ' + defaultFormattingDiscount + ').')
     .command('reportingThreshold', 'Set the threshold % for reporting suspicious formulas (default = ' + defaultReportingThreshold + ').')
     .command('suppressOutput', 'Don\'t output the processed JSON input to stdout.')
+    .command('noElapsedTime', 'Suppress elapsed time output (for regression testing).')
     .command('sweep', 'Perform a parameter sweep and report the best settings overall.')
     .help('h')
     .alias('h', 'help')
@@ -47,7 +48,7 @@ if (args.directory) {
     // Load up all files to process.
     allFiles = fs.readdirSync(args.directory).filter(function (x) { return x.endsWith('.json'); });
 }
-console.log(JSON.stringify(allFiles));
+//console.log(JSON.stringify(allFiles));
 // argument:
 // input = filename. Default file is standard input.
 var fname = '/dev/stdin';
@@ -136,6 +137,7 @@ else {
     parameters = [[formattingDiscount, reportingThreshold]];
 }
 var f1scores = [];
+var outputs = [];
 for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
     var parms = parameters_1[_i];
     formattingDiscount = parms[0];
@@ -145,7 +147,6 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
     var scores = [];
     for (var _a = 0, allFiles_1 = allFiles; _a < allFiles_1.length; _a++) {
         var fname_1 = allFiles_1[_a];
-        console.log('fname = ' + fname_1);
         // Read from file.
         var content = fs.readFileSync(base + fname_1);
         inp = JSON.parse(content);
@@ -184,6 +185,9 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                 }
             }
             var elapsed = myTimer.elapsedTime();
+            if (args.noElapsedTime) {
+                elapsed = 0; // Dummy value, used for regression testing.
+            }
             var out = {
                 // 'sheetName': sheet.sheetName,
                 //        'suspiciousCells': suspicious_cells,
@@ -235,9 +239,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
         for (var i = 0; i < inp.worksheets.length; i++) {
             _loop_1(i);
         }
-        if (!args.suppressOutput) {
-            console.log(JSON.stringify(output, null, '\t'));
-        }
+        outputs.push(output);
     }
     var averageScores = 0;
     if (scores.length > 0) {
@@ -247,7 +249,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
 }
 f1scores.sort(function (a, b) { if (a[2] < b[2]) {
     return -1;
-} ; if (a[2] > b[2]) {
+} if (a[2] > b[2]) {
     return 1;
 } return 0; });
 // Now find the lowest threshold with the highest F1 score.
@@ -257,8 +259,11 @@ var maxScore = f1scores.reduce(function (a, b) { if (a[2] > b[2]) {
 else {
     return b[2];
 } });
-console.log('maxScore = ' + maxScore);
+//console.log('maxScore = ' + maxScore);
 // Find the first one with the max.
 var firstMax = f1scores.find(function (item) { return item[2] === maxScore; });
-console.log('first max = ' + firstMax);
+//console.log('first max = ' + firstMax);
+if (!args.suppressOutput) {
+    console.log(JSON.stringify(outputs, null, '\t'));
+}
 console.log(JSON.stringify(f1scores));
