@@ -150,7 +150,11 @@ def process_workbook(dirname, fname):
     qname = os.path.join(dirname, fname)
     with open(qname, 'rb') as f:
         in_mem_file = io.BytesIO(f.read())
-    workbook = openpyxl.load_workbook(in_mem_file, read_only=False)
+    try:
+        workbook = openpyxl.load_workbook(in_mem_file, read_only=False)
+    except:
+        # OK, we couldn't open it R/W. Try to process R/O.
+        workbook = openpyxl.load_workbook(in_mem_file, read_only=True)
     output = {
         "workbookName": fname,
         "worksheets": []
