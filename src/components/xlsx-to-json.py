@@ -21,6 +21,24 @@ import argparse
 import warnings
 import pprint
 import hashlib
+import shutil
+import tempfile
+
+# From Stack Overflow:
+# https://stackoverflow.com/questions/23562366/how-do-i-get-value-present-in-a-merged-cell
+
+from openpyxl.utils import get_column_letter
+
+def getValueWithMergeLookup(sheet, cell):
+    idx = cell.coordinate
+    for range_ in sheet.merged_cells.ranges:
+        merged_cells = list(openpyxl.utils.rows_from_range(range_))
+        for row in merged_cells:
+            if idx in row:
+                # If this is a merged cell,
+                # return  the first cell of the merge range
+                return sheet.cell(merged_cells[0][0]).value
+
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -85,11 +103,21 @@ def find_columns(sheet, row):
     return column
 
 
+#            if type(cell).__name__ != 'MergedCell':
+#                if cell.value is not None:
+#                    if cell.data_type == datatype:
+#                        v = str(cell.value)
+
 def process_sheet(worksheet, datatype="f"):
     processed = []
-    for row in worksheet.rows:
+    theRows = worksheet.rows
+    nRow = 0
+    for row in theRows:
+        nRow += 1
         r = []
+        nCol = 0
         for cell in row:
+            nCol += 1
             v = ""
             if type(cell).__name__ != 'MergedCell':
                 if cell.value is not None:
@@ -147,22 +175,27 @@ def process_sheet_styles(worksheet):
 
 # Process every sheet in a workbook
 def process_workbook(dirname, fname):
-    qname = os.path.join(dirname, fname)
-    with open(qname, 'rb') as f:
+    qualified_origname = os.path.join(dirname, fname)
+    with open(qualified_origname, 'rb') as f:
         in_mem_file = io.BytesIO(f.read())
+    readonly = False
     try:
-        workbook = openpyxl.load_workbook(in_mem_file, read_only=False)
+        workbook = openpyxl.load_workbook(in_mem_file, read_only=readonly)
     except:
         # OK, we couldn't open it R/W. Try to process R/O.
-        workbook = openpyxl.load_workbook(in_mem_file, read_only=True)
+        readonly = True
+        workbook = openpyxl.load_workbook(in_mem_file, read_only=readonly)
     output = {
         "workbookName": fname,
         "worksheets": []
     }
     trimmed = False
     for worksheet in workbook.worksheets:
+        
+#        if not readonly:
+#            worksheet.reset_dimensions()
+            
         sheetname = worksheet.title
-
         # Now get the sheet range info.
         numRows = worksheet.max_row
         numCols = worksheet.max_column
@@ -184,11 +217,18 @@ def process_workbook(dirname, fname):
                 worksheet.delete_cols(numCols + 1, origCols - numCols)
             if origRows != numRows:
                 worksheet.delete_rows(numRows + 1, origRows - numRows)
-
+        
+#        theRows = 
+#        print(tuple(worksheet.rows))
+        
         # Extract formulas and numeric values.
-        formulas = process_sheet(worksheet, "f")
+#        print("----VALUES----")
         values = process_sheet(worksheet, "n")
-
+#        print("----DONE WITH VALUES-----")
+#        print("--- FORMULAS ----")
+        formulas = process_sheet(worksheet, "f")
+#        print("--- DONE WITH FORMULAS---")
+        
         # Get the styles of each cell.
         styles = process_sheet_styles(worksheet)
 
