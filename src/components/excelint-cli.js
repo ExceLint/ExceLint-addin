@@ -219,18 +219,39 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                     var falseNegatives = trueBugsJSON_1.filter(function (value) { return !foundBugsJSON_1.includes(value); }).map(function (x) { return JSON.parse(x); });
                     var precision = 0;
                     var recall = 0;
-                    if (foundBugs.length > 0) {
+                    out['truePositives'] = truePositives.length;
+                    out['falsePositives'] = falsePositives.length;
+                    out['falseNegatives'] = falseNegatives.length;
+                    // We adopt the methodology used by the ExceLint paper (OOPSLA 18):
+                    //   "When a tool flags nothing, we define precision to
+                    //    be 1, since the tool makes no mistakes. When a benchmark contains no errors but the tool flags
+                    //    anything, we define precision to be 0 since nothing that it flags can be a real error."
+                    if (foundBugs.length === 0) {
+                        out['precision'] = 1;
+                    }
+                    if ((truePositives.length === 0) && (foundBugs.length > 0)) {
+                        out['precision'] = 0;
+                    }
+                    if ((truePositives.length > 0) && (foundBugs.length > 0)) {
                         precision = truePositives.length / (truePositives.length + falsePositives.length);
                         out['precision'] = precision;
                     }
-                    if (trueBugs.length > 0) {
+                    if (falseNegatives.length + trueBugs.length > 0) {
                         recall = truePositives.length / (falseNegatives.length + truePositives.length);
                         out['recall'] = recall;
                     }
-                    if (precision + recall > 0) {
-                        // F1 score: https://en.wikipedia.org/wiki/F1_score
-                        var f1score = (2 * precision * recall) / (precision + recall);
-                        scores.push(f1score);
+                    else {
+                        // No bugs to find means perfect recall. NOTE: this is not described in the paper.
+                        out['recall'] = 1;
+                    }
+                    scores.push(truePositives.length - falsePositives.length);
+                    if (false) {
+                        if (precision + recall > 0) {
+                            // F1 score: https://en.wikipedia.org/wiki/F1_score
+                            var f1score = (2 * precision * recall) / (precision + recall);
+                            /// const f1score = precision; //// FIXME for testing (2 * precision * recall) / (precision + recall);
+                            scores.push(f1score);
+                        }
                     }
                 }
             }
@@ -242,10 +263,12 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
         outputs.push(output);
     }
     var averageScores = 0;
+    var sumScores = 0;
     if (scores.length > 0) {
         averageScores = scores.reduce(function (a, b) { return a + b; }, 0) / scores.length;
+        sumScores = scores.reduce(function (a, b) { return a + b; }, 0);
     }
-    f1scores.push([formattingDiscount, reportingThreshold, averageScores]);
+    f1scores.push([formattingDiscount, reportingThreshold, sumScores]);
 }
 f1scores.sort(function (a, b) { if (a[2] < b[2]) {
     return -1;

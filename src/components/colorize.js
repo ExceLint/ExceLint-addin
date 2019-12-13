@@ -633,6 +633,7 @@ var Colorize = /** @class */ (function () {
                     if (rectangleutils_1.RectangleUtils.is_mergeable(head, working_group[i])) {
                         var head_str = JSON.stringify(head);
                         var working_group_i_str = JSON.stringify(working_group[i]);
+                        // NB: 12/7/19 New check below, used to be unconditional.
                         if ((!(head_str in deleted_rectangles)) && (!(working_group_i_str in deleted_rectangles))) {
                             updated_rectangles.push(rectangleutils_1.RectangleUtils.bounding_box(head, working_group[i]));
                             deleted_rectangles[head_str] = true;
