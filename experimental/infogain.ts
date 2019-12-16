@@ -69,16 +69,56 @@ export class Stencil {
             Stencil.initialized = true;
         }
         if (Stencil.reflectStencils) {
-            /*          stencil_right += [(-x, y) for (x, y) in stencil if x > 0]
-                        stencil_left += [(-x, y) for (x, y) in stencil if x < 0]
-                        stencil_top += [(x, -y) for (x, y) in stencil if y < 0]
-                        stencil_bottom += [(x, -y) for (x, y) in stencil if y > 0]
-                        stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0]+[(x, -y) for (x, y) in stencil_left if y < 0]
-                        stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
-                        stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
-                        stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
-                        ;
-                        */
+            let reflected: any;
+
+            // Right
+            reflected = Stencil.stencil.map(([x, y]) => [-x, y]).filter(([x, _]) => (x > 0));
+            Stencil.stencil_right = Stencil.stencil_right.concat(reflected);
+
+            // Left
+            reflected = Stencil.stencil.map(([x, y]) => [-x, y]).filter(([x, _]) => (x < 0));
+            Stencil.stencil_left = Stencil.stencil_left.concat(reflected);
+
+            // Top
+            reflected = Stencil.stencil.map(([x, y]) => [x, -y]).filter(([_, y]) => (y < 0));
+            Stencil.stencil_top = Stencil.stencil_top.concat(reflected);
+
+            // Bottom
+            reflected = Stencil.stencil.map(([x, y]) => [x, -y]).filter(([_, y]) => (y > 0));
+            Stencil.stencil_bottom = Stencil.stencil_bottom.concat(reflected);
+
+            // Top left
+            // stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0]+[(x, -y) for (x, y) in stencil_left if y < 0]
+
+            reflected = Stencil.stencil_top.map(([x, y]) => [-x, y]).filter(([x, _]) => (x < 0));
+            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+            reflected = Stencil.stencil_left.map(([x, y]) => [x, -y]).filter(([_, y]) => (y < 0));
+            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+
+            // Top right
+            // stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
+
+            reflected = Stencil.stencil_top.map(([x, y]) => [-x, y]).filter(([x, _]) => (x > 0));
+            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+            reflected = Stencil.stencil_right.map(([x, y]) => [x, -y]).filter(([_, y]) => (y < 0));
+            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+
+            // Bottom left
+            // stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
+
+            reflected = Stencil.stencil_bottom.map(([x, y]) => [-x, y]).filter(([x, _]) => (x < 0));
+            Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
+            reflected = Stencil.stencil_left.map(([x, y]) => [x, -y]).filter(([x, y]) => (y > 0));
+            Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
+
+            // Bottom right
+            // stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
+
+
+            reflected = Stencil.stencil_bottom.map(([x, y]) => [-x, y]).filter(([x, _]) => (x > 0));
+            Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
+            reflected = Stencil.stencil_right.map(([x, y]) => [x, -y]).filter(([x, y]) => (y > 0));
+            Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
         }
     }
 
