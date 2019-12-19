@@ -63,124 +63,138 @@ var Stencil = /** @class */ (function () {
                 var x = _a[0], _ = _a[1];
                 return (x <= 0);
             });
+            if (Stencil.reflectStencils) {
+                var reflected = void 0;
+                // Right
+                reflected = Stencil.stencil.filter(function (_a) {
+                    var x = _a[0], _ = _a[1];
+                    return (x > 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [-x, y];
+                });
+                Stencil.stencil_right = Stencil.stencil_right.concat(reflected);
+                console.log('stencil right = ' + JSON.stringify(Stencil.stencil_right) + ', length = ' + Stencil.stencil_right.length);
+                // Left
+                reflected = Stencil.stencil.filter(function (_a) {
+                    var x = _a[0], _ = _a[1];
+                    return (x < 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [-x, y];
+                });
+                Stencil.stencil_left = Stencil.stencil_left.concat(reflected);
+                console.log('stencil left = ' + JSON.stringify(Stencil.stencil_left) + ', length = ' + Stencil.stencil_left.length);
+                // Top
+                reflected = Stencil.stencil.filter(function (_a) {
+                    var _ = _a[0], y = _a[1];
+                    return (y < 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [x, -y];
+                });
+                Stencil.stencil_top = Stencil.stencil_top.concat(reflected);
+                console.log('stencil top = ' + JSON.stringify(Stencil.stencil_top) + ', length = ' + Stencil.stencil_top.length);
+                // Bottom
+                reflected = Stencil.stencil.filter(function (_a) {
+                    var _ = _a[0], y = _a[1];
+                    return (y > 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [x, -y];
+                });
+                Stencil.stencil_bottom = Stencil.stencil_bottom.concat(reflected);
+                console.log('stencil bottom = ' + JSON.stringify(Stencil.stencil_bottom) + ', length = ' + Stencil.stencil_bottom.length);
+                // Top left
+                // stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0]+[(x, -y) for (x, y) in stencil_left if y < 0]
+                reflected = Stencil.stencil_top.filter(function (_a) {
+                    var x = _a[0], _ = _a[1];
+                    return (x < 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [-x, y];
+                });
+                Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+                reflected = Stencil.stencil_left.filter(function (_a) {
+                    var _ = _a[0], y = _a[1];
+                    return (y < 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [x, -y];
+                });
+                Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+                console.log('stencil top left = ' + JSON.stringify(Stencil.stencil_topleft) + ', length = ' + Stencil.stencil_topleft.length);
+                // Top right
+                // stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
+                reflected = Stencil.stencil_top.filter(function (_a) {
+                    var x = _a[0], _ = _a[1];
+                    return (x > 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [-x, y];
+                });
+                Stencil.stencil_topright = Stencil.stencil_topright.concat(reflected);
+                reflected = Stencil.stencil_right.filter(function (_a) {
+                    var _ = _a[0], y = _a[1];
+                    return (y < 0);
+                }).map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [x, -y];
+                });
+                Stencil.stencil_topright = Stencil.stencil_topright.concat(reflected);
+                console.log('stencil top right = ' + JSON.stringify(Stencil.stencil_topright) + ', length = ' + Stencil.stencil_topright.length);
+                // Bottom left
+                // stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
+                reflected = Stencil.stencil_bottom.map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [-x, y];
+                }).filter(function (_a) {
+                    var x = _a[0], _ = _a[1];
+                    return (x < 0);
+                });
+                Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
+                reflected = Stencil.stencil_left.map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [x, -y];
+                }).filter(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return (y > 0);
+                });
+                Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
+                // Bottom right
+                // stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
+                reflected = Stencil.stencil_bottom.map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [-x, y];
+                }).filter(function (_a) {
+                    var x = _a[0], _ = _a[1];
+                    return (x > 0);
+                });
+                Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
+                reflected = Stencil.stencil_right.map(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return [x, -y];
+                }).filter(function (_a) {
+                    var x = _a[0], y = _a[1];
+                    return (y > 0);
+                });
+                Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
+            }
             Stencil.initialized = true;
-        }
-        if (Stencil.reflectStencils) {
-            var reflected = void 0;
-            // Right
-            reflected = Stencil.stencil.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [-x, y];
-            }).filter(function (_a) {
-                var x = _a[0], _ = _a[1];
-                return (x > 0);
-            });
-            Stencil.stencil_right = Stencil.stencil_right.concat(reflected);
-            // Left
-            reflected = Stencil.stencil.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [-x, y];
-            }).filter(function (_a) {
-                var x = _a[0], _ = _a[1];
-                return (x < 0);
-            });
-            Stencil.stencil_left = Stencil.stencil_left.concat(reflected);
-            // Top
-            reflected = Stencil.stencil.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [x, -y];
-            }).filter(function (_a) {
-                var _ = _a[0], y = _a[1];
-                return (y < 0);
-            });
-            Stencil.stencil_top = Stencil.stencil_top.concat(reflected);
-            // Bottom
-            reflected = Stencil.stencil.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [x, -y];
-            }).filter(function (_a) {
-                var _ = _a[0], y = _a[1];
-                return (y > 0);
-            });
-            Stencil.stencil_bottom = Stencil.stencil_bottom.concat(reflected);
-            // Top left
-            // stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0]+[(x, -y) for (x, y) in stencil_left if y < 0]
-            reflected = Stencil.stencil_top.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [-x, y];
-            }).filter(function (_a) {
-                var x = _a[0], _ = _a[1];
-                return (x < 0);
-            });
-            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
-            reflected = Stencil.stencil_left.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [x, -y];
-            }).filter(function (_a) {
-                var _ = _a[0], y = _a[1];
-                return (y < 0);
-            });
-            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
-            // Top right
-            // stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
-            reflected = Stencil.stencil_top.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [-x, y];
-            }).filter(function (_a) {
-                var x = _a[0], _ = _a[1];
-                return (x > 0);
-            });
-            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
-            reflected = Stencil.stencil_right.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [x, -y];
-            }).filter(function (_a) {
-                var _ = _a[0], y = _a[1];
-                return (y < 0);
-            });
-            Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
-            // Bottom left
-            // stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
-            reflected = Stencil.stencil_bottom.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [-x, y];
-            }).filter(function (_a) {
-                var x = _a[0], _ = _a[1];
-                return (x < 0);
-            });
-            Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
-            reflected = Stencil.stencil_left.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [x, -y];
-            }).filter(function (_a) {
-                var x = _a[0], y = _a[1];
-                return (y > 0);
-            });
-            Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
-            // Bottom right
-            // stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
-            reflected = Stencil.stencil_bottom.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [-x, y];
-            }).filter(function (_a) {
-                var x = _a[0], _ = _a[1];
-                return (x > 0);
-            });
-            Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
-            reflected = Stencil.stencil_right.map(function (_a) {
-                var x = _a[0], y = _a[1];
-                return [x, -y];
-            }).filter(function (_a) {
-                var x = _a[0], y = _a[1];
-                return (y > 0);
-            });
-            Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
         }
     };
     Stencil.apply_stencil = function (stencil, arr, i, j, base, operator) {
+        if (stencil.length !== Stencil.stencil.length) {
+            console.trace('NOOOO');
+        }
+        console.log('apply_stencil ' + JSON.stringify(stencil));
+        console.log('  arr = ' + JSON.stringify(arr));
+        console.log('  i = ' + i);
+        console.log('  j = ' + j);
         var v = base;
         for (var ind = 0; ind < stencil.length; ind++) {
             var _a = stencil[ind], x = _a[0], y = _a[1];
+            console.log('[x,y] = [' + x + ',' + y + ']');
             // Transform x and y here, since the first coordinate is
             // actually the row(y - coord) and the second is the column
             // (x - coord).
@@ -193,16 +207,21 @@ var Stencil = /** @class */ (function () {
         var nrows = arr.length;
         var ncols = arr[0].length;
         var new_arr = arr.slice();
+        console.log('interior');
         // Interior
         for (var i = 1; i < ncols - 1; i++) {
             for (var j = 1; j < nrows - 1; j++) {
+                console.log('i = ' + i + ', j = ' + j);
                 new_arr[i][j] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator);
             }
         }
+        console.log('edges');
         // Edges
         // Top and bottom
         for (var j = 1; j < ncols - 1; j++) {
+            console.log('top');
             new_arr[0][j] = Stencil.apply_stencil(Stencil.stencil_top, arr, 0, j, base, operator);
+            console.log('bottom');
             new_arr[nrows - 1][j] = Stencil.apply_stencil(Stencil.stencil_bottom, arr, nrows - 1, j, base, operator);
         }
         // Left and right
