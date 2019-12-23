@@ -145,13 +145,17 @@ class Stencil:
 
             stencil_bottom   += [(x,-y) for (x,y) in stencil if y > 0]
             stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0] + [(x, -y) for (x, y) in stencil_left if y < 0]
-            stencil_topleft.remove((1,1))
+            stencil_topleft.remove((1, 1))
+            print("top left = " + str(stencil_topleft))
             stencil_topright += [(-x,y) for (x,y) in stencil_top if x > 0] + [(x,-y) for (x,y) in stencil_right if y < 0]
             stencil_topright.remove((-1,1))
+            print("top right = " + str(stencil_topright))
             stencil_bottomleft  += [(-x,y) for (x,y) in stencil_bottom if x < 0] + [(x,-y) for (x,y) in stencil_left if y > 0]
             stencil_bottomleft.remove((1,-1))
+            print("bottom left = " + str(stencil_bottomleft))
             stencil_bottomright += [(-x,y) for (x,y) in stencil_bottom if x > 0] + [(x,-y) for (x,y) in stencil_right if y > 0]
             stencil_bottomright.remove((-1,-1))
+            print("bottom right = " + str(stencil_bottomright))
 
         assert len(stencil_right) == 9
         assert len(stencil_left) == 9
