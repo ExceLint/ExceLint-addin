@@ -131,8 +131,6 @@ class Stencil:
         stencil_left     = [(x,y) for (x,y) in stencil if x >= 0]
         stencil_top = [(x, y) for (x, y) in stencil if y >= 0]
         
-        print("top was = " + str(stencil_top))
-
         stencil_bottom   = [(x,y) for (x,y) in stencil if y <= 0]
         stencil_topleft  = [(x,y) for (x,y) in stencil_top if x >= 0]
         stencil_topright = [(x,y) for (x,y) in stencil_top if x <= 0]
@@ -145,15 +143,25 @@ class Stencil:
             stencil_left     += [(-x,y) for (x,y) in stencil if x < 0]
             stencil_top      += [(x,-y) for (x,y) in stencil if y < 0]
 
-            print("top = " + str(stencil_top))
-
             stencil_bottom   += [(x,-y) for (x,y) in stencil if y > 0]
             stencil_topleft += [(-x, y) for (x, y) in stencil_top if x < 0] + [(x, -y) for (x, y) in stencil_left if y < 0]
-            print("length of topleft = " + str(len(stencil_topleft)))
+            stencil_topleft.remove((1,1))
             stencil_topright += [(-x,y) for (x,y) in stencil_top if x > 0] + [(x,-y) for (x,y) in stencil_right if y < 0]
+            stencil_topright.remove((-1,1))
             stencil_bottomleft  += [(-x,y) for (x,y) in stencil_bottom if x < 0] + [(x,-y) for (x,y) in stencil_left if y > 0]
+            stencil_bottomleft.remove((1,-1))
             stencil_bottomright += [(-x,y) for (x,y) in stencil_bottom if x > 0] + [(x,-y) for (x,y) in stencil_right if y > 0]
+            stencil_bottomright.remove((-1,-1))
 
+        assert len(stencil_right) == 9
+        assert len(stencil_left) == 9
+        assert len(stencil_top) == 9
+        assert len(stencil_bottom) == 9
+        assert len(stencil_topleft) == 9
+        assert len(stencil_topright) == 9
+        assert len(stencil_bottomleft) == 9
+        assert len(stencil_bottomright) == 9
+        
         # Interior
         for i in range(1,ncols-1):
             for j in range(1,nrows-1):
