@@ -123,6 +123,8 @@ var Stencil = /** @class */ (function () {
                     return [x, -y];
                 });
                 Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+                // Remove [1,1]
+                Stencil.stencil_topleft.splice(Stencil.stencil_topleft.findIndex(function (o) { return JSON.stringify(o) === JSON.stringify([1, 1]); }), 1);
                 console.log('stencil top left = ' + JSON.stringify(Stencil.stencil_topleft) + ', length = ' + Stencil.stencil_topleft.length);
                 // Top right
                 // stencil_topright += [(-x, y) for (x, y) in stencil_top if x > 0]+[(x, -y) for (x, y) in stencil_right if y < 0]
@@ -142,6 +144,8 @@ var Stencil = /** @class */ (function () {
                     return [x, -y];
                 });
                 Stencil.stencil_topright = Stencil.stencil_topright.concat(reflected);
+                // Remove [-1,1]
+                Stencil.stencil_topright.splice(Stencil.stencil_topright.findIndex(function (o) { return JSON.stringify(o) === JSON.stringify([-1, 1]); }), 1);
                 console.log('stencil top right = ' + JSON.stringify(Stencil.stencil_topright) + ', length = ' + Stencil.stencil_topright.length);
                 // Bottom left
                 // stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
@@ -150,17 +154,20 @@ var Stencil = /** @class */ (function () {
                     return [-x, y];
                 }).filter(function (_a) {
                     var x = _a[0], _ = _a[1];
-                    return (x < 0);
+                    return (x > 0);
                 });
                 Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
                 reflected = Stencil.stencil_left.map(function (_a) {
                     var x = _a[0], y = _a[1];
                     return [x, -y];
                 }).filter(function (_a) {
-                    var x = _a[0], y = _a[1];
-                    return (y > 0);
+                    var _ = _a[0], y = _a[1];
+                    return (y < 0);
                 });
                 Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
+                // Remove [1,-1]
+                Stencil.stencil_bottomleft.splice(Stencil.stencil_bottomleft.findIndex(function (o) { return JSON.stringify(o) === JSON.stringify([1, -1]); }), 1);
+                console.log('stencil bottom left = ' + JSON.stringify(Stencil.stencil_bottomleft) + ', length = ' + Stencil.stencil_bottomleft.length);
                 // Bottom right
                 // stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
                 reflected = Stencil.stencil_bottom.map(function (_a) {
@@ -168,24 +175,27 @@ var Stencil = /** @class */ (function () {
                     return [-x, y];
                 }).filter(function (_a) {
                     var x = _a[0], _ = _a[1];
-                    return (x > 0);
+                    return (x < 0);
                 });
                 Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
                 reflected = Stencil.stencil_right.map(function (_a) {
                     var x = _a[0], y = _a[1];
                     return [x, -y];
                 }).filter(function (_a) {
-                    var x = _a[0], y = _a[1];
-                    return (y > 0);
+                    var _ = _a[0], y = _a[1];
+                    return (y < 0);
                 });
                 Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
+                // Remove [-1,-1]
+                Stencil.stencil_bottomright.splice(Stencil.stencil_bottomright.findIndex(function (o) { return JSON.stringify(o) === JSON.stringify([-1, -1]); }), 1);
+                console.log('stencil bottom right = ' + JSON.stringify(Stencil.stencil_bottomright) + ', length = ' + Stencil.stencil_bottomright.length);
             }
             Stencil.initialized = true;
         }
     };
     Stencil.apply_stencil = function (stencil, arr, i, j, base, operator) {
         if (stencil.length !== Stencil.stencil.length) {
-            console.trace('NOOOO');
+            console.log('NOOOO');
         }
         console.log('apply_stencil ' + JSON.stringify(stencil));
         console.log('  arr = ' + JSON.stringify(arr));

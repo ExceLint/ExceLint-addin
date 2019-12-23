@@ -98,6 +98,8 @@ export class Stencil {
                 Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
                 reflected = Stencil.stencil_left.filter(([_, y]) => (y < 0)).map(([x, y]) => [x, -y]);
                 Stencil.stencil_topleft = Stencil.stencil_topleft.concat(reflected);
+                // Remove [1,1]
+                Stencil.stencil_topleft.splice(Stencil.stencil_topleft.findIndex((o) => JSON.stringify(o) === JSON.stringify([1, 1])), 1);
                 console.log('stencil top left = ' + JSON.stringify(Stencil.stencil_topleft) + ', length = ' + Stencil.stencil_topleft.length);
 
                 // Top right
@@ -107,24 +109,32 @@ export class Stencil {
                 Stencil.stencil_topright = Stencil.stencil_topright.concat(reflected);
                 reflected = Stencil.stencil_right.filter(([_, y]) => (y < 0)).map(([x, y]) => [x, -y]);
                 Stencil.stencil_topright = Stencil.stencil_topright.concat(reflected);
+                // Remove [-1,1]
+                Stencil.stencil_topright.splice(Stencil.stencil_topright.findIndex((o) => JSON.stringify(o) === JSON.stringify([-1, 1])), 1);
 
                 console.log('stencil top right = ' + JSON.stringify(Stencil.stencil_topright) + ', length = ' + Stencil.stencil_topright.length);
                 // Bottom left
                 // stencil_bottomleft += [(-x, y) for (x, y) in stencil_bottom if x < 0]+[(x, -y) for (x, y) in stencil_left if y > 0]
 
-                reflected = Stencil.stencil_bottom.map(([x, y]) => [-x, y]).filter(([x, _]) => (x < 0));
+                reflected = Stencil.stencil_bottom.map(([x, y]) => [-x, y]).filter(([x, _]) => (x > 0));
                 Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
-                reflected = Stencil.stencil_left.map(([x, y]) => [x, -y]).filter(([x, y]) => (y > 0));
+                reflected = Stencil.stencil_left.map(([x, y]) => [x, -y]).filter(([_, y]) => (y < 0));
                 Stencil.stencil_bottomleft = Stencil.stencil_bottomleft.concat(reflected);
+                // Remove [1,-1]
+                Stencil.stencil_bottomleft.splice(Stencil.stencil_bottomleft.findIndex((o) => JSON.stringify(o) === JSON.stringify([1, -1])), 1);
+                console.log('stencil bottom left = ' + JSON.stringify(Stencil.stencil_bottomleft) + ', length = ' + Stencil.stencil_bottomleft.length);
 
                 // Bottom right
                 // stencil_bottomright += [(-x, y) for (x, y) in stencil_bottom if x > 0]+[(x, -y) for (x, y) in stencil_right if y > 0]
 
 
-                reflected = Stencil.stencil_bottom.map(([x, y]) => [-x, y]).filter(([x, _]) => (x > 0));
+                reflected = Stencil.stencil_bottom.map(([x, y]) => [-x, y]).filter(([x, _]) => (x < 0));
                 Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
-                reflected = Stencil.stencil_right.map(([x, y]) => [x, -y]).filter(([x, y]) => (y > 0));
+                reflected = Stencil.stencil_right.map(([x, y]) => [x, -y]).filter(([_, y]) => (y < 0));
                 Stencil.stencil_bottomright = Stencil.stencil_bottomright.concat(reflected);
+                // Remove [-1,-1]
+                Stencil.stencil_bottomright.splice(Stencil.stencil_bottomright.findIndex((o) => JSON.stringify(o) === JSON.stringify([-1, -1])), 1);
+                console.log('stencil bottom right = ' + JSON.stringify(Stencil.stencil_bottomright) + ', length = ' + Stencil.stencil_bottomright.length);
             }
             Stencil.initialized = true;
         }
@@ -132,7 +142,7 @@ export class Stencil {
 
     private static apply_stencil(stencil, arr: Array<Array<number>>, i: number, j: number, base: number, operator: any): number {
         if (stencil.length !== Stencil.stencil.length) {
-            console.trace('NOOOO');
+            console.log('NOOOO');
         }
         console.log('apply_stencil ' + JSON.stringify(stencil));
         console.log('  arr = ' + JSON.stringify(arr));
