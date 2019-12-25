@@ -140,46 +140,40 @@ export class Stencil {
         }
     }
 
-    private static apply_stencil(stencil, arr: Array<Array<number>>, i: number, j: number, base: number, operator: any): number {
-        if (stencil.length !== Stencil.stencil.length) {
-            console.log('NOOOO');
-        }
-        console.log('apply_stencil ' + JSON.stringify(stencil));
-        console.log('  arr = ' + JSON.stringify(arr));
-        console.log('  i = ' + i);
-        console.log('  j = ' + j);
+    private static apply_stencil(stencil: Array<[number, number]>, arr: Array<Array<number>>, i: number, j: number, base: number, operator: (a: number, b: number) => number): number {
+        console.assert(stencil.length === Stencil.stencil.length);
         let v = base;
         for (let ind = 0; ind < stencil.length; ind++) {
             let [x, y] = stencil[ind];
-            console.log('[x,y] = [' + x + ',' + y + ']');
+            // console.log('[x,y] = [' + x + ',' + y + ']');
             // Transform x and y here, since the first coordinate is
             // actually the row(y - coord) and the second is the column
             // (x - coord).
             v = operator(v, arr[i + y][j + x]);
         }
-        return v; // (v / len(stencil)) # FIXME ?
+        return v;
     }
 
-    public static stencil_computation(arr: Array<Array<number>>, operator: any, base: number): Array<Array<number>> {
+    public static stencil_computation(arr: Array<Array<number>>, operator: (a: number, b: number) => number, base: number): Array<Array<number>> {
         Stencil.initialize();
+        // Make a new matrix ("new_arr") of the same size as arr, initialized with zeros.
         const nrows = arr.length;
         const ncols = arr[0].length;
-        let new_arr = arr.slice();
-        console.log('interior');
+        let new_arr = Array(nrows).fill(0).map(() => Array(ncols).fill(0));
+
         // Interior
         for (let i = 1; i < ncols - 1; i++) {
             for (let j = 1; j < nrows - 1; j++) {
-                console.log('i = ' + i + ', j = ' + j);
                 new_arr[i][j] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator);
             }
         }
-        console.log('edges');
+
         // Edges
         // Top and bottom
         for (let j = 1; j < ncols - 1; j++) {
-            console.log('top');
+            //            console.log('top');
             new_arr[0][j] = Stencil.apply_stencil(Stencil.stencil_top, arr, 0, j, base, operator);
-            console.log('bottom');
+            //           console.log('bottom');
             new_arr[nrows - 1][j] = Stencil.apply_stencil(Stencil.stencil_bottom, arr, nrows - 1, j, base, operator);
         }
         // Left and right
@@ -187,6 +181,7 @@ export class Stencil {
             new_arr[i][0] = Stencil.apply_stencil(Stencil.stencil_left, arr, i, 0, base, operator);
             new_arr[i][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_right, arr, i, ncols - 1, base, operator);
         }
+
         // Corners
         new_arr[0][0] = Stencil.apply_stencil(Stencil.stencil_topleft, arr, 0, 0, base, operator);
         new_arr[0][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_topright, arr, 0, ncols - 1, base, operator);

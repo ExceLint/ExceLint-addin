@@ -194,44 +194,36 @@ var Stencil = /** @class */ (function () {
         }
     };
     Stencil.apply_stencil = function (stencil, arr, i, j, base, operator) {
-        if (stencil.length !== Stencil.stencil.length) {
-            console.log('NOOOO');
-        }
-        console.log('apply_stencil ' + JSON.stringify(stencil));
-        console.log('  arr = ' + JSON.stringify(arr));
-        console.log('  i = ' + i);
-        console.log('  j = ' + j);
+        console.assert(stencil.length === Stencil.stencil.length);
         var v = base;
         for (var ind = 0; ind < stencil.length; ind++) {
             var _a = stencil[ind], x = _a[0], y = _a[1];
-            console.log('[x,y] = [' + x + ',' + y + ']');
+            // console.log('[x,y] = [' + x + ',' + y + ']');
             // Transform x and y here, since the first coordinate is
             // actually the row(y - coord) and the second is the column
             // (x - coord).
             v = operator(v, arr[i + y][j + x]);
         }
-        return v; // (v / len(stencil)) # FIXME ?
+        return v;
     };
     Stencil.stencil_computation = function (arr, operator, base) {
         Stencil.initialize();
+        // Make a new matrix ("new_arr") of the same size as arr, initialized with zeros.
         var nrows = arr.length;
         var ncols = arr[0].length;
-        var new_arr = arr.slice();
-        console.log('interior');
+        var new_arr = Array(nrows).fill(0).map(function () { return Array(ncols).fill(0); });
         // Interior
         for (var i = 1; i < ncols - 1; i++) {
             for (var j = 1; j < nrows - 1; j++) {
-                console.log('i = ' + i + ', j = ' + j);
                 new_arr[i][j] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator);
             }
         }
-        console.log('edges');
         // Edges
         // Top and bottom
         for (var j = 1; j < ncols - 1; j++) {
-            console.log('top');
+            //            console.log('top');
             new_arr[0][j] = Stencil.apply_stencil(Stencil.stencil_top, arr, 0, j, base, operator);
-            console.log('bottom');
+            //           console.log('bottom');
             new_arr[nrows - 1][j] = Stencil.apply_stencil(Stencil.stencil_bottom, arr, nrows - 1, j, base, operator);
         }
         // Left and right
