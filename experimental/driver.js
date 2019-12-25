@@ -1,15 +1,17 @@
 "use strict";
 exports.__esModule = true;
 var infogain_1 = require("./infogain");
-console.log(infogain_1.InfoGain.normalized_entropy([25]));
-console.log(infogain_1.InfoGain.normalized_entropy([25, 1]));
-console.log(infogain_1.InfoGain.normalized_entropy([25, 1, 1, 1]));
-console.log(infogain_1.InfoGain.salience([25, 1], 0));
-console.log(infogain_1.InfoGain.salience([25, 1], 1));
+/*
+console.log(InfoGain.normalized_entropy([25]));
+console.log(InfoGain.normalized_entropy([25, 1]));
+console.log(InfoGain.normalized_entropy([25, 1, 1, 1]));
+console.log(InfoGain.salience([25, 1], 0));
+console.log(InfoGain.salience([25, 1], 1));
+*/
 var input = [[1, 1, 1], [1, 2, 1], [1, 1, 1]];
-input = [[1, 4, 4, 2, 3], [5, 6, 7, 100, 9], [10, 11, 12, 13, 14], [15, 16, 8, 17, 18], [19, 20, 21, 22, 23]];
+input = [[1, 4, 4, 2, 3], [5, 6, 7, 100, 9], [10, 5, 5, 5, 5], [15, 5, 5, 5, 5], [5, 5, 5, 5, 5]];
 var st = infogain_1.Stencil.stencil_computation(input, function (x, y) { return x * y; }, 1);
-console.log(st);
+console.log('st = ' + JSON.stringify(st));
 // Convert to histogram of counts.
 var arr = st.flat(Infinity);
 console.log('flattened = ' + JSON.stringify(arr));
