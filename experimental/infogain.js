@@ -20,6 +20,11 @@ var InfoGain = /** @class */ (function () {
         var salience = (1 - p_index) * (1 - InfoGain.normalized_entropy(counts));
         return salience;
     };
+    InfoGain.to_histogram = function (data) {
+        var arr = data.flat(Infinity);
+        var hist = arr.reduce(function (acc, e) { return acc.set(e, (acc.get(e) || 0) + 1); }, new Map());
+        return hist;
+    };
     return InfoGain;
 }());
 exports.InfoGain = InfoGain;

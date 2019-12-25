@@ -18,6 +18,12 @@ export class InfoGain {
         const salience = (1 - p_index) * (1 - InfoGain.normalized_entropy(counts));
         return salience;
     }
+
+    public static to_histogram(data: Array<any>): Map<number, number> {
+        let arr = (data as any).flat(Infinity);
+        let hist = arr.reduce((acc: Map<number, number>, e: number) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
+        return hist;
+    }
 }
 
 export class Stencil {
