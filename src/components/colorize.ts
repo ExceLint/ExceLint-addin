@@ -6,6 +6,7 @@ import { ExcelUtilities } from '@microsoft/office-js-helpers';
 import { Timer } from './timer';
 import { JSONclone } from './jsonclone';
 import { find_all_proposed_fixes } from './groupme';
+import { Stencil, InfoGain } from './infogain';
 
 type excelintVector = [number, number, number];
 
@@ -17,6 +18,7 @@ export class Colorize {
 
     private static formulasThreshold = 10000;
     private static valuesThreshold = 10000;
+    //    private static stencilizer = new Stencil();
 
     public static setReportingThreshold(value: number) {
         Colorize.reportingThreshold = value;
@@ -236,146 +238,8 @@ export class Colorize {
     }
 
 
-    public static stencilize(cols: number, rows: number,
-        matrix: Array<Array<number>>): Array<Array<number>> {
-
-        //	    console.log('cols = ' + cols + ', rows = ' + rows);
-        //	    console.log('matrix = ' + JSON.stringify(matrix));
-        let stencil = new Array(cols);
-        for (let i = 0; i < cols; i++) {
-            stencil[i] = new Array(rows).fill(0);
-        }
-
-
-        // Middle (common-case)
-        const winMM = (i, j) => { /* console.log('MM: ' + i + ', ' + j); */ return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
-        matrix[i - 1][j], matrix[i][j], matrix[i + 1][j],
-        matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        };
-
-        /// Literal corner cases.
-
-        const winTL = (i, j) => {
-            console.log('TL'); return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
-            matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
-            matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        };
-
-        const winBL = (i, j) => {
-            console.log('BL'); return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
-            matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
-            matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1]];
-        };
-
-        const winTR = (i, j) => {
-            console.log('TR'); return [matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1],
-            matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
-            matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1]];
-        };
-
-        const winBR = (i, j) => {
-            console.log('BR'); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
-            matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
-            matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1]];
-        };
-
-        /// Literal edge cases
-        const winT = (i, j) => {
-            console.log('T'); return [matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1],
-            matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
-            matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        };
-
-        const winR = (i, j) => {
-            console.log('R: ' + i + ', ' + j); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
-            matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
-            matrix[i - 1][j + 1], matrix[i][j + 1], matrix[i - 1][j + 1]];
-        };
-
-        const winL = (i, j) => {
-            console.log('L'); return [matrix[i + 1][j - 1], matrix[i][j - 1], matrix[i + 1][j - 1],
-            matrix[i + 1][j], matrix[i][j], matrix[i + 1][j],
-            matrix[i + 1][j + 1], matrix[i][j + 1], matrix[i + 1][j + 1]];
-        };
-
-        const winB = (i, j) => {
-            console.log('B'); return [matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1],
-            matrix[i - 1][j], matrix[i][j], matrix[i - 1][j],
-            matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j - 1]];
-        };
-
-        const stencilFunction = (win, i, j) => {
-            const theWin = win(j, i); // NOTE reversal!
-            if (theWin.reduce((total, a) => (a === null) || (Boolean(total)), false)) {
-                // There's a null.
-                //		    console.log('busted: ' + JSON.stringify(win(i, j)));
-            }
-            const sum = theWin.reduce((total, a) => total + a, 0);
-            const nonzeros = theWin.reduce((total, a) => { if (Number(a) > 0) { return total + 1; } else { return total; } }, 0);
-            if (nonzeros > 0) {
-                const mean = sum / nonzeros;
-                //			const variance = win.reduce((total, a) => total + (a - mean) * (a - mean));
-                //			let counts = {};
-                //			win.forEach(el => counts[el] = 1  + (counts[el] || 0));
-                //			delete counts[0];
-                // stencil[i][j] = Object.keys(counts).length; // variance; //  mean;
-                stencil[i][j] = mean;
-            }
-            // Avoid math issues by rounding so we only use the first two significant digits past the decimal point.
-            stencil[i][j] = Math.round(stencil[i][j] * 100) / 100;
-        };
-
-        let win;
-        let win_counts = {};
-
-        //	    for (let i = 0; i < cols; i++) {
-        //		for (let j = 0; j < rows; j++) {
-
-        for (let i = 1; i < cols - 1; i++) {
-            for (let j = 1; j < rows - 1; j++) {
-                win = null;
-                switch (i) {
-                    case 0:
-                        switch (j) {
-                            case 0:
-                                win = winTL; win_counts['TL'] = 1 + (win_counts['TL'] || 0); break;
-                            case rows - 1:
-                                win = winTR; win_counts['TR'] = 1 + (win_counts['TR'] || 0); break;
-                            default:
-                                win = winT; win_counts['T'] = 1 + (win_counts['T'] || 0); break;
-                        }
-                        break;
-                    case cols - 1:
-                        switch (j) {
-                            case 0:
-                                win = winBL; win_counts['BL'] = 1 + (win_counts['BL'] || 0); break;
-                            case rows - 1:
-                                win = winBR; win_counts['BR'] = 1 + (win_counts['BR'] || 0); break;
-                            default:
-                                win = winB; win_counts['B'] = 1 + (win_counts['B'] || 0); break;
-                        }
-                        break;
-                    default:
-                        switch (j) {
-                            case 0:
-                                win = winL; win_counts['L'] = 1 + (win_counts['L'] || 0); break;
-                            case rows - 1:
-                                win = winR; win_counts['R'] = 1 + (win_counts['R'] || 0); break;
-                            default:
-                                win = winMM; win_counts['MM'] = 1 + (win_counts['MM'] || 0); break;
-                        }
-                }
-                stencilFunction(win, i, j);
-                //		    if (win === winR) {
-                //			console.log(JSON.stringify(win(i,j)));
-                //			console.log('stencil[' + i + '][' + j + '] = ' + stencil[i][j]);
-                //		    }
-            }
-        }
-
-        //	    console.log(JSON.stringify(win_counts));
-
-        //	    console.log('Stencil = ' + JSON.stringify(stencil));
+    public static stencilize(matrix: Array<Array<number>>): Array<Array<number>> {
+        let stencil = Stencil.stencil_computation(matrix, (x: number, y: number) => { return x ^ y; }, 1);
         return stencil;
     }
 
@@ -821,7 +685,7 @@ export class Colorize {
                 processed_formulas.concat(data_values));
             //									processed_formulas);
 
-            const stencil = Colorize.stencilize(cols, rows, formula_matrix);
+            const stencil = Colorize.stencilize(formula_matrix);
             const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
 
             const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
