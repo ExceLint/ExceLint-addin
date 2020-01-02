@@ -622,7 +622,7 @@ export class Colorize {
     }
 
     // Discount proposed fixes if they have different formats.
-    public static adjust_proposed_fixes(fixes, propertiesToGet, origin_col, origin_row): any {
+    public static adjust_proposed_fixes(fixes: any[], propertiesToGet: any[][], origin_col: number, origin_row: number): any {
         let proposed_fixes = [];
         // tslint:disable-next-line: forin
         for (let k in fixes) {
@@ -673,8 +673,8 @@ export class Colorize {
 
     public static find_suspicious_cells(cols: number, rows: number,
         origin: [number, number, number],
-        formulas, processed_formulas, data_values, threshold: number) {
-        let suspiciousCells;
+        formulas: any[][], processed_formulas: any[], data_values: any, threshold: number) {
+        let suspiciousCells: any[];
         {
             data_values = data_values;
             const formula_matrix = Colorize.processed_to_matrix(cols,
