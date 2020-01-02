@@ -67,6 +67,23 @@ class InfoGain:
                 entropy += -freq * math.log2(freq)
         return entropy
 
+    """Compute average Shannon entropy with one less item."""
+    @staticmethod
+    def average_reduced_normalized_entropy(counts):
+        total_entropy = 0
+        total = sum(counts) - 1
+        for j in range(0, len(counts)):
+            entropy = 0
+            for i in range(0,len(counts)):
+                if i == j:
+                    freq = (counts[i] - 1) / total
+                else:
+                    freq = counts[i] / total
+                if freq != 0:
+                    entropy += -freq * math.log2(freq)
+            total_entropy += entropy
+        return (total_entropy / len(counts)) / math.log2(total)
+    
     """Compute the salience (entropy-discounted "importance", from 0 to 1) of an index in a pmf."""
     @staticmethod
     def salience(counts, index):
@@ -318,4 +335,12 @@ print("salience array = " + str(salience_array))
 for i in range(0, len(z)):
     for j in range(0, len(z[0])):
         pass
-    
+
+arr = [82, 9, 6, 3]
+print("normalized entropy = " + str(InfoGain.normalized_entropy(arr)))
+print("normalized entropy [82, 9, 6] = " + str(InfoGain.normalized_entropy([82, 9, 6])))
+print("normalized entropy [82, 9, 3] = " + str(InfoGain.normalized_entropy([82, 9, 3])))
+print("normalized entropy [82, 6, 3] = " + str(InfoGain.normalized_entropy([82, 6, 3])))
+print("normalized entropy [9, 6, 3] = " + str(InfoGain.normalized_entropy([9, 6, 3])))
+print("average reduced entropy = " + str(InfoGain.average_reduced_normalized_entropy(arr)))
+print("salience try = " + str((1 - 82/100) * (InfoGain.average_reduced_normalized_entropy(arr)/InfoGain.normalized_entropy(arr))))
