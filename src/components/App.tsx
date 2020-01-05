@@ -86,7 +86,7 @@ export default class App extends React.Component<AppProps, AppState> {
         await context.sync();
         t.split('got formatting info.');
 
-        console.log(JSON.stringify(propertiesToGet.value));
+        // console.log(JSON.stringify(propertiesToGet.value));
 
         this.proposed_fixes = Colorize.adjust_proposed_fixes(fixes, propertiesToGet.value, origin_col, origin_row);
         t.split('done.');
@@ -94,7 +94,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 
     /// Color the ranges using the specified color function.
-    private color_ranges(grouped_ranges, currentWorksheet, colorfn, otherfn) {
+    private color_ranges(grouped_ranges: { [x: string]: any; }, currentWorksheet: Excel.Worksheet, colorfn: any, otherfn: { (): void; (): void; (): void; }) {
         const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
         // Process the ranges.
         let hash_index = 0;
@@ -105,11 +105,11 @@ export default class App extends React.Component<AppProps, AppState> {
                 for (let theRange of v) {
                     const rangeStr = ExcelUtils.make_range_string(theRange);
                     let range = currentWorksheet.getRange(rangeStr);
-                    if (range.length === 0) {
-                        continue;
-                    }
+                    //if (range.length === 0) {
+                    //    continue;
+                    //}
                     const color = colorfn(hash_index);
-                    if (color == '#FFFFFF') {
+                    if (color === '#FFFFFF') {
                         range.format.fill.clear();
                     } else {
                         // console.log("setting " + rangeStr + " to " + color);
@@ -124,7 +124,7 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
 
-    saveFormats = async (wasPreviouslyProtected) => {
+    saveFormats = async (wasPreviouslyProtected: boolean) => {
         OfficeExtension.config.extendedErrorLogging = true;
         await Excel.run(async context => {
             // First, load the current worksheet's name and id.
@@ -156,7 +156,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
 
             // Now, generate a new backup sheet. This will take the place of the old backup, if any.
-            let newbackupSheet = currentWorksheet.copy("End");
+            let newbackupSheet = currentWorksheet.copy('End');
             newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
             newbackupSheet.load(['name']);
             // Ensure that we remain on the current worksheet.
@@ -173,7 +173,7 @@ export default class App extends React.Component<AppProps, AppState> {
             }
 
             await context.sync();
-            console.log("saveFormats: copied out the formats");
+            console.log('saveFormats: copied out the formats');
         });
     }
 
@@ -181,12 +181,12 @@ export default class App extends React.Component<AppProps, AppState> {
     restoreFormats = async () => {
         try {
             await Excel.run(async context => {
-                console.log("restoreFormats: begin");
-                let t = new Timer("restoreFormats");
+                console.log('restoreFormats: begin');
+                let t = new Timer('restoreFormats');
 
                 let worksheets = context.workbook.worksheets;
                 let currentWorksheet = worksheets.getActiveWorksheet();
-                this.sheetName = "";
+                this.sheetName = '';
                 currentWorksheet.load(['protection', 'id']);
                 await context.sync();
 
@@ -195,14 +195,14 @@ export default class App extends React.Component<AppProps, AppState> {
                 try {
                     let backupSheet = worksheets.getItemOrNullObject(backupName);
                     await context.sync();
-                    console.log("backupSheet = " + JSON.stringify(backupSheet));
+                    console.log('backupSheet = ' + JSON.stringify(backupSheet));
                     if (!backupSheet.isNullObject) {
                         // First, try to unprotect the current worksheet so we can restore into it.
                         try {
                             currentWorksheet.protection.unprotect();
                             await context.sync();
                         } catch (error) {
-                            console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
+                            console.log('WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.');
                             return;
                         }
                         // Get the current used range.
@@ -231,7 +231,7 @@ export default class App extends React.Component<AppProps, AppState> {
                         await context.sync();
 
                         // Now copy it all into the original worksheet.
-                        console.log("copying out " + JSON.stringify(backupSheetUsedRange.address));
+                        console.log('copying out ' + JSON.stringify(backupSheetUsedRange.address));
                         // destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
                         destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
                         await context.sync();
@@ -253,7 +253,7 @@ export default class App extends React.Component<AppProps, AppState> {
                     } else {
                         console.log("restoreFormats: didn't find the sheet " + backupName);
                     }
-                } catch (error) { console.log("restoreFormats: Nothing to restore: " + error); }
+                } catch (error) { console.log('restoreFormats: Nothing to restore: ' + error); }
                 this.proposed_fixes = [];
                 this.suspicious_cells = [];
                 this.current_fix = -1;
@@ -261,12 +261,12 @@ export default class App extends React.Component<AppProps, AppState> {
                 this.total_fixes = -1;
                 this.updateContent();
                 await context.sync();
-                t.split("end");
+                t.split('end');
             });
         } catch (error) {
-            console.log("Error: " + error);
+            console.log('Error: ' + error);
             if (error instanceof OfficeExtension.Error) {
-                console.log("Debug info: " + JSON.stringify(error.debugInfo));
+                console.log('Debug info: ' + JSON.stringify(error.debugInfo));
             }
         }
     }
@@ -475,7 +475,7 @@ export default class App extends React.Component<AppProps, AppState> {
         }
     }
 
-    getRange(currentWorksheet, proposed_fixes, current_fix) {
+    getRange(currentWorksheet: Excel.Worksheet, proposed_fixes: string | any[], current_fix: number) {
         if (proposed_fixes.length > 0) {
             let [col0, row0, col1, row1] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
             let rangeStr = col0 + row0 + ":" + col1 + row1;
@@ -491,11 +491,11 @@ export default class App extends React.Component<AppProps, AppState> {
         console.log("selectFix " + currentFix);
         try {
             await Excel.run(async context => {
-                if (this.total_fixes == -1) {
+                if (this.total_fixes === -1) {
                     await this.restoreFormats();
                     await this.setColor();
                 }
-                if (currentFix == -1) {
+                if (currentFix === -1) {
                     this.current_fix = -1;
                     this.updateContent();
                     return;
@@ -537,11 +537,11 @@ export default class App extends React.Component<AppProps, AppState> {
         console.log("selectCell " + currentCell);
         try {
             await Excel.run(async context => {
-                if (this.suspicious_cells.length == 0) {
+                if (this.suspicious_cells.length === 0) {
                     await this.restoreFormats();
                     await this.setColor();
                 }
-                if (currentCell == -1) {
+                if (currentCell === -1) {
                     this.current_suspicious_cell = -1;
                     this.updateContent();
                     return;
@@ -609,7 +609,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 <Header title='ExceLint' />
                 <Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
                     message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormats}
-                    sheetName="" currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} cellSelector={this.selectCell} currentSuspiciousCell={this.current_suspicious_cell} />
+                    sheetName='' currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} cellSelector={this.selectCell} currentSuspiciousCell={this.current_suspicious_cell} />
 
             </div>
         );

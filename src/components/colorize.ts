@@ -18,7 +18,6 @@ export class Colorize {
 
     private static formulasThreshold = 10000;
     private static valuesThreshold = 10000;
-    //    private static stencilizer = new Stencil();
 
     public static setReportingThreshold(value: number) {
         Colorize.reportingThreshold = value;
@@ -239,12 +238,13 @@ export class Colorize {
 
 
     public static stencilize(matrix: Array<Array<number>>): Array<Array<number>> {
-        let stencil = Stencil.stencil_computation(matrix, (x: number, y: number) => { return x ^ y; }, 1);
+        let stencil = Stencil.stencil_computation(matrix, (x: number, y: number) => { return x * y; }, 1);
         return stencil;
     }
 
     public static compute_stencil_probabilities(cols: number, rows: number,
         stencil: Array<Array<number>>): Array<Array<number>> {
+        console.log('compute_stencil_probabilities: stencil = ' + JSON.stringify(stencil));
         let probs = new Array(cols);
         for (let i = 0; i < cols; i++) {
             probs[i] = new Array(rows).fill(0);
@@ -332,7 +332,7 @@ export class Colorize {
         }
         const avgValues = sumValues / countValues;
         cells.sort((a, b) => { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
-        //	    console.log('cells = ' + JSON.stringify(cells));
+        console.log('cells = ' + JSON.stringify(cells));
         return cells;
     }
 
@@ -395,12 +395,14 @@ export class Colorize {
 
         if (values.length < 10000) {
             // Disabled for now. FIXME
-            // suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+            //            suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+            suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1); // Must be more rare than this fraction.
+
         }
 
         const proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
-        if (false) {
+        if (true) {
             console.log('results:');
             console.log(JSON.stringify(suspicious_cells));
             console.log(JSON.stringify(grouped_formulas));
@@ -686,28 +688,37 @@ export class Colorize {
             //									processed_formulas);
 
             const stencil = Colorize.stencilize(formula_matrix);
+            console.log('after stencilize: stencil = ' + JSON.stringify(stencil));
             const probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
+            console.log('probs = ' + JSON.stringify(probs));
 
             const candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
-
             // Prune any cell that is in fact a formula.
 
             if (typeof formulas !== 'undefined') {
                 let totalFormulaWeight = 0;
+                let totalWeight = 0;
                 suspiciousCells = candidateSuspiciousCells.filter((c) => {
                     const theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
                     if ((theFormula.length < 1) || (theFormula[0] !== '=')) {
+                        totalWeight += c[2];
                         return true;
                     } else {
                         // It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
                         totalFormulaWeight += c[2];
+                        totalWeight += c[2];
                         return false;
                     }
                 });
+                console.log('total formula weight = ' + totalFormulaWeight);
+                console.log('total weight = ' + totalWeight);
                 // Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
-                const multiplier = 1 / (1 - totalFormulaWeight);
+                const multiplier = totalFormulaWeight / totalWeight;
+                console.log('after processing 1, suspiciousCells = ' + JSON.stringify(suspiciousCells));
                 suspiciousCells = suspiciousCells.map((c) => [c[0], c[1], c[2] * multiplier]);
+                console.log('after processing 2, suspiciousCells = ' + JSON.stringify(suspiciousCells));
                 suspiciousCells = suspiciousCells.filter((c) => c[2] <= threshold);
+                console.log('after processing 3, suspiciousCells = ' + JSON.stringify(suspiciousCells));
             } else {
                 suspiciousCells = candidateSuspiciousCells;
             }

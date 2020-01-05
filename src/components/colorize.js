@@ -9,7 +9,6 @@ var infogain_1 = require("./infogain");
 var Colorize = /** @class */ (function () {
     function Colorize() {
     }
-    //    private static stencilizer = new Stencil();
     Colorize.setReportingThreshold = function (value) {
         Colorize.reportingThreshold = value;
     };
@@ -204,10 +203,11 @@ var Colorize = /** @class */ (function () {
         return matrix;
     };
     Colorize.stencilize = function (matrix) {
-        var stencil = infogain_1.Stencil.stencil_computation(matrix, function (x, y) { return x ^ y; }, 1);
+        var stencil = infogain_1.Stencil.stencil_computation(matrix, function (x, y) { return x * y; }, 1);
         return stencil;
     };
     Colorize.compute_stencil_probabilities = function (cols, rows, stencil) {
+        console.log('compute_stencil_probabilities: stencil = ' + JSON.stringify(stencil));
         var probs = new Array(cols);
         for (var i = 0; i < cols; i++) {
             probs[i] = new Array(rows).fill(0);
@@ -284,7 +284,7 @@ var Colorize = /** @class */ (function () {
         }
         var avgValues = sumValues / countValues;
         cells.sort(function (a, b) { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
-        //	    console.log('cells = ' + JSON.stringify(cells));
+        console.log('cells = ' + JSON.stringify(cells));
         return cells;
     };
     Colorize.process_suspicious = function (usedRangeAddress, formulas, values) {
@@ -331,10 +331,11 @@ var Colorize = /** @class */ (function () {
         var suspicious_cells = [];
         if (values.length < 10000) {
             // Disabled for now. FIXME
-            // suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+            //            suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1 - Colorize.getReportingThreshold() / 100); // Must be more rare than this fraction.
+            suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1); // Must be more rare than this fraction.
         }
         var proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
-        if (false) {
+        if (true) {
             console.log('results:');
             console.log(JSON.stringify(suspicious_cells));
             console.log(JSON.stringify(grouped_formulas));
@@ -590,26 +591,36 @@ var Colorize = /** @class */ (function () {
             processed_formulas.concat(data_values));
             //									processed_formulas);
             var stencil = Colorize.stencilize(formula_matrix);
+            console.log('after stencilize: stencil = ' + JSON.stringify(stencil));
             var probs = Colorize.compute_stencil_probabilities(cols, rows, stencil);
+            console.log('probs = ' + JSON.stringify(probs));
             var candidateSuspiciousCells = Colorize.generate_suspicious_cells(cols, rows, origin[0] - 1, origin[1] - 1, formula_matrix, probs, threshold);
             // Prune any cell that is in fact a formula.
             if (typeof formulas !== 'undefined') {
                 var totalFormulaWeight_1 = 0;
+                var totalWeight_1 = 0;
                 suspiciousCells = candidateSuspiciousCells.filter(function (c) {
                     var theFormula = formulas[c[1] - origin[1]][c[0] - origin[0]];
                     if ((theFormula.length < 1) || (theFormula[0] !== '=')) {
+                        totalWeight_1 += c[2];
                         return true;
                     }
                     else {
                         // It's a formula: we will remove it, but also track how much it contributed to the probability distribution.
                         totalFormulaWeight_1 += c[2];
+                        totalWeight_1 += c[2];
                         return false;
                     }
                 });
+                console.log('total formula weight = ' + totalFormulaWeight_1);
+                console.log('total weight = ' + totalWeight_1);
                 // Now we need to correct all the non-formulas to give them weight proportional to the case when the formulas are removed.
-                var multiplier_1 = 1 / (1 - totalFormulaWeight_1);
+                var multiplier_1 = totalFormulaWeight_1 / totalWeight_1;
+                console.log('after processing 1, suspiciousCells = ' + JSON.stringify(suspiciousCells));
                 suspiciousCells = suspiciousCells.map(function (c) { return [c[0], c[1], c[2] * multiplier_1]; });
+                console.log('after processing 2, suspiciousCells = ' + JSON.stringify(suspiciousCells));
                 suspiciousCells = suspiciousCells.filter(function (c) { return c[2] <= threshold; });
+                console.log('after processing 3, suspiciousCells = ' + JSON.stringify(suspiciousCells));
             }
             else {
                 suspiciousCells = candidateSuspiciousCells;
