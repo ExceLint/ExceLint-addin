@@ -244,7 +244,7 @@ export class Colorize {
 
     public static compute_stencil_probabilities(cols: number, rows: number,
         stencil: Array<Array<number>>): Array<Array<number>> {
-        console.log('compute_stencil_probabilities: stencil = ' + JSON.stringify(stencil));
+//        console.log('compute_stencil_probabilities: stencil = ' + JSON.stringify(stencil));
         let probs = new Array(cols);
         for (let i = 0; i < cols; i++) {
             probs[i] = new Array(rows).fill(0);
@@ -332,7 +332,7 @@ export class Colorize {
         }
         const avgValues = sumValues / countValues;
         cells.sort((a, b) => { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
-        console.log('cells = ' + JSON.stringify(cells));
+//        console.log('cells = ' + JSON.stringify(cells));
         return cells;
     }
 
@@ -402,7 +402,7 @@ export class Colorize {
 
         const proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
 
-        if (true) {
+        if (false) {
             console.log('results:');
             console.log(JSON.stringify(suspicious_cells));
             console.log(JSON.stringify(grouped_formulas));
@@ -674,8 +674,9 @@ export class Colorize {
     }
 
     public static find_suspicious_cells(cols: number, rows: number,
-        origin: [number, number, number],
-        formulas: any[][], processed_formulas: any[], data_values: any, threshold: number) {
+					origin: [number, number, number],
+					formulas: any[][], processed_formulas: any[], data_values: any, threshold: number) {
+	return []; // FIXME disabled for now
         let suspiciousCells: any[];
         {
             data_values = data_values;

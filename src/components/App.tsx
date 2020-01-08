@@ -30,8 +30,8 @@ export default class App extends React.Component<AppProps, AppState> {
     private contentElement: any = null;
     private sheetName: string = '';
 
-    private numericFormulaRangeThreshold = 10000;
-    private numericRangeThreshold = 10000;
+    private numericFormulaRangeThreshold = 20000;
+    private numericRangeThreshold = 20000;
 
     constructor(props, context) {
         super(props, context);
@@ -570,7 +570,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 this.current_suspicious_cell = currentCell;
                 this.current_fix = -1;
                 this.updateContent();
-                console.log("setting is now " + this.current_suspicious_cell);
+//                console.log("setting is now " + this.current_suspicious_cell);
                 /*
                   this.contentElement.current.setState({ currentFix: currentFix,
                   totalFixes: this.total_fixes,

@@ -255,37 +255,37 @@ for (let parms of parameters) {
                     out['falsePositives'] = falsePositives.length;
                     out['falseNegatives'] = falseNegatives.length;
 
-		    // We adopt the methodology used by the ExceLint paper (OOPSLA 18):
-		    //   "When a tool flags nothing, we define precision to
-		    //    be 1, since the tool makes no mistakes. When a benchmark contains no errors but the tool flags
-		    //    anything, we define precision to be 0 since nothing that it flags can be a real error."
+                    // We adopt the methodology used by the ExceLint paper (OOPSLA 18):
+                    //   "When a tool flags nothing, we define precision to
+                    //    be 1, since the tool makes no mistakes. When a benchmark contains no errors but the tool flags
+                    //    anything, we define precision to be 0 since nothing that it flags can be a real error."
 
-		    if (foundBugs.length === 0) {
-			out['precision'] = 1;
-		    }
-		    if ((truePositives.length === 0) && (foundBugs.length > 0)) {
-			out['precision'] = 0;
-		    }
+                    if (foundBugs.length === 0) {
+                        out['precision'] = 1;
+                    }
+                    if ((truePositives.length === 0) && (foundBugs.length > 0)) {
+                        out['precision'] = 0;
+                    }
                     if ((truePositives.length > 0) && (foundBugs.length > 0)) {
                         precision = truePositives.length / (truePositives.length + falsePositives.length);
                         out['precision'] = precision;
-		    }
+                    }
                     if (falseNegatives.length + trueBugs.length > 0) {
                         recall = truePositives.length / (falseNegatives.length + truePositives.length);
                         out['recall'] = recall;
                     } else {
-			// No bugs to find means perfect recall. NOTE: this is not described in the paper.
-			out['recall'] = 1;
-		    }
-		    scores.push(truePositives.length - falsePositives.length);
-		    if (false) {
-			if (precision + recall > 0) {
+                        // No bugs to find means perfect recall. NOTE: this is not described in the paper.
+                        out['recall'] = 1;
+                    }
+                    scores.push(truePositives.length - falsePositives.length);
+                    if (false) {
+                        if (precision + recall > 0) {
                             // F1 score: https://en.wikipedia.org/wiki/F1_score
                             const f1score = (2 * precision * recall) / (precision + recall);
                             /// const f1score = precision; //// FIXME for testing (2 * precision * recall) / (precision + recall);
                             scores.push(f1score);
-			}
-		    }
+                        }
+                    }
                 }
             }
             output.worksheets[sheet.sheetName] = out;

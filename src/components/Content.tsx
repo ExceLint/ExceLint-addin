@@ -95,7 +95,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
         }
     }
     return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /></div>;
-    //    return <div></div>; //  style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+//    return <div></div>; //  style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
 }
 
 
@@ -149,8 +149,8 @@ function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0
             return table;
         }
     }
-    // return <div></div>;
-    return <div style={notSuspiciousStyle}>No suspicious cells found in {sheetName}.<br /><br /></div>;
+    return <div></div>;
+    // return <div style={notSuspiciousStyle}>No suspicious cells found in {sheetName}.<br /><br /></div>;
 }
 
 
@@ -182,7 +182,7 @@ function DisplayFixes(props) {
     result1 = <div><br /><br />{table1}</div>;
     // Suspicious cells.
     let result2 = <div></div>;
-    console.log('checking suspicious cells.');
+//    console.log('checking suspicious cells.');
     const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
     result2 = <div>{table2}</div>;
     return <div>{result1}{result2}</div>;

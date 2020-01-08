@@ -207,7 +207,7 @@ var Colorize = /** @class */ (function () {
         return stencil;
     };
     Colorize.compute_stencil_probabilities = function (cols, rows, stencil) {
-        console.log('compute_stencil_probabilities: stencil = ' + JSON.stringify(stencil));
+        //        console.log('compute_stencil_probabilities: stencil = ' + JSON.stringify(stencil));
         var probs = new Array(cols);
         for (var i = 0; i < cols; i++) {
             probs[i] = new Array(rows).fill(0);
@@ -284,7 +284,7 @@ var Colorize = /** @class */ (function () {
         }
         var avgValues = sumValues / countValues;
         cells.sort(function (a, b) { return Math.abs(b[2] - avgValues) - Math.abs(a[2] - avgValues); });
-        console.log('cells = ' + JSON.stringify(cells));
+        //        console.log('cells = ' + JSON.stringify(cells));
         return cells;
     };
     Colorize.process_suspicious = function (usedRangeAddress, formulas, values) {
@@ -335,7 +335,7 @@ var Colorize = /** @class */ (function () {
             suspicious_cells = Colorize.find_suspicious_cells(cols, rows, origin, formulas, processed_formulas, data_values, 1); // Must be more rare than this fraction.
         }
         var proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
-        if (true) {
+        if (false) {
             console.log('results:');
             console.log(JSON.stringify(suspicious_cells));
             console.log(JSON.stringify(grouped_formulas));
@@ -583,6 +583,7 @@ var Colorize = /** @class */ (function () {
         return proposed_fixes;
     };
     Colorize.find_suspicious_cells = function (cols, rows, origin, formulas, processed_formulas, data_values, threshold) {
+        return []; // FIXME disabled for now
         var suspiciousCells;
         {
             data_values = data_values;

@@ -166,16 +166,16 @@ export class Stencil {
         const nrows = arr.length;
         const ncols = arr[0].length;
         let new_arr = Array(nrows).fill(0).map(() => Array(ncols).fill(0));
-        console.log('new_arr = ' + JSON.stringify(new_arr));
+//        console.log('new_arr = ' + JSON.stringify(new_arr));
 
         // Interior
         for (let i = 1; i < ncols - 1; i++) {
             for (let j = 1; j < nrows - 1; j++) {
-                console.log('i = ' + i + ', j = ' + j);
+//                console.log('i = ' + i + ', j = ' + j);
                 new_arr[j][i] = Stencil.apply_stencil(Stencil.stencil, arr, i, j, base, operator);
             }
         }
-        console.log('new_arr = ' + JSON.stringify(new_arr));
+  //      console.log('new_arr = ' + JSON.stringify(new_arr));
 
         // Edges
         // Top and bottom
@@ -185,20 +185,20 @@ export class Stencil {
             //           console.log('bottom');
             new_arr[nrows - 1][j] = Stencil.apply_stencil(Stencil.stencil_bottom, arr, nrows - 1, j, base, operator);
         }
-        console.log('new_arr = ' + JSON.stringify(new_arr));
+    //    console.log('new_arr = ' + JSON.stringify(new_arr));
         // Left and right
         for (let i = 1; i < nrows - 1; i++) {
             new_arr[i][0] = Stencil.apply_stencil(Stencil.stencil_left, arr, i, 0, base, operator);
             new_arr[i][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_right, arr, i, ncols - 1, base, operator);
         }
 
-        console.log('new_arr = ' + JSON.stringify(new_arr));
+      //  console.log('new_arr = ' + JSON.stringify(new_arr));
         // Corners
         new_arr[0][0] = Stencil.apply_stencil(Stencil.stencil_topleft, arr, 0, 0, base, operator);
         new_arr[0][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_topright, arr, 0, ncols - 1, base, operator);
         new_arr[nrows - 1][0] = Stencil.apply_stencil(Stencil.stencil_bottomleft, arr, nrows - 1, 0, base, operator);
         new_arr[nrows - 1][ncols - 1] = Stencil.apply_stencil(Stencil.stencil_bottomright, arr, nrows - 1, ncols - 1, base, operator);
-        console.log('new_arr = ' + JSON.stringify(new_arr));
+        // console.log('new_arr = ' + JSON.stringify(new_arr));
         return new_arr;
     }
 }
