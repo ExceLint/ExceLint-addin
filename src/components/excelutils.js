@@ -189,9 +189,14 @@ var ExcelUtils = /** @class */ (function () {
         if (typeof (range) !== 'string') {
             return null;
         }
-        range = range.replace(this.formulas_with_numbers, '_'); // kind of a hack for now
-        range = range.replace(this.formulas_with_quoted_sheetnames, '_'); // kind of a hack for now
-        range = range.replace(this.formulas_with_unquoted_sheetnames, '_');
+        // Zap all the formulas with the below characteristics.
+        range = range.replace(this.formulas_with_numbers, '_'); // Don't track these.
+        range = range.replace(this.formulas_with_quoted_sheetnames_2, '_');
+        range = range.replace(this.formulas_with_quoted_sheetnames_1, '_');
+        range = range.replace(this.formulas_with_unquoted_sheetnames_2, '_');
+        range = range.replace(this.formulas_with_unquoted_sheetnames_1, '_');
+        range = range.replace(this.formulas_with_unquoted_sheetnames_1, '_');
+        range = range.replace(this.formulas_with_structured_references, '_');
         /// FIX ME - should we count the same range multiple times? Or just once?
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
@@ -370,11 +375,14 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
     ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
     ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
-    // We need to filter out all formulas with numbers so they don't mess with our dependency regexps.
+    // We need to filter out all formulas with these characteristics so they don't mess with our dependency regexps.
     ExcelUtils.formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
     // Same with sheet name references.
-    ExcelUtils.formulas_with_quoted_sheetnames = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
-    ExcelUtils.formulas_with_unquoted_sheetnames = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    ExcelUtils.formulas_with_quoted_sheetnames_1 = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    ExcelUtils.formulas_with_quoted_sheetnames_2 = new RegExp("'[^\']*'\!" + '\\$?[A-Z][A-Z]?\\$?\\d+' + ':' + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    ExcelUtils.formulas_with_unquoted_sheetnames_1 = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    ExcelUtils.formulas_with_unquoted_sheetnames_2 = new RegExp("[A-Za-z0-9]+\!" + '\\$?[A-Z][A-Z]?\\$?\\d+' + ':' + '\\$?[A-Z][A-Z]?\\$?\\d+', 'g');
+    ExcelUtils.formulas_with_structured_references = new RegExp('\\[([^\\]])*\\]', 'g');
     ExcelUtils.originalSheetSuffix = '_EL';
     return ExcelUtils;
 }());
