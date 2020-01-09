@@ -72,7 +72,9 @@ export default class App extends React.Component<AppProps, AppState> {
                     weight: true,
                     bold: true,
                     italic: true,
-                    name: true
+                    name: true,
+		    size: true,
+		    underline: true
                 },
 		borders: {
                     color: true,
