@@ -233,8 +233,8 @@ export default class App extends React.Component<AppProps, AppState> {
 
                         // Now copy it all into the original worksheet.
                         console.log('copying out ' + JSON.stringify(backupSheetUsedRange.address));
-                        // destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
-                        destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
+                        destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
+                        // destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
                         await context.sync();
                         // We are done with the backup sheet: delete it.
                         backupSheet.visibility = Excel.SheetVisibility.hidden;
