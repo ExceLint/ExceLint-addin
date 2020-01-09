@@ -66,11 +66,6 @@ export default class App extends React.Component<AppProps, AppState> {
                 fill: {
                     color: true
                 },
-                border: {
-                    color: true,
-                    style: true,
-                    weight: true
-                },
                 font: {
                     color: true,
                     style: true,
@@ -78,8 +73,14 @@ export default class App extends React.Component<AppProps, AppState> {
                     bold: true,
                     italic: true,
                     name: true
-                }
+                },
+		borders: {
+                    color: true,
+                    style: true,
+                    weight: true
+		},
             },
+	    style : true
         });
 
         // Sync to get the data from the workbook.
