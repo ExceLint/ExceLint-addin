@@ -232,10 +232,8 @@ for (let parms of parameters) {
             const totalCells = rows * columns;
 
             const out = {
-                // 'sheetName': sheet.sheetName,
-                //        'suspiciousCells': suspicious_cells,
-                //        'groupedFormulas': grouped_formulas,
-                //        'groupedData': grouped_data,
+                'suspiciousnessThreshold': reportingThreshold,
+                'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
                 'suspiciousRanges': adjusted_fixes.length,
                 'suspiciousCells': 0, // actually calculated below.

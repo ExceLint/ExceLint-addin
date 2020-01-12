@@ -197,10 +197,8 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             var rows = sheet.values.length;
             var totalCells = rows * columns;
             var out = {
-                // 'sheetName': sheet.sheetName,
-                //        'suspiciousCells': suspicious_cells,
-                //        'groupedFormulas': grouped_formulas,
-                //        'groupedData': grouped_data,
+                'suspiciousnessThreshold': reportingThreshold,
+                'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
                 'suspiciousRanges': adjusted_fixes.length,
                 'suspiciousCells': 0,
