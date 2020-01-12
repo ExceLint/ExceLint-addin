@@ -188,13 +188,28 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             if (args.noElapsedTime) {
                 elapsed = 0; // Dummy value, used for regression testing.
             }
+            // Compute number of cells containing formulas.
+            var numFormulaCells = (sheet.formulas.flat().filter(function (x) { return x.length > 0; })).length;
+            // Count the number of non-empty cells.
+            var numValueCells = (sheet.values.flat().filter(function (x) { return x.length > 0; })).length;
+            // Compute total number of cells in the sheet (rows * columns).
+            var columns = sheet.values[0].length;
+            var rows = sheet.values.length;
+            var totalCells = rows * columns;
             var out = {
                 // 'sheetName': sheet.sheetName,
                 //        'suspiciousCells': suspicious_cells,
                 //        'groupedFormulas': grouped_formulas,
                 //        'groupedData': grouped_data,
                 'proposedFixes': adjusted_fixes,
-                'elapsedTimeSeconds': elapsed / 1e6
+                'suspiciousRanges': adjusted_fixes.length,
+                'suspiciousCells': 0,
+                'elapsedTimeSeconds': elapsed / 1e6,
+                'columns': columns,
+                'rows': rows,
+                'totalCells': totalCells,
+                'numFormulaCells': numFormulaCells,
+                'numValueCells': numValueCells
             };
             // Compute precision and recall of proposed fixes, if we have annotated ground truth.
             var workbookBasename = path.basename(inp['workbookName']);
@@ -211,7 +226,9 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             return [];
                         }
                     });
-                    foundBugs = foundBugs.flat(1);
+                    var foundBugsArray = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
+                    foundBugs = foundBugsArray.map(JSON.parse);
+                    out['suspiciousCells'] = foundBugs.length;
                     var trueBugsJSON_1 = trueBugs.map(function (x) { return JSON.stringify(x); });
                     var foundBugsJSON_1 = foundBugs.map(function (x) { return JSON.stringify(x); });
                     var truePositives = trueBugsJSON_1.filter(function (value) { return foundBugsJSON_1.includes(value); }).map(function (x) { return JSON.parse(x); });
@@ -290,3 +307,29 @@ if (!args.suppressOutput) {
     console.log(JSON.stringify(outputs, null, '\t'));
 }
 console.log(JSON.stringify(f1scores));
+var q = [
+    [
+        [
+            12,
+            12,
+            0
+        ],
+        [
+            12,
+            13,
+            0
+        ]
+    ],
+    [
+        [
+            12,
+            14,
+            0
+        ],
+        [
+            12,
+            14,
+            0
+        ]
+    ]
+];

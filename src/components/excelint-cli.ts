@@ -220,13 +220,31 @@ for (let parms of parameters) {
             if (args.noElapsedTime) {
                 elapsed = 0; // Dummy value, used for regression testing.
             }
+            // Compute number of cells containing formulas.
+            const numFormulaCells = (sheet.formulas.flat().filter(x => x.length > 0)).length;
+
+            // Count the number of non-empty cells.
+            const numValueCells = (sheet.values.flat().filter(x => x.length > 0)).length;
+
+            // Compute total number of cells in the sheet (rows * columns).
+            const columns = sheet.values[0].length;
+            const rows = sheet.values.length;
+            const totalCells = rows * columns;
+
             const out = {
                 // 'sheetName': sheet.sheetName,
                 //        'suspiciousCells': suspicious_cells,
                 //        'groupedFormulas': grouped_formulas,
                 //        'groupedData': grouped_data,
                 'proposedFixes': adjusted_fixes,
-                'elapsedTimeSeconds': elapsed / 1e6
+                'suspiciousRanges': adjusted_fixes.length,
+                'suspiciousCells': 0, // actually calculated below.
+                'elapsedTimeSeconds': elapsed / 1e6,
+                'columns': columns,
+                'rows': rows,
+                'totalCells': totalCells,
+                'numFormulaCells': numFormulaCells,
+                'numValueCells': numValueCells
             };
 
             // Compute precision and recall of proposed fixes, if we have annotated ground truth.
@@ -243,7 +261,9 @@ for (let parms of parameters) {
                             return [];
                         }
                     });
-                    foundBugs = foundBugs.flat(1);
+                    const foundBugsArray: any = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
+                    foundBugs = foundBugsArray.map(JSON.parse);
+                    out['suspiciousCells'] = foundBugs.length;
                     const trueBugsJSON = trueBugs.map(x => JSON.stringify(x));
                     const foundBugsJSON = foundBugs.map(x => JSON.stringify(x));
                     const truePositives = trueBugsJSON.filter(value => foundBugsJSON.includes(value)).map(x => JSON.parse(x));
@@ -311,3 +331,31 @@ if (!args.suppressOutput) {
     console.log(JSON.stringify(outputs, null, '\t'));
 }
 console.log(JSON.stringify(f1scores));
+
+const q =
+    [
+        [
+            [
+                12,
+                12,
+                0
+            ],
+            [
+                12,
+                13,
+                0
+            ]
+        ],
+        [
+            [
+                12,
+                14,
+                0
+            ],
+            [
+                12,
+                14,
+                0
+            ]
+        ]];
+
