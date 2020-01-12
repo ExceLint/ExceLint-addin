@@ -328,32 +328,5 @@ const firstMax = f1scores.find(item => { return item[2] === maxScore; });
 if (!args.suppressOutput) {
     console.log(JSON.stringify(outputs, null, '\t'));
 }
-console.log(JSON.stringify(f1scores));
-
-const q =
-    [
-        [
-            [
-                12,
-                12,
-                0
-            ],
-            [
-                12,
-                13,
-                0
-            ]
-        ],
-        [
-            [
-                12,
-                14,
-                0
-            ],
-            [
-                12,
-                14,
-                0
-            ]
-        ]];
+// console.log(JSON.stringify(f1scores));
 

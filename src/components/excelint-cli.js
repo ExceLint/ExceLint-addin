@@ -304,30 +304,3 @@ var firstMax = f1scores.find(function (item) { return item[2] === maxScore; });
 if (!args.suppressOutput) {
     console.log(JSON.stringify(outputs, null, '\t'));
 }
-console.log(JSON.stringify(f1scores));
-var q = [
-    [
-        [
-            12,
-            12,
-            0
-        ],
-        [
-            12,
-            13,
-            0
-        ]
-    ],
-    [
-        [
-            12,
-            14,
-            0
-        ],
-        [
-            12,
-            14,
-            0
-        ]
-    ]
-];
