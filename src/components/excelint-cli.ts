@@ -136,7 +136,12 @@ if (useExample) {
     };
 }
 
-let annotated_bugs = fs.readFileSync('annotations-processed.json');
+let annotated_bugs = '{}';
+try {
+    annotated_bugs = fs.readFileSync('annotations-processed.json');
+} catch (e) {
+}
+
 let bugs = JSON.parse(annotated_bugs);
 
 let base = '';

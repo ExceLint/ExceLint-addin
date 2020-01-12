@@ -118,7 +118,12 @@ if (useExample) {
             }]
     };
 }
-var annotated_bugs = fs.readFileSync('annotations-processed.json');
+var annotated_bugs = '{}';
+try {
+    annotated_bugs = fs.readFileSync('annotations-processed.json');
+}
+catch (e) {
+}
 var bugs = JSON.parse(annotated_bugs);
 var base = '';
 if (args.directory) {
