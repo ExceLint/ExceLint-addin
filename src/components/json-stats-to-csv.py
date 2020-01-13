@@ -32,7 +32,8 @@ def process_workbook(dirname, fname, output_file):
                           'suspiciousRanges' : workbook[sheet]['suspiciousRanges'],
                           'suspiciousCells' : workbook[sheet]['suspiciousCells'],
                           'suspiciousnessThreshold' : workbook[sheet]['suspiciousnessThreshold'],
-                          'formattingDiscount' : workbook[sheet]['formattingDiscount'] }
+                          'formattingDiscount' : workbook[sheet]['formattingDiscount'],
+                          'numFormulaCells' : workbook[sheet]['numFormulaCells'] }
                     writer.writerow(s)
     
     
@@ -49,7 +50,7 @@ if args.output is None or (args.input is None and args.directory is None):
 
 # Write the header.
 with open(args.output, 'w') as csvfile:
-    fieldnames = ['workbookName', 'worksheet', 'suspiciousRanges', 'suspiciousCells', 'suspiciousnessThreshold', 'formattingDiscount']
+    fieldnames = ['workbookName', 'worksheet', 'suspiciousRanges', 'suspiciousCells', 'suspiciousnessThreshold', 'formattingDiscount', 'numFormulaCells']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     
