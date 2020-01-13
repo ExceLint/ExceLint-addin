@@ -217,22 +217,22 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             };
             // Compute precision and recall of proposed fixes, if we have annotated ground truth.
             var workbookBasename = path.basename(inp['workbookName']);
+            // Build list of bugs.
+            var foundBugs = out['proposedFixes'].map(function (x) {
+                if (x[0] >= (reportingThreshold / 100)) {
+                    return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
+                }
+                else {
+                    return [];
+                }
+            });
+            var foundBugsArray = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
+            foundBugs = foundBugsArray.map(JSON.parse);
+            out['suspiciousCells'] = foundBugs.length;
             if (workbookBasename in bugs) {
                 if (sheet.sheetName in bugs[workbookBasename]) {
                     var trueBugs = bugs[workbookBasename][sheet.sheetName]['bugs'];
                     var totalTrueBugs = trueBugs.length;
-                    // Build list of bugs.
-                    var foundBugs = out['proposedFixes'].map(function (x) {
-                        if (x[0] >= (reportingThreshold / 100)) {
-                            return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
-                        }
-                        else {
-                            return [];
-                        }
-                    });
-                    var foundBugsArray = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
-                    foundBugs = foundBugsArray.map(JSON.parse);
-                    out['suspiciousCells'] = foundBugs.length;
                     var trueBugsJSON_1 = trueBugs.map(function (x) { return JSON.stringify(x); });
                     var foundBugsJSON_1 = foundBugs.map(function (x) { return JSON.stringify(x); });
                     var truePositives = trueBugsJSON_1.filter(function (value) { return foundBugsJSON_1.includes(value); }).map(function (x) { return JSON.parse(x); });

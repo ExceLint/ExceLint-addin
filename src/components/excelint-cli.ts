@@ -253,21 +253,21 @@ for (let parms of parameters) {
 
             // Compute precision and recall of proposed fixes, if we have annotated ground truth.
             const workbookBasename = path.basename(inp['workbookName']);
+            // Build list of bugs.
+            let foundBugs: any = out['proposedFixes'].map(x => {
+                if (x[0] >= (reportingThreshold / 100)) {
+                    return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
+                } else {
+                    return [];
+                }
+            });
+            const foundBugsArray: any = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
+            foundBugs = foundBugsArray.map(JSON.parse);
+            out['suspiciousCells'] = foundBugs.length;
             if (workbookBasename in bugs) {
                 if (sheet.sheetName in bugs[workbookBasename]) {
                     const trueBugs = bugs[workbookBasename][sheet.sheetName]['bugs'];
                     const totalTrueBugs = trueBugs.length;
-                    // Build list of bugs.
-                    let foundBugs: any = out['proposedFixes'].map(x => {
-                        if (x[0] >= (reportingThreshold / 100)) {
-                            return expand(x[1][0], x[1][1]).concat(expand(x[2][0], x[2][1]));
-                        } else {
-                            return [];
-                        }
-                    });
-                    const foundBugsArray: any = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
-                    foundBugs = foundBugsArray.map(JSON.parse);
-                    out['suspiciousCells'] = foundBugs.length;
                     const trueBugsJSON = trueBugs.map(x => JSON.stringify(x));
                     const foundBugsJSON = foundBugs.map(x => JSON.stringify(x));
                     const truePositives = trueBugsJSON.filter(value => foundBugsJSON.includes(value)).map(x => JSON.parse(x));
