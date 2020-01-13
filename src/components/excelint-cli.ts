@@ -174,6 +174,7 @@ for (let parms of parameters) {
 
     for (let fname of allFiles) {
         // Read from file.
+	console.warn('processing ' + fname);
         let content = fs.readFileSync(base + fname);
         inp = JSON.parse(content);
 

@@ -153,6 +153,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
     for (var _a = 0, allFiles_1 = allFiles; _a < allFiles_1.length; _a++) {
         var fname_1 = allFiles_1[_a];
         // Read from file.
+        console.warn('processing ' + fname_1);
         var content = fs.readFileSync(base + fname_1);
         inp = JSON.parse(content);
         var output = {
