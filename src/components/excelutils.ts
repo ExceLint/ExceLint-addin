@@ -1,4 +1,7 @@
 // excel-utils
+// Emery Berger, Microsoft Research / UMass Amherst
+// https://emeryberger.com
+
 
 import * as sjcl from 'sjcl';
 import { RectangleUtils } from './rectangleutils';
@@ -47,10 +50,7 @@ export class ExcelUtils {
             return null;
         }
         if (proposed_fixes.length > 0) {
-            // console.log("proposed_fixes = " + JSON.stringify(proposed_fixes));
-            // console.log("current fix = " + current_fix);
             let r = RectangleUtils.bounding_box(proposed_fixes[current_fix][1], proposed_fixes[current_fix][2]);
-            // console.log("r = " + JSON.stringify(r));
             // convert to sheet notation
             let col0 = ExcelUtils.column_index_to_name(r[0][0]);
             let row0 = r[0][1].toString();
@@ -99,18 +99,12 @@ export class ExcelUtils {
 
     // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
     public static cell_dependency(cell: string, origin_col: number, origin_row: number): [number, number, number] {
-        //	console.log("cell_dependency: computing for " + cell + "(" + origin_col + ", " + origin_row + ")");
-        //	if (origin_col + origin_row === 0) {
-        //	    console.trace("WTF DUDE.");
-        //	}
         const alwaysReturnAdjustedColRow = false;
         {
             let r = ExcelUtils.cell_both_absolute.exec(cell);
             if (r) {
-                //console.log('both_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
-                //		console.log("parsed " + JSON.stringify([col, row]));
                 if (alwaysReturnAdjustedColRow) {
                     return [col - origin_col, row - origin_row, 0];
                 } else {
@@ -122,10 +116,8 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_col_absolute.exec(cell);
             if (r) {
-                //console.log("cell col absolute only " + JSON.stringify(r));
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
-                //	    console.log('absolute col: ' + col + ', row: ' + row);
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 } else {
@@ -137,7 +129,6 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_row_absolute.exec(cell);
             if (r) {
-                //console.log('row_absolute');
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
                 if (alwaysReturnAdjustedColRow) {
@@ -151,10 +142,8 @@ export class ExcelUtils {
         {
             let r = ExcelUtils.cell_both_relative.exec(cell);
             if (r) {
-                //console.log('both_relative: r[1] = ' + r[1] + ', r[2] = ' + r[2]);
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
-                //		console.log('both relative col: ' + col + ', row: ' + row);
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 } else {
@@ -240,16 +229,10 @@ export class ExcelUtils {
         // First, get all the range pairs out.
         while (found_pair = ExcelUtils.range_pair.exec(range)) {
             if (found_pair) {
-                //                console.log("found_pair " + found_pair);
-                //		console.log('all_cell_dependencies --> ' + found_pair);
                 let first_cell = found_pair[1];
-                //		console.log(' first_cell = ' + first_cell);
                 let first_vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
-                //		console.log(' first_vec = ' + JSON.stringify(first_vec));
                 let last_cell = found_pair[2];
-                //		console.log(' last_cell = ' + last_cell);
                 let last_vec = ExcelUtils.cell_dependency(last_cell, origin_col, origin_row);
-                //		console.log(' last_vec = ' + JSON.stringify(last_vec));
 
                 // First_vec is the upper-left hand side of a rectangle.
                 // Last_vec is the lower-right hand side of a rectangle.
@@ -259,8 +242,6 @@ export class ExcelUtils {
                 let width = last_vec[1] - first_vec[1] + 1;
                 for (let x = 0; x < length; x++) {
                     for (let y = 0; y < width; y++) {
-                        // console.log(' pushing ' + (x + first_vec[0]) + ', ' + (y + first_vec[1]));
-                        // console.log(' (x = ' + x + ', y = ' + y);
                         all_vectors.push([x + first_vec[0], y + first_vec[1], 0]);
                     }
                 }
@@ -274,12 +255,7 @@ export class ExcelUtils {
         let singleton = null;
         while (singleton = ExcelUtils.single_dep.exec(range)) {
             if (singleton) {
-                //		console.log('SINGLETON');
-                //		console.log('singleton[1] = ' + singleton[1]);
-                //	    console.log(found_pair);
                 let first_cell = singleton[1];
-                //                console.log(first_cell);
-                // console.log("first_cell = " + first_cell);
                 let vec = ExcelUtils.cell_dependency(first_cell, origin_col, origin_row);
                 all_vectors.push(vec);
                 // Wipe out the matched contents of range.
@@ -287,41 +263,22 @@ export class ExcelUtils {
             }
         }
 
-        //	console.log("range is now " + range);
-
-        // FIXME perhaps. For now, we are going to roll numbers in
-        // formulas into the dependency vectors. Each number counts as "1".
+        // For now, we roll numbers in formulas into the dependency vectors. Each number counts as "1".
         let number = null;
         while (number = ExcelUtils.number_dep.exec(range)) {
-            //	    console.log("matched a number");
             if (number) {
-                //                let n = parseFloat(number[1]);
-                //		console.log("number = " + n);
-                //		let q = Math.sqrt(n*n/2);
                 all_vectors.push([0, 0, 1]); // just add 1 for every number
                 // Wipe out the matched contents of range.
                 range = range.replace(number[0], '_');
             }
         }
 
-        //console.log(JSON.stringify(all_vectors));
         return all_vectors;
     }
 
     public static baseVector(): [number, number, number] {
         return [0, 0, 0];
     }
-
-    /// Get all the numeric values out into an array of vectors (row, col,
-    /*    public static all_numbers(origin_row: number, origin_col: number, values: Array<Array<string>>) : Array<[number, number,number]> {
-        for (let i = 0; i < formulas.length; i++) {
-    //	    console.log("now examining row " + i);
-            let row = formulas[i];
-            for (let j = 0; j < row.length; j++) {
-    //		console.log("now examining column " + j);
-            let cell = row[j];
-        }
-    */
 
     public static all_dependencies(row: number, col: number, origin_row: number, origin_col: number, formulas: Array<Array<string>>): Array<[number, number, number]> {
         let deps = [];
@@ -336,10 +293,8 @@ export class ExcelUtils {
 
         // Check if this cell is a formula.
         const cell = formulas[row][col];
-        //	console.log("cell[" + col + "][" + row + "] =" + cell);
         if ((cell.length > 1) && (cell[0] === '=')) {
             // It is. Compute the dependencies.
-            //	    console.log("ALL CELL DEPENDENCIES");
             deps = ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
         }
         return deps;
@@ -348,26 +303,17 @@ export class ExcelUtils {
     public static generate_all_references(formulas: Array<Array<string>>, origin_col: number, origin_row: number): { [dep: string]: Array<[number, number, number]> } {
         let refs = {};
         let counter = 0;
-        //	let all_deps = {};
-        //	console.log(JSON.stringify(formulas));
         for (let i = 0; i < formulas.length; i++) {
-            //	    console.log("now examining row " + i);
             let row = formulas[i];
             for (let j = 0; j < row.length; j++) {
-                //		console.log("now examining column " + j);
                 let cell = row[j];
                 counter++;
                 if (counter % 1000 === 0) {
                     //		    console.log(counter + " references down");
                 }
 
-                //		console.log('origin_col = '+origin_col+', origin_row = ' + origin_row);
                 if (cell[0] === '=') { // It's a formula.
-                    //		    let direct_refs = ExcelUtils.all_cell_dependencies(cell, origin_col + j, origin_row + i);
                     let direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
-                    //		    console.log("cell = " + JSON.stringify(cell));
-                    //		    console.log("direct_refs = " + JSON.stringify(direct_refs));
-                    //		    console.log(JSON.stringify(formulas));
                     for (let dep of direct_refs) {
                         if ((dep[0] === 0) && (dep[1] === 0) && (dep[2] !== 0)) {
                             // Not a real reference. Skip.
@@ -376,14 +322,6 @@ export class ExcelUtils {
                             // If it's not a formula, add it.
                             let rowIndex = dep[0] - origin_col - 1;
                             let colIndex = dep[1] - origin_row - 1;
-                            /*
-                            console.log("cell = " + cell);
-                            console.log("dep[0] = " + dep[0]);
-                            console.log("dep[1] = " + dep[1]);
-                            console.log("(# rows = " + formulas.length + ", # cols = " + row.length + ")");
-                            console.log("origin_col = " + origin_col + ", origin_row = " + origin_row);
-                            console.log("rowIndex = " + rowIndex);
-                            console.log("colIndex = " + colIndex);  */
                             const outsideFormulaRange = ((colIndex >= formulas.length)
                                 || (rowIndex >= formulas[0].length)
                                 || (rowIndex < 0)
@@ -395,14 +333,12 @@ export class ExcelUtils {
                                 } else {
                                     // Only include non-formulas (if they are in the range).
                                     const referentCell = formulas[colIndex][rowIndex];
-                                    //				    console.log("referent cell = " + JSON.stringify(referentCell));
                                     if ((referentCell !== undefined) && (referentCell[0] !== '=')) {
                                         addReference = true;
                                     }
                                 }
                                 if (addReference) {
                                     let key = dep.join(',');
-                                    //				    console.log("added reference to " + key);
                                     refs[key] = true;
                                 }
                             }
