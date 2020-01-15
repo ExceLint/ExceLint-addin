@@ -388,34 +388,61 @@ export default class App extends React.Component<AppProps, AppState> {
                 this.suspicious_cells = suspicious_cells;
                 this.proposed_fixes = proposed_fixes;
 
+		// Experimental: filter out colors so that only those
+		// idenfitied as proposed fixes get colored.
+		const useReducedColors = false; // disabled by default! // WAS true;
+		
+		let only_suspicious_proposed_fixes;
+		let only_suspicious_grouped_formulas = {};
+		if (useReducedColors) {
+		    only_suspicious_proposed_fixes = proposed_fixes.reduce((obj, item) => {
+			if (-item[0] > 0.10) { // FIXME hard-coded suspiciousness for now.
+			    obj[JSON.stringify(item[1])] = true ;
+			    obj[JSON.stringify(item[2])] = true ;
+			}
+			return obj; }, {});
+		    for (let key in grouped_formulas) {
+			only_suspicious_grouped_formulas[key] = [];
+			for (let rect of grouped_formulas[key]) {
+			    if (JSON.stringify(rect) in only_suspicious_proposed_fixes) {
+				only_suspicious_grouped_formulas[key].push(rect);
+			    }
+			}
+		    }
+		}
+		
                 /// Finally, apply colors.
-
+		
                 // Remove the background color from all cells.
                 let rangeFill = usedRange.format.fill;
                 rangeFill.clear();
-
+	
                 // Make all numbers yellow; this will be the default value for unreferenced data.
                 if (numericRanges) {
-                    numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		    if (!useReducedColors) {
+			numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
+		    }
                 }
-
+		
                 // Color numeric formulas yellow as well, if this is on.
-                if (false) {
+                if (!useReducedColors) {
                     if (useNumericFormulaRanges && numericFormulaRanges) {
                         numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
                     }
                 }
-
+		
                 // Just color referenced data gray.
-                this.color_ranges(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, () => { });
-
+		if (!useReducedColors) {
+		    this.color_ranges(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, () => { });
+		}
+		
                 // And color the formulas.
-                this.color_ranges(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
-
-                // Color referenced data based on its formula's color.
-                // DISABLED.
-                ///    this.color_ranges(grouped_data, currentWorksheet, (hash: string) => { return Colorize.get_light_color_version(Colorize.get_color(Math.round(parseFloat(hash)))); }, ()=>{});
-
+		if (useReducedColors) {
+                    this.color_ranges(only_suspicious_grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
+		} else {
+		    this.color_ranges(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
+		}
+		
                 await context.sync();
 
                 //		console.log(JSON.stringify(usedRange.formulasR1C1));
