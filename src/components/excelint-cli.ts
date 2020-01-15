@@ -242,6 +242,7 @@ for (let parms of parameters) {
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
                 'suspiciousRanges': adjusted_fixes.length,
+		'weightedSuspiciousRanges' : 0, // actually calculated below.
                 'suspiciousCells': 0, // actually calculated below.
                 'elapsedTimeSeconds': elapsed / 1e6,
                 'columns': columns,
@@ -264,6 +265,8 @@ for (let parms of parameters) {
             const foundBugsArray: any = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
             foundBugs = foundBugsArray.map(JSON.parse);
             out['suspiciousCells'] = foundBugs.length;
+	    let weightedSuspiciousRanges = out['proposedFixes'].map(x => x[0]).reduce((x, y) => x + y, 0);
+	    out['weightedSuspiciousRanges'] = weightedSuspiciousRanges;
             if (workbookBasename in bugs) {
                 if (sheet.sheetName in bugs[workbookBasename]) {
                     const trueBugs = bugs[workbookBasename][sheet.sheetName]['bugs'];

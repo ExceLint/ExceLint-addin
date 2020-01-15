@@ -207,6 +207,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
                 'suspiciousRanges': adjusted_fixes.length,
+                'weightedSuspiciousRanges': 0,
                 'suspiciousCells': 0,
                 'elapsedTimeSeconds': elapsed / 1e6,
                 'columns': columns,
@@ -229,6 +230,8 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             var foundBugsArray = Array.from(new Set(foundBugs.flat(1).map(JSON.stringify)));
             foundBugs = foundBugsArray.map(JSON.parse);
             out['suspiciousCells'] = foundBugs.length;
+            var weightedSuspiciousRanges = out['proposedFixes'].map(function (x) { return x[0]; }).reduce(function (x, y) { return x + y; }, 0);
+            out['weightedSuspiciousRanges'] = weightedSuspiciousRanges;
             if (workbookBasename in bugs) {
                 if (sheet.sheetName in bugs[workbookBasename]) {
                     var trueBugs = bugs[workbookBasename][sheet.sheetName]['bugs'];
