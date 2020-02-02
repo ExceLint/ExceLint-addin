@@ -190,6 +190,22 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                     adjusted_fixes.push([adjusted_score, first, second]);
                 }
             }
+            // console.log(sheet.formulas);
+            // console.log(JSON.stringify(adjusted_fixes));
+            var example_fixes = [];
+            if (adjusted_fixes.length > 0) {
+                for (var ind = 0; ind < adjusted_fixes.length; ind++) {
+                    var formulas = [];
+                    for (var i_1 = 0; i_1 < 2; i_1++) {
+                        var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
+                        var formulaX = formulaCoord[1] - 1;
+                        var formulaY = formulaCoord[0] - 1;
+                        var formula = sheet.formulas[formulaX][formulaY];
+                        formulas.push(formula);
+                    }
+                    example_fixes.push(formulas);
+                }
+            }
             var elapsed = myTimer.elapsedTime();
             if (args.noElapsedTime) {
                 elapsed = 0; // Dummy value, used for regression testing.
@@ -206,6 +222,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                 'suspiciousnessThreshold': reportingThreshold,
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
+                'exampleFixes': example_fixes,
                 'suspiciousRanges': adjusted_fixes.length,
                 'weightedSuspiciousRanges': 0,
                 'suspiciousCells': 0,

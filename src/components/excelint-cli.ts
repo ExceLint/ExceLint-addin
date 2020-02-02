@@ -222,6 +222,25 @@ for (let parms of parameters) {
                 }
             }
 
+	    // console.log(sheet.formulas);
+	    // console.log(JSON.stringify(adjusted_fixes));
+
+	    let example_fixes = [];
+	    
+	    if (adjusted_fixes.length > 0) {
+		for (let ind = 0; ind < adjusted_fixes.length; ind++) {
+		    let formulas = [];
+		    for (let i = 0; i < 2; i++) {
+			const formulaCoord = adjusted_fixes[ind][i+1][0];
+			const formulaX = formulaCoord[1]-1;
+			const formulaY = formulaCoord[0]-1;
+			const formula = sheet.formulas[formulaX][formulaY];
+			formulas.push(formula);
+		    }
+		    example_fixes.push(formulas);
+		}
+	    }
+
             let elapsed = myTimer.elapsedTime();
             if (args.noElapsedTime) {
                 elapsed = 0; // Dummy value, used for regression testing.
@@ -241,6 +260,7 @@ for (let parms of parameters) {
                 'suspiciousnessThreshold': reportingThreshold,
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
+		'exampleFixes' : example_fixes,
                 'suspiciousRanges': adjusted_fixes.length,
 		'weightedSuspiciousRanges' : 0, // actually calculated below.
                 'suspiciousCells': 0, // actually calculated below.
