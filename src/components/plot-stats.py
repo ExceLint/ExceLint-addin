@@ -36,14 +36,15 @@ with open(args.input, 'r') as csvfile:
         if int(numFormulaCells) > 1:
             # print(numFormulaCells)
             # Strip off .xlsx ending
-            items.append((workbookName[:-5] + '!' + worksheet, row['suspiciousRanges']))
+            items.append((workbookName[:-5] + '!' + worksheet, row['weightedSuspiciousRanges']))
+            # WAS items.append((workbookName[:-5] + '!' + worksheet, row['suspiciousRanges']))
         
-sorted_items = sorted(items, key=lambda x: int(x[1]))
+sorted_items = sorted(items, key=lambda x: float(x[1]))
 
 for item in sorted_items:
-    if int(item[1]) > 0:
+    if float(item[1]) > 0:
         sheets.append(item[0])
-        cells.append(int(item[1]))
+        cells.append(float(item[1]))
 #    print(item[1])
     
 max_cells = cells[-1]
@@ -52,7 +53,7 @@ plt.figure(figsize=(8,8))
 plt.axes([0.1,0.2,0.9,0.7])
 plt.title('ExceLint + CUSTODES: susp thresh = ' + str(suspiciousnessThreshold), y=1.02)
 #plt.xlabel('Worksheet name')
-plt.ylabel('# suspicious ranges')
+plt.ylabel('weighted suspicious ranges')
 plt.ylim(0,max_cells)
 plt.xticks(rotation='vertical', fontsize=4)
 plt.tick_params(pad=0)
