@@ -22,10 +22,11 @@ function processWorksheet(sheet, selection : selections) {
 	ref = sheet["!ref"];
     }
     const decodedRange = xlsx.utils.decode_range(ref);
-    const startColumn = decodedRange['s']['c'];
-    const startRow    = decodedRange['s']['r'];
+    const startColumn = 0; // decodedRange['s']['c'];
+    const startRow    = 0; // decodedRange['s']['r'];
     const endColumn   = decodedRange['e']['c'];
     const endRow      = decodedRange['e']['r'];
+    
     let rows : string[][] = [];
     for (let r = startRow; r <= endRow; r++) {
 	let row : string[] = [];
@@ -46,7 +47,12 @@ function processWorksheet(sheet, selection : selections) {
 		case selections.VALUES:
 		    // Numeric values.
 		    if (cellValue['t'] === 'n') {
-			cellValueStr = JSON.stringify(cellValue['v']);
+			if (('z' in cellValue) && (cellValue['z'].endsWith('yy'))) {
+			    // ad hoc date matching.
+			    // skip dates.
+			} else {
+			    cellValueStr = JSON.stringify(cellValue['v']);
+			}
 		    }
 		    break;
 		case selections.STYLES:
@@ -124,6 +130,9 @@ for (let filename of files) {
 	let result = pair_re.exec(ref); // pair_re.exec(ref);
 	if (result) {
  	    // It's a pair; we're fine.
+	    // ACTUALLY to work around a bug downstream, we start everything at A1.
+	    // This sucks but it works.
+	    ref = "A1:" + result[2];
 	} else {
 	    // Singleton. Make it a pair.
 	    ref = ref + ":" + ref;

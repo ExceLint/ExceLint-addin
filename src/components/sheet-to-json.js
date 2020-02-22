@@ -20,8 +20,8 @@ function processWorksheet(sheet, selection) {
         ref = sheet["!ref"];
     }
     var decodedRange = xlsx.utils.decode_range(ref);
-    var startColumn = decodedRange['s']['c'];
-    var startRow = decodedRange['s']['r'];
+    var startColumn = 0; // decodedRange['s']['c'];
+    var startRow = 0; // decodedRange['s']['r'];
     var endColumn = decodedRange['e']['c'];
     var endRow = decodedRange['e']['r'];
     var rows = [];
@@ -45,7 +45,13 @@ function processWorksheet(sheet, selection) {
                     case selections.VALUES:
                         // Numeric values.
                         if (cellValue['t'] === 'n') {
-                            cellValueStr = JSON.stringify(cellValue['v']);
+                            if (('z' in cellValue) && (cellValue['z'].endsWith('yy'))) {
+                                // ad hoc date matching.
+                                // skip dates.
+                            }
+                            else {
+                                cellValueStr = JSON.stringify(cellValue['v']);
+                            }
                         }
                         break;
                     case selections.STYLES:
@@ -120,6 +126,9 @@ for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
         var result = pair_re.exec(ref); // pair_re.exec(ref);
         if (result) {
             // It's a pair; we're fine.
+            // ACTUALLY to work around a bug downstream, we start everything at A1.
+            // This sucks but it works.
+            ref = "A1:" + result[2];
         }
         else {
             // Singleton. Make it a pair.
