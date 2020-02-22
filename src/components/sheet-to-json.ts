@@ -104,7 +104,7 @@ if (args.directory) {
 
 let outputs = [];
 for (let filename of files) {
-    let f = xlsx.readFile(filename, { "cellStyles": true } );
+    let f = xlsx.readFile(base + filename, { "cellStyles": true } );
     //console.log(JSON.stringify(f, null, 4));
     let output = {};
     output["workbookName"] = filename;
@@ -137,7 +137,12 @@ for (let filename of files) {
 	    "styles" : processWorksheet(sheets[sheet], selections.STYLES)
 	});
     }
-    outputs.push(output);
+    const outputFile = (base + filename).replace('.xlsx', '.json').replace('.xls', '.json');
+    fs.writeFileSync(outputFile, JSON.stringify(output));
+//    console.log(JSON.stringify(output));
+//    outputs.push(output);
 }
-console.log(JSON.stringify(outputs, null, 4));
+// Pretty-print
+// console.log(JSON.stringify(outputs, null, 4));
+//console.log(JSON.stringify(outputs));
 
