@@ -110,6 +110,7 @@ if (args.directory) {
 
 let outputs = [];
 for (let filename of files) {
+    console.warn('processing ' + filename);
     let f = xlsx.readFile(base + filename, { "cellStyles": true } );
     //console.log(JSON.stringify(f, null, 4));
     let output = {};
@@ -117,12 +118,17 @@ for (let filename of files) {
     output["worksheets"] = [];
     let sheetNames = f.SheetNames;
     let sheets = f.Sheets;
-    for (let sheet of sheetNames) {
+    for (let sheetName of sheetNames) {
+	if (!sheets[sheetName]) {
+	    // Weird edge case here.
+	    continue;
+	}
+	console.warn('  processing ' + filename + '!' + sheetName);
 	// Try to parse the ref to see if it's a pair (e.g., A1:B10) or a singleton (e.g., C9).
 	// If the latter, make it into a pair (e.g., C9:C9).
 	let ref;
-	if ("!ref" in sheets[sheet]) {
-	    ref = sheets[sheet]["!ref"];
+	if ("!ref" in sheets[sheetName]) {
+	    ref = sheets[sheetName]["!ref"];
 	} else {
 	    // Empty sheet.
 	    ref = "A1:A1";
@@ -137,13 +143,13 @@ for (let filename of files) {
 	    // Singleton. Make it a pair.
 	    ref = ref + ":" + ref;
 	}
-	const sheetRange = sheet + "!" + ref;
+	const sheetRange = sheetName + "!" + ref;
 	output["worksheets"].push({
-	    "sheetName": sheet,
+	    "sheetName": sheetName,
 	    "usedRangeAddress": sheetRange,
-	    "formulas" : processWorksheet(sheets[sheet], selections.FORMULAS),
-	    "values" : processWorksheet(sheets[sheet], selections.VALUES),
-	    "styles" : processWorksheet(sheets[sheet], selections.STYLES)
+	    "formulas" : processWorksheet(sheets[sheetName], selections.FORMULAS),
+	    "values" : processWorksheet(sheets[sheetName], selections.VALUES),
+	    "styles" : processWorksheet(sheets[sheetName], selections.STYLES)
 	});
     }
     const outputFile = (base + filename).replace('.xlsx', '.json').replace('.xls', '.json');

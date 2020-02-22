@@ -104,6 +104,7 @@ if (args.directory) {
 var outputs = [];
 for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
     var filename = files_1[_i];
+    console.warn('processing ' + filename);
     var f = xlsx.readFile(base + filename, { "cellStyles": true });
     //console.log(JSON.stringify(f, null, 4));
     var output = {};
@@ -112,12 +113,17 @@ for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
     var sheetNames = f.SheetNames;
     var sheets = f.Sheets;
     for (var _a = 0, sheetNames_1 = sheetNames; _a < sheetNames_1.length; _a++) {
-        var sheet = sheetNames_1[_a];
+        var sheetName = sheetNames_1[_a];
+        if (!sheets[sheetName]) {
+            // Weird edge case here.
+            continue;
+        }
+        console.warn('  processing ' + filename + '!' + sheetName);
         // Try to parse the ref to see if it's a pair (e.g., A1:B10) or a singleton (e.g., C9).
         // If the latter, make it into a pair (e.g., C9:C9).
         var ref = void 0;
-        if ("!ref" in sheets[sheet]) {
-            ref = sheets[sheet]["!ref"];
+        if ("!ref" in sheets[sheetName]) {
+            ref = sheets[sheetName]["!ref"];
         }
         else {
             // Empty sheet.
@@ -134,13 +140,13 @@ for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
             // Singleton. Make it a pair.
             ref = ref + ":" + ref;
         }
-        var sheetRange = sheet + "!" + ref;
+        var sheetRange = sheetName + "!" + ref;
         output["worksheets"].push({
-            "sheetName": sheet,
+            "sheetName": sheetName,
             "usedRangeAddress": sheetRange,
-            "formulas": processWorksheet(sheets[sheet], selections.FORMULAS),
-            "values": processWorksheet(sheets[sheet], selections.VALUES),
-            "styles": processWorksheet(sheets[sheet], selections.STYLES)
+            "formulas": processWorksheet(sheets[sheetName], selections.FORMULAS),
+            "values": processWorksheet(sheets[sheetName], selections.VALUES),
+            "styles": processWorksheet(sheets[sheetName], selections.STYLES)
         });
     }
     var outputFile = (base + filename).replace('.xlsx', '.json').replace('.xls', '.json');
