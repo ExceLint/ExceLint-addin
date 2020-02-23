@@ -126,6 +126,54 @@ var ExcelUtils = /** @class */ (function () {
         throw new Error('We should never get here.');
         return [0, 0, 0];
     };
+    ExcelUtils.toR1C1 = function (srcCell, destCell) {
+        // Dependencies are column, then row.
+        var vec1 = ExcelUtils.cell_dependency(srcCell, 0, 0);
+        var vec2 = ExcelUtils.cell_dependency(destCell, 0, 0);
+        // Compute the difference.
+        var resultVec = [];
+        vec2.forEach(function (item, index, arr) { resultVec.push(item - vec1[index]); });
+        // Now generate the R1C1 notation version, which varies
+        // depending whether it's a relative or absolute reference.
+        var resultStr = "";
+        if (ExcelUtils.cell_both_absolute.exec(destCell)) {
+            resultStr = "R" + vec2[1] + "C" + vec2[0];
+        }
+        else if (ExcelUtils.cell_col_absolute.exec(destCell)) {
+            if (resultVec[1] === 0) {
+                resultStr += "R";
+            }
+            else {
+                resultStr += "R[" + resultVec[1] + "]";
+            }
+            resultStr += "C" + vec2[0];
+        }
+        else if (ExcelUtils.cell_row_absolute.exec(destCell)) {
+            if (resultVec[0] === 0) {
+                resultStr += "C";
+            }
+            else {
+                resultStr += "C[" + resultVec[0] + "]";
+            }
+            resultStr = "R" + vec2[1] + resultStr;
+        }
+        else {
+            // Common case, both relative.
+            if (resultVec[1] === 0) {
+                resultStr += "R";
+            }
+            else {
+                resultStr += "R[" + resultVec[1] + "]";
+            }
+            if (resultVec[0] === 0) {
+                resultStr += "C";
+            }
+            else {
+                resultStr += "C[" + resultVec[0] + "]";
+            }
+        }
+        return resultStr;
+    };
     ExcelUtils.extract_sheet_cell = function (str) {
         //	console.log("extract_sheet_cell " + str);
         var matched = ExcelUtils.sheet_plus_cell.exec(str);

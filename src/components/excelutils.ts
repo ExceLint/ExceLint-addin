@@ -157,6 +157,48 @@ export class ExcelUtils {
         return [0, 0, 0];
     }
 
+    public static toR1C1(srcCell : string, destCell: string) : string {
+	// Dependencies are column, then row.
+	const vec1 = ExcelUtils.cell_dependency(srcCell, 0, 0);
+	const vec2 = ExcelUtils.cell_dependency(destCell, 0, 0);
+	// Compute the difference.
+	let resultVec = [];
+	vec2.forEach((item, index, arr) => { resultVec.push(item - vec1[index]); });
+	// Now generate the R1C1 notation version, which varies
+	// depending whether it's a relative or absolute reference.
+	let resultStr = "";
+	if (ExcelUtils.cell_both_absolute.exec(destCell)) {
+	    resultStr = "R" + vec2[1] + "C" + vec2[0];
+	} else if (ExcelUtils.cell_col_absolute.exec(destCell)) {
+	    if (resultVec[1] === 0) {
+		resultStr += "R";
+	    } else {
+		resultStr += "R[" + resultVec[1] + "]";
+	    }
+	    resultStr += "C" + vec2[0];
+	} else if (ExcelUtils.cell_row_absolute.exec(destCell)) {
+	    if (resultVec[0] === 0) {
+		resultStr += "C";
+	    } else {
+		resultStr += "C[" + resultVec[0] + "]";
+	    }
+	    resultStr = "R" + vec2[1] + resultStr;
+	} else {
+	    // Common case, both relative.
+	    if (resultVec[1] === 0) {
+		resultStr += "R";
+	    } else {
+		resultStr += "R[" + resultVec[1] + "]";
+	    }
+	    if (resultVec[0] === 0) {
+		resultStr += "C";
+	    } else {
+		resultStr += "C[" + resultVec[0] + "]";
+	    }
+	}
+        return resultStr;
+    }
+    
     public static extract_sheet_cell(str: string): Array<string> {
         //	console.log("extract_sheet_cell " + str);
         let matched = ExcelUtils.sheet_plus_cell.exec(str);
