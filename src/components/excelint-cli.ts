@@ -5,6 +5,7 @@
 'use strict';
 let fs = require('fs');
 let path = require('path');
+import { ExcelUtils } from './excelutils';
 import { Colorize } from './colorize';
 import { Timer } from './timer';
 import { string } from 'prop-types';
@@ -241,6 +242,22 @@ for (let parms of parameters) {
 		}
 	    }
 
+	    let example_fixes_r1c1 = [];
+	    
+	    if (adjusted_fixes.length > 0) {
+		for (let ind = 0; ind < adjusted_fixes.length; ind++) {
+		    let formulas = [];
+		    for (let i = 0; i < 2; i++) {
+			const formulaCoord = adjusted_fixes[ind][i+1][0];
+			const formulaX = formulaCoord[1]-1;
+			const formulaY = formulaCoord[0]-1;
+			const formula = sheet.formulas[formulaX][formulaY];
+			formulas.push(ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
+		    }
+		    example_fixes_r1c1.push(formulas);
+		}
+	    }
+
             let elapsed = myTimer.elapsedTime();
             if (args.noElapsedTime) {
                 elapsed = 0; // Dummy value, used for regression testing.
@@ -261,6 +278,7 @@ for (let parms of parameters) {
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
 		'exampleFixes' : example_fixes,
+		'exampleFixesR1C1' : example_fixes_r1c1,
                 'suspiciousRanges': adjusted_fixes.length,
 		'weightedSuspiciousRanges' : 0, // actually calculated below.
                 'suspiciousCells': 0, // actually calculated below.

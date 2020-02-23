@@ -174,6 +174,27 @@ var ExcelUtils = /** @class */ (function () {
         }
         return resultStr;
     };
+    ExcelUtils.formulaToR1C1 = function (range, origin_col, origin_row) {
+        var origin = ExcelUtils.column_index_to_name(origin_col) + origin_row;
+        // First, get all the range pairs out.
+        var found_pair;
+        while (found_pair = ExcelUtils.range_pair.exec(range)) {
+            if (found_pair) {
+                var first_cell = found_pair[1];
+                var last_cell = found_pair[2];
+                range = range.replace(found_pair[0], ExcelUtils.toR1C1(origin, found_pair[1]) + ":" + ExcelUtils.toR1C1(origin, found_pair[2]));
+            }
+        }
+        // Now look for singletons.
+        var singleton = null;
+        while (singleton = ExcelUtils.single_dep.exec(range)) {
+            if (singleton) {
+                var first_cell = singleton[1];
+                range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, ExcelUtils.toR1C1(origin, first_cell)));
+            }
+        }
+        return range;
+    };
     ExcelUtils.extract_sheet_cell = function (str) {
         //	console.log("extract_sheet_cell " + str);
         var matched = ExcelUtils.sheet_plus_cell.exec(str);

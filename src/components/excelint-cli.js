@@ -5,6 +5,7 @@
 exports.__esModule = true;
 var fs = require('fs');
 var path = require('path');
+var excelutils_1 = require("./excelutils");
 var colorize_1 = require("./colorize");
 var timer_1 = require("./timer");
 // Convert a rectangle into a list of indices.
@@ -206,6 +207,20 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                     example_fixes.push(formulas);
                 }
             }
+            var example_fixes_r1c1 = [];
+            if (adjusted_fixes.length > 0) {
+                for (var ind = 0; ind < adjusted_fixes.length; ind++) {
+                    var formulas = [];
+                    for (var i_2 = 0; i_2 < 2; i_2++) {
+                        var formulaCoord = adjusted_fixes[ind][i_2 + 1][0];
+                        var formulaX = formulaCoord[1] - 1;
+                        var formulaY = formulaCoord[0] - 1;
+                        var formula = sheet.formulas[formulaX][formulaY];
+                        formulas.push(excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
+                    }
+                    example_fixes_r1c1.push(formulas);
+                }
+            }
             var elapsed = myTimer.elapsedTime();
             if (args.noElapsedTime) {
                 elapsed = 0; // Dummy value, used for regression testing.
@@ -223,6 +238,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
                 'exampleFixes': example_fixes,
+                'exampleFixesR1C1': example_fixes_r1c1,
                 'suspiciousRanges': adjusted_fixes.length,
                 'weightedSuspiciousRanges': 0,
                 'suspiciousCells': 0,

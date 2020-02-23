@@ -198,6 +198,29 @@ export class ExcelUtils {
 	}
         return resultStr;
     }
+
+    public static formulaToR1C1(range: string, origin_col: number, origin_row: number) : string {
+	const origin = ExcelUtils.column_index_to_name(origin_col) + origin_row;
+        // First, get all the range pairs out.
+	let found_pair;
+        while (found_pair = ExcelUtils.range_pair.exec(range)) {
+            if (found_pair) {
+                let first_cell = found_pair[1];
+                let last_cell = found_pair[2];
+                range = range.replace(found_pair[0], ExcelUtils.toR1C1(origin,found_pair[1]) + ":" + ExcelUtils.toR1C1(origin, found_pair[2]));
+            }
+        }
+
+        // Now look for singletons.
+        let singleton = null;
+        while (singleton = ExcelUtils.single_dep.exec(range)) {
+            if (singleton) {
+                let first_cell = singleton[1];
+                range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, ExcelUtils.toR1C1(origin, first_cell)));
+            }
+        }
+	return range;
+    }
     
     public static extract_sheet_cell(str: string): Array<string> {
         //	console.log("extract_sheet_cell " + str);
