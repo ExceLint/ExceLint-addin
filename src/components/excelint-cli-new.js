@@ -196,6 +196,13 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             var example_fixes = [];
             if (adjusted_fixes.length > 0) {
                 for (var ind = 0; ind < adjusted_fixes.length; ind++) {
+                    var direction = "";
+                    if (adjusted_fixes[ind][1][0][0] === adjusted_fixes[ind][2][0][0]) {
+                        direction = "vertical";
+                    }
+                    else {
+                        direction = "horizontal";
+                    }
                     var formulas = [];
                     for (var i_1 = 0; i_1 < 2; i_1++) {
                         var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
@@ -204,12 +211,19 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         var formula = sheet.formulas[formulaX][formulaY];
                         formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
                     }
-                    example_fixes.push(formulas);
+                    example_fixes.push([direction, formulas]);
                 }
             }
             var example_fixes_r1c1 = [];
             if (adjusted_fixes.length > 0) {
                 for (var ind = 0; ind < adjusted_fixes.length; ind++) {
+                    var direction = "";
+                    if (adjusted_fixes[ind][1][0][0] === adjusted_fixes[ind][2][0][0]) {
+                        direction = "vertical";
+                    }
+                    else {
+                        direction = "horizontal";
+                    }
                     var formulas = [];
                     for (var i_2 = 0; i_2 < 2; i_2++) {
                         var formulaCoord = adjusted_fixes[ind][i_2 + 1][0];
@@ -218,7 +232,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         var formula = sheet.formulas[formulaX][formulaY];
                         formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
                     }
-                    example_fixes_r1c1.push(formulas);
+                    example_fixes_r1c1.push([direction, formulas]);
                 }
             }
             var elapsed = myTimer.elapsedTime();

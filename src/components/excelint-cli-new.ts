@@ -230,6 +230,12 @@ for (let parms of parameters) {
 	    
 	    if (adjusted_fixes.length > 0) {
 		for (let ind = 0; ind < adjusted_fixes.length; ind++) {
+		    let direction = "";
+		    if (adjusted_fixes[ind][1][0][0] === adjusted_fixes[ind][2][0][0]) {
+			direction = "vertical";
+		    } else {
+			direction = "horizontal";
+		    }
 		    let formulas = [];
 		    for (let i = 0; i < 2; i++) {
 			const formulaCoord = adjusted_fixes[ind][i+1][0];
@@ -238,7 +244,7 @@ for (let parms of parameters) {
 			const formula = sheet.formulas[formulaX][formulaY];
 			formulas.push(ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
 		    }
-		    example_fixes.push(formulas);
+		    example_fixes.push([direction, formulas]);
 		}
 	    }
 
@@ -246,6 +252,12 @@ for (let parms of parameters) {
 	    
 	    if (adjusted_fixes.length > 0) {
 		for (let ind = 0; ind < adjusted_fixes.length; ind++) {
+		    let direction = "";
+		    if (adjusted_fixes[ind][1][0][0] === adjusted_fixes[ind][2][0][0]) {
+			direction = "vertical";
+		    } else {
+			direction = "horizontal";
+		    }
 		    let formulas = [];
 		    for (let i = 0; i < 2; i++) {
 			const formulaCoord = adjusted_fixes[ind][i+1][0];
@@ -254,7 +266,7 @@ for (let parms of parameters) {
 			const formula = sheet.formulas[formulaX][formulaY];
 			formulas.push(ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
 		    }
-		    example_fixes_r1c1.push(formulas);
+		    example_fixes_r1c1.push([direction, formulas]);
 		}
 	    }
 
