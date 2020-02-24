@@ -194,6 +194,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
             // console.log(sheet.formulas);
             // console.log(JSON.stringify(adjusted_fixes));
             var example_fixes = [];
+            var totalNumericDiff = 0.0;
             if (adjusted_fixes.length > 0) {
                 for (var ind = 0; ind < adjusted_fixes.length; ind++) {
                     var direction = "";
@@ -204,14 +205,17 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         direction = "horizontal";
                     }
                     var formulas = [];
+                    var numbers = [];
                     for (var i_1 = 0; i_1 < 2; i_1++) {
                         var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
                         var formulaX = formulaCoord[1] - 1;
                         var formulaY = formulaCoord[0] - 1;
                         var formula = sheet.formulas[formulaX][formulaY];
+                        numbers.push(excelutils_1.ExcelUtils.sum_numeric_constants(formula));
                         formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
                     }
-                    example_fixes.push([direction, formulas]);
+                    totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
+                    example_fixes.push([direction, totalNumericDiff, formulas]);
                 }
             }
             var example_fixes_r1c1 = [];

@@ -353,6 +353,51 @@ export class ExcelUtils {
         return all_vectors;
     }
 
+    public static sum_numeric_constants(range: string): number {
+        if (typeof (range) !== 'string') {
+            return 0;
+        }
+
+	// Zap all the formulas with the below characteristics.
+        range = range.replace(this.formulas_with_numbers, '_'); // Don't track these.
+        range = range.replace(this.formulas_with_quoted_sheetnames_2, '_');
+        range = range.replace(this.formulas_with_quoted_sheetnames_1, '_');
+        range = range.replace(this.formulas_with_unquoted_sheetnames_2, '_');
+        range = range.replace(this.formulas_with_unquoted_sheetnames_1, '_');
+        range = range.replace(this.formulas_with_unquoted_sheetnames_1, '_');
+	range = range.replace(this.formulas_with_structured_references, '_');
+	
+        // First, get all the range pairs out.
+        let found_pair = null;
+        while (found_pair = ExcelUtils.range_pair.exec(range)) {
+            if (found_pair) {
+                // Wipe out the matched contents of range.
+                range = range.replace(found_pair[0], '_');
+            }
+        }
+
+        // Now look for singletons.
+        let singleton = null;
+        while (singleton = ExcelUtils.single_dep.exec(range)) {
+            if (singleton) {
+                // Wipe out the matched contents of range.
+                range = range.replace(singleton[0], '_');
+            }
+        }
+
+	// Now aggregate total numeric constants (sum them).
+        let number = null;
+	let total = 0.0;
+        while (number = ExcelUtils.number_dep.exec(range)) {
+            if (number) {
+		total += parseFloat(number);
+                // Wipe out the matched contents of range.
+                range = range.replace(number[0], '_');
+            }
+        }
+        return total;
+    }
+
     public static baseVector(): [number, number, number] {
         return [0, 0, 0];
     }

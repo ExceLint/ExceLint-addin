@@ -227,6 +227,7 @@ for (let parms of parameters) {
 	    // console.log(JSON.stringify(adjusted_fixes));
 
 	    let example_fixes = [];
+	    let totalNumericDiff = 0.0;
 	    
 	    if (adjusted_fixes.length > 0) {
 		for (let ind = 0; ind < adjusted_fixes.length; ind++) {
@@ -237,14 +238,17 @@ for (let parms of parameters) {
 			direction = "horizontal";
 		    }
 		    let formulas = [];
+		    let numbers = [];
 		    for (let i = 0; i < 2; i++) {
 			const formulaCoord = adjusted_fixes[ind][i+1][0];
 			const formulaX = formulaCoord[1]-1;
 			const formulaY = formulaCoord[0]-1;
 			const formula = sheet.formulas[formulaX][formulaY];
+			numbers.push(ExcelUtils.sum_numeric_constants(formula));
 			formulas.push(ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
 		    }
-		    example_fixes.push([direction, formulas]);
+		    totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
+		    example_fixes.push([direction, totalNumericDiff, formulas]);
 		}
 	    }
 
