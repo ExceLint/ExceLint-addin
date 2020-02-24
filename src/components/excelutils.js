@@ -311,6 +311,7 @@ var ExcelUtils = /** @class */ (function () {
         return all_vectors;
     };
     ExcelUtils.sum_numeric_constants = function (range) {
+        range = range.slice();
         if (typeof (range) !== 'string') {
             return 0;
         }

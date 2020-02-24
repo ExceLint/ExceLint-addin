@@ -354,6 +354,7 @@ export class ExcelUtils {
     }
 
     public static sum_numeric_constants(range: string): number {
+	range = range.slice();
         if (typeof (range) !== 'string') {
             return 0;
         }
