@@ -101,10 +101,7 @@ if (args.directory) {
     files = fs.readdirSync(args.directory).filter(function (x) { return x.endsWith('.xls') || x.endsWith('.xlsx'); });
     base = args.directory + '/';
 }
-var outputs = [];
-for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
-    var filename = files_1[_i];
-    console.warn('processing ' + filename);
+function processWorkbook(base, filename) {
     var f = xlsx.readFile(base + filename, { "cellStyles": true });
     //console.log(JSON.stringify(f, null, 4));
     var output = {};
@@ -112,8 +109,8 @@ for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
     output["worksheets"] = [];
     var sheetNames = f.SheetNames;
     var sheets = f.Sheets;
-    for (var _a = 0, sheetNames_1 = sheetNames; _a < sheetNames_1.length; _a++) {
-        var sheetName = sheetNames_1[_a];
+    for (var _i = 0, sheetNames_1 = sheetNames; _i < sheetNames_1.length; _i++) {
+        var sheetName = sheetNames_1[_i];
         if (!sheets[sheetName]) {
             // Weird edge case here.
             continue;
@@ -149,6 +146,13 @@ for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
             "styles": processWorksheet(sheets[sheetName], selections.STYLES)
         });
     }
+    return output;
+}
+var outputs = [];
+for (var _i = 0, files_1 = files; _i < files_1.length; _i++) {
+    var filename = files_1[_i];
+    console.warn('processing ' + filename);
+    var output = processWorkbook(base, filename);
     var outputFile = (base + filename).replace('.xlsx', '.json').replace('.xls', '.json');
     fs.writeFileSync(outputFile, JSON.stringify(output));
     //    console.log(JSON.stringify(output));

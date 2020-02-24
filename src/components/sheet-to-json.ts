@@ -108,9 +108,8 @@ if (args.directory) {
     base = args.directory + '/';
 }
 
-let outputs = [];
-for (let filename of files) {
-    console.warn('processing ' + filename);
+
+function processWorkbook(base: string, filename: string) {
     let f = xlsx.readFile(base + filename, { "cellStyles": true } );
     //console.log(JSON.stringify(f, null, 4));
     let output = {};
@@ -152,6 +151,13 @@ for (let filename of files) {
 	    "styles" : processWorksheet(sheets[sheetName], selections.STYLES)
 	});
     }
+    return output;
+}
+
+let outputs = [];
+for (let filename of files) {
+    console.warn('processing ' + filename);
+    let output = processWorkbook(base, filename);
     const outputFile = (base + filename).replace('.xlsx', '.json').replace('.xls', '.json');
     fs.writeFileSync(outputFile, JSON.stringify(output));
 //    console.log(JSON.stringify(output));
