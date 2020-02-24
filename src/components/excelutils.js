@@ -140,7 +140,7 @@ var ExcelUtils = /** @class */ (function () {
         }
         // Compute the difference.
         var resultVec = [];
-        vec2.forEach(function (item, index, arr) { resultVec.push(item - vec1[index]); });
+        vec2.forEach(function (item, index, _) { resultVec.push(item - vec1[index]); });
         // Now generate the R1C1 notation version, which varies
         // depending whether it's a relative or absolute reference.
         var resultStr = "";
