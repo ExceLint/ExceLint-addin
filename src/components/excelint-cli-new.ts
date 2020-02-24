@@ -236,7 +236,7 @@ for (let parms of parameters) {
 			const formulaX = formulaCoord[1]-1;
 			const formulaY = formulaCoord[0]-1;
 			const formula = sheet.formulas[formulaX][formulaY];
-			formulas.push(formula);
+			formulas.push(ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
 		    }
 		    example_fixes.push(formulas);
 		}
@@ -252,7 +252,7 @@ for (let parms of parameters) {
 			const formulaX = formulaCoord[1]-1;
 			const formulaY = formulaCoord[0]-1;
 			const formula = sheet.formulas[formulaX][formulaY];
-			formulas.push(ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
+			formulas.push(ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
 		    }
 		    example_fixes_r1c1.push(formulas);
 		}

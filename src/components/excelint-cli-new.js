@@ -202,7 +202,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         var formulaX = formulaCoord[1] - 1;
                         var formulaY = formulaCoord[0] - 1;
                         var formula = sheet.formulas[formulaX][formulaY];
-                        formulas.push(formula);
+                        formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
                     }
                     example_fixes.push(formulas);
                 }
@@ -216,7 +216,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         var formulaX = formulaCoord[1] - 1;
                         var formulaY = formulaCoord[0] - 1;
                         var formula = sheet.formulas[formulaX][formulaY];
-                        formulas.push(excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
+                        formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
                     }
                     example_fixes_r1c1.push(formulas);
                 }
