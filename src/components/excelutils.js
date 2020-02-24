@@ -126,10 +126,18 @@ var ExcelUtils = /** @class */ (function () {
         throw new Error('We should never get here.');
         return [0, 0, 0];
     };
-    ExcelUtils.toR1C1 = function (srcCell, destCell) {
+    ExcelUtils.toR1C1 = function (srcCell, destCell, greek) {
+        if (greek === void 0) { greek = false; }
         // Dependencies are column, then row.
         var vec1 = ExcelUtils.cell_dependency(srcCell, 0, 0);
         var vec2 = ExcelUtils.cell_dependency(destCell, 0, 0);
+        var R = "R";
+        var C = "C";
+        if (greek) {
+            // We use this encoding to avoid confusion with, say, "C1", downstream.
+            R = "ρ";
+            C = "γ";
+        }
         // Compute the difference.
         var resultVec = [];
         vec2.forEach(function (item, index, arr) { resultVec.push(item - vec1[index]); });
@@ -137,44 +145,45 @@ var ExcelUtils = /** @class */ (function () {
         // depending whether it's a relative or absolute reference.
         var resultStr = "";
         if (ExcelUtils.cell_both_absolute.exec(destCell)) {
-            resultStr = "R" + vec2[1] + "C" + vec2[0];
+            resultStr = R + vec2[1] + C + vec2[0];
         }
         else if (ExcelUtils.cell_col_absolute.exec(destCell)) {
             if (resultVec[1] === 0) {
-                resultStr += "R";
+                resultStr += R;
             }
             else {
-                resultStr += "R[" + resultVec[1] + "]";
+                resultStr += R + "[" + resultVec[1] + "]";
             }
-            resultStr += "C" + vec2[0];
+            resultStr += C + vec2[0];
         }
         else if (ExcelUtils.cell_row_absolute.exec(destCell)) {
             if (resultVec[0] === 0) {
-                resultStr += "C";
+                resultStr += C;
             }
             else {
-                resultStr += "C[" + resultVec[0] + "]";
+                resultStr += C + "[" + resultVec[0] + "]";
             }
-            resultStr = "R" + vec2[1] + resultStr;
+            resultStr = R + vec2[1] + resultStr;
         }
         else {
             // Common case, both relative.
             if (resultVec[1] === 0) {
-                resultStr += "R";
+                resultStr += R;
             }
             else {
-                resultStr += "R[" + resultVec[1] + "]";
+                resultStr += R + "[" + resultVec[1] + "]";
             }
             if (resultVec[0] === 0) {
-                resultStr += "C";
+                resultStr += C;
             }
             else {
-                resultStr += "C[" + resultVec[0] + "]";
+                resultStr += C + "[" + resultVec[0] + "]";
             }
         }
         return resultStr;
     };
-    ExcelUtils.formulaToR1C1 = function (range, origin_col, origin_row) {
+    ExcelUtils.formulaToR1C1 = function (formula, origin_col, origin_row) {
+        var range = formula.slice();
         var origin = ExcelUtils.column_index_to_name(origin_col) + origin_row;
         // First, get all the range pairs out.
         var found_pair;
@@ -182,7 +191,7 @@ var ExcelUtils = /** @class */ (function () {
             if (found_pair) {
                 var first_cell = found_pair[1];
                 var last_cell = found_pair[2];
-                range = range.replace(found_pair[0], ExcelUtils.toR1C1(origin, found_pair[1]) + ":" + ExcelUtils.toR1C1(origin, found_pair[2]));
+                range = range.replace(found_pair[0], ExcelUtils.toR1C1(origin, found_pair[1], true) + ":" + ExcelUtils.toR1C1(origin, found_pair[2], true));
             }
         }
         // Now look for singletons.
@@ -190,9 +199,12 @@ var ExcelUtils = /** @class */ (function () {
         while (singleton = ExcelUtils.single_dep.exec(range)) {
             if (singleton) {
                 var first_cell = singleton[1];
-                range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, ExcelUtils.toR1C1(origin, first_cell)));
+                range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, first_cell, true));
             }
         }
+        // Now, we de-greek.
+        range = range.replace(/ρ/g, 'R');
+        range = range.replace(/γ/g, 'C');
         return range;
     };
     ExcelUtils.extract_sheet_cell = function (str) {

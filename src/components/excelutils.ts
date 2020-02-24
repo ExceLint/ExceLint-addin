@@ -157,10 +157,17 @@ export class ExcelUtils {
         return [0, 0, 0];
     }
 
-    public static toR1C1(srcCell : string, destCell: string) : string {
+    public static toR1C1(srcCell : string, destCell: string, greek: Boolean = false) : string {
 	// Dependencies are column, then row.
 	const vec1 = ExcelUtils.cell_dependency(srcCell, 0, 0);
 	const vec2 = ExcelUtils.cell_dependency(destCell, 0, 0);
+	let R = "R";
+	let C = "C";
+	if (greek) {
+	    // We use this encoding to avoid confusion with, say, "C1", downstream.
+	    R = "ρ";
+	    C = "γ";
+	}
 	// Compute the difference.
 	let resultVec = [];
 	vec2.forEach((item, index, arr) => { resultVec.push(item - vec1[index]); });
@@ -168,38 +175,39 @@ export class ExcelUtils {
 	// depending whether it's a relative or absolute reference.
 	let resultStr = "";
 	if (ExcelUtils.cell_both_absolute.exec(destCell)) {
-	    resultStr = "R" + vec2[1] + "C" + vec2[0];
+	    resultStr = R + vec2[1] + C + vec2[0];
 	} else if (ExcelUtils.cell_col_absolute.exec(destCell)) {
 	    if (resultVec[1] === 0) {
-		resultStr += "R";
+		resultStr += R;
 	    } else {
-		resultStr += "R[" + resultVec[1] + "]";
+		resultStr += R + "[" + resultVec[1] + "]";
 	    }
-	    resultStr += "C" + vec2[0];
+	    resultStr += C + vec2[0];
 	} else if (ExcelUtils.cell_row_absolute.exec(destCell)) {
 	    if (resultVec[0] === 0) {
-		resultStr += "C";
+		resultStr += C;
 	    } else {
-		resultStr += "C[" + resultVec[0] + "]";
+		resultStr += C + "[" + resultVec[0] + "]";
 	    }
-	    resultStr = "R" + vec2[1] + resultStr;
+	    resultStr = R + vec2[1] + resultStr;
 	} else {
 	    // Common case, both relative.
 	    if (resultVec[1] === 0) {
-		resultStr += "R";
+		resultStr += R;
 	    } else {
-		resultStr += "R[" + resultVec[1] + "]";
+		resultStr += R + "[" + resultVec[1] + "]";
 	    }
 	    if (resultVec[0] === 0) {
-		resultStr += "C";
+		resultStr += C;
 	    } else {
-		resultStr += "C[" + resultVec[0] + "]";
+		resultStr += C + "[" + resultVec[0] + "]";
 	    }
 	}
         return resultStr;
     }
 
-    public static formulaToR1C1(range: string, origin_col: number, origin_row: number) : string {
+    public static formulaToR1C1(formula: string, origin_col: number, origin_row: number) : string {
+	let range = formula.slice();
 	const origin = ExcelUtils.column_index_to_name(origin_col) + origin_row;
         // First, get all the range pairs out.
 	let found_pair;
@@ -207,7 +215,7 @@ export class ExcelUtils {
             if (found_pair) {
                 let first_cell = found_pair[1];
                 let last_cell = found_pair[2];
-                range = range.replace(found_pair[0], ExcelUtils.toR1C1(origin,found_pair[1]) + ":" + ExcelUtils.toR1C1(origin, found_pair[2]));
+                range = range.replace(found_pair[0], ExcelUtils.toR1C1(origin,found_pair[1], true) + ":" + ExcelUtils.toR1C1(origin, found_pair[2], true));
             }
         }
 
@@ -216,9 +224,13 @@ export class ExcelUtils {
         while (singleton = ExcelUtils.single_dep.exec(range)) {
             if (singleton) {
                 let first_cell = singleton[1];
-                range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, ExcelUtils.toR1C1(origin, first_cell)));
+                range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, first_cell, true));
             }
         }
+	// Now, we de-greek.
+	range = range.replace(/ρ/g, 'R');
+	range = range.replace(/γ/g, 'C');
+	
 	return range;
     }
     
