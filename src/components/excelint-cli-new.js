@@ -213,7 +213,8 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             var formulaY = formulaCoord[0] - 1;
                             var formula = sheet.formulas[formulaX][formulaY];
                             numbers.push(excelutils_1.ExcelUtils.sum_numeric_constants(formula));
-                            formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + formula);
+                            var cellPlusFormula = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + formula;
+                            formulas.push(cellPlusFormula);
                         }
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
                         example_fixes.push({ "direction": direction,
@@ -243,7 +244,8 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             var formulaY = formulaCoord[0] - 1;
                             var formula = sheet.formulas[formulaX][formulaY];
                             numbers.push(excelutils_1.ExcelUtils.sum_numeric_constants(formula));
-                            formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaX) + formulaY + ":" + excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY, formulaX)); // formulaX, formulaY));
+                            var cellPlusFormula = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY + 1, formulaX + 1);
+                            formulas.push(cellPlusFormula);
                         }
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
                         example_fixes_r1c1.push({ "direction": direction,

@@ -14,7 +14,7 @@ export class ExcelUtils {
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     private static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     private static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
-    private static number_dep = new RegExp('([0-9]+\.?[0-9]*)');
+    private static number_dep = new RegExp('([0-9]+\\.?[0-9]*)');
     private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
     private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
     private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
