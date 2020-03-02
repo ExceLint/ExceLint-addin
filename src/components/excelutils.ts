@@ -281,7 +281,7 @@ export class ExcelUtils {
         }
     }
 
-    private static all_cell_dependencies(range: string, origin_col: number, origin_row: number): Array<[number, number, number]> {
+    public static all_cell_dependencies(range: string, origin_col: number, origin_row: number, include_numbers = true): Array<[number, number, number]> {
 
         //	console.log("looking for dependencies in " + range);
 
@@ -340,23 +340,26 @@ export class ExcelUtils {
             }
         }
 
-        // For now, we roll numbers in formulas into the dependency vectors. Each number counts as "1".
-        let number = null;
-        while (number = ExcelUtils.number_dep.exec(range)) {
-            if (number) {
-                all_vectors.push([0, 0, 1]); // just add 1 for every number
-                // Wipe out the matched contents of range.
-                range = range.replace(number[0], '_');
+	if (include_numbers) {
+            // Optionally roll numbers in formulas into the dependency vectors. Each number counts as "1".
+            let number = null;
+            while (number = ExcelUtils.number_dep.exec(range)) {
+		if (number) {
+                    all_vectors.push([0, 0, 1]); // just add 1 for every number
+                    // Wipe out the matched contents of range.
+                    range = range.replace(number[0], '_');
+		}
             }
-        }
+	}
 
         return all_vectors;
     }
 
-    public static sum_numeric_constants(range: string): number {
+    public static numeric_constants(range: string): Array<number> {
+	let numbers = [];
 	range = range.slice();
         if (typeof (range) !== 'string') {
-            return 0;
+            return numbers;
         }
 
 	// Zap all the formulas with the below characteristics.
@@ -388,15 +391,16 @@ export class ExcelUtils {
 
 	// Now aggregate total numeric constants (sum them).
         let number = null;
-	let total = 0.0;
+//	let total = 0.0;
         while (number = ExcelUtils.number_dep.exec(range)) {
             if (number) {
-		total += parseFloat(number);
+		numbers.push(parseFloat(number));
+//		total += parseFloat(number);
                 // Wipe out the matched contents of range.
                 range = range.replace(number[0], '_');
             }
         }
-        return total;
+        return numbers; // total;
     }
 
     public static baseVector(): [number, number, number] {

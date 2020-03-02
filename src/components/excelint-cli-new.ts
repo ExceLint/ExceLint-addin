@@ -223,44 +223,9 @@ for (let parms of parameters) {
                 }
             }
 
-	    // console.log(sheet.formulas);
-	    // console.log(JSON.stringify(adjusted_fixes));
-
-	    let example_fixes = [];
-	    let totalNumericDiff = 0.0;
-
-	    {
-		if (adjusted_fixes.length > 0) {
-		    for (let ind = 0; ind < adjusted_fixes.length; ind++) {
-			let direction = "";
-			if (adjusted_fixes[ind][1][0][0] === adjusted_fixes[ind][2][0][0]) {
-			    direction = "vertical";
-			} else {
-			    direction = "horizontal";
-			}
-			let formulas = [];
-			let numbers = [];
-			for (let i = 0; i < 2; i++) {
-			    const formulaCoord = adjusted_fixes[ind][i+1][0];
-			    const formulaX = formulaCoord[1]-1;
-			    const formulaY = formulaCoord[0]-1;
-			    const formula = sheet.formulas[formulaX][formulaY];
-			    numbers.push(ExcelUtils.sum_numeric_constants(formula));
-			    const cellPlusFormula = ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":" + formula;
-			    formulas.push(cellPlusFormula);
-			}
-			totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
-			example_fixes.push({ "direction" : direction,
-					     "numeric_difference": totalNumericDiff,
-					     "magnitude_numeric_difference": (totalNumericDiff === 0) ? 0 : Math.log10(totalNumericDiff),
-					     "formulas": formulas });
-		    }
-		}
-	    }
-
 	    let example_fixes_r1c1 = [];
 	    {
-		totalNumericDiff = 0.0;
+		let totalNumericDiff = 0.0;
 		if (adjusted_fixes.length > 0) {
 		    for (let ind = 0; ind < adjusted_fixes.length; ind++) {
 			let direction = "";
@@ -270,21 +235,51 @@ for (let parms of parameters) {
 			    direction = "horizontal";
 			}
 			let formulas = [];
+			let print_formulas = [];
+			let r1c1_formulas = [];
+			let r1c1_print_formulas = [];
+			let all_numbers = [];
 			let numbers = [];
+			let dependence_count = [];
 			for (let i = 0; i < 2; i++) {
 			    const formulaCoord = adjusted_fixes[ind][i+1][0];
 			    const formulaX = formulaCoord[1]-1;
 			    const formulaY = formulaCoord[0]-1;
 			    const formula = sheet.formulas[formulaX][formulaY];
-			    numbers.push(ExcelUtils.sum_numeric_constants(formula));
-			    const cellPlusFormula = ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":" + ExcelUtils.formulaToR1C1(formula, formulaY+1, formulaX+1);
-			    formulas.push(cellPlusFormula);
+			    const numeric_constants = ExcelUtils.numeric_constants(formula);
+			    all_numbers.push(numeric_constants);
+			    numbers.push(numbers.reduce((a,b) => a + b, 0));
+			    dependence_count.push(ExcelUtils.all_cell_dependencies(formula, formulaX, formulaY, false).length);
+			    const r1c1 = ExcelUtils.formulaToR1C1(formula, formulaY+1, formulaX+1);
+			    const cellPlusFormula = ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":" + r1c1;
+			    r1c1_formulas.push(r1c1);
+			    r1c1_print_formulas.push(cellPlusFormula);
+			    formulas.push(formula);
+			    print_formulas.push(ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":" + formula);
 			}
 			totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
-			example_fixes_r1c1.push({ "direction" : direction,
+			// Binning.
+			let bin = [];
+			if (dependence_count[0] !== dependence_count[1]) {
+			    bin.push("different-dependent-count");
+			}
+			if (all_numbers[0].length !== all_numbers[1].length) {
+			    bin.push("number-of-constants-mismatch");
+			}
+			if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
+			    // reference mismatch, but can have false positives with constants.
+			    bin.push("r1c1-mismatch");
+			}
+			if (bin === []) {
+			    bin.push("unclassified");
+			}
+			example_fixes_r1c1.push({ "bin" : bin,
+						  "direction" : direction,
+						  "numbers" : numbers,
 						  "numeric_difference": totalNumericDiff,
 						  "magnitude_numeric_difference": (totalNumericDiff === 0) ? 0 : Math.log10(totalNumericDiff),
-						  "formulas": formulas });
+						  "formulas": print_formulas,
+						  "r1c1formulas" : r1c1_print_formulas });
 			// example_fixes_r1c1.push([direction, formulas]);
 		    }
 		}
@@ -309,8 +304,8 @@ for (let parms of parameters) {
                 'suspiciousnessThreshold': reportingThreshold,
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
-		'exampleFixes' : example_fixes,
-		'exampleFixesR1C1' : example_fixes_r1c1,
+		'exampleFixes' : example_fixes_r1c1,
+//		'exampleFixesR1C1' : example_fixes_r1c1,
                 'suspiciousRanges': adjusted_fixes.length,
 		'weightedSuspiciousRanges' : 0, // actually calculated below.
                 'suspiciousCells': 0, // actually calculated below.

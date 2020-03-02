@@ -191,11 +191,9 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                     adjusted_fixes.push([adjusted_score, first, second]);
                 }
             }
-            // console.log(sheet.formulas);
-            // console.log(JSON.stringify(adjusted_fixes));
-            var example_fixes = [];
-            var totalNumericDiff = 0.0;
+            var example_fixes_r1c1 = [];
             {
+                var totalNumericDiff = 0.0;
                 if (adjusted_fixes.length > 0) {
                     for (var ind = 0; ind < adjusted_fixes.length; ind++) {
                         var direction = "";
@@ -206,52 +204,51 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             direction = "horizontal";
                         }
                         var formulas = [];
+                        var print_formulas = [];
+                        var r1c1_formulas = [];
+                        var r1c1_print_formulas = [];
+                        var all_numbers = [];
                         var numbers = [];
+                        var dependence_count = [];
                         for (var i_1 = 0; i_1 < 2; i_1++) {
                             var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
                             var formulaX = formulaCoord[1] - 1;
                             var formulaY = formulaCoord[0] - 1;
                             var formula = sheet.formulas[formulaX][formulaY];
-                            numbers.push(excelutils_1.ExcelUtils.sum_numeric_constants(formula));
-                            var cellPlusFormula = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + formula;
-                            formulas.push(cellPlusFormula);
+                            var numeric_constants = excelutils_1.ExcelUtils.numeric_constants(formula);
+                            all_numbers.push(numeric_constants);
+                            numbers.push(numbers.reduce(function (a, b) { return a + b; }, 0));
+                            dependence_count.push(excelutils_1.ExcelUtils.all_cell_dependencies(formula, formulaX, formulaY, false).length);
+                            var r1c1 = excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY + 1, formulaX + 1);
+                            var cellPlusFormula = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + r1c1;
+                            r1c1_formulas.push(r1c1);
+                            r1c1_print_formulas.push(cellPlusFormula);
+                            formulas.push(formula);
+                            print_formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + formula);
                         }
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
-                        example_fixes.push({ "direction": direction,
+                        // Binning.
+                        var bin = [];
+                        if (dependence_count[0] !== dependence_count[1]) {
+                            bin.push("different-dependent-count");
+                        }
+                        if (all_numbers[0].length !== all_numbers[1].length) {
+                            bin.push("number-of-constants-mismatch");
+                        }
+                        if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
+                            // reference mismatch, but can have false positives with constants.
+                            bin.push("r1c1-mismatch");
+                        }
+                        if (bin === []) {
+                            bin.push("unclassified");
+                        }
+                        example_fixes_r1c1.push({ "bin": bin,
+                            "direction": direction,
+                            "numbers": numbers,
                             "numeric_difference": totalNumericDiff,
                             "magnitude_numeric_difference": (totalNumericDiff === 0) ? 0 : Math.log10(totalNumericDiff),
-                            "formulas": formulas });
-                    }
-                }
-            }
-            var example_fixes_r1c1 = [];
-            {
-                totalNumericDiff = 0.0;
-                if (adjusted_fixes.length > 0) {
-                    for (var ind = 0; ind < adjusted_fixes.length; ind++) {
-                        var direction = "";
-                        if (adjusted_fixes[ind][1][0][0] === adjusted_fixes[ind][2][0][0]) {
-                            direction = "vertical";
-                        }
-                        else {
-                            direction = "horizontal";
-                        }
-                        var formulas = [];
-                        var numbers = [];
-                        for (var i_2 = 0; i_2 < 2; i_2++) {
-                            var formulaCoord = adjusted_fixes[ind][i_2 + 1][0];
-                            var formulaX = formulaCoord[1] - 1;
-                            var formulaY = formulaCoord[0] - 1;
-                            var formula = sheet.formulas[formulaX][formulaY];
-                            numbers.push(excelutils_1.ExcelUtils.sum_numeric_constants(formula));
-                            var cellPlusFormula = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY + 1, formulaX + 1);
-                            formulas.push(cellPlusFormula);
-                        }
-                        totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
-                        example_fixes_r1c1.push({ "direction": direction,
-                            "numeric_difference": totalNumericDiff,
-                            "magnitude_numeric_difference": (totalNumericDiff === 0) ? 0 : Math.log10(totalNumericDiff),
-                            "formulas": formulas });
+                            "formulas": print_formulas,
+                            "r1c1formulas": r1c1_print_formulas });
                         // example_fixes_r1c1.push([direction, formulas]);
                     }
                 }
@@ -272,8 +269,8 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                 'suspiciousnessThreshold': reportingThreshold,
                 'formattingDiscount': formattingDiscount,
                 'proposedFixes': adjusted_fixes,
-                'exampleFixes': example_fixes,
-                'exampleFixesR1C1': example_fixes_r1c1,
+                'exampleFixes': example_fixes_r1c1,
+                //		'exampleFixesR1C1' : example_fixes_r1c1,
                 'suspiciousRanges': adjusted_fixes.length,
                 'weightedSuspiciousRanges': 0,
                 'suspiciousCells': 0,

@@ -251,8 +251,9 @@ var ExcelUtils = /** @class */ (function () {
             return rangeStr;
         }
     };
-    ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row) {
+    ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row, include_numbers) {
         //	console.log("looking for dependencies in " + range);
+        if (include_numbers === void 0) { include_numbers = true; }
         var found_pair = null;
         var all_vectors = [];
         if (typeof (range) !== 'string') {
@@ -299,21 +300,24 @@ var ExcelUtils = /** @class */ (function () {
                 range = range.replace(singleton[0], '_');
             }
         }
-        // For now, we roll numbers in formulas into the dependency vectors. Each number counts as "1".
-        var number = null;
-        while (number = ExcelUtils.number_dep.exec(range)) {
-            if (number) {
-                all_vectors.push([0, 0, 1]); // just add 1 for every number
-                // Wipe out the matched contents of range.
-                range = range.replace(number[0], '_');
+        if (include_numbers) {
+            // Optionally roll numbers in formulas into the dependency vectors. Each number counts as "1".
+            var number = null;
+            while (number = ExcelUtils.number_dep.exec(range)) {
+                if (number) {
+                    all_vectors.push([0, 0, 1]); // just add 1 for every number
+                    // Wipe out the matched contents of range.
+                    range = range.replace(number[0], '_');
+                }
             }
         }
         return all_vectors;
     };
-    ExcelUtils.sum_numeric_constants = function (range) {
+    ExcelUtils.numeric_constants = function (range) {
+        var numbers = [];
         range = range.slice();
         if (typeof (range) !== 'string') {
-            return 0;
+            return numbers;
         }
         // Zap all the formulas with the below characteristics.
         range = range.replace(this.formulas_with_numbers, '_'); // Don't track these.
@@ -341,15 +345,16 @@ var ExcelUtils = /** @class */ (function () {
         }
         // Now aggregate total numeric constants (sum them).
         var number = null;
-        var total = 0.0;
+        //	let total = 0.0;
         while (number = ExcelUtils.number_dep.exec(range)) {
             if (number) {
-                total += parseFloat(number);
+                numbers.push(parseFloat(number));
+                //		total += parseFloat(number);
                 // Wipe out the matched contents of range.
                 range = range.replace(number[0], '_');
             }
         }
-        return total;
+        return numbers; // total;
     };
     ExcelUtils.baseVector = function () {
         return [0, 0, 0];

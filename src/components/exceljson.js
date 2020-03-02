@@ -38,7 +38,7 @@ var ExcelJSON = /** @class */ (function () {
                         case ExcelJSON.selections.VALUES:
                             // Numeric values.
                             if (cellValue['t'] === 'n') {
-                                if (('z' in cellValue) && (cellValue['z'].endsWith('yy'))) {
+                                if (('z' in cellValue) && cellValue['z'] && (cellValue['z'].endsWith('yy'))) {
                                     // ad hoc date matching.
                                     // skip dates.
                                 }
