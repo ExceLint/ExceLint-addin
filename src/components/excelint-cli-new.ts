@@ -245,13 +245,14 @@ for (let parms of parameters) {
 			for (let i = 0; i < 2; i++) {
 			     // the coordinates of the cell containing the first formula in the proposed fix range
 			    const formulaCoord = adjusted_fixes[ind][i+1][0];
-			    const formulaX = formulaCoord[1]-1;                   // column
-			    const formulaY = formulaCoord[0]-1;                   // row
+			    const formulaX = formulaCoord[1]-1;                   // row
+			    const formulaY = formulaCoord[0]-1;                   // column
 			    const formula = sheet.formulas[formulaX][formulaY];   // the formula itself
 			    const numeric_constants = ExcelUtils.numeric_constants(formula); // all numeric constants in the formula
 			    all_numbers.push(numeric_constants);
 			    numbers.push(numbers.reduce((a,b) => a + b, 0));      // the sum of all numeric constants
-			    dependence_count.push(ExcelUtils.all_cell_dependencies(formula, formulaX, formulaY, false).length);
+			    const dependences_wo_constants = ExcelUtils.all_cell_dependencies(formula, formulaY+1, formulaX+1, false);
+			    dependence_count.push(dependences_wo_constants.length);
 			    const r1c1 = ExcelUtils.formulaToR1C1(formula, formulaY+1, formulaX+1);
 			    const preface = ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":";
 			    const cellPlusFormula = preface + r1c1;
@@ -261,6 +262,7 @@ for (let parms of parameters) {
 			    formulas.push(formula);
 			    print_formulas.push(preface + formula);
 			    absolute_refs.push((formula.match(/\$/g) || []).length);
+			    // console.log(preface + JSON.stringify(dependences_wo_constants));
 			}
 			totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
 			// Binning.

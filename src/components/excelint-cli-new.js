@@ -214,13 +214,14 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         for (var i_1 = 0; i_1 < 2; i_1++) {
                             // the coordinates of the cell containing the first formula in the proposed fix range
                             var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
-                            var formulaX = formulaCoord[1] - 1; // column
-                            var formulaY = formulaCoord[0] - 1; // row
+                            var formulaX = formulaCoord[1] - 1; // row
+                            var formulaY = formulaCoord[0] - 1; // column
                             var formula = sheet.formulas[formulaX][formulaY]; // the formula itself
                             var numeric_constants = excelutils_1.ExcelUtils.numeric_constants(formula); // all numeric constants in the formula
                             all_numbers.push(numeric_constants);
                             numbers.push(numbers.reduce(function (a, b) { return a + b; }, 0)); // the sum of all numeric constants
-                            dependence_count.push(excelutils_1.ExcelUtils.all_cell_dependencies(formula, formulaX, formulaY, false).length);
+                            var dependences_wo_constants = excelutils_1.ExcelUtils.all_cell_dependencies(formula, formulaY + 1, formulaX + 1, false);
+                            dependence_count.push(dependences_wo_constants.length);
                             var r1c1 = excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY + 1, formulaX + 1);
                             var preface = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":";
                             var cellPlusFormula = preface + r1c1;
@@ -230,6 +231,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             formulas.push(formula);
                             print_formulas.push(preface + formula);
                             absolute_refs.push((formula.match(/\$/g) || []).length);
+                            // console.log(preface + JSON.stringify(dependences_wo_constants));
                         }
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
                         // Binning.

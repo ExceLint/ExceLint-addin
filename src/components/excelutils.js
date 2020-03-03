@@ -254,6 +254,7 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.all_cell_dependencies = function (range, origin_col, origin_row, include_numbers) {
         //	console.log("looking for dependencies in " + range);
         if (include_numbers === void 0) { include_numbers = true; }
+        var originalRange = range;
         var found_pair = null;
         var all_vectors = [];
         if (typeof (range) !== 'string') {
@@ -311,6 +312,7 @@ var ExcelUtils = /** @class */ (function () {
                 }
             }
         }
+        console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
         return all_vectors;
     };
     ExcelUtils.numeric_constants = function (range) {

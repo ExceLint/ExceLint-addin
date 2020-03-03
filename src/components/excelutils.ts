@@ -285,6 +285,8 @@ export class ExcelUtils {
 
         //	console.log("looking for dependencies in " + range);
 
+	const originalRange = range;
+	
         let found_pair = null;
         let all_vectors: Array<[number, number, number]> = [];
 
@@ -351,7 +353,7 @@ export class ExcelUtils {
 		}
             }
 	}
-
+	console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
         return all_vectors;
     }
 
