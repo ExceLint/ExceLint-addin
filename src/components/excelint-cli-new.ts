@@ -270,27 +270,29 @@ for (let parms of parameters) {
 			// Binning.
 			let bin = [];
 			if (dependence_count[0] !== dependence_count[1]) {
-			    bin.push("different-dependent-count");
+			    bin.push("different-referent-count");
 			}
 			if (all_numbers[0].length !== all_numbers[1].length) {
-			    bin.push("number-of-constants-mismatch");
+			    if (Math.abs(all_numbers[0].length - all_numbers[1].length) === 1) {
+				bin.push("one-extra-constant");
+			    } else {
+				bin.push("number-of-constants-mismatch");
+			    }
 			}
 			if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
 			    // reference mismatch, but can have false positives with constants.
-			    bin.push("r1c1-mismatch");
+			    if (JSON.stringify(dependence_vectors[0]) !== JSON.stringify(dependence_vectors[1])) {
+				bin.push("r1c1-mismatch");
+			    }
 			}
 			if (absolute_refs[0] !== absolute_refs[1]) {
 			    bin.push("absolute-ref-mismatch");
 			}
-			let off_axis = false;
 			for (let i = 0; i < dependence_vectors.length; i++) {
 			    if (dependence_vectors[i][0][0] * dependence_vectors[i][0][1] !== 0) {
-				off_axis = true;
+				bin.push("off-axis-reference");
 				break;
 			    }
-			}
-			if (off_axis) {
-			    bin.push("off-axis-reference");
 			}
 			if (bin === []) {
 			    bin.push("unclassified");
