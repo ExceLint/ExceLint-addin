@@ -281,7 +281,7 @@ for (let parms of parameters) {
 			}
 			if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
 			    // reference mismatch, but can have false positives with constants.
-			    if (JSON.stringify(dependence_vectors[0]) !== JSON.stringify(dependence_vectors[1])) {
+			    if (JSON.stringify(dependence_vectors[0].sort()) !== JSON.stringify(dependence_vectors[1].sort())) {
 				bin.push("r1c1-mismatch");
 			    }
 			}
@@ -289,9 +289,11 @@ for (let parms of parameters) {
 			    bin.push("absolute-ref-mismatch");
 			}
 			for (let i = 0; i < dependence_vectors.length; i++) {
-			    if (dependence_vectors[i][0][0] * dependence_vectors[i][0][1] !== 0) {
-				bin.push("off-axis-reference");
-				break;
+			    if (dependence_vectors[i].length > 0) {
+				if (dependence_vectors[i][0][0] * dependence_vectors[i][0][1] !== 0) {
+				    bin.push("off-axis-reference");
+				    break;
+				}
 			    }
 			}
 			if (bin === []) {
