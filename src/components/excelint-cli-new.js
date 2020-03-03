@@ -203,28 +203,33 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         else {
                             direction = "horizontal";
                         }
-                        var formulas = [];
-                        var print_formulas = [];
-                        var r1c1_formulas = [];
-                        var r1c1_print_formulas = [];
-                        var all_numbers = [];
-                        var numbers = [];
-                        var dependence_count = [];
+                        var formulas = []; // actual formulas
+                        var print_formulas = []; // formulas with a preface (the cell name containing each)
+                        var r1c1_formulas = []; // formulas in R1C1 format
+                        var r1c1_print_formulas = []; // as above, but for R1C1 formulas
+                        var all_numbers = []; // all the numeric constants in each formula
+                        var numbers = []; // the sum of all the numeric constants in each formula
+                        var dependence_count = []; // the number of dependent cells
+                        var absolute_refs = []; // the number of absolute references in each formula
                         for (var i_1 = 0; i_1 < 2; i_1++) {
+                            // the coordinates of the cell containing the first formula in the proposed fix range
                             var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
-                            var formulaX = formulaCoord[1] - 1;
-                            var formulaY = formulaCoord[0] - 1;
-                            var formula = sheet.formulas[formulaX][formulaY];
-                            var numeric_constants = excelutils_1.ExcelUtils.numeric_constants(formula);
+                            var formulaX = formulaCoord[1] - 1; // column
+                            var formulaY = formulaCoord[0] - 1; // row
+                            var formula = sheet.formulas[formulaX][formulaY]; // the formula itself
+                            var numeric_constants = excelutils_1.ExcelUtils.numeric_constants(formula); // all numeric constants in the formula
                             all_numbers.push(numeric_constants);
-                            numbers.push(numbers.reduce(function (a, b) { return a + b; }, 0));
+                            numbers.push(numbers.reduce(function (a, b) { return a + b; }, 0)); // the sum of all numeric constants
                             dependence_count.push(excelutils_1.ExcelUtils.all_cell_dependencies(formula, formulaX, formulaY, false).length);
                             var r1c1 = excelutils_1.ExcelUtils.formulaToR1C1(formula, formulaY + 1, formulaX + 1);
-                            var cellPlusFormula = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + r1c1;
+                            var preface = excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":";
+                            var cellPlusFormula = preface + r1c1;
+                            // Add the formulas plus their prefaces (the latter for printing).
                             r1c1_formulas.push(r1c1);
                             r1c1_print_formulas.push(cellPlusFormula);
                             formulas.push(formula);
-                            print_formulas.push(excelutils_1.ExcelUtils.column_index_to_name(formulaY + 1) + (formulaX + 1) + ":" + formula);
+                            print_formulas.push(preface + formula);
+                            absolute_refs.push((formula.match(/\$/g) || []).length);
                         }
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
                         // Binning.
@@ -238,6 +243,9 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
                             // reference mismatch, but can have false positives with constants.
                             bin.push("r1c1-mismatch");
+                        }
+                        if (absolute_refs[0] !== absolute_refs[1]) {
+                            bin.push("absolute-ref-mismatch");
                         }
                         if (bin === []) {
                             bin.push("unclassified");

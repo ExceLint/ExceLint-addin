@@ -234,28 +234,33 @@ for (let parms of parameters) {
 			} else {
 			    direction = "horizontal";
 			}
-			let formulas = [];
-			let print_formulas = [];
-			let r1c1_formulas = [];
-			let r1c1_print_formulas = [];
-			let all_numbers = [];
-			let numbers = [];
-			let dependence_count = [];
+			let formulas = [];              // actual formulas
+			let print_formulas = [];        // formulas with a preface (the cell name containing each)
+			let r1c1_formulas = [];         // formulas in R1C1 format
+			let r1c1_print_formulas = [];   // as above, but for R1C1 formulas
+			let all_numbers = [];           // all the numeric constants in each formula
+			let numbers = [];               // the sum of all the numeric constants in each formula
+			let dependence_count = [];      // the number of dependent cells
+			let absolute_refs = [];         // the number of absolute references in each formula
 			for (let i = 0; i < 2; i++) {
+			     // the coordinates of the cell containing the first formula in the proposed fix range
 			    const formulaCoord = adjusted_fixes[ind][i+1][0];
-			    const formulaX = formulaCoord[1]-1;
-			    const formulaY = formulaCoord[0]-1;
-			    const formula = sheet.formulas[formulaX][formulaY];
-			    const numeric_constants = ExcelUtils.numeric_constants(formula);
+			    const formulaX = formulaCoord[1]-1;                   // column
+			    const formulaY = formulaCoord[0]-1;                   // row
+			    const formula = sheet.formulas[formulaX][formulaY];   // the formula itself
+			    const numeric_constants = ExcelUtils.numeric_constants(formula); // all numeric constants in the formula
 			    all_numbers.push(numeric_constants);
-			    numbers.push(numbers.reduce((a,b) => a + b, 0));
+			    numbers.push(numbers.reduce((a,b) => a + b, 0));      // the sum of all numeric constants
 			    dependence_count.push(ExcelUtils.all_cell_dependencies(formula, formulaX, formulaY, false).length);
 			    const r1c1 = ExcelUtils.formulaToR1C1(formula, formulaY+1, formulaX+1);
-			    const cellPlusFormula = ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":" + r1c1;
+			    const preface = ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":";
+			    const cellPlusFormula = preface + r1c1;
+			    // Add the formulas plus their prefaces (the latter for printing).
 			    r1c1_formulas.push(r1c1);
 			    r1c1_print_formulas.push(cellPlusFormula);
 			    formulas.push(formula);
-			    print_formulas.push(ExcelUtils.column_index_to_name(formulaY+1) + (formulaX+1) + ":" + formula);
+			    print_formulas.push(preface + formula);
+			    absolute_refs.push((formula.match(/\$/g) || []).length);
 			}
 			totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
 			// Binning.
@@ -269,6 +274,9 @@ for (let parms of parameters) {
 			if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
 			    // reference mismatch, but can have false positives with constants.
 			    bin.push("r1c1-mismatch");
+			}
+			if (absolute_refs[0] !== absolute_refs[1]) {
+			    bin.push("absolute-ref-mismatch");
 			}
 			if (bin === []) {
 			    bin.push("unclassified");
