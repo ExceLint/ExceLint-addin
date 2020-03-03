@@ -242,6 +242,7 @@ for (let parms of parameters) {
 			let numbers = [];               // the sum of all the numeric constants in each formula
 			let dependence_count = [];      // the number of dependent cells
 			let absolute_refs = [];         // the number of absolute references in each formula
+			let dependence_vectors = [];
 			for (let i = 0; i < 2; i++) {
 			     // the coordinates of the cell containing the first formula in the proposed fix range
 			    const formulaCoord = adjusted_fixes[ind][i+1][0];
@@ -263,6 +264,7 @@ for (let parms of parameters) {
 			    print_formulas.push(preface + formula);
 			    absolute_refs.push((formula.match(/\$/g) || []).length);
 			    // console.log(preface + JSON.stringify(dependences_wo_constants));
+			    dependence_vectors.push(dependences_wo_constants);
 			}
 			totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
 			// Binning.
@@ -280,6 +282,16 @@ for (let parms of parameters) {
 			if (absolute_refs[0] !== absolute_refs[1]) {
 			    bin.push("absolute-ref-mismatch");
 			}
+			let off_axis = false;
+			for (let i = 0; i < dependence_vectors.length; i++) {
+			    if (dependence_vectors[i][0][0] * dependence_vectors[i][0][1] !== 0) {
+				off_axis = true;
+				break;
+			    }
+			}
+			if (off_axis) {
+			    bin.push("off-axis-reference");
+			}
 			if (bin === []) {
 			    bin.push("unclassified");
 			}
@@ -289,7 +301,8 @@ for (let parms of parameters) {
 						  "numeric_difference": totalNumericDiff,
 						  "magnitude_numeric_difference": (totalNumericDiff === 0) ? 0 : Math.log10(totalNumericDiff),
 						  "formulas": print_formulas,
-						  "r1c1formulas" : r1c1_print_formulas });
+						  "r1c1formulas" : r1c1_print_formulas,
+						  "dependence_vectors" : dependence_vectors });
 			// example_fixes_r1c1.push([direction, formulas]);
 		    }
 		}

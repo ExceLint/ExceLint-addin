@@ -211,6 +211,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         var numbers = []; // the sum of all the numeric constants in each formula
                         var dependence_count = []; // the number of dependent cells
                         var absolute_refs = []; // the number of absolute references in each formula
+                        var dependence_vectors = [];
                         for (var i_1 = 0; i_1 < 2; i_1++) {
                             // the coordinates of the cell containing the first formula in the proposed fix range
                             var formulaCoord = adjusted_fixes[ind][i_1 + 1][0];
@@ -232,6 +233,7 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             print_formulas.push(preface + formula);
                             absolute_refs.push((formula.match(/\$/g) || []).length);
                             // console.log(preface + JSON.stringify(dependences_wo_constants));
+                            dependence_vectors.push(dependences_wo_constants);
                         }
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
                         // Binning.
@@ -249,6 +251,16 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         if (absolute_refs[0] !== absolute_refs[1]) {
                             bin.push("absolute-ref-mismatch");
                         }
+                        var off_axis = false;
+                        for (var i_2 = 0; i_2 < dependence_vectors.length; i_2++) {
+                            if (dependence_vectors[i_2][0][0] * dependence_vectors[i_2][0][1] !== 0) {
+                                off_axis = true;
+                                break;
+                            }
+                        }
+                        if (off_axis) {
+                            bin.push("off-axis-reference");
+                        }
                         if (bin === []) {
                             bin.push("unclassified");
                         }
@@ -258,7 +270,8 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                             "numeric_difference": totalNumericDiff,
                             "magnitude_numeric_difference": (totalNumericDiff === 0) ? 0 : Math.log10(totalNumericDiff),
                             "formulas": print_formulas,
-                            "r1c1formulas": r1c1_print_formulas });
+                            "r1c1formulas": r1c1_print_formulas,
+                            "dependence_vectors": dependence_vectors });
                         // example_fixes_r1c1.push([direction, formulas]);
                     }
                 }

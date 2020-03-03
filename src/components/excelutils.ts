@@ -353,7 +353,7 @@ export class ExcelUtils {
 		}
             }
 	}
-	console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
+//	console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
         return all_vectors;
     }
 

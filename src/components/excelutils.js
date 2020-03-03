@@ -312,7 +312,7 @@ var ExcelUtils = /** @class */ (function () {
                 }
             }
         }
-        console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
+        //	console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
         return all_vectors;
     };
     ExcelUtils.numeric_constants = function (range) {
