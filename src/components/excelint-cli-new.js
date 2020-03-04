@@ -238,9 +238,27 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                         totalNumericDiff = Math.abs(numbers[0] - numbers[1]);
                         // Binning.
                         var bin = [];
+                        // Check for recurrent formulas.
+                        for (var i_2 = 0; i_2 < dependence_vectors.length; i_2++) {
+                            // If there are at least two dependencies and one of them is -1 in the column (row),
+                            // it is a recurrence (the common recurrence relation of starting at a value and
+                            // referencing, say, =B10+1).
+                            if (dependence_vectors[i_2].length > 0) {
+                                if ((direction === "vertical") && ((dependence_vectors[i_2][0][0] === 0) && (dependence_vectors[i_2][0][1] === -1))) {
+                                    bin.push("recurrent-formula");
+                                    break;
+                                }
+                                if ((direction === "horizontal") && ((dependence_vectors[i_2][0][0] === -1) && (dependence_vectors[i_2][0][1] === 0))) {
+                                    bin.push("recurrent-formula");
+                                    break;
+                                }
+                            }
+                        }
+                        // Different number of referents (dependencies).
                         if (dependence_count[0] !== dependence_count[1]) {
                             bin.push("different-referent-count");
                         }
+                        // Different number of constants.
                         if (all_numbers[0].length !== all_numbers[1].length) {
                             if (Math.abs(all_numbers[0].length - all_numbers[1].length) === 1) {
                                 bin.push("one-extra-constant");
@@ -249,18 +267,25 @@ for (var _i = 0, parameters_1 = parameters; _i < parameters_1.length; _i++) {
                                 bin.push("number-of-constants-mismatch");
                             }
                         }
-                        if (r1c1_formulas[0].localeCompare(r1c1_formulas[1])) {
-                            // reference mismatch, but can have false positives with constants.
+                        // Mismatched R1C1 representation.
+                        if (r1c1_formulas[0] !== r1c1_formulas[1]) {
+                            // The formulas don't match, but it could
+                            // be because of the presence of (possibly
+                            // different) constants instead of the
+                            // dependencies being different. Do a deep comparison
+                            // here.
                             if (JSON.stringify(dependence_vectors[0].sort()) !== JSON.stringify(dependence_vectors[1].sort())) {
                                 bin.push("r1c1-mismatch");
                             }
                         }
+                        // Different number of absolute ($, a.k.a. "anchor") references.
                         if (absolute_refs[0] !== absolute_refs[1]) {
                             bin.push("absolute-ref-mismatch");
                         }
-                        for (var i_2 = 0; i_2 < dependence_vectors.length; i_2++) {
-                            if (dependence_vectors[i_2].length > 0) {
-                                if (dependence_vectors[i_2][0][0] * dependence_vectors[i_2][0][1] !== 0) {
+                        // Dependencies that are neither vertical or horizontal (likely errors if an absolute-ref-mismatch).
+                        for (var i_3 = 0; i_3 < dependence_vectors.length; i_3++) {
+                            if (dependence_vectors[i_3].length > 0) {
+                                if (dependence_vectors[i_3][0][0] * dependence_vectors[i_3][0][1] !== 0) {
                                     bin.push("off-axis-reference");
                                     break;
                                 }
