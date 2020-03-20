@@ -297,6 +297,19 @@ for (let parms of parameters) {
 				bin.push("number-of-constants-mismatch");
 			    }
 			}
+			// Both constants.
+			if ((all_numbers[0].length > 0) && (all_numbers[1].length > 0)) {
+			    // Both have numbers.
+			    if (dependence_count[0] + dependence_count[1] === 0) {
+				// Both have no dependents.
+				bin.push("both-constants");
+			    } else {
+				if (dependence_count[0] * dependence_count[1] === 0) {
+				    // One is a constant.
+				    bin.push("one-is-all-constants");
+				}
+			    }
+			}
 			// Mismatched R1C1 representation.
 			if (r1c1_formulas[0] !== r1c1_formulas[1]) {
 			    // The formulas don't match, but it could
