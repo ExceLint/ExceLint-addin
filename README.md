@@ -1,6 +1,6 @@
-![\[Exce-Lint logo\]](logos/ExceLint/ExceLint.png)
+![\[ExceLint logo\]](logos/ExceLint/ExceLint.png)
 
-Exce-Lint is an Excel add-in that automatically finds formula errors in
+ExceLint is an Excel add-in that automatically finds formula errors in
 spreadsheets. It is a product of research from the [PLASMA lab @ UMass
 Amherst](https://plasma-umass.org) and Microsoft Research.
 
@@ -12,7 +12,7 @@ Research).
 
 ## Installation
 
-Exce-Lint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
+ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
 You need to install the file `manifest.xml` following the appropriate instructions for each platform:
 
 * Windows: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins
@@ -27,12 +27,12 @@ repository](https://github.com/plasma-umass/ExceLint-addin).
 
 ## Privacy
 
-The Exce-Lint add-in does not collect personally identifiable
+The ExceLint add-in does not collect personally identifiable
 information. See [the privacy statement](privacy.html) for more details.
 
 ## Support
 
-Exce-Lint is provided without any guarantee of support. However, we
+ExceLint is provided without any guarantee of support. However, we
 welcome [bug
 reports](https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=bug&template=bug_report.md&title=)
 and [enhancement/feature
@@ -48,6 +48,36 @@ Daniel W. Barowy (Williams College), Emery D. Berger (University of
 Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In
 *Proceedings of the ACM on Programming Languages*, Volume 2, Number
 OOPSLA.
+
+## Development
+
+The ExceLint addin is written entirely in TypeScript. It is already set up to be hostable locally.
+
+### Requirements
+
+To run ExceLint locally, you will first need to install [Node](https://nodejs.org/en/).
+
+### Running the ExceLint service locally
+
+First, run the following commands to build and start the local ExceLint service (which just hosts the assets).
+
+```
+git clone https://github.com/plasma-umass/ExceLint-addin
+cd ExceLint-addin
+npm install
+npm run start-local
+```
+
+### Testing
+
+The easiest way to test the local service is to use Excel 365
+(https://www.office.com/launch/excel?auth=2). Open a workbook, click
+the Insert menu, then click "Office Add-ins" on the ribbon. Click
+"Upload My Add-in" (in the upper-right hand corner), and select the
+file `manifest-localhost.xml`. If everything works as planned, you should
+see an icon for ExceLint on the Home ribbon. Click on it and it should open
+the task pane on the right-hand side of the window.
+
 
 ## Acknowledgements
 
