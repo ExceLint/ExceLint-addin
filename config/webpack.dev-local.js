@@ -21,8 +21,10 @@ module.exports = async (env, options) => {
             "Access-Control-Allow-Origin": "*"
 	},
 	https: {
-            key: fs.readFileSync('/etc/letsencrypt/live/excelint-addin.westus2.cloudapp.azure.com/privkey.pem'),
-            cert: fs.readFileSync('/etc/letsencrypt/live/excelint-addin.westus2.cloudapp.azure.com/fullchain.pem'),
+//            key: fs.readFileSync('/etc/letsencrypt/live/excelint-addin.westus2.cloudapp.azure.com/privkey.pem'),
+//            cert: fs.readFileSync('/etc/letsencrypt/live/excelint-addin.westus2.cloudapp.azure.com/fullchain.pem'),
+            key: fs.readFileSync('./certs/privkey.pem'),
+            cert: fs.readFileSync('./certs/fullchain.pem')
         },
 	allowedHosts: [
             '.amazonaws.com', '.azure.com', 'localhost', '0.0.0.0'
