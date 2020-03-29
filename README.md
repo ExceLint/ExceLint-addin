@@ -55,7 +55,7 @@ The ExceLint addin is written entirely in TypeScript. It is already set up to be
 
 ### Requirements
 
-To run ExceLint locally, you will first need to install [Node](https://nodejs.org/en/).
+To run ExceLint locally, you will first need to install [Node](https://nodejs.org/en/) and [Git](https://git-scm.com/downloads).
 
 ### Running the ExceLint service locally
 
