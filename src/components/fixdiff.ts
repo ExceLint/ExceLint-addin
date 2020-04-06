@@ -42,6 +42,7 @@ export class FixDiff {
 	for (let i = 0; i < this.fns.length; i++) {
 	    formula = formula.replace(this.fns[i], this.fn2unicode[this.fns[i]]);
 	}
+//	console.log("TOKENIZING " + formula);
 	formula = formula.replace(/(\-?\d+)/g, (_, num) => {
 //	    console.log("found " + num);
 	    const replacement = String.fromCharCode(16384 + parseInt(num));
@@ -53,6 +54,7 @@ export class FixDiff {
     }
 
     public detokenize(formula: string) : string {
+	console.log("DETOKENIZING " + formula);
 	for (let i = 0; i < this.fns.length; i++) {
 	    formula = formula.replace(this.fn2unicode[this.fns[i]], this.fns[i]);
 	}
@@ -63,19 +65,26 @@ export class FixDiff {
 //	    console.log("replacing with: " + replacement);
 	    return replacement;
 	});
+	console.log("formula is now " + formula);
 	return formula;
     }
     
     // Return the diffs (with formulas treated specially).
     public compute_fix_diff(str1, str2, c1, r1, c2, r2) { //c2, r2) {
 	// First, "tokenize" the strings.
-	str1 = this.tokenize(str1);
-	str2 = this.tokenize(str2);
+	console.log(str1);
+	console.log(str2);
 	// Convert to R1C1 format.
 	let rc_str1 = ExcelUtils.formulaToR1C1(str1, c1, r1);
 	let rc_str2 = ExcelUtils.formulaToR1C1(str2, c2, r2);
-//	console.log(rc_str1);
-//	console.log(rc_str2);
+	console.log("R1C1: ");
+	console.log(rc_str1);
+	console.log(rc_str2);
+	rc_str1 = this.tokenize(rc_str1);
+	rc_str2 = this.tokenize(rc_str2);
+	console.log("R1C1 tokenized: ");
+	console.log(rc_str1);
+	console.log(rc_str2);
 	// Build up the diff.
 	let theDiff = diff.main(rc_str1, rc_str2);
 //	console.log(theDiff);

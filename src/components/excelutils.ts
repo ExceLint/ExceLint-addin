@@ -8,17 +8,17 @@ import { RectangleUtils } from './rectangleutils';
 
 export class ExcelUtils {
     // Matchers for all kinds of Excel expressions.
-    private static general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
+    private static general_re = '\\$?[A-Z][A-Z]?\\$?[\\d\\u2000-\\u6000]+'; // column and row number, optionally with $
     private static sheet_re = '[^\\!]+';
     private static sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     private static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     private static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
     private static number_dep = new RegExp('([0-9]+\\.?[0-9]*)');
-    private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
-    private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
-    private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
-    private static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
+    private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
+    private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
+    private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
+    private static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
 
     // We need to filter out all formulas with these characteristics so they don't mess with our dependency regexps.
     
@@ -105,6 +105,9 @@ export class ExcelUtils {
             if (r) {
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
+		if (r[2][0] >= '\u2000') {
+		    row = Number(r[2].charCodeAt(0) - 16384);
+		}
                 if (alwaysReturnAdjustedColRow) {
                     return [col - origin_col, row - origin_row, 0];
                 } else {
@@ -118,6 +121,9 @@ export class ExcelUtils {
             if (r) {
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
+		if (r[2][0] >= '\u2000') {
+		    row = Number(r[2].charCodeAt(0) - 16384);
+		}
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 } else {
@@ -131,6 +137,9 @@ export class ExcelUtils {
             if (r) {
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
+		if (r[2][0] >= '\u2000') {
+		    row = Number(r[2].charCodeAt(0) - 16384);
+		}
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 } else {
@@ -144,6 +153,9 @@ export class ExcelUtils {
             if (r) {
                 let col = ExcelUtils.column_name_to_index(r[1]);
                 let row = Number(r[2]);
+		if (r[2][0] >= '\u2000') {
+		    row = Number(r[2].charCodeAt(0) - 16384);
+		}
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 } else {
