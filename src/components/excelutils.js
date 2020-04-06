@@ -75,6 +75,9 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
+                if (r[2][0] >= '\u2000') {
+                    row = Number(r[2].charCodeAt(0) - 16384);
+                }
                 if (alwaysReturnAdjustedColRow) {
                     return [col - origin_col, row - origin_row, 0];
                 }
@@ -88,6 +91,9 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
+                if (r[2][0] >= '\u2000') {
+                    row = Number(r[2].charCodeAt(0) - 16384);
+                }
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 }
@@ -101,6 +107,9 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
+                if (r[2][0] >= '\u2000') {
+                    row = Number(r[2].charCodeAt(0) - 16384);
+                }
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 }
@@ -114,6 +123,9 @@ var ExcelUtils = /** @class */ (function () {
             if (r) {
                 var col = ExcelUtils.column_name_to_index(r[1]);
                 var row = Number(r[2]);
+                if (r[2][0] >= '\u2000') {
+                    row = Number(r[2].charCodeAt(0) - 16384);
+                }
                 if (alwaysReturnAdjustedColRow) {
                     return [col, row, 0];
                 }
@@ -430,17 +442,17 @@ var ExcelUtils = /** @class */ (function () {
         return refs;
     };
     // Matchers for all kinds of Excel expressions.
-    ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?\\d+'; // column and row number, optionally with $
+    ExcelUtils.general_re = '\\$?[A-Z][A-Z]?\\$?[\\d\\u2000-\\u6000]+'; // column and row number, optionally with $
     ExcelUtils.sheet_re = '[^\\!]+';
     ExcelUtils.sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     ExcelUtils.sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
     ExcelUtils.single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
     ExcelUtils.range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
     ExcelUtils.number_dep = new RegExp('([0-9]+\\.?[0-9]*)');
-    ExcelUtils.cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)(\\d+)');
-    ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$\\d]?(\\d+)');
-    ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$(\\d+)');
-    ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$(\\d+)');
+    ExcelUtils.cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
+    ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
+    ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
+    ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
     // We need to filter out all formulas with these characteristics so they don't mess with our dependency regexps.
     ExcelUtils.formulas_with_numbers = new RegExp('/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/', 'g');
     // Same with sheet name references.
