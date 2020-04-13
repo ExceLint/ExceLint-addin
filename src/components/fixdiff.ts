@@ -51,11 +51,11 @@ class CellEncoder {
 	let absoluteColumn = false;
 	let absoluteRow = false;
 	if (decodedNum & CellEncoder.absoluteRowMultiplier) {
-	    decodedNum |= ~CellEncoder.absoluteRowMultiplier;
+	    decodedNum &= ~CellEncoder.absoluteRowMultiplier;
 	    absoluteRow = true;
 	}
 	if (decodedNum & CellEncoder.absoluteColumnMultiplier) {
-	    decodedNum |= CellEncoder.absoluteColumnMultiplier;
+	    decodedNum &= ~CellEncoder.absoluteColumnMultiplier;
 	    absoluteColumn = true;
 	}
 	console.log("decoded num = " + decodedNum);
@@ -357,8 +357,10 @@ let [row1, col1] = [1, 2];
 let [row2, col2] = [1, 3];
 //let [row1, col1] = [11, 2];
 //let [row2, col2] = [11, 3];
-let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
-let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
+//let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
+//let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
+let str1 = '=ROUND($A$1:B9)'; // 'ROUND(A1)+12';
+let str2 = '=ROUND($A$1:C10)'; // 'ROUNDUP(B2)+12';
 
 console.log(ExcelUtils.column_index_to_name(col1) + row1);
 console.log(ExcelUtils.column_index_to_name(col2) + row2);
