@@ -20,7 +20,9 @@ class CellEncoder {
 	console.log("encode: row = (" + row + ")");
 	const addAbsolutes = Number(absoluteRow) * CellEncoder.absoluteRowMultiplier
 	    + Number(absoluteColumn) * CellEncoder.absoluteColumnMultiplier;
-	return addAbsolutes + CellEncoder.maxRows * col + row + CellEncoder.startPoint;
+	return addAbsolutes + CellEncoder.maxRows * (CellEncoder.maxColumns / 2 + col)
+	    + (CellEncoder.maxRows / 2 + row)
+	    + CellEncoder.startPoint;
     }
     
     public static encodeToChar(col: number, row: number, absoluteColumn: boolean = false, absoluteRow: boolean = false) : string {
@@ -34,12 +36,12 @@ class CellEncoder {
 
     private static decodeColumn(encoded: number) : number {
 	encoded -= CellEncoder.startPoint;
-	return Math.floor(encoded / CellEncoder.maxRows);
+	return Math.floor(encoded / CellEncoder.maxRows) - CellEncoder.maxColumns / 2;
     }
     
     private static decodeRow(encoded: number) : number {
 	encoded -= CellEncoder.startPoint;
-	return (encoded % CellEncoder.maxRows);
+	return (encoded % CellEncoder.maxRows) - CellEncoder.maxRows / 2;
     }
 
     public static decodeFromChar(chr: string): [number, number, boolean, boolean] {
@@ -62,8 +64,6 @@ class CellEncoder {
 	console.log("absolute column: " + absoluteColumn);
 	console.log("absolute row: " + absoluteRow);
 	const result : [number, number, boolean, boolean] = [CellEncoder.decodeColumn(decodedNum), CellEncoder.decodeRow(decodedNum), absoluteColumn, absoluteRow];
-	console.log("decoded: " + JSON.stringify(result));
-	// FIXME need to return that info --^
 	return result;
     }
 
@@ -147,17 +147,13 @@ export class FixDiff {
 	// depending whether it's a relative or absolute reference.
 	let resultStr : string = "";
 	if (ExcelUtils.cell_both_absolute.exec(destCell)) {
-	    console.log("A");
 	    resultStr = CellEncoder.encodeToChar(vec2[0], vec2[1], true, true);
 	} else if (ExcelUtils.cell_col_absolute.exec(destCell)) {
-	    console.log("B");
 	    resultStr = CellEncoder.encodeToChar(vec2[0], resultVec[1], true, false);
 	} else if (ExcelUtils.cell_row_absolute.exec(destCell)) {
-	    console.log("C");
 	    resultStr = CellEncoder.encodeToChar(resultVec[0], vec2[1], false, true);
 	} else {
 	    // Common case, both relative.
-	    console.log("D");
 	    resultStr = CellEncoder.encodeToChar(resultVec[0], resultVec[1], false, false);
 	}
 	return resultStr;
@@ -244,6 +240,7 @@ export class FixDiff {
 	    console.log("about to detokenize " + JSON.stringify(theDiff[j][1]));
 	    theDiff[j][1] = this.detokenize(theDiff[j][1]);
 	}
+	diff.cleanupSemantic(theDiff);
 	return theDiff;
     }
 
@@ -348,8 +345,6 @@ export class FixDiff {
     }
 }
 
-//console.log("JUMANJI");
-
 let nd = new FixDiff();
 
 // Now try a diff.
@@ -359,8 +354,8 @@ let [row2, col2] = [1, 3];
 //let [row2, col2] = [11, 3];
 //let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
 //let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
-let str1 = '=ROUND($A$1:B9)'; // 'ROUND(A1)+12';
-let str2 = '=ROUND($A$1:C10)'; // 'ROUNDUP(B2)+12';
+let str1 = '=ROUND($A1:B9)'; // 'ROUND(A1)+12';
+let str2 = '=ROUND($A1:C10)'; // 'ROUNDUP(B2)+12';
 
 console.log(ExcelUtils.column_index_to_name(col1) + row1);
 console.log(ExcelUtils.column_index_to_name(col2) + row2);
@@ -368,7 +363,7 @@ console.log(ExcelUtils.column_index_to_name(col2) + row2);
 //console.log(str2);
 
 let diffs = nd.compute_fix_diff(str1, str2, col1 - 1, row1 - 1, col2 - 1, row2 - 1);
-//console.log(JSON.stringify(diffs));
+console.log(JSON.stringify(diffs));
 let [a, b] = nd.pretty_diffs(diffs);
 
 if (false) {
