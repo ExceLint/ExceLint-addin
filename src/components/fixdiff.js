@@ -4,6 +4,69 @@ var fs = require('fs');
 var textdiff = require('text-diff');
 var diff = new textdiff();
 var excelutils_1 = require("./excelutils");
+var CellEncoder = /** @class */ (function () {
+    function CellEncoder() {
+    }
+    CellEncoder.encode = function (col, row, absoluteColumn, absoluteRow) {
+        if (absoluteColumn === void 0) { absoluteColumn = false; }
+        if (absoluteRow === void 0) { absoluteRow = false; }
+        var addAbsolutes = Number(absoluteRow) * CellEncoder.absoluteRowMultiplier
+            + Number(absoluteColumn) * CellEncoder.absoluteColumnMultiplier;
+        return addAbsolutes + CellEncoder.maxRows * (CellEncoder.maxColumns / 2 + col)
+            + (CellEncoder.maxRows / 2 + row)
+            + CellEncoder.startPoint;
+    };
+    CellEncoder.encodeToChar = function (col, row, absoluteColumn, absoluteRow) {
+        if (absoluteColumn === void 0) { absoluteColumn = false; }
+        if (absoluteRow === void 0) { absoluteRow = false; }
+        var chr = String.fromCodePoint(CellEncoder.encode(col, row, absoluteColumn, absoluteRow));
+        return chr;
+    };
+    CellEncoder.decodeColumn = function (encoded) {
+        encoded -= CellEncoder.startPoint;
+        return Math.floor(encoded / CellEncoder.maxRows) - CellEncoder.maxColumns / 2;
+    };
+    CellEncoder.decodeRow = function (encoded) {
+        encoded -= CellEncoder.startPoint;
+        return (encoded % CellEncoder.maxRows) - CellEncoder.maxRows / 2;
+    };
+    CellEncoder.decodeFromChar = function (chr) {
+        var decodedNum = chr.codePointAt(0);
+        var absoluteColumn = false;
+        var absoluteRow = false;
+        if (decodedNum & CellEncoder.absoluteRowMultiplier) {
+            decodedNum &= ~CellEncoder.absoluteRowMultiplier;
+            absoluteRow = true;
+        }
+        if (decodedNum & CellEncoder.absoluteColumnMultiplier) {
+            decodedNum &= ~CellEncoder.absoluteColumnMultiplier;
+            absoluteColumn = true;
+        }
+        var result = [CellEncoder.decodeColumn(decodedNum), CellEncoder.decodeRow(decodedNum), absoluteColumn, absoluteRow];
+        return result;
+    };
+    CellEncoder.maxEncodedSize = function () {
+        return CellEncoder.encode(CellEncoder.maxColumns - 1, CellEncoder.maxRows - 1) - CellEncoder.encode(-(CellEncoder.maxColumns - 1), -(CellEncoder.maxRows - 1));
+    };
+    CellEncoder.test = function () {
+        for (var col = -CellEncoder.maxColumns; col < CellEncoder.maxColumns; col++) {
+            for (var row = -CellEncoder.maxRows; row < CellEncoder.maxRows; row++) {
+                var encoded = CellEncoder.encode(col, row);
+                var decodedCol = CellEncoder.decodeColumn(encoded);
+                var decodedRow = CellEncoder.decodeRow(encoded);
+                //	console.log(decodedCol + " " + decodedRow);
+                console.assert(col === decodedCol, "NOPE COL");
+                console.assert(row === decodedRow, "NOPE ROW");
+            }
+        }
+    };
+    CellEncoder.maxRows = 64; // -32..32
+    CellEncoder.maxColumns = 32; // -16..16
+    CellEncoder.absoluteRowMultiplier = 2 * CellEncoder.maxRows * CellEncoder.maxColumns; // if bit set, absolute row
+    CellEncoder.absoluteColumnMultiplier = 2 * CellEncoder.absoluteRowMultiplier; // if bit set, absolute column
+    CellEncoder.startPoint = 2048; // Start the encoding of the cell at this Unicode value
+    return CellEncoder;
+}());
 var FixDiff = /** @class */ (function () {
     function FixDiff() {
         // Load the JSON file containing all the Excel functions.
@@ -16,7 +79,6 @@ var FixDiff = /** @class */ (function () {
         this.fn2unicode = {};
         this.unicode2fn = {};
         this.initArrays();
-        //	console.log(this.fns);
     }
     // Construct the arrays above.
     FixDiff.prototype.initArrays = function () {
@@ -31,76 +93,115 @@ var FixDiff = /** @class */ (function () {
         }
         // Sort the functions in reverse order by size (longest first). This
         // order will prevent accidentally tokenizing substrings of functions.
-        this.fns.sort(function (a, b) { if (a.length < b.length) {
-            return 1;
-        } if (a.length > b.length) {
-            return -1;
+        this.fns.sort(function (a, b) {
+            if (a.length < b.length) {
+                return 1;
+            }
+            if (a.length > b.length) {
+                return -1;
+            }
+            else {
+                // Sort in alphabetical order.
+                if (a < b) {
+                    return -1;
+                }
+                if (a > b) {
+                    return 1;
+                }
+                return 0;
+            }
+        });
+    };
+    FixDiff.toPseudoR1C1 = function (srcCell, destCell) {
+        // Dependencies are column, then row.
+        var vec1 = excelutils_1.ExcelUtils.cell_dependency(srcCell, 0, 0);
+        var vec2 = excelutils_1.ExcelUtils.cell_dependency(destCell, 0, 0);
+        // Compute the difference.
+        var resultVec = [];
+        vec2.forEach(function (item, index, _) { resultVec.push(item - vec1[index]); });
+        // Now generate the pseudo R1C1 version, which varies
+        // depending whether it's a relative or absolute reference.
+        var resultStr = "";
+        if (excelutils_1.ExcelUtils.cell_both_absolute.exec(destCell)) {
+            resultStr = CellEncoder.encodeToChar(vec2[0], vec2[1], true, true);
         }
-        else
-            return 0; });
+        else if (excelutils_1.ExcelUtils.cell_col_absolute.exec(destCell)) {
+            resultStr = CellEncoder.encodeToChar(vec2[0], resultVec[1], true, false);
+        }
+        else if (excelutils_1.ExcelUtils.cell_row_absolute.exec(destCell)) {
+            resultStr = CellEncoder.encodeToChar(resultVec[0], vec2[1], false, true);
+        }
+        else {
+            // Common case, both relative.
+            resultStr = CellEncoder.encodeToChar(resultVec[0], resultVec[1], false, false);
+        }
+        return resultStr;
+    };
+    FixDiff.formulaToPseudoR1C1 = function (formula, origin_col, origin_row) {
+        var range = formula.slice();
+        var origin = excelutils_1.ExcelUtils.column_index_to_name(origin_col) + origin_row;
+        // First, get all the range pairs out.
+        var found_pair;
+        while (found_pair = excelutils_1.ExcelUtils.range_pair.exec(range)) {
+            if (found_pair) {
+                var first_cell = found_pair[1];
+                var last_cell = found_pair[2];
+                range = range.replace(found_pair[0], FixDiff.toPseudoR1C1(origin, found_pair[1]) + ":" + FixDiff.toPseudoR1C1(origin, found_pair[2]));
+            }
+        }
+        // Now look for singletons.
+        var singleton = null;
+        while (singleton = excelutils_1.ExcelUtils.single_dep.exec(range)) {
+            if (singleton) {
+                var first_cell = singleton[1];
+                range = range.replace(singleton[0], FixDiff.toPseudoR1C1(origin, first_cell));
+            }
+        }
+        return range;
     };
     FixDiff.prototype.tokenize = function (formula) {
         for (var i = 0; i < this.fns.length; i++) {
             formula = formula.replace(this.fns[i], this.fn2unicode[this.fns[i]]);
         }
-        //	console.log("TOKENIZING " + formula);
         formula = formula.replace(/(\-?\d+)/g, function (_, num) {
-            //	    console.log("found " + num);
-            var replacement = String.fromCharCode(16384 + parseInt(num));
-            //	    console.log("replacing with " + replacement);
+            // Make sure the unicode characters are far away from the encoded cell values.
+            var replacement = String.fromCodePoint(CellEncoder.absoluteColumnMultiplier * 2 + parseInt(num));
             return replacement;
         });
-        //	console.log("formula is now " + formula);
         return formula;
     };
     FixDiff.prototype.detokenize = function (formula) {
-        console.log("DETOKENIZING " + formula);
         for (var i = 0; i < this.fns.length; i++) {
             formula = formula.replace(this.fn2unicode[this.fns[i]], this.fns[i]);
         }
-        //	console.log("now checking " + formula);
-        formula = formula.replace(/([\u2000-\u6000])/g, function (_, numStr) {
-            var replacement = (numStr.charCodeAt(0) - 16384).toString();
-            //	    console.log("done found: " + numStr);
-            //	    console.log("replacing with: " + replacement);
-            return replacement;
-        });
-        console.log("formula is now " + formula);
         return formula;
     };
     // Return the diffs (with formulas treated specially).
     FixDiff.prototype.compute_fix_diff = function (str1, str2, c1, r1, c2, r2) {
-        // First, "tokenize" the strings.
-        console.log(str1);
-        console.log(str2);
-        // Convert to R1C1 format.
-        var rc_str1 = excelutils_1.ExcelUtils.formulaToR1C1(str1, c1, r1);
-        var rc_str2 = excelutils_1.ExcelUtils.formulaToR1C1(str2, c2, r2);
-        console.log("R1C1: ");
-        console.log(rc_str1);
-        console.log(rc_str2);
+        // Convert to pseudo R1C1 format.
+        var rc_str1 = FixDiff.formulaToPseudoR1C1(str1, c1, r1); // ExcelUtils.formulaToR1C1(str1, c1, r1);
+        var rc_str2 = FixDiff.formulaToPseudoR1C1(str2, c2, r2); // ExcelUtils.formulaToR1C1(str2, c2, r2);
+        // Tokenize the functions.
         rc_str1 = this.tokenize(rc_str1);
         rc_str2 = this.tokenize(rc_str2);
-        console.log("R1C1 tokenized: ");
-        console.log(rc_str1);
-        console.log(rc_str2);
         // Build up the diff.
         var theDiff = diff.main(rc_str1, rc_str2);
-        //	console.log(theDiff);
         // Now de-tokenize the diff contents
-        // and convert back out of R1C1 format.
+        // and convert back out of pseudo R1C1 format.
         for (var j = 0; j < theDiff.length; j++) {
+            // console.log("processing " + JSON.stringify(theDiff[j][1]));
             if (theDiff[j][0] == 0) { // No diff
-                theDiff[j][1] = this.fromR1C1(theDiff[j][1], c1, r1); // doesn't matter which one
+                theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c1, r1); ///FIXME // doesn't matter which one
             }
             else if (theDiff[j][0] == -1) { // Left diff
-                theDiff[j][1] = this.fromR1C1(theDiff[j][1], c1, r1);
+                theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c1, r1);
             }
             else { // Right diff
-                theDiff[j][1] = this.fromR1C1(theDiff[j][1], c2, r2);
+                theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c2, r2);
             }
             theDiff[j][1] = this.detokenize(theDiff[j][1]);
         }
+        diff.cleanupSemantic(theDiff);
         return theDiff;
     };
     FixDiff.prototype.fromR1C1 = function (r1c1_formula, origin_col, origin_row) {
@@ -139,6 +240,37 @@ var FixDiff = /** @class */ (function () {
         r1c1 = r1c1.replace(C, "C");
         return r1c1;
     };
+    FixDiff.prototype.fromPseudoR1C1 = function (r1c1_formula, origin_col, origin_row) {
+        // We assume that formulas have already been 'tokenized'.
+        // console.log("fromPseudoR1C1 = " + r1c1_formula + ", origin_col = " + origin_col + ", origin_row = " + origin_row);
+        var r1c1 = r1c1_formula.slice();
+        // Find the Unicode characters and decode them.
+        r1c1 = r1c1.replace(/([\u800-\uF000])/g, function (_full, encoded_char) {
+            if (encoded_char.codePointAt(0) < CellEncoder.startPoint) {
+                return encoded_char;
+            }
+            var _a = CellEncoder.decodeFromChar(encoded_char), co = _a[0], ro = _a[1], absCo = _a[2], absRo = _a[3];
+            var result;
+            if (!absCo && !absRo) {
+                // Both relative (R[..]C[...])
+                result = excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + (origin_row + ro);
+            }
+            if (absCo && !absRo) {
+                // Row absolute, column relative (R...C[..])
+                result = excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + '$' + ro;
+            }
+            if (!absCo && absRo) {
+                // Row relative, column absolute (R[..]C...)
+                result = '$' + excelutils_1.ExcelUtils.column_index_to_name(co) + (origin_row + ro);
+            }
+            if (absCo && absRo) {
+                // Both absolute (R...C...)
+                result = '$' + excelutils_1.ExcelUtils.column_index_to_name(co) + '$' + ro;
+            }
+            return result;
+        });
+        return r1c1;
+    };
     FixDiff.prototype.pretty_diffs = function (diffs) {
         var strList = [];
         // Iterate for -1 and 1.
@@ -169,16 +301,19 @@ var FixDiff = /** @class */ (function () {
     return FixDiff;
 }());
 exports.FixDiff = FixDiff;
-;
 var nd = new FixDiff();
 // Now try a diff.
-var str1 = '=SUM(B6:E6)+100'; // 'ROUND(A1)+12';
-var str2 = '=SUM(B7:D7)+10'; // 'ROUNDUP(B2)+12';
-//console.log(str1);
-//console.log(str2);
-var diffs = nd.compute_fix_diff(str1, str2, 6, 6, 6, 7);
-//console.log(JSON.stringify(diffs));
-var _a = nd.pretty_diffs(diffs), a = _a[0], b = _a[1];
+var _a = [1, 2], row1 = _a[0], col1 = _a[1];
+var _b = [1, 3], row2 = _b[0], col2 = _b[1];
+//let [row1, col1] = [11, 2];
+//let [row2, col2] = [11, 3];
+//let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
+//let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
+var str1 = '=ROUND($A1:B9)'; // 'ROUND(A1)+12';
+var str2 = '=ROUND($A1:C10)'; // 'ROUNDUP(B2)+12';
+var diffs = nd.compute_fix_diff(str1, str2, col1 - 1, row1 - 1, col2 - 1, row2 - 1);
+console.log(JSON.stringify(diffs));
+var _c = nd.pretty_diffs(diffs), a = _c[0], b = _c[1];
 console.log(a);
 console.log("---");
 console.log(b);
