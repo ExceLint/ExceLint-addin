@@ -123,18 +123,23 @@ var FixDiff = /** @class */ (function () {
         // depending whether it's a relative or absolute reference.
         var resultStr = "";
         if (excelutils_1.ExcelUtils.cell_both_absolute.exec(destCell)) {
+            // console.log("both absolute");
             resultStr = CellEncoder.encodeToChar(vec2[0], vec2[1], true, true);
         }
         else if (excelutils_1.ExcelUtils.cell_col_absolute.exec(destCell)) {
+            // console.log("column absolute, row relative");
             resultStr = CellEncoder.encodeToChar(vec2[0], resultVec[1], true, false);
         }
         else if (excelutils_1.ExcelUtils.cell_row_absolute.exec(destCell)) {
+            // console.log("row absolute, column relative");
             resultStr = CellEncoder.encodeToChar(resultVec[0], vec2[1], false, true);
         }
         else {
             // Common case, both relative.
+            // console.log("both relative");
             resultStr = CellEncoder.encodeToChar(resultVec[0], resultVec[1], false, false);
         }
+        // console.log("to pseudo r1c1: " + resultStr);
         return resultStr;
     };
     FixDiff.formulaToPseudoR1C1 = function (formula, origin_col, origin_row) {
@@ -186,10 +191,10 @@ var FixDiff = /** @class */ (function () {
         rc_str2 = this.tokenize(rc_str2);
         // Build up the diff.
         var theDiff = diff.main(rc_str1, rc_str2);
+        // console.log(JSON.stringify(theDiff));
         // Now de-tokenize the diff contents
         // and convert back out of pseudo R1C1 format.
         for (var j = 0; j < theDiff.length; j++) {
-            // console.log("processing " + JSON.stringify(theDiff[j][1]));
             if (theDiff[j][0] == 0) { // No diff
                 theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c1, r1); ///FIXME // doesn't matter which one
             }
@@ -253,18 +258,22 @@ var FixDiff = /** @class */ (function () {
             var result;
             if (!absCo && !absRo) {
                 // Both relative (R[..]C[...])
+                // console.log("both relative");
                 result = excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + (origin_row + ro);
             }
             if (absCo && !absRo) {
-                // Row absolute, column relative (R...C[..])
-                result = excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + '$' + ro;
+                // Row relative, column absolute (R[..]C...)
+                // console.log("column absolute");
+                result = '$' + excelutils_1.ExcelUtils.column_index_to_name(co) + (origin_row + ro);
             }
             if (!absCo && absRo) {
-                // Row relative, column absolute (R[..]C...)
-                result = '$' + excelutils_1.ExcelUtils.column_index_to_name(co) + (origin_row + ro);
+                // Row absolute, column relative (R...C[..])
+                // console.log("row absolute");
+                result = excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + '$' + ro;
             }
             if (absCo && absRo) {
                 // Both absolute (R...C...)
+                // console.log("both absolute");
                 result = '$' + excelutils_1.ExcelUtils.column_index_to_name(co) + '$' + ro;
             }
             return result;
@@ -309,11 +318,14 @@ var _b = [1, 3], row2 = _b[0], col2 = _b[1];
 //let [row2, col2] = [11, 3];
 //let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
 //let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
-var str1 = '=ROUND($A1:B9)'; // 'ROUND(A1)+12';
-var str2 = '=ROUND($A1:C10)'; // 'ROUNDUP(B2)+12';
+var str1 = '=ROUND(A$1:B9)'; // 'ROUND(A1)+12';
+var str2 = '=ROUND(A$1:C10)'; // 'ROUNDUP(B2)+12';
 var diffs = nd.compute_fix_diff(str1, str2, col1 - 1, row1 - 1, col2 - 1, row2 - 1);
-console.log(JSON.stringify(diffs));
+// console.log(JSON.stringify(diffs));
 var _c = nd.pretty_diffs(diffs), a = _c[0], b = _c[1];
+// the first one should be the one needing to be fixed.
+console.log("change " + str1 + " to ");
 console.log(a);
-console.log("---");
-console.log(b);
+//let cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)([\\d]+)');
+// let cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
+//console.log(cell_col_absolute.exec('$A1'));
