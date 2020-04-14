@@ -12,13 +12,13 @@ export class ExcelUtils {
     private static sheet_re = '[^\\!]+';
     private static sheet_plus_cell = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + ')');
     private static sheet_plus_range = new RegExp('(' + ExcelUtils.sheet_re + ')\\!(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')');
-    private static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
-    private static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
+    public static single_dep = new RegExp('(' + ExcelUtils.general_re + ')');
+    public static range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
     private static number_dep = new RegExp('([0-9]+\\.?[0-9]*)');
-    private static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
-    private static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
-    private static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
-    private static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
+    public static cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
+    public static cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
+    public static cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
+    public static cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
 
     // We need to filter out all formulas with these characteristics so they don't mess with our dependency regexps.
     

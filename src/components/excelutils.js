@@ -450,7 +450,7 @@ var ExcelUtils = /** @class */ (function () {
     ExcelUtils.range_pair = new RegExp('(' + ExcelUtils.general_re + '):(' + ExcelUtils.general_re + ')', 'g');
     ExcelUtils.number_dep = new RegExp('([0-9]+\\.?[0-9]*)');
     ExcelUtils.cell_both_relative = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
-    ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
+    ExcelUtils.cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)');
     ExcelUtils.cell_row_absolute = new RegExp('[^\\$A-Z]?([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
     ExcelUtils.cell_both_absolute = new RegExp('\\$([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)');
     // We need to filter out all formulas with these characteristics so they don't mess with our dependency regexps.
