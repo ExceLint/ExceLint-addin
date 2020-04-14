@@ -217,44 +217,6 @@ export class FixDiff {
 	return theDiff;
     }
 
-    public fromR1C1(r1c1_formula : string, origin_col: number, origin_row: number) : string {
-	// We assume that formulas have already been 'tokenized'.
-	let r1c1 = r1c1_formula.slice();
-	const R = "ρ";
-	const C = "γ";
-	r1c1 = r1c1.replace("R", R); // needs to be 'greeked'
-	r1c1 = r1c1.replace("C", C);
-	// Both relative (R[..]C[...])
-	r1c1 = r1c1.replace(/ρ\[(\-?[0-9])\]γ\[(\-?[0-9])\]/g, (_, row_offset, col_offset) => {
-	    let ro = parseInt(row_offset) + 1;
-	    let co = parseInt(col_offset) + 1;
-	    return ExcelUtils.column_index_to_name(origin_col + co) + (origin_row + ro);
-	});
-	// Row relative, column absolute (R[..]C...)
-	r1c1 = r1c1.replace(/ρ\[(\-?[0-9])\]γ(\-?[0-9])/g, (_, row_offset, col_offset) => {
-	    let ro = parseInt(row_offset) + 1;
-	    let co = parseInt(col_offset);
-	    return ExcelUtils.column_index_to_name(co) + (origin_row + ro);
-	});
-	// Row absolute, column relative (R...C[..])
-	r1c1 = r1c1.replace(/ρ(\-?[0-9])γ\[(\-?[0-9])\]/g, (_, row_offset, col_offset) => {
-	    let ro = parseInt(row_offset);
-	    let co = parseInt(col_offset) + 1;
-	    return ExcelUtils.column_index_to_name(origin_col + co) + ro;
-	});
-	// Both absolute (R...C...)
-	r1c1 = r1c1.replace(/ρ(\-?[0-9])γ(\-?[0-9])/g, (_, row_offset, col_offset) => {
-	    let ro = parseInt(row_offset);
-	    let co = parseInt(col_offset);
-	    return ExcelUtils.column_index_to_name(co) + ro;
-	});
-	// Now de-greek.
-	r1c1 = r1c1.replace(R, "R");
-	r1c1 = r1c1.replace(C, "C");
-	return r1c1;
-    }
-
-
     public fromPseudoR1C1(r1c1_formula : string, origin_col: number, origin_row: number) : string {
 	// We assume that formulas have already been 'tokenized'.
 	// console.log("fromPseudoR1C1 = " + r1c1_formula + ", origin_col = " + origin_col + ", origin_row = " + origin_row);
