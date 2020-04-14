@@ -130,15 +130,20 @@ export class FixDiff {
 	// depending whether it's a relative or absolute reference.
 	let resultStr : string = "";
 	if (ExcelUtils.cell_both_absolute.exec(destCell)) {
+	    // console.log("both absolute");
 	    resultStr = CellEncoder.encodeToChar(vec2[0], vec2[1], true, true);
 	} else if (ExcelUtils.cell_col_absolute.exec(destCell)) {
+	    // console.log("column absolute, row relative");
 	    resultStr = CellEncoder.encodeToChar(vec2[0], resultVec[1], true, false);
 	} else if (ExcelUtils.cell_row_absolute.exec(destCell)) {
+	    // console.log("row absolute, column relative");
 	    resultStr = CellEncoder.encodeToChar(resultVec[0], vec2[1], false, true);
 	} else {
 	    // Common case, both relative.
+	    // console.log("both relative");
 	    resultStr = CellEncoder.encodeToChar(resultVec[0], resultVec[1], false, false);
 	}
+	// console.log("to pseudo r1c1: " + resultStr);
 	return resultStr;
     }
 
@@ -195,10 +200,10 @@ export class FixDiff {
 	rc_str2 = this.tokenize(rc_str2);
 	// Build up the diff.
 	let theDiff = diff.main(rc_str1, rc_str2);
+	// console.log(JSON.stringify(theDiff));
 	// Now de-tokenize the diff contents
 	// and convert back out of pseudo R1C1 format.
 	for (let j = 0; j < theDiff.length; j++) {
-	    // console.log("processing " + JSON.stringify(theDiff[j][1]));
 	    if (theDiff[j][0] == 0) { // No diff
 		theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c1, r1); ///FIXME // doesn't matter which one
 	    } else if (theDiff[j][0] == -1) { // Left diff
@@ -263,18 +268,22 @@ export class FixDiff {
 	    let result: string;
 	    if (!absCo && !absRo) {
 		// Both relative (R[..]C[...])
+		// console.log("both relative");
 		result = ExcelUtils.column_index_to_name(origin_col + co) + (origin_row + ro);
 	    }
 	    if (absCo && !absRo) {
-		// Row absolute, column relative (R...C[..])
-		result = ExcelUtils.column_index_to_name(origin_col + co) + '$' + ro;
+		// Row relative, column absolute (R[..]C...)
+		// console.log("column absolute");
+		result = '$' + ExcelUtils.column_index_to_name(co) + (origin_row + ro);
 	    }
 	    if (!absCo && absRo) {
-		// Row relative, column absolute (R[..]C...)
-		result = '$' + ExcelUtils.column_index_to_name(co) + (origin_row + ro);
+		// Row absolute, column relative (R...C[..])
+		// console.log("row absolute");
+		result = ExcelUtils.column_index_to_name(origin_col + co) + '$' + ro;
 	    }
 	    if (absCo && absRo) {
 		// Both absolute (R...C...)
+		// console.log("both absolute");
 		result = '$'  + ExcelUtils.column_index_to_name(co) + '$' + ro;
 	    }
 	    return result;
@@ -318,14 +327,16 @@ let [row2, col2] = [1, 3];
 //let [row2, col2] = [11, 3];
 //let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
 //let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
-let str1 = '=ROUND($A1:B9)'; // 'ROUND(A1)+12';
-let str2 = '=ROUND($A1:C10)'; // 'ROUNDUP(B2)+12';
+let str1 = '=ROUND(A$1:B9)'; // 'ROUND(A1)+12';
+let str2 = '=ROUND(A$1:C10)'; // 'ROUNDUP(B2)+12';
 
 let diffs = nd.compute_fix_diff(str1, str2, col1 - 1, row1 - 1, col2 - 1, row2 - 1);
-console.log(JSON.stringify(diffs));
+// console.log(JSON.stringify(diffs));
 let [a, b] = nd.pretty_diffs(diffs);
-
+// the first one should be the one needing to be fixed.
+console.log("change " + str1 + " to ");
 console.log(a);
-console.log("---");
-console.log(b);
 
+//let cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)([\\d]+)');
+// let cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
+//console.log(cell_col_absolute.exec('$A1'));
