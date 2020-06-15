@@ -1,4 +1,11 @@
 "use strict";
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
 exports.__esModule = true;
 var fs = require('fs');
 var textdiff = require('text-diff');
@@ -116,30 +123,35 @@ var FixDiff = /** @class */ (function () {
         // Dependencies are column, then row.
         var vec1 = excelutils_1.ExcelUtils.cell_dependency(srcCell, 0, 0);
         var vec2 = excelutils_1.ExcelUtils.cell_dependency(destCell, 0, 0);
+        console.log("start " + JSON.stringify(vec1));
+        console.log("dest  " + JSON.stringify(vec2));
         // Compute the difference.
         var resultVec = [];
         vec2.forEach(function (item, index, _) { resultVec.push(item - vec1[index]); });
+        console.log("vec2  " + JSON.stringify(resultVec));
         // Now generate the pseudo R1C1 version, which varies
         // depending whether it's a relative or absolute reference.
         var resultStr = "";
         if (excelutils_1.ExcelUtils.cell_both_absolute.exec(destCell)) {
-            // console.log("both absolute");
+            console.log("both absolute");
             resultStr = CellEncoder.encodeToChar(vec2[0], vec2[1], true, true);
         }
         else if (excelutils_1.ExcelUtils.cell_col_absolute.exec(destCell)) {
-            // console.log("column absolute, row relative");
+            console.log("column absolute, row relative");
+            console.log(vec2[0]);
+            console.log(resultVec[1]);
             resultStr = CellEncoder.encodeToChar(vec2[0], resultVec[1], true, false);
         }
         else if (excelutils_1.ExcelUtils.cell_row_absolute.exec(destCell)) {
-            // console.log("row absolute, column relative");
+            console.log("row absolute, column relative");
             resultStr = CellEncoder.encodeToChar(resultVec[0], vec2[1], false, true);
         }
         else {
             // Common case, both relative.
-            // console.log("both relative");
+            console.log("both relative");
             resultStr = CellEncoder.encodeToChar(resultVec[0], resultVec[1], false, false);
         }
-        // console.log("to pseudo r1c1: " + resultStr);
+        console.log("to pseudo r1c1: " + resultStr);
         return resultStr;
     };
     FixDiff.formulaToPseudoR1C1 = function (formula, origin_col, origin_row) {
@@ -190,60 +202,31 @@ var FixDiff = /** @class */ (function () {
         rc_str1 = this.tokenize(rc_str1);
         rc_str2 = this.tokenize(rc_str2);
         // Build up the diff.
-        var theDiff = diff.main(rc_str1, rc_str2);
-        // console.log(JSON.stringify(theDiff));
+        var difference = diff.main(rc_str1, rc_str2);
+        var theDiff = [__spreadArrays(difference), __spreadArrays(difference)];
         // Now de-tokenize the diff contents
         // and convert back out of pseudo R1C1 format.
-        for (var j = 0; j < theDiff.length; j++) {
-            if (theDiff[j][0] == 0) { // No diff
-                theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c1, r1); ///FIXME // doesn't matter which one
+        for (var i = 0; i < 2; i++) {
+            for (var j = 0; j < theDiff[i].length; j++) {
+                if (theDiff[i][j][0] == 0) { // No diff
+                    if (i == 0) {
+                        theDiff[i][j][1] = this.fromPseudoR1C1(theDiff[i][j][1], c1, r1); // first one
+                    }
+                    else {
+                        theDiff[i][j][1] = this.fromPseudoR1C1(theDiff[i][j][1], c2, r2); // second one
+                    }
+                }
+                else if (theDiff[i][j][0] == -1) { // Left diff
+                    theDiff[i][j][1] = this.fromPseudoR1C1(theDiff[i][j][1], c1, r1);
+                }
+                else { // Right diff
+                    theDiff[i][j][1] = this.fromPseudoR1C1(theDiff[i][j][1], c2, r2);
+                }
+                theDiff[i][j][1] = this.detokenize(theDiff[i][j][1]);
             }
-            else if (theDiff[j][0] == -1) { // Left diff
-                theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c1, r1);
-            }
-            else { // Right diff
-                theDiff[j][1] = this.fromPseudoR1C1(theDiff[j][1], c2, r2);
-            }
-            theDiff[j][1] = this.detokenize(theDiff[j][1]);
+            diff.cleanupSemantic(theDiff[i]);
         }
-        diff.cleanupSemantic(theDiff);
         return theDiff;
-    };
-    FixDiff.prototype.fromR1C1 = function (r1c1_formula, origin_col, origin_row) {
-        // We assume that formulas have already been 'tokenized'.
-        var r1c1 = r1c1_formula.slice();
-        var R = "ρ";
-        var C = "γ";
-        r1c1 = r1c1.replace("R", R); // needs to be 'greeked'
-        r1c1 = r1c1.replace("C", C);
-        // Both relative (R[..]C[...])
-        r1c1 = r1c1.replace(/ρ\[(\-?[0-9])\]γ\[(\-?[0-9])\]/g, function (_, row_offset, col_offset) {
-            var ro = parseInt(row_offset) + 1;
-            var co = parseInt(col_offset) + 1;
-            return excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + (origin_row + ro);
-        });
-        // Row relative, column absolute (R[..]C...)
-        r1c1 = r1c1.replace(/ρ\[(\-?[0-9])\]γ(\-?[0-9])/g, function (_, row_offset, col_offset) {
-            var ro = parseInt(row_offset) + 1;
-            var co = parseInt(col_offset);
-            return excelutils_1.ExcelUtils.column_index_to_name(co) + (origin_row + ro);
-        });
-        // Row absolute, column relative (R...C[..])
-        r1c1 = r1c1.replace(/ρ(\-?[0-9])γ\[(\-?[0-9])\]/g, function (_, row_offset, col_offset) {
-            var ro = parseInt(row_offset);
-            var co = parseInt(col_offset) + 1;
-            return excelutils_1.ExcelUtils.column_index_to_name(origin_col + co) + ro;
-        });
-        // Both absolute (R...C...)
-        r1c1 = r1c1.replace(/ρ(\-?[0-9])γ(\-?[0-9])/g, function (_, row_offset, col_offset) {
-            var ro = parseInt(row_offset);
-            var co = parseInt(col_offset);
-            return excelutils_1.ExcelUtils.column_index_to_name(co) + ro;
-        });
-        // Now de-greek.
-        r1c1 = r1c1.replace(R, "R");
-        r1c1 = r1c1.replace(C, "C");
-        return r1c1;
     };
     FixDiff.prototype.fromPseudoR1C1 = function (r1c1_formula, origin_col, origin_row) {
         // We assume that formulas have already been 'tokenized'.
@@ -310,22 +293,33 @@ var FixDiff = /** @class */ (function () {
     return FixDiff;
 }());
 exports.FixDiff = FixDiff;
-var nd = new FixDiff();
+function showDiffs(str1, row1, col1, str2, row2, col2) {
+    var nd = new FixDiff();
+    var _a = nd.compute_fix_diff(str1, str2, col1 - 1, row1 - 1, col2 - 1, row2 - 1), diff0 = _a[0], diff1 = _a[1];
+    console.log(diff0);
+    console.log(diff1);
+    // console.log(JSON.stringify(diffs));
+    var _b = nd.pretty_diffs(diff0), first = _b[0], dummy2 = _b[1];
+    var _c = nd.pretty_diffs(diff1), dummy1 = _c[0], second = _c[1];
+    // the first one should be the one needing to be fixed.
+    //    console.log(str1);
+    //    console.log(str2);
+    //    console.log("change: ");
+    console.log(first);
+    console.log(dummy2);
+    console.log(dummy1);
+    console.log(second);
+}
+showDiffs('=ROUND(C9:E$10)', 1, 3, '=ROUND(B9:E10)', 1, 2);
+showDiffs('=ROUND(B9:E10)', 1, 2, '=ROUND(C9:E$10)', 1, 3);
+showDiffs('=ROUND(B9:E10)', 1, 2, '=ROUND(C9:E10)', 1, 3);
+showDiffs('=ROUND($B$9:E10)', 1, 2, '=ROUND(C9:E10)', 1, 3);
 // Now try a diff.
-var _a = [1, 2], row1 = _a[0], col1 = _a[1];
-var _b = [1, 3], row2 = _b[0], col2 = _b[1];
+var _a = [1, 3], row1 = _a[0], col1 = _a[1];
+var _b = [1, 2], row2 = _b[0], col2 = _b[1];
 //let [row1, col1] = [11, 2];
 //let [row2, col2] = [11, 3];
 //let str1 = '=ROUND(B7:B9)'; // 'ROUND(A1)+12';
 //let str2 = '=ROUND(C7:C10)'; // 'ROUNDUP(B2)+12';
-var str1 = '=ROUND(A$1:B9)'; // 'ROUND(A1)+12';
-var str2 = '=ROUND(A$1:C10)'; // 'ROUNDUP(B2)+12';
-var diffs = nd.compute_fix_diff(str1, str2, col1 - 1, row1 - 1, col2 - 1, row2 - 1);
-// console.log(JSON.stringify(diffs));
-var _c = nd.pretty_diffs(diffs), a = _c[0], b = _c[1];
-// the first one should be the one needing to be fixed.
-console.log("change " + str1 + " to ");
-console.log(a);
-//let cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)([\\d]+)');
-// let cell_col_absolute = new RegExp('\\$([A-Z][A-Z]?)[^\\$[\\d\\u2000-\\u6000]+]?([\\d\\u2000-\\u6000]+)');
-//console.log(cell_col_absolute.exec('$A1'));
+var str1 = '=ROUND(E$10:C9)'; // 'ROUNDUP(B2)+12';
+var str2 = '=ROUND(E10:B9)'; // 'ROUND(A1)+12';
