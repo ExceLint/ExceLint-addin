@@ -10,7 +10,7 @@
     "start": "webpack-dev-server --inline --host 0.0.0.0 --port 443 --mode production --config config/webpack.dev.js --progress",
     "start-local": "webpack-dev-server --inline --host localhost --port 3000 --config config/webpack.dev-local.js --progress",
     "sideload": "office-toolbox sideload -m manifest.xml -a Excel",
-    "build": "rm -rf src/components/ExceLint-core && git clone https://github.com/ExceLint/ExceLint-core src/components/ExceLint-core && npm run clean && webpack --mode production --config config/webpack.prod.js --colors --progress --bail",
+    "build": "shx rm -rf src/components/ExceLint-core && git clone https://github.com/ExceLint/ExceLint-core src/components/ExceLint-core && npm run clean && webpack --mode production --config config/webpack.prod.js --colors --progress --bail",
     "validate": "office-toolbox validate -m manifest.xml"
   },
   "dependencies": {
@@ -64,6 +64,7 @@
     "resolve-from": "^5.0.0",
     "rimraf": "^2.7.1",
     "set-blocking": "^2.0.0",
+    "shelljs": "^0.8.4",
     "sjcl": "^1.0.8",
     "source-map": "^0.7.3",
     "string-width": "^4.2.0",
@@ -87,6 +88,7 @@
     "yargs-parser": "^13.1.2"
   },
   "devDependencies": {
-    "@types/office-js": "^1.0.90"
+    "@types/office-js": "^1.0.90",
+    "shx": "^0.3.2"
   }
 }
