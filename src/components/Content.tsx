@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Button, ButtonType } from 'office-ui-fabric-react';
 import { Slider } from 'office-ui-fabric-react/lib/Slider';
-import { ExcelUtils } from './excelutils';
-import { Colorize } from './colorize';
+import { ExcelUtils } from './ExceLint-core/src/excelutils';
+import { Colorize } from './ExceLint-core/src/colorize';
 
 const barWidth = 100;
 

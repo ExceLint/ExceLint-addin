@@ -2,10 +2,10 @@ import * as React from 'react';
 import { Header } from './Header';
 import { Content } from './Content';
 import Progress from './Progress';
-import { Colorize } from './colorize';
-import { ExcelUtils } from './excelutils';
-import { RectangleUtils } from './rectangleutils';
-import { Timer } from './timer';
+import { Colorize } from './ExceLint-core/src/colorize';
+import { ExcelUtils } from './ExceLint-core/src/excelutils';
+import { RectangleUtils } from './ExceLint-core/src/rectangleutils';
+import { Timer } from './ExceLint-core/src/timer';
 
 import * as OfficeHelpers from '@microsoft/office-js-helpers';
 
