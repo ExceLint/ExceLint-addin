@@ -397,7 +397,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 this.proposed_fixes = proposed_fixes;
 
 		// Experimental: filter out colors so that only those
-		// idenfitied as proposed fixes get colored.
+		// identified as proposed fixes get colored.
 		const useReducedColors = false; // disabled by default! // WAS true;
 		
 		let only_suspicious_proposed_fixes;
