@@ -155,7 +155,11 @@ export default class App extends React.Component<AppProps, AppState> {
 
             // Don't show the copied sheet.
             let app = context.workbook.application;
-            app.suspendScreenUpdatingUntilNextSync();
+	    try {
+		app.suspendScreenUpdatingUntilNextSync();
+	    } catch (error) {
+		// In case it's not implemented.
+	    }
 
 
             // Now, generate a new backup sheet. This will take the place of the old backup, if any.
@@ -335,7 +339,11 @@ export default class App extends React.Component<AppProps, AppState> {
                 // Now start colorizing.
 
                 // Turn off screen updating and calculations while this is happening.
-                app.suspendScreenUpdatingUntilNextSync();
+		try {
+		    app.suspendScreenUpdatingUntilNextSync();
+		} catch (error) {
+		    // In case it's not implemented.
+		}
                 app.suspendApiCalculationUntilNextSync();
 
                 const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
