@@ -43,11 +43,13 @@
   </DefaultSettings>
   <!-- End TaskPane Mode integration.  -->
 
+  <!--
   <Requirements>
    <Methods>
       <Method Name="Application.suspendScreenUpdatingUntilNextSync"/>
    </Methods>
   </Requirements>
+  -->
  
      <Permissions>ReadWriteDocument</Permissions>
 
