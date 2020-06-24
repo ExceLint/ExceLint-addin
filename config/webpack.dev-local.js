@@ -27,7 +27,7 @@ module.exports = async (env, options) => {
             cert: fs.readFileSync('./certs/fullchain.pem')
         },
 	allowedHosts: [
-            '.amazonaws.com', '.azure.com', 'localhost', '0.0.0.0'
+            '.amazonaws.com', '.azure.com', 'localhost', '0.0.0.0', '127.0.0.1'
         ]
     },
     plugins: [
