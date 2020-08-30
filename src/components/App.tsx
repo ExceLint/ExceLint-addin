@@ -4,8 +4,11 @@ import { Content } from './Content';
 import Progress from './Progress';
 import { Colorize } from './ExceLint-core/src/colorize';
 import { ExcelUtils } from './ExceLint-core/src/excelutils';
+import { ExcelJSON } from './ExceLint-core/src/exceljson';
 import { RectangleUtils } from './ExceLint-core/src/rectangleutils';
 import { Timer } from './ExceLint-core/src/timer';
+
+const xlsx = require('xlsx');
 
 import * as OfficeHelpers from '@microsoft/office-js-helpers';
 
@@ -53,7 +56,7 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
-    adjust_fix_scores = async (context: any, backupSheet: any, origin_col: any, origin_row: any) => {
+    private async adjust_fix_scores(context: any, backupSheet: any, origin_col: any, origin_row: any) {
         let t = new Timer('adjust_fix_scores');
         const fixes = this.proposed_fixes;
 
@@ -278,17 +281,78 @@ export default class App extends React.Component<AppProps, AppState> {
         }
     }
 
+    // Read in the workbook as a file into XLSX form, so it can be processed by our tools
+    // developed for excelint-cli.
+    getWorkbook() : Promise<any> {
+	return new Promise((resolve, _reject) => {
+	    Office.context.document.getFileAsync(Office.FileType.Compressed, (result) =>
+		{
+		    if (result.status === Office.AsyncResultStatus.Succeeded) {
+			// For now, assume there's just one slice - FIXME.
+			result.value.getSliceAsync(0, (result : Office.AsyncResult<Office.Slice>) => {
+			    if (result.status === Office.AsyncResultStatus.Succeeded) {
+				console.log("successful slice load.");
+				let slice = result.value.data;
+				console.log("extracted slice.");
+				let workbook = xlsx.read(slice, {type: "array"});
+				console.log("read workbook from xlsx.");
+				resolve (workbook);
+			    } else {
+			        console.log("slice async failed.");
+				resolve (null);
+			    }
+			});
+		    } else {
+			console.log("getFileAsync somehow is now not working, fail.");
+			resolve (null);
+			// 			reject(result.error);
+		    }
+		});
+	});
+    }
+
     /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
     setColor = async () => {
-
         try {
-            //	    OfficeExtension.config.extendedErrorLogging = true;
+
+	    // Read the workbook into JSON form.
+	    try {
+	    	let workbook = await this.getWorkbook();
+		let out = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
+		console.log(JSON.stringify(out));
+	    } catch (error) {
+	      console.log("setColor: failed to read workbook into JSON.");
+	    }
+	    
             await Excel.run(async context => {
                 console.log('setColor: starting processing.');
                 let t = new Timer("setColor");
                 let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
                 currentWorksheet.load(['protection']);
                 await context.sync();
+		/*
+		Office.context.document.getSelectedDataAsync(Office.CoercionType.Text,
+							     (result) => {
+								 if (result.status === Office.AsyncResultStatus.Succeeded) {
+								     Office.context.document.getFilePropertiesAsync((_asyncResult) => { console.log('doc URL = ', '"' + JSON.stringify(Object.getOwnPropertyNames(Office.context.document)));
+																     }); 
+								 }
+							     });
+		*/
+		/*
+		let reader = new FileReader();
+		reader.onload = (function (_event) {
+		    Excel.run(function (context) {
+			let startIndex = reader.result.toString().indexOf("base64,");
+			let workbookContents = reader.result.toString().substr(startIndex + 7);
+			console.log(workbookContents);
+			return context.sync();
+		    }).catch((err) => {
+			console.log("ERROR " + err);
+		    });
+		});
+		reader.readAsDataURL(myFile.files[0]);
+		*/
                 t.split("got protection");
 
                 // 		console.log('setColor: protection status = ' + currentWorksheet.protection.protected);
@@ -391,6 +455,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 const formulas = usedRange.formulas;
                 const values = usedRange.values;
 
+		//await Colorize.process_sheet(context.workbook, Office.FileType.Compressed);
                 let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
                     = Colorize.process_suspicious(usedRangeAddress, formulas, values);
                 this.suspicious_cells = suspicious_cells;
