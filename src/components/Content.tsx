@@ -4,7 +4,7 @@ import { Slider } from 'office-ui-fabric-react/lib/Slider';
 import { ExcelUtils } from './ExceLint-core/src/excelutils';
 import { Colorize } from './ExceLint-core/src/colorize';
 
-const barWidth = 100;
+const barWidth = 100; // pixel length of the suspiciousness bar
 
 export interface ContentProps {
     message1: string;
@@ -53,33 +53,24 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
             if (r) {
                 let [col0, row0, col1, row1] = r;
                 // Sort from largest to smallest (by making negative).
-                //		console.log(JSON.stringify(r));
                 let score = -arr[i][0];
                 console.log("original score = " + score);
                 if (!arr[i][3]) { // Different formats.
                     score *= (100 - Colorize.getFormattingDiscount()) / 100;
                 }
                 console.log("score now = " + score);
-                score *= barWidth; // Math.round((arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
-                //		let score = Math.round((-arr[i][0])/numFixes*barWidth*100)/(100); //  * numFixes);
-                //		console.log("score = " + score);
+                score *= barWidth;
                 if (score > barWidth) {
                     score = barWidth;
                 }
-                //		score = barWidth - score; // Invert the ranking.
-                // Skip really low scores.
-                //		if (score < Colorize.getReportingThreshold()) {
-                //		    continue;
-                //		}
                 counter += 1;
-                //		console.log("score is now = " + score);
                 let rangeDisplay = <b></b>;
                 if (current === i) {
                     rangeDisplay = <td style={{ width: 100 }}><b>{col0}{row0}:{col1}{row1}</b></td>;
                 } else {
                     rangeDisplay = <td style={{ width: 100 }}>{col0}{row0}:{col1}{row1}</td>;
                 }
-                const scoreStr = Math.round(score).toString() + "% suspicious";
+                const scoreStr = Math.round(score).toString() + "% anomalous";
                 let barColor = 'red';
                 if (Math.round(score) < 50) {
                     barColor = 'yellow';
@@ -89,13 +80,12 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
         }
         if (counter > 0) {
             let table = [];
-            let header = <tr><th align="left">Range</th><th align="left">Suspiciousness</th></tr>;
-            table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious formulas in {sheetName}:<br /><div style={divStyle}><table style={{ width: '300px' }}><tbody>{header}{children}</tbody></table></div></div>);
+            let header = <tr><th align="left">Range</th><th align="left">Anomalousness</th></tr>;
+            table.push(<div style={notSuspiciousStyle}>Click to jump to anomalous formulas in {sheetName}:<br /><div style={divStyle}><table style={{ width: '300px' }}><tbody>{header}{children}</tbody></table></div></div>);
             return table;
         }
     }
-    return <div style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /></div>;
-//    return <div></div>; //  style={notSuspiciousStyle}>No suspicious formulas found in {sheetName}.<br /><br /></div>;
+    return <div style={notSuspiciousStyle}>No anomalous formulas found in {sheetName}.<br /></div>;
 }
 
 
@@ -144,8 +134,8 @@ function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0
         }
         if (counter > 0) {
             let table = [];
-            let header = <tr><th align="left">Cell</th><th align="left">Suspiciousness</th></tr>;
-            table.push(<div style={notSuspiciousStyle}>Click to jump to suspicious cells in {sheetName}:<br /><div style={divStyle}><table style={{ width: '300px' }}><tbody>{header}{children}</tbody></table></div><br /></div>);
+            let header = <tr><th align="left">Cell</th><th align="left">Anomalousness</th></tr>;
+            table.push(<div style={notSuspiciousStyle}>Click to jump to anomalous cells in {sheetName}:<br /><div style={divStyle}><table style={{ width: '300px' }}><tbody>{header}{children}</tbody></table></div><br /></div>);
             return table;
         }
     }
@@ -228,7 +218,7 @@ export class Content extends React.Component<ContentProps, any> {
         } else {
             instructions = <div style={notSuspiciousStyle}><em>Advanced settings:</em></div>;
             slider1 = <div><Slider
-                label="Suspiciousness threshold (%)"
+                label="Anomalousness threshold (%)"
                 min={0}
                 max={100}
                 step={1}
