@@ -126,7 +126,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 hash_index += 1;
             }
         });
-        console.log('done processing.');
+        // console.log('done processing.');
     }
 
 
@@ -183,7 +183,7 @@ export default class App extends React.Component<AppProps, AppState> {
             }
 
             await context.sync();
-            console.log('saveFormats: copied out the formats');
+            // console.log('saveFormats: copied out the formats');
         });
     }
 
@@ -205,7 +205,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 try {
                     let backupSheet = worksheets.getItemOrNullObject(backupName);
                     await context.sync();
-                    console.log('backupSheet = ' + JSON.stringify(backupSheet));
+                    // console.log('backupSheet = ' + JSON.stringify(backupSheet));
                     if (!backupSheet.isNullObject) {
                         // First, try to unprotect the current worksheet so we can restore into it.
                         try {
@@ -241,7 +241,7 @@ export default class App extends React.Component<AppProps, AppState> {
                         await context.sync();
 
                         // Now copy it all into the original worksheet.
-                        console.log('copying out ' + JSON.stringify(backupSheetUsedRange.address));
+                        // console.log('copying out ' + JSON.stringify(backupSheetUsedRange.address));
                         destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
                         // destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
                         await context.sync();
@@ -292,15 +292,15 @@ export default class App extends React.Component<AppProps, AppState> {
 			result.value.getSliceAsync(0, (res : Office.AsyncResult<Office.Slice>) => {
 			    if (res.status === Office.AsyncResultStatus.Succeeded) {
 				// File loaded. Grab the data and read it into xlsx.
-				console.log("successful slice load.");
+				// console.log("successful slice load.");
 				let slice = res.value.data;
-				console.log("extracted slice.");
+				// console.log("extracted slice.");
 				let workbook = xlsx.read(slice, {type: "array"});
-				console.log("read workbook from xlsx.");
+				// console.log("read workbook from xlsx.");
 				// Close the file (this is mandatory).
 				(async () => {
 				    await result.value.closeAsync();
-				    console.log("Closed the file.");
+				    // console.log("Closed the file.");
 				})();
 				resolve (workbook);
 			    } else {
@@ -339,8 +339,8 @@ export default class App extends React.Component<AppProps, AppState> {
 	    try {
 	    	let workbook = await this.getWorkbook();
 		let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
-		console.log(JSON.stringify(jsonBook));
-		console.log("-----");
+		// console.log(JSON.stringify(jsonBook));
+		// console.log("-----");
 		// We need to do the analysis with no lower cutoff so
 		// it can be adjusted via the sliders. If the sliders
 		// go away, this will not be needed.
@@ -360,7 +360,6 @@ export default class App extends React.Component<AppProps, AppState> {
                 currentWorksheet.load(['protection']);
 		await context.sync();
                 const wasPreviouslyProtected = currentWorksheet.protection.protected;
-                console.log("setColor: previously protected? = " + wasPreviouslyProtected);
                 try {
                     currentWorksheet.protection.unprotect();
                     await context.sync();
@@ -383,10 +382,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 let usedRange = currentWorksheet.getUsedRange(false) as any;
                 usedRange.load(['address', 'values', 'formulas', 'format']);
-		console.log(JSON.stringify(usedRange));
+		// console.log(JSON.stringify(usedRange));
                 await context.sync();
                 t.split("got address");
-		console.log(JSON.stringify(usedRange));
+		// console.log(JSON.stringify(usedRange));
 
                 //		let displayComments = false;
 
@@ -441,7 +440,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 let numericRanges = null;
 
-                console.log("number of cells used = " + numberOfCellsUsed);
+                // console.log("number of cells used = " + numberOfCellsUsed);
 
                 if (numberOfCellsUsed < this.numericRangeThreshold) { // Check number of cells, as above.
                     // For very large spreadsheets, this takes AGES.
@@ -468,7 +467,8 @@ export default class App extends React.Component<AppProps, AppState> {
 		// Note that we are duplicating work! FIXME. This work
 		// above has basically been done by the
 		// process_workbook call.
-		
+
+		// console.log(JSON.stringify(JSONoutput['worksheets'][currentWorksheetName]));
 		let new_proposed_fixes = JSONoutput['worksheets'][currentWorksheetName]['proposedFixes'];
 		// Convert to the expected format, negating the entropy and adding a true value at the end.
 		for (let i = 0; i < new_proposed_fixes.length; i++) {
@@ -476,12 +476,12 @@ export default class App extends React.Component<AppProps, AppState> {
 		    new_proposed_fixes[i].push(true);
 		}
 		
-		console.log(new_proposed_fixes);
+		// console.log(new_proposed_fixes);
                 this.proposed_fixes = new_proposed_fixes;
 
-		console.log("suspicious cells = " + JSON.stringify(suspicious_cells));
-		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
-		console.log("grouped data = " + JSON.stringify(grouped_data));
+		//console.log("suspicious cells = " + JSON.stringify(suspicious_cells));
+		//console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+		//console.log("grouped data = " + JSON.stringify(grouped_data));
 		
 		// Experimental: filter out colors so that only those
 		// identified as proposed fixes get colored.
@@ -570,7 +570,7 @@ export default class App extends React.Component<AppProps, AppState> {
                 }
 
 		// Parse out the explanation string for each.
-		console.log(JSON.stringify(JSONoutput));
+		// console.log(JSON.stringify(JSONoutput));
 		for (let i = 0; i < this.proposed_fixes.length; i++) {
 		    const fixes = JSONoutput['worksheets'][currentWorksheetName]['exampleFixes'][i];
 		    // console.log(fixes);
@@ -579,7 +579,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    const example2 = fixes['formulas'][1];
 		    const explanationStr = explanation + '\n' + example1 + '\n' + example2;
 		    this.proposed_fixes[i].push(explanationStr);
-		    console.log("NEW PROPOSED FIX THANG: " + JSON.stringify(this.proposed_fixes[i]));
+		    // console.log("NEW PROPOSED FIX THANG: " + JSON.stringify(this.proposed_fixes[i]));
 		}
 
                 this.total_fixes = formulas.length;
@@ -594,6 +594,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 // Protect the sheet against changes.
                 currentWorksheet.protection.protect();
+		await context.sync();
 
                 this.updateContent();
 
@@ -629,7 +630,7 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     selectFix = async (currentFix) => {
-        console.log("selectFix " + currentFix);
+        // console.log("selectFix " + currentFix);
         try {
             await Excel.run(async context => {
                 if (this.total_fixes === -1) {

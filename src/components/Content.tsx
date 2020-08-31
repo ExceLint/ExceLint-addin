@@ -53,13 +53,13 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
             if (r) {
                 let [col0, row0, col1, row1] = r;
                 // Sort from largest to smallest (by making negative).
-		console.log("TABLE IN CONTENT: " + JSON.stringify(arr[i]));
+		// console.log("TABLE IN CONTENT: " + JSON.stringify(arr[i]));
                 let score = -arr[i][0];
-                console.log("original score = " + score);
+                // console.log("original score = " + score);
                 if (!arr[i][3]) { // Different formats.
                     score *= (100 - Colorize.getFormattingDiscount()) / 100;
                 }
-                console.log("score now = " + score);
+                // console.log("score now = " + score);
                 score *= barWidth;
                 if (score > barWidth) {
                     score = barWidth;
@@ -71,18 +71,25 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
                 } else {
                     rangeDisplay = <td style={{ width: 100 }}>{col0}{row0}:{col1}{row1}</td>;
                 }
-                const scoreStr = arr[i][4] + "\n(" + Math.round(score).toString() + "% anomalous)";
+                const scoreStr = arr[i][4]; //  + "\n" + "(" + Math.round(score).toString() + "% anomalous)";
                 let barColor = 'red';
                 if (Math.round(score) < 50) {
                     barColor = 'yellow';
                 }
-                children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{ width: Math.round(score), backgroundColor: barColor, display: 'inline-block' }}>&nbsp;</td><td title={scoreStr} style={{ width: barWidth - Math.round(score), backgroundColor: 'lightgray', display: 'inline-block' }}>&nbsp;</td></tr>);
+                children.push(
+			      <tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>
+			      {rangeDisplay}
+			      <td title={scoreStr} style={{ width: Math.round(score), backgroundColor: barColor, display: 'inline-block' }}>&nbsp;</td>
+			      <td title={scoreStr} style={{ width: barWidth - Math.round(score), backgroundColor: 'lightgray', display: 'inline-block' }}>&nbsp;</td>
+			      </tr>
+			      );
             }
         }
         if (counter > 0) {
             let table = [];
             let header = <tr><th align="left">Range</th><th align="left">Anomalousness</th></tr>;
-            table.push(<div style={notSuspiciousStyle}>Click to jump to anomalous formulas in {sheetName}:<br /><div style={divStyle}><table style={{ width: '300px' }}><tbody>{header}{children}</tbody></table></div></div>);
+            table.push(<div style={notSuspiciousStyle}>Click to jump to anomalous formulas in {sheetName}:<br /><em>Hover over a range for more details.</em><br />
+<br /><div style={divStyle}><table style={{ width: '300px' }}><tbody>{header}{children}</tbody></table></div></div>);
             return table;
         }
     }
@@ -91,7 +98,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
 
 
 function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0: number) => void, current: number, numFixes: number): any {
-    console.log('makeTableSuspiciousCells');
+    // console.log('makeTableSuspiciousCells');
     if (numFixes === 0) {
         numFixes = 1;
     }
@@ -104,7 +111,7 @@ function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0
             let r = arr[i];
             if (r) {
                 let [col, row, val] = r;
-                console.log("value = " + val);
+                // console.log("value = " + val);
                 let score = (1.0 - val) * barWidth;
                 // Sort from largest to smallest (by making negative).
                 if (score > barWidth) {
@@ -112,6 +119,7 @@ function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0
                 }
                 // Skip really low scores.
                 if (score < Colorize.suspiciousCellsReportingThreshold) {
+		    console.warn('skipping ' + i);
                     continue;
                 }
                 counter += 1;
@@ -147,7 +155,7 @@ function DisplayFixes(props) {
     if (props.sheetName === '') {
         return <div></div>;
     }
-    console.log('DisplayFixes: ' + props.totalFixes + ', ' + props.suspiciousCells.length);
+    // console.log('DisplayFixes: ' + props.totalFixes + ', ' + props.suspiciousCells.length);
     let result1 = <div></div>;
     let str = '';
     // Filter out fixes whose score is below the threshold.
@@ -209,10 +217,11 @@ export class Content extends React.Component<ContentProps, any> {
         if ((this.state.themFixes.length === 0) && (this.state.suspiciousCells.length === 0)) {
             instructions = <div><br />
                 Click on <a onClick={this.props.click1}><b>Reveal Structure</b></a> to reveal the underlying structure of the spreadsheet.
-		Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.
+		Different formulas are assigned different colors, making it easy to spot inconsistencies or to audit a spreadsheet for correctness.<br />
 		<br /><br />
             </div>;
         } else {
+	    if (false) { // show advanced settings
             instructions = <div style={notSuspiciousStyle}><em>Advanced settings:</em></div>;
             slider1 = <div><Slider
                 label="Anomalousness threshold (%)"
@@ -231,7 +240,8 @@ export class Content extends React.Component<ContentProps, any> {
                 defaultValue={Colorize.getFormattingDiscount()}
                 showValue={true}
                 onChange={(value: number) => { Colorize.setFormattingDiscount(value); this.forceUpdate(); }}
-            /></div>;
+		    /></div>;
+	    }
         }
 
         return (
