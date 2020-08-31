@@ -53,6 +53,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
             if (r) {
                 let [col0, row0, col1, row1] = r;
                 // Sort from largest to smallest (by making negative).
+		console.log("TABLE IN CONTENT: " + JSON.stringify(arr[i]));
                 let score = -arr[i][0];
                 console.log("original score = " + score);
                 if (!arr[i][3]) { // Different formats.
@@ -70,7 +71,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
                 } else {
                     rangeDisplay = <td style={{ width: 100 }}>{col0}{row0}:{col1}{row1}</td>;
                 }
-                const scoreStr = Math.round(score).toString() + "% anomalous";
+                const scoreStr = arr[i][4] + "\n(" + Math.round(score).toString() + "% anomalous)";
                 let barColor = 'red';
                 if (Math.round(score) < 50) {
                     barColor = 'yellow';
@@ -122,12 +123,11 @@ function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0
                 } else {
                     rangeDisplay = <td style={{ width: 100 }}>{colName}{row}</td>;
                 }
-                const scoreStr = Math.round(score).toString() + "% suspicious";
+                const scoreStr = "{" + Math.round(score).toString() + "% anomalous" + "}";
                 let barColor = 'red';
                 if (Math.round(score) < 50) {
                     barColor = 'yellow';
                 }
-                //		const scoreStr = "mildly suspicious";
                 children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{ width: Math.round(score), backgroundColor: barColor, display: 'inline-block' }}>&nbsp;</td><td title={scoreStr} style={{ width: barWidth - Math.round(score), backgroundColor: 'lightgray', display: 'inline-block' }}>&nbsp;</td></tr>);
                 //		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'yellow', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
             }
@@ -140,7 +140,6 @@ function makeTableSuspiciousCells(sheetName: string, arr: any[], selector: (arg0
         }
     }
     return <div></div>;
-    // return <div style={notSuspiciousStyle}>No suspicious cells found in {sheetName}.<br /><br /></div>;
 }
 
 
@@ -165,18 +164,16 @@ function DisplayFixes(props) {
         // OK, if we got here, we did some analysis.
         if ((filteredFixes.length === 0) && (props.suspiciousCells.length === 0)) {
             // We got nothing.
-            table1 = <div style={notSuspiciousStyle}><br />Nothing suspicious found in {props.sheetName}.<br /><br /></div>;
+            table1 = <div style={notSuspiciousStyle}><br />Nothing anomalous found in {props.sheetName}.<br /><br /></div>;
         }
     }
     table1 = makeTable(props.sheetName, filteredFixes, props.selector, props.currentFix, filteredFixes.length);
     result1 = <div><br /><br />{table1}</div>;
     // Suspicious cells.
     let result2 = <div></div>;
-//    console.log('checking suspicious cells.');
     const table2 = makeTableSuspiciousCells(props.sheetName, props.suspiciousCells, props.cellSelector, props.currentSuspiciousCell, props.suspiciousCells.length);
     result2 = <div>{table2}</div>;
     return <div>{result1}{result2}</div>;
-    //return <div>{result1}</div>;
 }
 
 

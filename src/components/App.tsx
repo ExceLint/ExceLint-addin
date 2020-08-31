@@ -289,13 +289,19 @@ export default class App extends React.Component<AppProps, AppState> {
 		{
 		    if (result.status === Office.AsyncResultStatus.Succeeded) {
 			// For now, assume there's just one slice - FIXME.
-			result.value.getSliceAsync(0, (result : Office.AsyncResult<Office.Slice>) => {
-			    if (result.status === Office.AsyncResultStatus.Succeeded) {
+			result.value.getSliceAsync(0, (res : Office.AsyncResult<Office.Slice>) => {
+			    if (res.status === Office.AsyncResultStatus.Succeeded) {
+				// File loaded. Grab the data and read it into xlsx.
 				console.log("successful slice load.");
-				let slice = result.value.data;
+				let slice = res.value.data;
 				console.log("extracted slice.");
 				let workbook = xlsx.read(slice, {type: "array"});
 				console.log("read workbook from xlsx.");
+				// Close the file (this is mandatory).
+				(async () => {
+				    await result.value.closeAsync();
+				    console.log("Closed the file.");
+				})();
 				resolve (workbook);
 			    } else {
 			        console.log("slice async failed.");
@@ -313,13 +319,35 @@ export default class App extends React.Component<AppProps, AppState> {
 
     /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
     setColor = async () => {
+        OfficeExtension.config.extendedErrorLogging = true;
         try {
 
+	    let currentWorksheet;
+	    let currentWorksheetName = "";
+	    (async () => {
+		await Excel.run(async context => {
+		    currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+                    currentWorksheet.load(['name']);
+                    await context.sync();
+		    currentWorksheetName = currentWorksheet.name;
+		});
+	    })();
+			   
 	    // Read the workbook into JSON form.
+	    let JSONoutput = {};
+	    
 	    try {
 	    	let workbook = await this.getWorkbook();
-		let out = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
-		console.log(JSON.stringify(out));
+		let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
+		console.log(JSON.stringify(jsonBook));
+		console.log("-----");
+		// We need to do the analysis with no lower cutoff so
+		// it can be adjusted via the sliders. If the sliders
+		// go away, this will not be needed.
+		const originalThreshold = Colorize.reportingThreshold;
+		Colorize.reportingThreshold = 0;
+		JSONoutput = Colorize.process_workbook(jsonBook, currentWorksheetName);
+		Colorize.reportingThreshold = originalThreshold;
 	    } catch (error) {
 	      console.log("setColor: failed to read workbook into JSON.");
 	    }
@@ -327,35 +355,10 @@ export default class App extends React.Component<AppProps, AppState> {
             await Excel.run(async context => {
                 console.log('setColor: starting processing.');
                 let t = new Timer("setColor");
-                let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-                currentWorksheet.load(['protection']);
-                await context.sync();
-		/*
-		Office.context.document.getSelectedDataAsync(Office.CoercionType.Text,
-							     (result) => {
-								 if (result.status === Office.AsyncResultStatus.Succeeded) {
-								     Office.context.document.getFilePropertiesAsync((_asyncResult) => { console.log('doc URL = ', '"' + JSON.stringify(Object.getOwnPropertyNames(Office.context.document)));
-																     }); 
-								 }
-							     });
-		*/
-		/*
-		let reader = new FileReader();
-		reader.onload = (function (_event) {
-		    Excel.run(function (context) {
-			let startIndex = reader.result.toString().indexOf("base64,");
-			let workbookContents = reader.result.toString().substr(startIndex + 7);
-			console.log(workbookContents);
-			return context.sync();
-		    }).catch((err) => {
-			console.log("ERROR " + err);
-		    });
-		});
-		reader.readAsDataURL(myFile.files[0]);
-		*/
-                t.split("got protection");
 
-                // 		console.log('setColor: protection status = ' + currentWorksheet.protection.protected);
+		let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+                currentWorksheet.load(['protection']);
+		await context.sync();
                 const wasPreviouslyProtected = currentWorksheet.protection.protected;
                 console.log("setColor: previously protected? = " + wasPreviouslyProtected);
                 try {
@@ -379,9 +382,11 @@ export default class App extends React.Component<AppProps, AppState> {
                 app.calculationMode = 'Manual';
 
                 let usedRange = currentWorksheet.getUsedRange(false) as any;
-                usedRange.load(['address', 'values']);
+                usedRange.load(['address', 'values', 'formulas', 'format']);
+		console.log(JSON.stringify(usedRange));
                 await context.sync();
                 t.split("got address");
+		console.log(JSON.stringify(usedRange));
 
                 //		let displayComments = false;
 
@@ -396,10 +401,8 @@ export default class App extends React.Component<AppProps, AppState> {
                             console.log(JSON.stringify(currentWorksheet.names.items));
                 */
 
-                usedRange.load(['formulas', 'format']);
-                await context.sync();
                 t.split("load from used range = " + usedRange.address);
-
+		
                 // Now start colorizing.
 
                 // Turn off screen updating and calculations while this is happening.
@@ -409,7 +412,7 @@ export default class App extends React.Component<AppProps, AppState> {
 		    // In case it's not implemented.
 		}
                 app.suspendApiCalculationUntilNextSync();
-
+		
                 const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
 
                 let useNumericFormulaRanges = false;
@@ -451,24 +454,43 @@ export default class App extends React.Component<AppProps, AppState> {
                 }
 
 
+		// await context.sync();
+		
                 const usedRangeAddress = usedRange.address;
                 const formulas = usedRange.formulas;
                 const values = usedRange.values;
 
 		//await Colorize.process_sheet(context.workbook, Office.FileType.Compressed);
-                let [suspicious_cells, grouped_formulas, grouped_data, proposed_fixes]
+                let [suspicious_cells, grouped_formulas, grouped_data, _unused_proposed_fixes]
                     = Colorize.process_suspicious(usedRangeAddress, formulas, values);
                 this.suspicious_cells = suspicious_cells;
-                this.proposed_fixes = proposed_fixes;
 
+		// Note that we are duplicating work! FIXME. This work
+		// above has basically been done by the
+		// process_workbook call.
+		
+		let new_proposed_fixes = JSONoutput['worksheets'][currentWorksheetName]['proposedFixes'];
+		// Convert to the expected format, negating the entropy and adding a true value at the end.
+		for (let i = 0; i < new_proposed_fixes.length; i++) {
+		    new_proposed_fixes[i][0] = -new_proposed_fixes[i][0];
+		    new_proposed_fixes[i].push(true);
+		}
+		
+		console.log(new_proposed_fixes);
+                this.proposed_fixes = new_proposed_fixes;
+
+		console.log("suspicious cells = " + JSON.stringify(suspicious_cells));
+		console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+		console.log("grouped data = " + JSON.stringify(grouped_data));
+		
 		// Experimental: filter out colors so that only those
 		// identified as proposed fixes get colored.
-		const useReducedColors = false; // disabled by default! // WAS true;
+		const useReducedColors = false; // disabled by default! // WAS true; // ILDC
 		
 		let only_suspicious_proposed_fixes;
 		let only_suspicious_grouped_formulas = {};
 		if (useReducedColors) {
-		    only_suspicious_proposed_fixes = proposed_fixes.reduce((obj, item) => {
+		    only_suspicious_proposed_fixes = this.proposed_fixes.reduce((obj, item) => {
 			if (-item[0] > 0.10) { // FIXME hard-coded suspiciousness for now.
 			    obj[JSON.stringify(item[1])] = true ;
 			    obj[JSON.stringify(item[2])] = true ;
@@ -483,7 +505,7 @@ export default class App extends React.Component<AppProps, AppState> {
 			}
 		    }
 		}
-		
+
                 /// Finally, apply colors.
 		
                 // Remove the background color from all cells.
@@ -510,12 +532,15 @@ export default class App extends React.Component<AppProps, AppState> {
 		}
 		
                 // And color the formulas.
-		if (useReducedColors) {
-                    this.color_ranges(only_suspicious_grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
-		} else {
-		    this.color_ranges(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
+		if (true) { // Enable colors.
+		    if (useReducedColors) {
+			this.color_ranges(only_suspicious_grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
+		    } else {
+			this.color_ranges(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
+		    }
 		}
 		
+                currentWorksheet.load(['id']);
                 await context.sync();
 
                 //		console.log(JSON.stringify(usedRange.formulasR1C1));
@@ -544,7 +569,21 @@ export default class App extends React.Component<AppProps, AppState> {
                     t.split("generated fixes");
                 }
 
+		// Parse out the explanation string for each.
+		console.log(JSON.stringify(JSONoutput));
+		for (let i = 0; i < this.proposed_fixes.length; i++) {
+		    const fixes = JSONoutput['worksheets'][currentWorksheetName]['exampleFixes'][i];
+		    // console.log(fixes);
+		    const explanation = fixes['bin'][0]; // for now, just the first explanation
+		    const example1 = fixes['formulas'][0];
+		    const example2 = fixes['formulas'][1];
+		    const explanationStr = explanation + '\n' + example1 + '\n' + example2;
+		    this.proposed_fixes[i].push(explanationStr);
+		    console.log("NEW PROPOSED FIX THANG: " + JSON.stringify(this.proposed_fixes[i]));
+		}
+
                 this.total_fixes = formulas.length;
+
                 this.proposed_fixes_length = this.proposed_fixes.length;
 
                 //		app.suspendScreenUpdatingUntilNextSync();
@@ -560,7 +599,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
                 // Restore original calculation mode.
                 app.calculationMode = originalCalculationMode;
-
 
                 await context.sync();
 
