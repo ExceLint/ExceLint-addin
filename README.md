@@ -10,6 +10,13 @@ Microsoft Research), and [Ben
 Zorn](https://www.microsoft.com/en-us/research/people/zorn/) (Microsoft
 Research).
 
+## Talks on ExceLint
+
+* [ExceLint - Automatically Finding Spreadsheet Formula Errors](https://www.youtube.com/watch?v=rEwUA0h2dsw), OOPSLA 2018 conference talk by Dan Barowy
+* [Saving the world from spreadsheets](https://www.youtube.com/watch?list=SRYearby%20Super%20Mesh%20Task%20Chair&v=GyWKxFxyyrQ), Univ. of Washington PLSE seminar, by Emery Berger
+* [The next generation of developer tools for data programming](https://note.microsoft.com/MSR-Webinar-Data-Programming-Registration-On-Demand.html), Microsoft Research Webinar Series, by Ben Zorn
+
+
 ## Installation
 
 ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
