@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
-const webpackMerge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const commonConfig = require('./webpack.common.js');
 
 module.exports = async (env, options) => {
-    const config = webpackMerge(commonConfig, {
+    const config = merge(commonConfig, {
     devtool: 'eval-source-map',
     devServer: {
         publicPath: '/',
