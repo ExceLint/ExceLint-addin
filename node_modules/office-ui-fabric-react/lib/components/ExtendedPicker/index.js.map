@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../src/","sources":["components/ExtendedPicker/index.ts"],"names":[],"mappings":"AAAA,cAAc,sBAAsB,CAAC;AAErC,cAAc,qCAAqC,CAAC","sourcesContent":["export * from './BaseExtendedPicker';\nexport * from './BaseExtendedPicker.types';\nexport * from './PeoplePicker/ExtendedPeoplePicker';\n"]}

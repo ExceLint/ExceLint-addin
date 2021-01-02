@@ -1,0 +1,27 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = require("tslib");
+var React = require("react");
+var Utilities_1 = require("../../Utilities");
+var Layer_notification_1 = require("./Layer.notification");
+var LayerHost = /** @class */ (function (_super) {
+    tslib_1.__extends(LayerHost, _super);
+    function LayerHost() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    LayerHost.prototype.shouldComponentUpdate = function () {
+        return false;
+    };
+    LayerHost.prototype.componentDidMount = function () {
+        Layer_notification_1.notifyHostChanged(this.props.id);
+    };
+    LayerHost.prototype.componentWillUnmount = function () {
+        Layer_notification_1.notifyHostChanged(this.props.id);
+    };
+    LayerHost.prototype.render = function () {
+        return React.createElement("div", tslib_1.__assign({}, this.props, { className: Utilities_1.css('ms-LayerHost', this.props.className) }));
+    };
+    return LayerHost;
+}(React.Component));
+exports.LayerHost = LayerHost;
+//# sourceMappingURL=LayerHost.js.map

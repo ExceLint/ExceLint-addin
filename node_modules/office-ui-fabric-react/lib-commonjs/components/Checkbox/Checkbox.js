@@ -1,0 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Utilities_1 = require("../../Utilities");
+var Checkbox_base_1 = require("./Checkbox.base");
+var Checkbox_styles_1 = require("./Checkbox.styles");
+exports.Checkbox = Utilities_1.styled(Checkbox_base_1.CheckboxBase, Checkbox_styles_1.getStyles, undefined, { scope: 'Checkbox' });
+//# sourceMappingURL=Checkbox.js.map

@@ -1,0 +1,2 @@
+import { IStackComponent } from './Stack.types';
+export declare const styles: IStackComponent['styles'];

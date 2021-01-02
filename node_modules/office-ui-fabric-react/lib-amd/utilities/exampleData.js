@@ -1,0 +1,74 @@
+/* eslint-disable deprecation/deprecation */
+define(["require", "exports", "tslib"], function (require, exports, tslib_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var LOREM_IPSUM = ('Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut ' +
+        'labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut ' +
+        'aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore ' +
+        'eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt ' +
+        'mollit anim id est laborum').split(' ');
+    var DATA = {
+        color: ['red', 'blue', 'green', 'yellow'],
+        shape: ['circle', 'square', 'triangle'],
+        location: ['Seattle', 'New York', 'Chicago', 'Los Angeles', 'Portland'],
+    };
+    /** @deprecated Use the version from `@uifabric/example-data` instead. */
+    function createListItems(count, startIndex) {
+        if (startIndex === void 0) { startIndex = 0; }
+        return tslib_1.__spreadArrays(Array(count)).map(function (item, index) {
+            var size = 150 + Math.round(Math.random() * 100);
+            return {
+                thumbnail: "//placehold.it/" + size + "x" + size,
+                key: 'item-' + (index + startIndex) + ' ' + lorem(4),
+                name: lorem(5),
+                description: lorem(10 + Math.round(Math.random() * 50)),
+                color: _randWord(DATA.color),
+                shape: _randWord(DATA.shape),
+                location: _randWord(DATA.location),
+                width: size,
+                height: size,
+            };
+        });
+    }
+    exports.createListItems = createListItems;
+    /** @deprecated Use the version from `@uifabric/example-data` instead. */
+    function createGroups(groupCount, groupDepth, startIndex, itemsPerGroup, level, key, isCollapsed) {
+        if (level === void 0) { level = 0; }
+        if (key === void 0) { key = ''; }
+        if (key !== '') {
+            key = key + '-';
+        }
+        var count = Math.pow(itemsPerGroup, groupDepth);
+        return tslib_1.__spreadArrays(Array(groupCount)).map(function (value, index) {
+            return {
+                count: count,
+                key: 'group' + key + index,
+                name: 'group ' + key + index,
+                startIndex: index * count + startIndex,
+                level: level,
+                isCollapsed: isCollapsed,
+                children: groupDepth > 1
+                    ? createGroups(groupCount, groupDepth - 1, index * count + startIndex, itemsPerGroup, level + 1, key + index)
+                    : [],
+            };
+        });
+    }
+    exports.createGroups = createGroups;
+    /** @deprecated Use the version from `@uifabric/example-data` instead. */
+    function lorem(wordCount) {
+        return tslib_1.__spreadArrays(Array(wordCount)).map(function (item, idx) {
+            return LOREM_IPSUM[idx % LOREM_IPSUM.length];
+        })
+            .join(' ');
+    }
+    exports.lorem = lorem;
+    function isGroupable(key) {
+        return key === 'color' || key === 'shape' || key === 'location';
+    }
+    exports.isGroupable = isGroupable;
+    function _randWord(array) {
+        var index = Math.floor(Math.random() * array.length);
+        return array[index];
+    }
+});
+//# sourceMappingURL=exampleData.js.map

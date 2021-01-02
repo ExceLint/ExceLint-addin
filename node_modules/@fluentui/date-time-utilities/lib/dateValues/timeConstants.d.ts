@@ -1,0 +1,15 @@
+/**
+ * Common constants and methods
+ */
+declare const TimeConstants: {
+    MillisecondsInOneDay: number;
+    MillisecondsIn1Sec: number;
+    MillisecondsIn1Min: number;
+    MillisecondsIn30Mins: number;
+    MillisecondsIn1Hour: number;
+    MinutesInOneDay: number;
+    MinutesInOneHour: number;
+    DaysInOneWeek: number;
+    MonthInOneYear: number;
+};
+export default TimeConstants;

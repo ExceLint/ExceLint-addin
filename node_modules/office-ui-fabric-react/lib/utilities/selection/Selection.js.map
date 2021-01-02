@@ -1,0 +1,1 @@
+{"version":3,"file":"Selection.js","sourceRoot":"../src/","sources":["utilities/selection/Selection.ts"],"names":[],"mappings":"AAAA,OAAO,EAAqB,SAAS,EAAE,MAAM,qBAAqB,CAAC","sourcesContent":["export { ISelectionOptions, Selection } from '@uifabric/utilities';\n"]}

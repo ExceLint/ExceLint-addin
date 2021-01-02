@@ -1,0 +1,13 @@
+node_modules
+*~
+*.docx
+*.xlsx
+
+# TODO: submodules?
+office365-js
+openxml-js
+
+# tokens for test
+.gdrive
+.storage
+

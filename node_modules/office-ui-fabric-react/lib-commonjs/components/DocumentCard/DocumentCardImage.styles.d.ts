@@ -1,0 +1,2 @@
+import { IDocumentCardImageStyleProps, IDocumentCardImageStyles } from './DocumentCardImage.types';
+export declare const getStyles: (props: IDocumentCardImageStyleProps) => IDocumentCardImageStyles;

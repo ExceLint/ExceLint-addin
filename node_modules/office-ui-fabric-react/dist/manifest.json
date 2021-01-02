@@ -1,0 +1,35 @@
+{
+    "version": "1.0",
+    "ramps": [],
+    "resources": {
+        "strings": {},
+        "css": [],
+        "imageStrips": [],
+        "inlineScripts": [],
+        "config": {},
+        "scripts": [
+            {
+                "name": "office-ui-fabric-react.umd",
+                "localized": false,
+                "hash": "",
+                "hashNoCompress": "",
+                "sourceMap": "",
+                "zipSize": 0,
+                "path": "office-ui-fabric-react.umd.js"
+            }
+        ],
+        "shim": {},
+        "bundles": {
+            "office-ui-fabric-react.umd": [
+                "@microsoft/load-themed-styles"
+            ]
+        },
+        "scenarios": {},
+        "cultures": [],
+        "libraries": []
+    },
+    "loggingData": {},
+    "rampInfo": {},
+    "buildNumber": "dev",
+    "hashes": {}
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"WindowProvider.js","sourceRoot":"../src/","sources":["WindowProvider.ts"],"names":[],"mappings":";;;IACA,uDAAgD","sourcesContent":["import './version';\nexport * from '@fluentui/react-window-provider';\n"]}

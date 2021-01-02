@@ -1,0 +1,39 @@
+import * as React from 'react';
+import { ICalendar, ICalendarProps } from './Calendar.types';
+export interface ICalendarState {
+    /** The currently focused date in the day picker, but not necessarily selected */
+    navigatedDayDate?: Date;
+    /** The currently focused date in the month picker, but not necessarily selected */
+    navigatedMonthDate?: Date;
+    /** The currently selected date in the calendar */
+    selectedDate?: Date;
+    /** State used to show/hide month picker */
+    isMonthPickerVisible?: boolean;
+    /** State used to show/hide day picker */
+    isDayPickerVisible?: boolean;
+}
+export declare class Calendar extends React.Component<ICalendarProps, ICalendarState> implements ICalendar {
+    static defaultProps: ICalendarProps;
+    private _dayPicker;
+    private _monthPicker;
+    private _hasFocus;
+    private _focusOnUpdate;
+    constructor(props: ICalendarProps);
+    UNSAFE_componentWillReceiveProps(nextProps: ICalendarProps): void;
+    componentDidUpdate(): void;
+    render(): JSX.Element;
+    focus(): void;
+    private _onBlur;
+    private _onFocus;
+    private _navigateDayPickerDay;
+    private _navigateMonthPickerDay;
+    private _onNavigateDayDate;
+    private _onNavigateMonthDate;
+    private _onSelectDate;
+    private _onHeaderSelect;
+    private _onGotoToday;
+    private _onGotoTodayClick;
+    private _onGotoTodayKeyDown;
+    private _onDatePickerPopupKeyDown;
+    private _handleEscKey;
+}

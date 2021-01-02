@@ -1,0 +1,106 @@
+import * as React from 'react';
+import { ISpinButton, ISpinButtonProps } from './SpinButton.types';
+export declare enum KeyboardSpinDirection {
+    down = -1,
+    notSpinning = 0,
+    up = 1
+}
+export interface ISpinButtonState {
+    /**
+     * Is true when the control has focus.
+     */
+    isFocused: boolean;
+    /**
+     * the value of the spin button
+     */
+    value: string;
+    /**
+     * keyboard spin direction, used to style the up or down button
+     * as active when up/down arrow is pressed
+     */
+    keyboardSpinDirection: KeyboardSpinDirection;
+}
+export declare type DefaultProps = Required<Pick<ISpinButtonProps, 'step' | 'min' | 'max' | 'disabled' | 'labelPosition' | 'label' | 'incrementButtonIcon' | 'decrementButtonIcon'>>;
+export declare class SpinButton extends React.Component<ISpinButtonProps, ISpinButtonState> implements ISpinButton {
+    static defaultProps: DefaultProps;
+    private _async;
+    private _input;
+    private _inputId;
+    private _labelId;
+    private _lastValidValue;
+    private _spinningByMouse;
+    private _valueToValidate;
+    private _precision;
+    private _currentStepFunctionHandle;
+    private _initialStepDelay;
+    private _stepDelay;
+    constructor(props: ISpinButtonProps);
+    componentWillUnmount(): void;
+    /**
+     * Invoked when a component is receiving new props. This method is not called for the initial render.
+     */
+    UNSAFE_componentWillReceiveProps(newProps: ISpinButtonProps): void;
+    render(): JSX.Element;
+    focus(): void;
+    /**
+     * Gets the value of the spin button.
+     */
+    readonly value: string | undefined;
+    private _onFocus;
+    private _onBlur;
+    private _onValidate;
+    private _calculatePrecision;
+    /**
+     * Validate function to use if one is not passed in
+     */
+    private _defaultOnValidate;
+    private _onIncrement;
+    /**
+     * Increment function to use if one is not passed in
+     */
+    private _defaultOnIncrement;
+    private _onDecrement;
+    /**
+     * Increment function to use if one is not passed in
+     */
+    private _defaultOnDecrement;
+    private _onChange;
+    /**
+     * This is used when validating text entry in the input on blur or when enter key is pressed
+     * (not when changed via the buttons).
+     * @param event - the event that fired
+     */
+    private _validate;
+    /**
+     * The method is needed to ensure we are updating the actual input value.
+     * without this our value will never change (and validation will not have the correct number)
+     * @param event - the event that was fired
+     */
+    private _onInputChange;
+    /**
+     * Update the value with the given stepFunction
+     * @param shouldSpin - should we fire off another updateValue when we are done here? This should be true
+     * when spinning in response to a mouseDown
+     * @param stepFunction - function to use to step by
+     * @param event - The event that triggered the updateValue
+     */
+    private _updateValue;
+    /**
+     * Stop spinning (clear any currently pending update and set spinning to false)
+     */
+    private _stop;
+    /**
+     * Handle keydown on the text field. We need to update
+     * the value when up or down arrow are depressed
+     * @param event - the keyboardEvent that was fired
+     */
+    private _handleKeyDown;
+    /**
+     * Make sure that we have stopped spinning on keyUp
+     * if the up or down arrow fired this event
+     * @param event - keyboard event
+     */
+    private _handleKeyUp;
+    private _onIncrementMouseDown;
+    private _onDecrementMouseDown;
+}

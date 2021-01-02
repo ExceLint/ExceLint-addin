@@ -1,0 +1,6 @@
+import * as React from 'react';
+import { IDatePickerProps } from './DatePicker.types';
+/**
+ * DatePicker description
+ */
+export declare const DatePicker: React.FunctionComponent<IDatePickerProps>;

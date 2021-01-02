@@ -1,0 +1,1 @@
+{"version":3,"file":"DefaultPalette.js","sourceRoot":"../src/","sources":["styles/DefaultPalette.ts"],"names":[],"mappings":";;;IAAA,gDAA0D","sourcesContent":["export * from '@fluentui/theme/lib/colors/DefaultPalette';\n"]}

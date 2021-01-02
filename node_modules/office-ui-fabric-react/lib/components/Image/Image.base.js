@@ -1,0 +1,150 @@
+import { __assign, __extends } from "tslib";
+import * as React from 'react';
+import { classNamesFunction, getNativeProps, imgProperties } from '../../Utilities';
+import { ImageCoverStyle, ImageFit, ImageLoadState } from './Image.types';
+var getClassNames = classNamesFunction();
+var KEY_PREFIX = 'fabricImage';
+var ImageBase = /** @class */ (function (_super) {
+    __extends(ImageBase, _super);
+    function ImageBase(props) {
+        var _this = _super.call(this, props) || this;
+        // Make an initial assumption about the image layout until we can
+        // check the rendered element. The value here only takes effect when
+        // shouldStartVisible is true.
+        _this._coverStyle = ImageCoverStyle.portrait;
+        _this._imageElement = React.createRef();
+        _this._frameElement = React.createRef();
+        _this._onImageLoaded = function (ev) {
+            var _a = _this.props, src = _a.src, onLoad = _a.onLoad;
+            if (onLoad) {
+                onLoad(ev);
+            }
+            _this._computeCoverStyle(_this.props);
+            if (src) {
+                _this.setState({
+                    loadState: ImageLoadState.loaded,
+                });
+            }
+        };
+        _this._onImageError = function (ev) {
+            if (_this.props.onError) {
+                _this.props.onError(ev);
+            }
+            _this.setState({
+                loadState: ImageLoadState.error,
+            });
+        };
+        _this.state = {
+            loadState: ImageLoadState.notLoaded,
+        };
+        return _this;
+    }
+    ImageBase.prototype.UNSAFE_componentWillReceiveProps = function (nextProps) {
+        if (nextProps.src !== this.props.src) {
+            this.setState({
+                loadState: ImageLoadState.notLoaded,
+            });
+        }
+        else if (this.state.loadState === ImageLoadState.loaded) {
+            this._computeCoverStyle(nextProps);
+        }
+    };
+    ImageBase.prototype.componentDidUpdate = function (prevProps, prevState) {
+        this._checkImageLoaded();
+        if (this.props.onLoadingStateChange && prevState.loadState !== this.state.loadState) {
+            this.props.onLoadingStateChange(this.state.loadState);
+        }
+    };
+    ImageBase.prototype.render = function () {
+        var imageProps = getNativeProps(this.props, imgProperties, [
+            'width',
+            'height',
+        ]);
+        var _a = this.props, src = _a.src, alt = _a.alt, width = _a.width, height = _a.height, shouldFadeIn = _a.shouldFadeIn, shouldStartVisible = _a.shouldStartVisible, className = _a.className, imageFit = _a.imageFit, role = _a.role, maximizeFrame = _a.maximizeFrame, styles = _a.styles, theme = _a.theme;
+        var loadState = this.state.loadState;
+        var coverStyle = this.props.coverStyle !== undefined ? this.props.coverStyle : this._coverStyle;
+        var classNames = getClassNames(styles, {
+            theme: theme,
+            className: className,
+            width: width,
+            height: height,
+            maximizeFrame: maximizeFrame,
+            shouldFadeIn: shouldFadeIn,
+            shouldStartVisible: shouldStartVisible,
+            isLoaded: loadState === ImageLoadState.loaded ||
+                (loadState === ImageLoadState.notLoaded && this.props.shouldStartVisible),
+            isLandscape: coverStyle === ImageCoverStyle.landscape,
+            isCenter: imageFit === ImageFit.center,
+            isCenterContain: imageFit === ImageFit.centerContain,
+            isCenterCover: imageFit === ImageFit.centerCover,
+            isContain: imageFit === ImageFit.contain,
+            isCover: imageFit === ImageFit.cover,
+            isNone: imageFit === ImageFit.none,
+            isError: loadState === ImageLoadState.error,
+            isNotImageFit: imageFit === undefined,
+        });
+        // If image dimensions aren't specified, the natural size of the image is used.
+        return (React.createElement("div", { className: classNames.root, style: { width: width, height: height }, ref: this._frameElement },
+            React.createElement("img", __assign({}, imageProps, { onLoad: this._onImageLoaded, onError: this._onImageError, key: KEY_PREFIX + this.props.src || '', className: classNames.image, ref: this._imageElement, src: src, alt: alt, role: role }))));
+    };
+    ImageBase.prototype._checkImageLoaded = function () {
+        var src = this.props.src;
+        var loadState = this.state.loadState;
+        if (loadState === ImageLoadState.notLoaded) {
+            // testing if naturalWidth and naturalHeight are greater than zero is better than checking
+            // .complete, because .complete will also be set to true if the image breaks. However,
+            // for some browsers, SVG images do not have a naturalWidth or naturalHeight, so fall back
+            // to checking .complete for these images.
+            var isLoaded = this._imageElement.current
+                ? (src && this._imageElement.current.naturalWidth > 0 && this._imageElement.current.naturalHeight > 0) ||
+                    (this._imageElement.current.complete && ImageBase._svgRegex.test(src))
+                : false;
+            if (isLoaded) {
+                this._computeCoverStyle(this.props);
+                this.setState({
+                    loadState: ImageLoadState.loaded,
+                });
+            }
+        }
+    };
+    ImageBase.prototype._computeCoverStyle = function (props) {
+        var imageFit = props.imageFit, width = props.width, height = props.height;
+        // Do not compute cover style if it was already specified in props
+        if ((imageFit === ImageFit.cover ||
+            imageFit === ImageFit.contain ||
+            imageFit === ImageFit.centerContain ||
+            imageFit === ImageFit.centerCover) &&
+            this.props.coverStyle === undefined &&
+            this._imageElement.current &&
+            this._frameElement.current) {
+            // Determine the desired ratio using the width and height props.
+            // If those props aren't available, measure measure the frame.
+            var desiredRatio = void 0;
+            if (typeof width === 'number' &&
+                typeof height === 'number' &&
+                imageFit !== ImageFit.centerContain &&
+                imageFit !== ImageFit.centerCover) {
+                desiredRatio = width / height;
+            }
+            else {
+                desiredRatio = this._frameElement.current.clientWidth / this._frameElement.current.clientHeight;
+            }
+            // Examine the source image to determine its original ratio.
+            var naturalRatio = this._imageElement.current.naturalWidth / this._imageElement.current.naturalHeight;
+            // Should we crop from the top or the sides?
+            if (naturalRatio > desiredRatio) {
+                this._coverStyle = ImageCoverStyle.landscape;
+            }
+            else {
+                this._coverStyle = ImageCoverStyle.portrait;
+            }
+        }
+    };
+    ImageBase.defaultProps = {
+        shouldFadeIn: true,
+    };
+    ImageBase._svgRegex = /\.svg$/i;
+    return ImageBase;
+}(React.Component));
+export { ImageBase };
+//# sourceMappingURL=Image.base.js.map

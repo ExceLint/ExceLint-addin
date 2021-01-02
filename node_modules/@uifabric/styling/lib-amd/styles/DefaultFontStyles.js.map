@@ -1,0 +1,1 @@
+{"version":3,"file":"DefaultFontStyles.js","sourceRoot":"../src/","sources":["styles/DefaultFontStyles.ts"],"names":[],"mappings":";;;IAAA,mDAA4D","sourcesContent":["export * from '@fluentui/theme/lib/fonts/DefaultFontStyles';\n"]}

@@ -1,0 +1,883 @@
+define(["require", "exports", "tslib", "react", "./ContextualMenu.types", "../../common/DirectionalHint", "../../FocusZone", "../../Utilities", "../../utilities/contextualMenu/index", "../../utilities/decorators/withResponsiveMode", "../../Callout", "./ContextualMenuItem", "./ContextualMenuItemWrapper/index", "../../Styling", "./ContextualMenu.classNames"], function (require, exports, tslib_1, React, ContextualMenu_types_1, DirectionalHint_1, FocusZone_1, Utilities_1, index_1, withResponsiveMode_1, Callout_1, ContextualMenuItem_1, index_2, Styling_1, ContextualMenu_classNames_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var getClassNames = Utilities_1.classNamesFunction();
+    var getContextualMenuItemClassNames = Utilities_1.classNamesFunction();
+    function getSubmenuItems(item) {
+        return item.subMenuProps ? item.subMenuProps.items : item.items;
+    }
+    exports.getSubmenuItems = getSubmenuItems;
+    /**
+     * Returns true if a list of menu items can contain a checkbox
+     */
+    function canAnyMenuItemsCheck(items) {
+        return items.some(function (item) {
+            if (item.canCheck) {
+                return true;
+            }
+            // If the item is a section, check if any of the items in the section can check.
+            if (item.sectionProps && item.sectionProps.items.some(function (submenuItem) { return submenuItem.canCheck === true; })) {
+                return true;
+            }
+            return false;
+        });
+    }
+    exports.canAnyMenuItemsCheck = canAnyMenuItemsCheck;
+    var NavigationIdleDelay = 250 /* ms */;
+    var COMPONENT_NAME = 'ContextualMenu';
+    var _getMenuItemStylesFunction = Utilities_1.memoizeFunction(function () {
+        var styles = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            styles[_i] = arguments[_i];
+        }
+        return function (styleProps) {
+            return Styling_1.concatStyleSetsWithProps.apply(void 0, tslib_1.__spreadArrays([styleProps, ContextualMenu_classNames_1.getItemStyles], styles));
+        };
+    });
+    var ContextualMenuBase = /** @class */ (function (_super) {
+        tslib_1.__extends(ContextualMenuBase, _super);
+        function ContextualMenuBase(props) {
+            var _this = _super.call(this, props) || this;
+            _this._mounted = false;
+            _this.dismiss = function (ev, dismissAll) {
+                var onDismiss = _this.props.onDismiss;
+                if (onDismiss) {
+                    onDismiss(ev, dismissAll);
+                }
+            };
+            _this._tryFocusPreviousActiveElement = function (options) {
+                if (_this.props.onRestoreFocus) {
+                    _this.props.onRestoreFocus(options);
+                }
+                else {
+                    if (options && options.containsFocus && _this._previousActiveElement) {
+                        // Make sure that the focus method actually exists
+                        // In some cases the object might exist but not be a real element.
+                        // This is primarily for IE 11 and should be removed once IE 11 is no longer in use.
+                        if (_this._previousActiveElement.focus) {
+                            _this._previousActiveElement.focus();
+                        }
+                    }
+                }
+            };
+            _this._onRenderMenuList = function (menuListProps, defaultRender) {
+                var indexCorrection = 0;
+                var items = menuListProps.items, totalItemCount = menuListProps.totalItemCount, hasCheckmarks = menuListProps.hasCheckmarks, hasIcons = menuListProps.hasIcons, role = menuListProps.role;
+                return (React.createElement("ul", { className: _this._classNames.list, onKeyDown: _this._onKeyDown, onKeyUp: _this._onKeyUp, role: (role !== null && role !== void 0 ? role : 'menu') }, items.map(function (item, index) {
+                    var menuItem = _this._renderMenuItem(item, index, indexCorrection, totalItemCount, hasCheckmarks, hasIcons);
+                    if (item.itemType !== ContextualMenu_types_1.ContextualMenuItemType.Divider && item.itemType !== ContextualMenu_types_1.ContextualMenuItemType.Header) {
+                        var indexIncrease = item.customOnRenderListLength ? item.customOnRenderListLength : 1;
+                        indexCorrection += indexIncrease;
+                    }
+                    return menuItem;
+                })));
+            };
+            /**
+             * !!!IMPORTANT!!! Avoid mutating `item: IContextualMenuItem` argument. It will
+             * cause the menu items to always re-render because the component update is based on shallow comparison.
+             */
+            _this._renderMenuItem = function (item, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons) {
+                var _a;
+                var renderedItems = [];
+                var iconProps = item.iconProps || { iconName: 'None' };
+                var getItemClassNames = item.getItemClassNames, // eslint-disable-line deprecation/deprecation
+                itemProps = item.itemProps;
+                var styles = itemProps ? itemProps.styles : undefined;
+                // We only send a dividerClassName when the item to be rendered is a divider.
+                // For all other cases, the default divider style is used.
+                var dividerClassName = item.itemType === ContextualMenu_types_1.ContextualMenuItemType.Divider ? item.className : undefined;
+                var subMenuIconClassName = item.submenuIconProps ? item.submenuIconProps.className : '';
+                // eslint-disable-next-line deprecation/deprecation
+                var itemClassNames;
+                // IContextualMenuItem#getItemClassNames for backwards compatibility
+                // otherwise uses mergeStyles for class names.
+                if (getItemClassNames) {
+                    itemClassNames = getItemClassNames(_this.props.theme, index_1.isItemDisabled(item), _this.state.expandedMenuItemKey === item.key, !!index_1.getIsChecked(item), !!item.href, iconProps.iconName !== 'None', item.className, dividerClassName, iconProps.className, subMenuIconClassName, item.primaryDisabled);
+                }
+                else {
+                    var itemStyleProps = {
+                        theme: _this.props.theme,
+                        disabled: index_1.isItemDisabled(item),
+                        expanded: _this.state.expandedMenuItemKey === item.key,
+                        checked: !!index_1.getIsChecked(item),
+                        isAnchorLink: !!item.href,
+                        knownIcon: iconProps.iconName !== 'None',
+                        itemClassName: item.className,
+                        dividerClassName: dividerClassName,
+                        iconClassName: iconProps.className,
+                        subMenuClassName: subMenuIconClassName,
+                        primaryDisabled: item.primaryDisabled,
+                    };
+                    // We need to generate default styles then override if styles are provided
+                    // since the ContextualMenu currently handles item classNames.
+                    itemClassNames = getContextualMenuItemClassNames(_getMenuItemStylesFunction((_a = _this._classNames.subComponentStyles) === null || _a === void 0 ? void 0 : _a.menuItem, styles), itemStyleProps);
+                }
+                // eslint-disable-next-line deprecation/deprecation
+                if (item.text === '-' || item.name === '-') {
+                    item.itemType = ContextualMenu_types_1.ContextualMenuItemType.Divider;
+                }
+                switch (item.itemType) {
+                    case ContextualMenu_types_1.ContextualMenuItemType.Divider:
+                        renderedItems.push(_this._renderSeparator(index, itemClassNames));
+                        break;
+                    case ContextualMenu_types_1.ContextualMenuItemType.Header:
+                        renderedItems.push(_this._renderSeparator(index, itemClassNames));
+                        var headerItem = _this._renderHeaderMenuItem(item, itemClassNames, index, hasCheckmarks, hasIcons);
+                        renderedItems.push(_this._renderListItem(headerItem, item.key || index, itemClassNames, item.title));
+                        break;
+                    case ContextualMenu_types_1.ContextualMenuItemType.Section:
+                        renderedItems.push(_this._renderSectionItem(item, itemClassNames, index, hasCheckmarks, hasIcons));
+                        break;
+                    default:
+                        var menuItem = _this._renderNormalItem(item, itemClassNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons);
+                        renderedItems.push(_this._renderListItem(menuItem, item.key || index, itemClassNames, item.title));
+                        break;
+                }
+                // Since multiple nodes *could* be rendered, wrap them all in a fragment with this item's key.
+                // This ensures the reconciler handles multi-item output per-node correctly and does not re-mount content.
+                return React.createElement(React.Fragment, { key: item.key }, renderedItems);
+            };
+            _this._defaultMenuItemRenderer = function (item) {
+                var index = item.index, focusableElementIndex = item.focusableElementIndex, totalItemCount = item.totalItemCount, hasCheckmarks = item.hasCheckmarks, hasIcons = item.hasIcons;
+                return _this._renderMenuItem(item, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons);
+            };
+            _this._onKeyDown = function (ev) {
+                // Take note if we are processing an alt (option) or meta (command) keydown.
+                // See comment in _shouldHandleKeyUp for reasoning.
+                _this._lastKeyDownWasAltOrMeta = _this._isAltOrMeta(ev);
+                // On Mac, pressing escape dismisses all levels of native context menus
+                var dismissAllMenus = ev.which === Utilities_1.KeyCodes.escape && (Utilities_1.isMac() || Utilities_1.isIOS());
+                return _this._keyHandler(ev, _this._shouldHandleKeyDown, dismissAllMenus);
+            };
+            _this._shouldHandleKeyDown = function (ev) {
+                return (ev.which === Utilities_1.KeyCodes.escape ||
+                    _this._shouldCloseSubMenu(ev) ||
+                    (ev.which === Utilities_1.KeyCodes.up && (ev.altKey || ev.metaKey)));
+            };
+            _this._onMenuFocusCapture = function (ev) {
+                if (_this.props.delayUpdateFocusOnHover) {
+                    _this._shouldUpdateFocusOnMouseEvent = true;
+                }
+            };
+            _this._onKeyUp = function (ev) {
+                return _this._keyHandler(ev, _this._shouldHandleKeyUp, true /* dismissAllMenus */);
+            };
+            /**
+             * We close the menu on key up only if ALL of the following are true:
+             * - Most recent key down was alt or meta (command)
+             * - The alt/meta key down was NOT followed by some other key (such as down/up arrow to
+             *   expand/collapse the menu)
+             * - We're not on a Mac (or iOS)
+             *
+             * This is because on Windows, pressing alt moves focus to the application menu bar or similar,
+             * closing any open context menus. There is not a similar behavior on Macs.
+             */
+            _this._shouldHandleKeyUp = function (ev) {
+                var keyPressIsAltOrMetaAlone = _this._lastKeyDownWasAltOrMeta && _this._isAltOrMeta(ev);
+                _this._lastKeyDownWasAltOrMeta = false;
+                return !!keyPressIsAltOrMetaAlone && !(Utilities_1.isIOS() || Utilities_1.isMac());
+            };
+            /**
+             * Calls `shouldHandleKey` to determine whether the keyboard event should be handled;
+             * if so, stops event propagation and dismisses menu(s).
+             * @param ev - The keyboard event.
+             * @param shouldHandleKey - Returns whether we should handle this keyboard event.
+             * @param dismissAllMenus - If true, dismiss all menus. Otherwise, dismiss only the current menu.
+             * Only does anything if `shouldHandleKey` returns true.
+             * @returns Whether the event was handled.
+             */
+            _this._keyHandler = function (ev, shouldHandleKey, dismissAllMenus) {
+                var handled = false;
+                if (shouldHandleKey(ev)) {
+                    _this._focusingPreviousElement = true;
+                    _this.dismiss(ev, dismissAllMenus);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    handled = true;
+                }
+                return handled;
+            };
+            /**
+             * Checks if the submenu should be closed
+             */
+            _this._shouldCloseSubMenu = function (ev) {
+                var submenuCloseKey = Utilities_1.getRTL(_this.props.theme) ? Utilities_1.KeyCodes.right : Utilities_1.KeyCodes.left;
+                if (ev.which !== submenuCloseKey || !_this.props.isSubMenu) {
+                    return false;
+                }
+                return (_this._adjustedFocusZoneProps.direction === FocusZone_1.FocusZoneDirection.vertical ||
+                    (!!_this._adjustedFocusZoneProps.checkForNoWrap &&
+                        !Utilities_1.shouldWrapFocus(ev.target, 'data-no-horizontal-wrap')));
+            };
+            _this._onMenuKeyDown = function (ev) {
+                // Mark as handled if onKeyDown returns true (for handling collapse cases)
+                // or if we are attempting to expand a submenu
+                var handled = _this._onKeyDown(ev);
+                if (handled || !_this._host) {
+                    return;
+                }
+                // If we have a modifier key being pressed, we do not want to move focus.
+                // Otherwise, handle up and down keys.
+                var hasModifier = !!(ev.altKey || ev.metaKey);
+                var isUp = ev.which === Utilities_1.KeyCodes.up;
+                var isDown = ev.which === Utilities_1.KeyCodes.down;
+                if (!hasModifier && (isUp || isDown)) {
+                    var elementToFocus = isUp
+                        ? Utilities_1.getLastFocusable(_this._host, _this._host.lastChild, true)
+                        : Utilities_1.getFirstFocusable(_this._host, _this._host.firstChild, true);
+                    if (elementToFocus) {
+                        elementToFocus.focus();
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    }
+                }
+            };
+            /**
+             * Scroll handler for the callout to make sure the mouse events
+             * for updating focus are not interacting during scroll
+             */
+            _this._onScroll = function () {
+                if (!_this._isScrollIdle && _this._scrollIdleTimeoutId !== undefined) {
+                    _this._async.clearTimeout(_this._scrollIdleTimeoutId);
+                    _this._scrollIdleTimeoutId = undefined;
+                }
+                else {
+                    _this._isScrollIdle = false;
+                }
+                _this._scrollIdleTimeoutId = _this._async.setTimeout(function () {
+                    _this._isScrollIdle = true;
+                }, NavigationIdleDelay);
+            };
+            _this._onItemMouseEnterBase = function (item, ev, target) {
+                if (_this._shouldIgnoreMouseEvent()) {
+                    return;
+                }
+                _this._updateFocusOnMouseEvent(item, ev, target);
+            };
+            _this._onItemMouseMoveBase = function (item, ev, target) {
+                var targetElement = ev.currentTarget;
+                // Always do this check to make sure we record a mouseMove if needed (even if we are timed out)
+                if (_this._shouldUpdateFocusOnMouseEvent) {
+                    _this._gotMouseMove = true;
+                }
+                else {
+                    return;
+                }
+                if (!_this._isScrollIdle ||
+                    _this._enterTimerId !== undefined ||
+                    targetElement === _this._targetWindow.document.activeElement) {
+                    return;
+                }
+                _this._updateFocusOnMouseEvent(item, ev, target);
+            };
+            _this._onMouseItemLeave = function (item, ev) {
+                if (_this._shouldIgnoreMouseEvent()) {
+                    return;
+                }
+                if (_this._enterTimerId !== undefined) {
+                    _this._async.clearTimeout(_this._enterTimerId);
+                    _this._enterTimerId = undefined;
+                }
+                if (_this.state.expandedMenuItemKey !== undefined) {
+                    return;
+                }
+                /**
+                 * IE11 focus() method forces parents to scroll to top of element.
+                 * Edge and IE expose a setActive() function for focusable divs that
+                 * sets the page focus but does not scroll the parent element.
+                 */
+                if (_this._host.setActive) {
+                    try {
+                        _this._host.setActive();
+                    }
+                    catch (e) {
+                        /* no-op */
+                    }
+                }
+                else {
+                    _this._host.focus();
+                }
+            };
+            _this._onItemMouseDown = function (item, ev) {
+                if (item.onMouseDown) {
+                    item.onMouseDown(item, ev);
+                }
+            };
+            _this._onItemClick = function (item, ev) {
+                _this._onItemClickBase(item, ev, ev.currentTarget);
+            };
+            _this._onItemClickBase = function (item, ev, target) {
+                var items = getSubmenuItems(item);
+                // Cancel a async menu item hover timeout action from being taken and instead
+                // just trigger the click event instead.
+                _this._cancelSubMenuTimer();
+                if (!index_1.hasSubmenu(item) && (!items || !items.length)) {
+                    // This is an item without a menu. Click it.
+                    _this._executeItemClick(item, ev);
+                }
+                else {
+                    if (item.key !== _this.state.expandedMenuItemKey) {
+                        // This has a collapsed sub menu. Expand it.
+                        _this.setState({
+                            // When Edge + Narrator are used together (regardless of if the button is in a form or not), pressing
+                            // "Enter" fires this method and not _onMenuKeyDown. Checking ev.nativeEvent.detail differentiates
+                            // between a real click event and a keypress event (detail should be the number of mouse clicks).
+                            // ...Plot twist! For a real click event in IE 11, detail is always 0 (Edge sets it properly to 1).
+                            // So we also check the pointerType property, which both Edge and IE set to "mouse" for real clicks
+                            // and "" for pressing "Enter" with Narrator on.
+                            expandedByMouseClick: ev.nativeEvent.detail !== 0 || ev.nativeEvent.pointerType === 'mouse',
+                        });
+                        _this._onItemSubMenuExpand(item, target);
+                    }
+                }
+                ev.stopPropagation();
+                ev.preventDefault();
+            };
+            _this._onAnchorClick = function (item, ev) {
+                _this._executeItemClick(item, ev);
+                ev.stopPropagation();
+            };
+            _this._executeItemClick = function (item, ev) {
+                if (item.disabled || item.isDisabled) {
+                    return;
+                }
+                var dismiss = false;
+                if (item.onClick) {
+                    dismiss = !!item.onClick(ev, item);
+                }
+                else if (_this.props.onItemClick) {
+                    dismiss = !!_this.props.onItemClick(ev, item);
+                }
+                if (dismiss || !ev.defaultPrevented) {
+                    _this.dismiss(ev, true);
+                    // This should be removed whenever possible.
+                    // This ensures that the hidden dismissal action maintains the same behavior.
+                    // If the menu is being dismissed then the previously focused element should
+                    // get focused since the dismiss was triggered by a user click on an item
+                    // Rather than focus being lost.
+                    _this._focusingPreviousElement = true;
+                }
+            };
+            _this._onItemKeyDown = function (item, ev) {
+                var openKey = Utilities_1.getRTL(_this.props.theme) ? Utilities_1.KeyCodes.left : Utilities_1.KeyCodes.right;
+                if (!item.disabled &&
+                    (ev.which === openKey || ev.which === Utilities_1.KeyCodes.enter || (ev.which === Utilities_1.KeyCodes.down && (ev.altKey || ev.metaKey)))) {
+                    _this.setState({
+                        expandedByMouseClick: false,
+                    });
+                    _this._onItemSubMenuExpand(item, ev.currentTarget);
+                    ev.preventDefault();
+                }
+            };
+            // Cancel a async menu item hover timeout action from being taken and instead
+            // do new upcoming behavior
+            _this._cancelSubMenuTimer = function () {
+                if (_this._enterTimerId !== undefined) {
+                    _this._async.clearTimeout(_this._enterTimerId);
+                    _this._enterTimerId = undefined;
+                }
+            };
+            _this._onItemSubMenuExpand = function (item, target) {
+                if (_this.state.expandedMenuItemKey !== item.key) {
+                    if (_this.state.expandedMenuItemKey) {
+                        _this._onSubMenuDismiss();
+                    }
+                    // Focus the target to ensure when we close it, we're focusing on the correct element.
+                    target.focus();
+                    _this.setState({
+                        expandedMenuItemKey: item.key,
+                        submenuTarget: target,
+                    });
+                }
+            };
+            /**
+             * This function is called ASYNCHRONOUSLY, and so there is a chance it is called
+             * after the component is unmounted. The _mounted property is added to prevent
+             * from calling setState() after unmount. Do NOT copy this pattern in synchronous
+             * code.
+             */
+            _this._onSubMenuDismiss = function (ev, dismissAll) {
+                if (dismissAll) {
+                    _this.dismiss(ev, dismissAll);
+                }
+                else if (_this._mounted) {
+                    _this.setState({
+                        dismissedMenuItemKey: _this.state.expandedMenuItemKey,
+                        expandedMenuItemKey: undefined,
+                        submenuTarget: undefined,
+                    });
+                }
+            };
+            _this._getSubMenuId = function (item) {
+                var subMenuId = _this.state.subMenuId;
+                if (item.subMenuProps && item.subMenuProps.id) {
+                    subMenuId = item.subMenuProps.id;
+                }
+                return subMenuId;
+            };
+            _this._onPointerAndTouchEvent = function (ev) {
+                _this._cancelSubMenuTimer();
+            };
+            _this._async = new Utilities_1.Async(_this);
+            _this._events = new Utilities_1.EventGroup(_this);
+            Utilities_1.initializeComponentRef(_this);
+            Utilities_1.warnDeprecations(COMPONENT_NAME, props, {
+                getMenuClassNames: 'styles',
+            });
+            _this.state = {
+                contextualMenuItems: undefined,
+                subMenuId: Utilities_1.getId('ContextualMenu'),
+            };
+            _this._id = props.id || Utilities_1.getId('ContextualMenu');
+            _this._focusingPreviousElement = false;
+            _this._isScrollIdle = true;
+            _this._shouldUpdateFocusOnMouseEvent = !_this.props.delayUpdateFocusOnHover;
+            _this._gotMouseMove = false;
+            return _this;
+        }
+        ContextualMenuBase.prototype.shouldComponentUpdate = function (newProps, newState) {
+            if (!newProps.shouldUpdateWhenHidden && this.props.hidden && newProps.hidden) {
+                // Do not update when hidden.
+                return false;
+            }
+            return !Utilities_1.shallowCompare(this.props, newProps) || !Utilities_1.shallowCompare(this.state, newState);
+        };
+        ContextualMenuBase.prototype.UNSAFE_componentWillUpdate = function (newProps) {
+            if (newProps.target !== this.props.target) {
+                var newTarget = newProps.target;
+                this._setTargetWindowAndElement(newTarget);
+            }
+            if (this._isHidden(newProps) !== this._isHidden(this.props)) {
+                if (this._isHidden(newProps)) {
+                    this._onMenuClosed();
+                }
+                else {
+                    this._onMenuOpened();
+                    this._previousActiveElement = this._targetWindow
+                        ? this._targetWindow.document.activeElement
+                        : undefined;
+                }
+            }
+            if (newProps.delayUpdateFocusOnHover !== this.props.delayUpdateFocusOnHover) {
+                // update shouldUpdateFocusOnMouseEvent to follow what was passed in
+                this._shouldUpdateFocusOnMouseEvent = !newProps.delayUpdateFocusOnHover;
+                // If shouldUpdateFocusOnMouseEvent is false, we need to reset gotMouseMove to false
+                this._gotMouseMove = this._shouldUpdateFocusOnMouseEvent && this._gotMouseMove;
+            }
+        };
+        // Invoked once, both on the client and server, immediately before the initial rendering occurs.
+        ContextualMenuBase.prototype.UNSAFE_componentWillMount = function () {
+            var target = this.props.target;
+            this._setTargetWindowAndElement(target);
+            if (!this.props.hidden) {
+                this._previousActiveElement = this._targetWindow
+                    ? this._targetWindow.document.activeElement
+                    : undefined;
+            }
+        };
+        // Invoked once, only on the client (not on the server), immediately after the initial rendering occurs.
+        ContextualMenuBase.prototype.componentDidMount = function () {
+            if (!this.props.hidden) {
+                this._onMenuOpened();
+            }
+            this._mounted = true;
+        };
+        // Invoked immediately before a component is unmounted from the DOM.
+        ContextualMenuBase.prototype.componentWillUnmount = function () {
+            if (this.props.onMenuDismissed) {
+                this.props.onMenuDismissed(this.props);
+            }
+            this._events.dispose();
+            this._async.dispose();
+            this._mounted = false;
+        };
+        ContextualMenuBase.prototype.render = function () {
+            var _this = this;
+            var isBeakVisible = this.props.isBeakVisible;
+            var _a = this.props, items = _a.items, labelElementId = _a.labelElementId, id = _a.id, className = _a.className, beakWidth = _a.beakWidth, directionalHint = _a.directionalHint, directionalHintForRTL = _a.directionalHintForRTL, alignTargetEdge = _a.alignTargetEdge, gapSpace = _a.gapSpace, coverTarget = _a.coverTarget, ariaLabel = _a.ariaLabel, doNotLayer = _a.doNotLayer, target = _a.target, bounds = _a.bounds, useTargetWidth = _a.useTargetWidth, useTargetAsMinWidth = _a.useTargetAsMinWidth, directionalHintFixed = _a.directionalHintFixed, shouldFocusOnMount = _a.shouldFocusOnMount, shouldFocusOnContainer = _a.shouldFocusOnContainer, title = _a.title, styles = _a.styles, theme = _a.theme, calloutProps = _a.calloutProps, _b = _a.onRenderSubMenu, onRenderSubMenu = _b === void 0 ? this._onRenderSubMenu : _b, _c = _a.onRenderMenuList, onRenderMenuList = _c === void 0 ? this._onRenderMenuList : _c, focusZoneProps = _a.focusZoneProps, 
+            // eslint-disable-next-line deprecation/deprecation
+            getMenuClassNames = _a.getMenuClassNames;
+            this._classNames = getMenuClassNames
+                ? getMenuClassNames(theme, className)
+                : getClassNames(styles, {
+                    theme: theme,
+                    className: className,
+                });
+            var hasIcons = itemsHaveIcons(items);
+            function itemsHaveIcons(contextualMenuItems) {
+                for (var _i = 0, contextualMenuItems_1 = contextualMenuItems; _i < contextualMenuItems_1.length; _i++) {
+                    var item = contextualMenuItems_1[_i];
+                    if (item.iconProps) {
+                        return true;
+                    }
+                    if (item.itemType === ContextualMenu_types_1.ContextualMenuItemType.Section &&
+                        item.sectionProps &&
+                        itemsHaveIcons(item.sectionProps.items)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            this._adjustedFocusZoneProps = tslib_1.__assign(tslib_1.__assign({}, focusZoneProps), { direction: this._getFocusZoneDirection() });
+            var hasCheckmarks = canAnyMenuItemsCheck(items);
+            var submenuProps = this.state.expandedMenuItemKey && this.props.hidden !== true ? this._getSubmenuProps() : null;
+            isBeakVisible = isBeakVisible === undefined ? this.props.responsiveMode <= withResponsiveMode_1.ResponsiveMode.medium : isBeakVisible;
+            /**
+             * When useTargetWidth is true, get the width of the target element and apply it for the context menu container
+             */
+            var contextMenuStyle;
+            var targetAsHtmlElement = this._target;
+            if ((useTargetWidth || useTargetAsMinWidth) && targetAsHtmlElement && targetAsHtmlElement.offsetWidth) {
+                var targetBoundingRect = targetAsHtmlElement.getBoundingClientRect();
+                var targetWidth = targetBoundingRect.width - 2 /* Accounts for 1px border */;
+                if (useTargetWidth) {
+                    contextMenuStyle = {
+                        width: targetWidth,
+                    };
+                }
+                else if (useTargetAsMinWidth) {
+                    contextMenuStyle = {
+                        minWidth: targetWidth,
+                    };
+                }
+            }
+            // The menu should only return if items were provided, if no items were provided then it should not appear.
+            if (items && items.length > 0) {
+                var totalItemCount = 0;
+                for (var _i = 0, items_1 = items; _i < items_1.length; _i++) {
+                    var item = items_1[_i];
+                    if (item.itemType !== ContextualMenu_types_1.ContextualMenuItemType.Divider && item.itemType !== ContextualMenu_types_1.ContextualMenuItemType.Header) {
+                        var itemCount = item.customOnRenderListLength ? item.customOnRenderListLength : 1;
+                        totalItemCount += itemCount;
+                    }
+                }
+                var calloutStyles = this._classNames.subComponentStyles
+                    ? this._classNames.subComponentStyles.callout
+                    : undefined;
+                return (React.createElement(Callout_1.Callout, tslib_1.__assign({ styles: calloutStyles, onRestoreFocus: this._tryFocusPreviousActiveElement }, calloutProps, { target: target, isBeakVisible: isBeakVisible, beakWidth: beakWidth, directionalHint: directionalHint, directionalHintForRTL: directionalHintForRTL, gapSpace: gapSpace, coverTarget: coverTarget, doNotLayer: doNotLayer, className: Utilities_1.css('ms-ContextualMenu-Callout', calloutProps && calloutProps.className), setInitialFocus: shouldFocusOnMount, onDismiss: this.props.onDismiss, onScroll: this._onScroll, bounds: bounds, directionalHintFixed: directionalHintFixed, alignTargetEdge: alignTargetEdge, hidden: this.props.hidden }),
+                    React.createElement("div", { "aria-label": ariaLabel, "aria-labelledby": labelElementId, style: contextMenuStyle, ref: function (host) { return (_this._host = host); }, id: id, className: this._classNames.container, tabIndex: shouldFocusOnContainer ? 0 : -1, onKeyDown: this._onMenuKeyDown, onKeyUp: this._onKeyUp, onFocusCapture: this._onMenuFocusCapture },
+                        title && React.createElement("div", { className: this._classNames.title },
+                            " ",
+                            title,
+                            " "),
+                        items && items.length ? (React.createElement(FocusZone_1.FocusZone, tslib_1.__assign({ className: this._classNames.root, isCircularNavigation: true, handleTabKey: FocusZone_1.FocusZoneTabbableElements.all }, this._adjustedFocusZoneProps), onRenderMenuList({
+                            items: items,
+                            totalItemCount: totalItemCount,
+                            hasCheckmarks: hasCheckmarks,
+                            hasIcons: hasIcons,
+                            defaultMenuItemRenderer: this._defaultMenuItemRenderer,
+                        }, this._onRenderMenuList))) : null,
+                        submenuProps && onRenderSubMenu(submenuProps, this._onRenderSubMenu))));
+            }
+            else {
+                return null;
+            }
+        };
+        /**
+         * Return whether the contextual menu is hidden.
+         * Undefined value for hidden is equivalent to hidden being false.
+         * @param props - Props for the component
+         */
+        ContextualMenuBase.prototype._isHidden = function (props) {
+            return !!props.hidden;
+        };
+        ContextualMenuBase.prototype._onMenuOpened = function () {
+            this._events.on(this._targetWindow, 'resize', this.dismiss);
+            this._shouldUpdateFocusOnMouseEvent = !this.props.delayUpdateFocusOnHover;
+            this._gotMouseMove = false;
+            this.props.onMenuOpened && this.props.onMenuOpened(this.props);
+        };
+        ContextualMenuBase.prototype._onMenuClosed = function () {
+            this._events.off(this._targetWindow, 'resize', this.dismiss);
+            // This is kept for backwards compatability with hidden for right now.
+            // This preserves the way that this behaved in the past
+            // TODO find a better way to handle this by using the same conventions that
+            // Popup uses to determine if focus is contained when dismissal occurs
+            this._tryFocusPreviousActiveElement({
+                containsFocus: this._focusingPreviousElement,
+                documentContainsFocus: this._targetWindow.document.hasFocus(),
+                originalElement: this._previousActiveElement,
+            });
+            this._focusingPreviousElement = false;
+            if (this.props.onMenuDismissed) {
+                this.props.onMenuDismissed(this.props);
+            }
+            this._shouldUpdateFocusOnMouseEvent = !this.props.delayUpdateFocusOnHover;
+            // We need to dismiss any submenu related state properties,
+            // so that when the menu is shown again, the submenu is collapsed
+            this.setState({
+                expandedByMouseClick: undefined,
+                dismissedMenuItemKey: undefined,
+                expandedMenuItemKey: undefined,
+                submenuTarget: undefined,
+            });
+        };
+        /**
+         * Gets the focusZoneDirection by using the arrowDirection if specified,
+         * the direction specificed in the focusZoneProps, or defaults to FocusZoneDirection.vertical
+         */
+        ContextualMenuBase.prototype._getFocusZoneDirection = function () {
+            var focusZoneProps = this.props.focusZoneProps;
+            return focusZoneProps && focusZoneProps.direction !== undefined
+                ? focusZoneProps.direction
+                : FocusZone_1.FocusZoneDirection.vertical;
+        };
+        ContextualMenuBase.prototype._onRenderSubMenu = function (subMenuProps, defaultRender) {
+            throw Error('ContextualMenuBase: onRenderSubMenu callback is null or undefined. ' +
+                'Please ensure to set `onRenderSubMenu` property either manually or with `styled` helper.');
+        };
+        ContextualMenuBase.prototype._renderSectionItem = function (sectionItem, 
+        // eslint-disable-next-line deprecation/deprecation
+        menuClassNames, index, hasCheckmarks, hasIcons) {
+            var _this = this;
+            var _a;
+            var sectionProps = sectionItem.sectionProps;
+            if (!sectionProps) {
+                return;
+            }
+            var headerItem;
+            var groupProps;
+            if (sectionProps.title) {
+                var headerContextualMenuItem = undefined;
+                var ariaLabellledby = '';
+                if (typeof sectionProps.title === 'string') {
+                    // Since title is a user-facing string, it needs to be stripped
+                    // of whitespace in order to build a valid element ID
+                    var id = this._id + sectionProps.title.replace(/\s/g, '');
+                    headerContextualMenuItem = {
+                        key: "section-" + sectionProps.title + "-title",
+                        itemType: ContextualMenu_types_1.ContextualMenuItemType.Header,
+                        text: sectionProps.title,
+                        id: id,
+                    };
+                    ariaLabellledby = id;
+                }
+                else {
+                    headerContextualMenuItem = sectionProps.title;
+                    ariaLabellledby = this._id + ((_a = sectionProps.title.text) === null || _a === void 0 ? void 0 : _a.replace(/\s/g, ''));
+                }
+                if (headerContextualMenuItem) {
+                    groupProps = {
+                        role: 'group',
+                        'aria-labelledby': ariaLabellledby,
+                    };
+                    headerItem = this._renderHeaderMenuItem(headerContextualMenuItem, menuClassNames, index, hasCheckmarks, hasIcons);
+                }
+            }
+            if (sectionProps.items && sectionProps.items.length > 0) {
+                return (React.createElement("li", { role: "presentation", key: sectionProps.key || sectionItem.key || "section-" + index },
+                    React.createElement("div", tslib_1.__assign({}, groupProps),
+                        React.createElement("ul", { className: this._classNames.list },
+                            sectionProps.topDivider && this._renderSeparator(index, menuClassNames, true, true),
+                            headerItem &&
+                                this._renderListItem(headerItem, sectionItem.key || index, menuClassNames, sectionItem.title),
+                            sectionProps.items.map(function (contextualMenuItem, itemsIndex) {
+                                return _this._renderMenuItem(contextualMenuItem, itemsIndex, itemsIndex, sectionProps.items.length, hasCheckmarks, hasIcons);
+                            }),
+                            sectionProps.bottomDivider && this._renderSeparator(index, menuClassNames, false, true)))));
+            }
+        };
+        ContextualMenuBase.prototype._renderListItem = function (content, key, classNames, // eslint-disable-line deprecation/deprecation
+        title) {
+            return (React.createElement("li", { role: "presentation", title: title, key: key, className: classNames.item }, content));
+        };
+        ContextualMenuBase.prototype._renderSeparator = function (index, classNames, // eslint-disable-line deprecation/deprecation
+        top, fromSection) {
+            if (fromSection || index > 0) {
+                return (React.createElement("li", { role: "separator", key: 'separator-' + index + (top === undefined ? '' : top ? '-top' : '-bottom'), className: classNames.divider, "aria-hidden": "true" }));
+            }
+            return null;
+        };
+        ContextualMenuBase.prototype._renderNormalItem = function (item, classNames, // eslint-disable-line deprecation/deprecation
+        index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons) {
+            if (item.onRender) {
+                return item.onRender(tslib_1.__assign({ 'aria-posinset': focusableElementIndex + 1, 'aria-setsize': totalItemCount }, item), this.dismiss);
+            }
+            if (item.href) {
+                return this._renderAnchorMenuItem(item, classNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons);
+            }
+            if (item.split && index_1.hasSubmenu(item)) {
+                return this._renderSplitButton(item, classNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons);
+            }
+            return this._renderButtonItem(item, classNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons);
+        };
+        ContextualMenuBase.prototype._renderHeaderMenuItem = function (item, 
+        // eslint-disable-next-line deprecation/deprecation
+        classNames, index, hasCheckmarks, hasIcons) {
+            var _a = this.props.contextualMenuItemAs, ChildrenRenderer = _a === void 0 ? ContextualMenuItem_1.ContextualMenuItem : _a;
+            var itemProps = item.itemProps, id = item.id;
+            var divHtmlProperties = itemProps && Utilities_1.getNativeProps(itemProps, Utilities_1.divProperties);
+            return (
+            // eslint-disable-next-line deprecation/deprecation
+            React.createElement("div", tslib_1.__assign({ id: id, className: this._classNames.header }, divHtmlProperties, { style: item.style }),
+                React.createElement(ChildrenRenderer, tslib_1.__assign({ item: item, classNames: classNames, index: index, onCheckmarkClick: hasCheckmarks ? this._onItemClick : undefined, hasIcons: hasIcons }, itemProps))));
+        };
+        ContextualMenuBase.prototype._renderAnchorMenuItem = function (item, 
+        // eslint-disable-next-line deprecation/deprecation
+        classNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons) {
+            var contextualMenuItemAs = this.props.contextualMenuItemAs;
+            var expandedMenuItemKey = this.state.expandedMenuItemKey;
+            return (React.createElement(index_2.ContextualMenuAnchor, { item: item, classNames: classNames, index: index, focusableElementIndex: focusableElementIndex, totalItemCount: totalItemCount, hasCheckmarks: hasCheckmarks, hasIcons: hasIcons, contextualMenuItemAs: contextualMenuItemAs, onItemMouseEnter: this._onItemMouseEnterBase, onItemMouseLeave: this._onMouseItemLeave, onItemMouseMove: this._onItemMouseMoveBase, onItemMouseDown: this._onItemMouseDown, executeItemClick: this._executeItemClick, onItemClick: this._onAnchorClick, onItemKeyDown: this._onItemKeyDown, getSubMenuId: this._getSubMenuId, expandedMenuItemKey: expandedMenuItemKey, openSubMenu: this._onItemSubMenuExpand, dismissSubMenu: this._onSubMenuDismiss, dismissMenu: this.dismiss }));
+        };
+        ContextualMenuBase.prototype._renderButtonItem = function (item, 
+        // eslint-disable-next-line deprecation/deprecation
+        classNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons) {
+            var contextualMenuItemAs = this.props.contextualMenuItemAs;
+            var expandedMenuItemKey = this.state.expandedMenuItemKey;
+            return (React.createElement(index_2.ContextualMenuButton, { item: item, classNames: classNames, index: index, focusableElementIndex: focusableElementIndex, totalItemCount: totalItemCount, hasCheckmarks: hasCheckmarks, hasIcons: hasIcons, contextualMenuItemAs: contextualMenuItemAs, onItemMouseEnter: this._onItemMouseEnterBase, onItemMouseLeave: this._onMouseItemLeave, onItemMouseMove: this._onItemMouseMoveBase, onItemMouseDown: this._onItemMouseDown, executeItemClick: this._executeItemClick, onItemClick: this._onItemClick, onItemClickBase: this._onItemClickBase, onItemKeyDown: this._onItemKeyDown, getSubMenuId: this._getSubMenuId, expandedMenuItemKey: expandedMenuItemKey, openSubMenu: this._onItemSubMenuExpand, dismissSubMenu: this._onSubMenuDismiss, dismissMenu: this.dismiss }));
+        };
+        ContextualMenuBase.prototype._renderSplitButton = function (item, 
+        // eslint-disable-next-line deprecation/deprecation
+        classNames, index, focusableElementIndex, totalItemCount, hasCheckmarks, hasIcons) {
+            var contextualMenuItemAs = this.props.contextualMenuItemAs;
+            var expandedMenuItemKey = this.state.expandedMenuItemKey;
+            return (React.createElement(index_2.ContextualMenuSplitButton, { item: item, classNames: classNames, index: index, focusableElementIndex: focusableElementIndex, totalItemCount: totalItemCount, hasCheckmarks: hasCheckmarks, hasIcons: hasIcons, contextualMenuItemAs: contextualMenuItemAs, onItemMouseEnter: this._onItemMouseEnterBase, onItemMouseLeave: this._onMouseItemLeave, onItemMouseMove: this._onItemMouseMoveBase, onItemMouseDown: this._onItemMouseDown, executeItemClick: this._executeItemClick, onItemClick: this._onItemClick, onItemClickBase: this._onItemClickBase, onItemKeyDown: this._onItemKeyDown, openSubMenu: this._onItemSubMenuExpand, dismissSubMenu: this._onSubMenuDismiss, dismissMenu: this.dismiss, expandedMenuItemKey: expandedMenuItemKey, onTap: this._onPointerAndTouchEvent }));
+        };
+        /**
+         * Returns true if the key for the event is alt (Mac option) or meta (Mac command).
+         */
+        ContextualMenuBase.prototype._isAltOrMeta = function (ev) {
+            return ev.which === Utilities_1.KeyCodes.alt || ev.key === 'Meta';
+        };
+        ContextualMenuBase.prototype._shouldIgnoreMouseEvent = function () {
+            return !this._isScrollIdle || !this._gotMouseMove;
+        };
+        /**
+         * Handles updating focus when mouseEnter or mouseMove fire.
+         * As part of updating focus, This function will also update
+         * the expand/collapse state accordingly.
+         */
+        ContextualMenuBase.prototype._updateFocusOnMouseEvent = function (item, ev, target) {
+            var _this = this;
+            var targetElement = target ? target : ev.currentTarget;
+            var _a = this.props.subMenuHoverDelay, timeoutDuration = _a === void 0 ? NavigationIdleDelay : _a;
+            if (item.key === this.state.expandedMenuItemKey) {
+                return;
+            }
+            if (this._enterTimerId !== undefined) {
+                this._async.clearTimeout(this._enterTimerId);
+                this._enterTimerId = undefined;
+            }
+            // If the menu is not expanded we can update focus without any delay
+            if (this.state.expandedMenuItemKey === undefined) {
+                targetElement.focus();
+            }
+            // Delay updating expanding/dismissing the submenu
+            // and only set focus if we have not already done so
+            if (index_1.hasSubmenu(item)) {
+                ev.stopPropagation();
+                this._enterTimerId = this._async.setTimeout(function () {
+                    targetElement.focus();
+                    _this.setState({
+                        expandedByMouseClick: true,
+                    });
+                    _this._onItemSubMenuExpand(item, targetElement);
+                    _this._enterTimerId = undefined;
+                }, timeoutDuration);
+            }
+            else {
+                this._enterTimerId = this._async.setTimeout(function () {
+                    _this._onSubMenuDismiss(ev);
+                    targetElement.focus();
+                    _this._enterTimerId = undefined;
+                }, timeoutDuration);
+            }
+        };
+        ContextualMenuBase.prototype._getSubmenuProps = function () {
+            var _a = this.state, submenuTarget = _a.submenuTarget, expandedMenuItemKey = _a.expandedMenuItemKey;
+            var item = this._findItemByKey(expandedMenuItemKey);
+            var submenuProps = null;
+            if (item) {
+                submenuProps = {
+                    items: getSubmenuItems(item),
+                    target: submenuTarget,
+                    onDismiss: this._onSubMenuDismiss,
+                    isSubMenu: true,
+                    id: this.state.subMenuId,
+                    shouldFocusOnMount: true,
+                    shouldFocusOnContainer: this.state.expandedByMouseClick,
+                    directionalHint: Utilities_1.getRTL(this.props.theme) ? DirectionalHint_1.DirectionalHint.leftTopEdge : DirectionalHint_1.DirectionalHint.rightTopEdge,
+                    className: this.props.className,
+                    gapSpace: 0,
+                    isBeakVisible: false,
+                };
+                if (item.subMenuProps) {
+                    Utilities_1.assign(submenuProps, item.subMenuProps);
+                }
+            }
+            return submenuProps;
+        };
+        ContextualMenuBase.prototype._findItemByKey = function (key) {
+            var items = this.props.items;
+            return this._findItemByKeyFromItems(key, items);
+        };
+        /**
+         * Returns the item that mathes a given key if any.
+         * @param key - The key of the item to match
+         * @param items - The items to look for the key
+         */
+        ContextualMenuBase.prototype._findItemByKeyFromItems = function (key, items) {
+            for (var _i = 0, items_2 = items; _i < items_2.length; _i++) {
+                var item = items_2[_i];
+                if (item.itemType === ContextualMenu_types_1.ContextualMenuItemType.Section && item.sectionProps) {
+                    var match = this._findItemByKeyFromItems(key, item.sectionProps.items);
+                    if (match) {
+                        return match;
+                    }
+                }
+                else if (item.key && item.key === key) {
+                    return item;
+                }
+            }
+        };
+        ContextualMenuBase.prototype._setTargetWindowAndElement = function (target) {
+            var currentElement = this._host;
+            if (target) {
+                if (typeof target === 'string') {
+                    var currentDoc = Utilities_1.getDocument(currentElement);
+                    this._target = currentDoc ? currentDoc.querySelector(target) : null;
+                    this._targetWindow = Utilities_1.getWindow(currentElement);
+                    // Cast to any prevents error about stopPropagation always existing
+                }
+                else if (target.stopPropagation) {
+                    this._targetWindow = Utilities_1.getWindow(target.target);
+                    this._target = target;
+                }
+                else if (
+                // eslint-disable-next-line deprecation/deprecation
+                (target.left !== undefined || target.x !== undefined) &&
+                    // eslint-disable-next-line deprecation/deprecation
+                    (target.top !== undefined || target.y !== undefined)) {
+                    this._targetWindow = Utilities_1.getWindow(currentElement);
+                    this._target = target;
+                }
+                else if (target.current !== undefined) {
+                    this._target = target.current;
+                    this._targetWindow = Utilities_1.getWindow(this._target);
+                }
+                else {
+                    var targetElement = target;
+                    this._targetWindow = Utilities_1.getWindow(targetElement);
+                    this._target = target;
+                }
+            }
+            else {
+                this._targetWindow = Utilities_1.getWindow(currentElement);
+            }
+        };
+        // The default ContextualMenu properties have no items and beak, the default submenu direction is right and top.
+        ContextualMenuBase.defaultProps = {
+            items: [],
+            shouldFocusOnMount: true,
+            gapSpace: 0,
+            directionalHint: DirectionalHint_1.DirectionalHint.bottomAutoEdge,
+            beakWidth: 16,
+        };
+        ContextualMenuBase = tslib_1.__decorate([
+            withResponsiveMode_1.withResponsiveMode
+        ], ContextualMenuBase);
+        return ContextualMenuBase;
+    }(React.Component));
+    exports.ContextualMenuBase = ContextualMenuBase;
+});
+//# sourceMappingURL=ContextualMenu.base.js.map

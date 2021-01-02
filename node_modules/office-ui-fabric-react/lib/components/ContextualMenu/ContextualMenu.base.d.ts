@@ -1,0 +1,155 @@
+import * as React from 'react';
+import { IContextualMenuProps, IContextualMenuItem } from './ContextualMenu.types';
+import { DirectionalHint } from '../../common/DirectionalHint';
+export interface IContextualMenuState {
+    expandedMenuItemKey?: string;
+    /** True if the menu was expanded by mouse click OR hover (as opposed to by keyboard) */
+    expandedByMouseClick?: boolean;
+    dismissedMenuItemKey?: string;
+    contextualMenuItems?: IContextualMenuItem[];
+    contextualMenuTarget?: Element;
+    submenuTarget?: Element;
+    positions?: any;
+    slideDirectionalClassName?: string;
+    subMenuId?: string;
+    submenuDirection?: DirectionalHint;
+}
+export declare function getSubmenuItems(item: IContextualMenuItem): IContextualMenuItem[] | undefined;
+/**
+ * Returns true if a list of menu items can contain a checkbox
+ */
+export declare function canAnyMenuItemsCheck(items: IContextualMenuItem[]): boolean;
+export declare class ContextualMenuBase extends React.Component<IContextualMenuProps, IContextualMenuState> {
+    static defaultProps: IContextualMenuProps;
+    private _async;
+    private _events;
+    private _id;
+    private _host;
+    private _previousActiveElement;
+    private _enterTimerId;
+    private _targetWindow;
+    private _target;
+    private _isScrollIdle;
+    private _scrollIdleTimeoutId;
+    /** True if the most recent keydown event was for alt (option) or meta (command). */
+    private _lastKeyDownWasAltOrMeta;
+    private _shouldUpdateFocusOnMouseEvent;
+    private _gotMouseMove;
+    private _mounted;
+    private _focusingPreviousElement;
+    private _adjustedFocusZoneProps;
+    private _classNames;
+    constructor(props: IContextualMenuProps);
+    dismiss: (ev?: any, dismissAll?: boolean | undefined) => void;
+    shouldComponentUpdate(newProps: IContextualMenuProps, newState: IContextualMenuState): boolean;
+    UNSAFE_componentWillUpdate(newProps: IContextualMenuProps): void;
+    UNSAFE_componentWillMount(): void;
+    componentDidMount(): void;
+    componentWillUnmount(): void;
+    render(): JSX.Element | null;
+    /**
+     * Return whether the contextual menu is hidden.
+     * Undefined value for hidden is equivalent to hidden being false.
+     * @param props - Props for the component
+     */
+    private _isHidden;
+    private _onMenuOpened;
+    private _onMenuClosed;
+    private _tryFocusPreviousActiveElement;
+    /**
+     * Gets the focusZoneDirection by using the arrowDirection if specified,
+     * the direction specificed in the focusZoneProps, or defaults to FocusZoneDirection.vertical
+     */
+    private _getFocusZoneDirection;
+    private _onRenderSubMenu;
+    private _onRenderMenuList;
+    /**
+     * !!!IMPORTANT!!! Avoid mutating `item: IContextualMenuItem` argument. It will
+     * cause the menu items to always re-render because the component update is based on shallow comparison.
+     */
+    private _renderMenuItem;
+    private _defaultMenuItemRenderer;
+    private _renderSectionItem;
+    private _renderListItem;
+    private _renderSeparator;
+    private _renderNormalItem;
+    private _renderHeaderMenuItem;
+    private _renderAnchorMenuItem;
+    private _renderButtonItem;
+    private _renderSplitButton;
+    private _onKeyDown;
+    private _shouldHandleKeyDown;
+    private _onMenuFocusCapture;
+    private _onKeyUp;
+    /**
+     * We close the menu on key up only if ALL of the following are true:
+     * - Most recent key down was alt or meta (command)
+     * - The alt/meta key down was NOT followed by some other key (such as down/up arrow to
+     *   expand/collapse the menu)
+     * - We're not on a Mac (or iOS)
+     *
+     * This is because on Windows, pressing alt moves focus to the application menu bar or similar,
+     * closing any open context menus. There is not a similar behavior on Macs.
+     */
+    private _shouldHandleKeyUp;
+    /**
+     * Returns true if the key for the event is alt (Mac option) or meta (Mac command).
+     */
+    private _isAltOrMeta;
+    /**
+     * Calls `shouldHandleKey` to determine whether the keyboard event should be handled;
+     * if so, stops event propagation and dismisses menu(s).
+     * @param ev - The keyboard event.
+     * @param shouldHandleKey - Returns whether we should handle this keyboard event.
+     * @param dismissAllMenus - If true, dismiss all menus. Otherwise, dismiss only the current menu.
+     * Only does anything if `shouldHandleKey` returns true.
+     * @returns Whether the event was handled.
+     */
+    private _keyHandler;
+    /**
+     * Checks if the submenu should be closed
+     */
+    private _shouldCloseSubMenu;
+    private _onMenuKeyDown;
+    /**
+     * Scroll handler for the callout to make sure the mouse events
+     * for updating focus are not interacting during scroll
+     */
+    private _onScroll;
+    private _onItemMouseEnterBase;
+    private _onItemMouseMoveBase;
+    private _shouldIgnoreMouseEvent;
+    private _onMouseItemLeave;
+    /**
+     * Handles updating focus when mouseEnter or mouseMove fire.
+     * As part of updating focus, This function will also update
+     * the expand/collapse state accordingly.
+     */
+    private _updateFocusOnMouseEvent;
+    private _onItemMouseDown;
+    private _onItemClick;
+    private _onItemClickBase;
+    private _onAnchorClick;
+    private _executeItemClick;
+    private _onItemKeyDown;
+    private _cancelSubMenuTimer;
+    private _onItemSubMenuExpand;
+    private _getSubmenuProps;
+    private _findItemByKey;
+    /**
+     * Returns the item that mathes a given key if any.
+     * @param key - The key of the item to match
+     * @param items - The items to look for the key
+     */
+    private _findItemByKeyFromItems;
+    /**
+     * This function is called ASYNCHRONOUSLY, and so there is a chance it is called
+     * after the component is unmounted. The _mounted property is added to prevent
+     * from calling setState() after unmount. Do NOT copy this pattern in synchronous
+     * code.
+     */
+    private _onSubMenuDismiss;
+    private _setTargetWindowAndElement;
+    private _getSubMenuId;
+    private _onPointerAndTouchEvent;
+}

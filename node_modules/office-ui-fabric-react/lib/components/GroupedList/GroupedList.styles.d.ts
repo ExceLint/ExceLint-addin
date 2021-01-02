@@ -1,0 +1,2 @@
+import { IGroupedListStyleProps, IGroupedListStyles } from './GroupedList.types';
+export declare const getStyles: (props: IGroupedListStyleProps) => IGroupedListStyles;

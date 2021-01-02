@@ -1,0 +1,90 @@
+﻿.oxdTableClass {
+    border: 1px solid black;
+    border-collapse: separate;
+}
+
+.oxdTdClass {
+    border: 1px solid black;
+    vertical-align: top;
+}
+
+.oxdTdLeft {
+    margin-top: 0;
+    padding-right: 0.75em;
+}
+
+.oxdTdRight {
+    padding: 0.75em;
+}
+
+#oxdTdLeftSpacingDiv {
+    margin: 0;
+    padding: 0;
+    height: 12px;
+}
+
+.apiHead {
+    font-family: "trebuchet MS";
+    font-size: 20px;
+    font-weight: 200 !important;
+    color: #374C67 !important;
+    margin-top: 0;
+    margin-left: 2em;
+    text-indent: -2em;
+    word-wrap: break-word;
+}
+
+.apiSubHead {
+    font-family: "trebuchet MS";
+    font-size: 16px;
+    font-weight: 200 !important;
+    color: #374C67 !important;
+    padding-top: 10px !important;
+    padding-bottom: 6px !important;
+}
+
+.apiPara, .apiSubPara {
+    margin-top: 10px;
+    margin-bottom: 0px;
+    line-height: 1.4;
+}
+
+.apiLi {
+    line-height: 1.43;
+}
+
+.apiCode {
+    font-family: Consolas, 'Courier New', fixed;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 1.5em;
+}
+
+.apiSubPara {
+    margin-left: 1.5em;
+}
+
+.apiArgumentText {
+    margin-left: 3em;
+    text-indent: -1.5em;
+}
+
+#oxdDocToc ul {
+    padding-left: 1.125em;
+    margin-bottom: 3px;
+    margin-top: 3px;
+}
+
+#oxdDocToc li {
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    font-size: 12px;
+    margin-bottom: 3px;
+    margin-top: 3px;
+    padding-right: 0.375em;
+}
+
+#oxdDocToc li a {
+    text-decoration: none;
+}
+
+

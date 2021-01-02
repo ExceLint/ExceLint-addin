@@ -1,0 +1,51 @@
+import * as React from 'react';
+import { IBaseFloatingPicker, IBaseFloatingPickerProps } from './BaseFloatingPicker.types';
+import { ISuggestionsControlProps } from './Suggestions/Suggestions.types';
+import { SuggestionsControl } from './Suggestions/SuggestionsControl';
+import { SuggestionsStore } from './Suggestions/SuggestionsStore';
+export interface IBaseFloatingPickerState {
+    queryString: string;
+    suggestionsVisible?: boolean;
+    didBind: boolean;
+}
+export declare class BaseFloatingPicker<T, P extends IBaseFloatingPickerProps<T>> extends React.Component<P, IBaseFloatingPickerState> implements IBaseFloatingPicker {
+    protected selection: Selection;
+    protected root: React.RefObject<HTMLDivElement>;
+    protected suggestionStore: SuggestionsStore<T>;
+    protected suggestionsControl: React.RefObject<SuggestionsControl<T>>;
+    protected SuggestionsControlOfProperType: new (props: ISuggestionsControlProps<T>) => SuggestionsControl<T>;
+    protected currentPromise: PromiseLike<T[]>;
+    protected isComponentMounted: boolean;
+    private _async;
+    constructor(basePickerProps: P);
+    readonly inputText: string;
+    readonly suggestions: any[];
+    forceResolveSuggestion(): void;
+    readonly currentSelectedSuggestionIndex: number;
+    readonly isSuggestionsShown: boolean;
+    onQueryStringChanged: (queryString: string) => void;
+    hidePicker: () => void;
+    showPicker: (updateValue?: boolean) => void;
+    componentDidMount(): void;
+    componentDidUpdate(): void;
+    componentWillUnmount(): void;
+    UNSAFE_componentWillReceiveProps(newProps: IBaseFloatingPickerProps<T>): void;
+    completeSuggestion: () => void;
+    updateSuggestions(suggestions: T[], forceUpdate?: boolean): void;
+    render(): JSX.Element;
+    protected renderSuggestions(): JSX.Element | null;
+    protected onSelectionChange(): void;
+    protected updateValue(updatedValue: string): void;
+    protected updateSuggestionWithZeroState(): void;
+    protected updateSuggestionsList(suggestions: T[] | PromiseLike<T[]>): void;
+    protected onChange(item: T): void;
+    protected onSuggestionClick: (ev: React.MouseEvent<HTMLElement, MouseEvent>, item: T, index: number) => void;
+    protected onSuggestionRemove: (ev: React.MouseEvent<HTMLElement, MouseEvent>, item: T, index: number) => void;
+    protected onKeyDown: (ev: MouseEvent) => void;
+    private _updateActiveDescendant;
+    private _onResolveSuggestions;
+    private _onValidateInput;
+    private _updateSuggestionsVisible;
+    private _bindToInputElement;
+    private _unbindFromInputElement;
+}

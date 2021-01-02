@@ -1,0 +1,1 @@
+{"version":3,"file":"ResizeGroup.js","sourceRoot":"../src/","sources":["components/ResizeGroup/ResizeGroup.tsx"],"names":[],"mappings":";;;IAEa,QAAA,WAAW,GAAG,kCAAe,CAAC","sourcesContent":["import { ResizeGroupBase } from './ResizeGroup.base';\n\nexport const ResizeGroup = ResizeGroupBase;\n"]}

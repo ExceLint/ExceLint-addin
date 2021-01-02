@@ -1,0 +1,1 @@
+{"version":3,"file":"DateMath.js","sourceRoot":"../src/","sources":["utilities/dateMath/DateMath.ts"],"names":[],"mappings":";;;AAAA,8FAAoE","sourcesContent":["export * from '@fluentui/date-time-utilities/lib/dateMath/dateMath';\n"]}

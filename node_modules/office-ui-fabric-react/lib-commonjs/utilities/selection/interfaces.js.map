@@ -1,0 +1,1 @@
+{"version":3,"file":"interfaces.js","sourceRoot":"../src/","sources":["utilities/selection/interfaces.ts"],"names":[],"mappings":";;AAAA,iDAAsH;AAAjF,uCAAA,gBAAgB,CAAA;AAAE,yCAAA,kBAAkB,CAAA;AAAE,oCAAA,aAAa,CAAA","sourcesContent":["export { IObjectWithKey, ISelection, SELECTION_CHANGE, SelectionDirection, SelectionMode } from '@uifabric/utilities';\n"]}

@@ -1,0 +1,321 @@
+var _a;
+import { __assign, __extends } from "tslib";
+import * as React from 'react';
+import { getClassNames } from './PositioningContainer.styles';
+import { Layer } from '../../../Layer';
+// Utilites/Helpers
+import { DirectionalHint } from '../../../common/DirectionalHint';
+import { css, elementContains, focusFirstChild, getWindow, getDocument, initializeComponentRef, Async, EventGroup, } from '../../../Utilities';
+import { getMaxHeight, positionElement, RectangleEdge, } from '../../../utilities/positioning';
+import { AnimationClassNames, mergeStyles } from '../../../Styling';
+var OFF_SCREEN_STYLE = { opacity: 0 };
+// In order for some of the max height logic to work
+// properly we need to set the border.
+// The value is abitrary.
+var BORDER_WIDTH = 1;
+var SLIDE_ANIMATIONS = (_a = {},
+    _a[RectangleEdge.top] = 'slideUpIn20',
+    _a[RectangleEdge.bottom] = 'slideDownIn20',
+    _a[RectangleEdge.left] = 'slideLeftIn20',
+    _a[RectangleEdge.right] = 'slideRightIn20',
+    _a);
+var PositioningContainer = /** @class */ (function (_super) {
+    __extends(PositioningContainer, _super);
+    function PositioningContainer(props) {
+        var _this = _super.call(this, props) || this;
+        /**
+         * The primary positioned div.
+         */
+        _this._positionedHost = React.createRef();
+        // @TODO rename to reflect the name of this class
+        _this._contentHost = React.createRef();
+        /**
+         * Deprecated, use `onResize` instead.
+         * @deprecated Use `onResize` instead.
+         */
+        _this.dismiss = function (ev) {
+            _this.onResize(ev);
+        };
+        _this.onResize = function (ev) {
+            var onDismiss = _this.props.onDismiss;
+            if (onDismiss) {
+                onDismiss(ev);
+            }
+            else {
+                _this._updateAsyncPosition();
+            }
+        };
+        _this._setInitialFocus = function () {
+            if (_this._contentHost.current && _this.props.setInitialFocus && !_this._didSetInitialFocus && _this.state.positions) {
+                _this._didSetInitialFocus = true;
+                focusFirstChild(_this._contentHost.current);
+            }
+        };
+        _this._onComponentDidMount = function () {
+            // This is added so the positioningContainer will dismiss when the window is scrolled
+            // but not when something inside the positioningContainer is scrolled. The delay seems
+            // to be required to avoid React firing an async focus event in IE from
+            // the target changing focus quickly prior to rendering the positioningContainer.
+            _this._async.setTimeout(function () {
+                _this._events.on(_this._targetWindow, 'scroll', _this._async.throttle(_this._dismissOnScroll, 10), true);
+                _this._events.on(_this._targetWindow, 'resize', _this._async.throttle(_this.onResize, 10), true);
+                _this._events.on(_this._targetWindow.document.body, 'focus', _this._dismissOnLostFocus, true);
+                _this._events.on(_this._targetWindow.document.body, 'click', _this._dismissOnLostFocus, true);
+            }, 0);
+            if (_this.props.onLayerMounted) {
+                _this.props.onLayerMounted();
+            }
+            _this._updateAsyncPosition();
+            _this._setHeightOffsetEveryFrame();
+        };
+        initializeComponentRef(_this);
+        _this._async = new Async(_this);
+        _this._events = new EventGroup(_this);
+        _this._didSetInitialFocus = false;
+        _this.state = {
+            positions: undefined,
+            heightOffset: 0,
+        };
+        _this._positionAttempts = 0;
+        return _this;
+    }
+    PositioningContainer.prototype.UNSAFE_componentWillMount = function () {
+        this._setTargetWindowAndElement(this._getTarget());
+    };
+    PositioningContainer.prototype.componentDidMount = function () {
+        this._onComponentDidMount();
+    };
+    PositioningContainer.prototype.componentDidUpdate = function () {
+        this._setInitialFocus();
+        this._updateAsyncPosition();
+    };
+    PositioningContainer.prototype.UNSAFE_componentWillUpdate = function (newProps) {
+        // If the target element changed, find the new one. If we are tracking
+        // target with class name, always find element because we do not know if
+        // fabric has rendered a new element and disposed the old element.
+        var newTarget = this._getTarget(newProps);
+        var oldTarget = this._getTarget();
+        if (newTarget !== oldTarget || typeof newTarget === 'string' || newTarget instanceof String) {
+            this._maxHeight = undefined;
+            this._setTargetWindowAndElement(newTarget);
+        }
+        if (newProps.offsetFromTarget !== this.props.offsetFromTarget) {
+            this._maxHeight = undefined;
+        }
+        if (newProps.finalHeight !== this.props.finalHeight) {
+            this._setHeightOffsetEveryFrame();
+        }
+    };
+    PositioningContainer.prototype.componentWillUnmount = function () {
+        this._async.dispose();
+        this._events.dispose();
+    };
+    PositioningContainer.prototype.render = function () {
+        // If there is no target window then we are likely in server side rendering and we should not render anything.
+        if (!this._targetWindow) {
+            return null;
+        }
+        var _a = this.props, className = _a.className, positioningContainerWidth = _a.positioningContainerWidth, positioningContainerMaxHeight = _a.positioningContainerMaxHeight, children = _a.children;
+        var positions = this.state.positions;
+        var styles = getClassNames();
+        var directionalClassName = positions && positions.targetEdge ? AnimationClassNames[SLIDE_ANIMATIONS[positions.targetEdge]] : '';
+        var getContentMaxHeight = this._getMaxHeight() + this.state.heightOffset;
+        var contentMaxHeight = positioningContainerMaxHeight && positioningContainerMaxHeight > getContentMaxHeight
+            ? getContentMaxHeight
+            : positioningContainerMaxHeight;
+        var content = (React.createElement("div", { ref: this._positionedHost, className: css('ms-PositioningContainer', styles.container) },
+            React.createElement("div", { className: mergeStyles('ms-PositioningContainer-layerHost', styles.root, className, directionalClassName, !!positioningContainerWidth && { width: positioningContainerWidth }), style: positions ? positions.elementPosition : OFF_SCREEN_STYLE, 
+                // Safari and Firefox on Mac OS requires this to back-stop click events so focus remains in the Callout.
+                // See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#Clicking_and_focus
+                tabIndex: -1, ref: this._contentHost },
+                children,
+                // @TODO apply to the content container
+                contentMaxHeight)));
+        return this.props.doNotLayer ? content : React.createElement(Layer, null, content);
+    };
+    PositioningContainer.prototype._dismissOnScroll = function (ev) {
+        var preventDismissOnScroll = this.props.preventDismissOnScroll;
+        if (this.state.positions && !preventDismissOnScroll) {
+            this._dismissOnLostFocus(ev);
+        }
+    };
+    PositioningContainer.prototype._dismissOnLostFocus = function (ev) {
+        var target = ev.target;
+        var clickedOutsideCallout = this._positionedHost.current && !elementContains(this._positionedHost.current, target);
+        if ((!this._target && clickedOutsideCallout) ||
+            (ev.target !== this._targetWindow &&
+                clickedOutsideCallout &&
+                (this._target.stopPropagation ||
+                    !this._target ||
+                    (target !== this._target && !elementContains(this._target, target))))) {
+            this.onResize(ev);
+        }
+    };
+    PositioningContainer.prototype._updateAsyncPosition = function () {
+        var _this = this;
+        this._async.requestAnimationFrame(function () { return _this._updatePosition(); });
+    };
+    PositioningContainer.prototype._updatePosition = function () {
+        var positions = this.state.positions;
+        var _a = this.props, offsetFromTarget = _a.offsetFromTarget, onPositioned = _a.onPositioned;
+        var hostElement = this._positionedHost.current;
+        var positioningContainerElement = this._contentHost.current;
+        if (hostElement && positioningContainerElement) {
+            var currentProps = __assign({}, this.props);
+            currentProps.bounds = this._getBounds();
+            currentProps.target = this._target;
+            if (document.body.contains(currentProps.target)) {
+                currentProps.gapSpace = offsetFromTarget;
+                var newPositions_1 = positionElement(currentProps, hostElement, positioningContainerElement);
+                // Set the new position only when the positions are not exists or one of the new positioningContainer positions
+                // are different. The position should not change if the position is within 2 decimal places.
+                if ((!positions && newPositions_1) ||
+                    (positions && newPositions_1 && !this._arePositionsEqual(positions, newPositions_1) && this._positionAttempts < 5)) {
+                    // We should not reposition the positioningContainer more than a few times, if it is then the content is
+                    // likely resizing and we should stop trying to reposition to prevent a stack overflow.
+                    this._positionAttempts++;
+                    this.setState({
+                        positions: newPositions_1,
+                    }, function () {
+                        if (onPositioned) {
+                            onPositioned(newPositions_1);
+                        }
+                    });
+                }
+                else {
+                    this._positionAttempts = 0;
+                    if (onPositioned) {
+                        onPositioned(newPositions_1);
+                    }
+                }
+            }
+            else if (positions !== undefined) {
+                this.setState({
+                    positions: undefined,
+                });
+            }
+        }
+    };
+    PositioningContainer.prototype._getBounds = function () {
+        if (!this._positioningBounds) {
+            var currentBounds = this.props.bounds;
+            if (!currentBounds) {
+                currentBounds = {
+                    top: 0 + this.props.minPagePadding,
+                    left: 0 + this.props.minPagePadding,
+                    right: this._targetWindow.innerWidth - this.props.minPagePadding,
+                    bottom: this._targetWindow.innerHeight - this.props.minPagePadding,
+                    width: this._targetWindow.innerWidth - this.props.minPagePadding * 2,
+                    height: this._targetWindow.innerHeight - this.props.minPagePadding * 2,
+                };
+            }
+            this._positioningBounds = currentBounds;
+        }
+        return this._positioningBounds;
+    };
+    /**
+     * Return the maximum height the container can grow to
+     * without going out of the specified bounds
+     */
+    PositioningContainer.prototype._getMaxHeight = function () {
+        var _a = this.props, directionalHintFixed = _a.directionalHintFixed, offsetFromTarget = _a.offsetFromTarget, directionalHint = _a.directionalHint;
+        if (!this._maxHeight) {
+            if (directionalHintFixed && this._target) {
+                var gapSpace = offsetFromTarget ? offsetFromTarget : 0;
+                this._maxHeight = getMaxHeight(this._target, directionalHint, gapSpace, this._getBounds());
+            }
+            else {
+                this._maxHeight = this._getBounds().height - BORDER_WIDTH * 2;
+            }
+        }
+        return this._maxHeight;
+    };
+    PositioningContainer.prototype._arePositionsEqual = function (positions, newPosition) {
+        return this._comparePositions(positions.elementPosition, newPosition.elementPosition);
+    };
+    PositioningContainer.prototype._comparePositions = function (oldPositions, newPositions) {
+        for (var key in newPositions) {
+            if (newPositions.hasOwnProperty(key)) {
+                var oldPositionEdge = oldPositions[key];
+                var newPositionEdge = newPositions[key];
+                if (oldPositionEdge && newPositionEdge) {
+                    if (oldPositionEdge.toFixed(2) !== newPositionEdge.toFixed(2)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    };
+    PositioningContainer.prototype._setTargetWindowAndElement = function (target) {
+        var currentElement = this._positionedHost.current;
+        if (target) {
+            if (typeof target === 'string') {
+                var currentDoc = getDocument();
+                this._target = currentDoc ? currentDoc.querySelector(target) : null;
+                this._targetWindow = getWindow(currentElement);
+                // Cast to any prevents error about stopPropagation always existing
+            }
+            else if (target.stopPropagation) {
+                this._targetWindow = getWindow(target.target);
+                this._target = target;
+            }
+            else if (
+            // eslint-disable-next-line deprecation/deprecation
+            (target.left !== undefined || target.x !== undefined) &&
+                // eslint-disable-next-line deprecation/deprecation
+                (target.top !== undefined || target.y !== undefined)) {
+                this._targetWindow = getWindow(currentElement);
+                this._target = target;
+            }
+            else {
+                var targetElement = target;
+                this._targetWindow = getWindow(targetElement);
+                this._target = target;
+            }
+        }
+        else {
+            this._targetWindow = getWindow(currentElement);
+        }
+    };
+    /**
+     * Animates the height if finalHeight was given.
+     */
+    PositioningContainer.prototype._setHeightOffsetEveryFrame = function () {
+        var _this = this;
+        if (this._contentHost && this.props.finalHeight) {
+            this._setHeightOffsetTimer = this._async.requestAnimationFrame(function () {
+                if (!_this._contentHost.current) {
+                    return;
+                }
+                var positioningContainerMainElem = _this._contentHost.current.lastChild;
+                var cardScrollHeight = positioningContainerMainElem.scrollHeight;
+                var cardCurrHeight = positioningContainerMainElem.offsetHeight;
+                var scrollDiff = cardScrollHeight - cardCurrHeight;
+                _this.setState({
+                    heightOffset: _this.state.heightOffset + scrollDiff,
+                });
+                if (positioningContainerMainElem.offsetHeight < _this.props.finalHeight) {
+                    _this._setHeightOffsetEveryFrame();
+                }
+                else {
+                    _this._async.cancelAnimationFrame(_this._setHeightOffsetTimer);
+                }
+            });
+        }
+    };
+    PositioningContainer.prototype._getTarget = function (props) {
+        if (props === void 0) { props = this.props; }
+        var target = props.target;
+        return target;
+    };
+    PositioningContainer.defaultProps = {
+        preventDismissOnScroll: false,
+        offsetFromTarget: 0,
+        minPagePadding: 8,
+        directionalHint: DirectionalHint.bottomAutoEdge,
+    };
+    return PositioningContainer;
+}(React.Component));
+export { PositioningContainer };
+//# sourceMappingURL=PositioningContainer.js.map

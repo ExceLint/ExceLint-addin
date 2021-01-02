@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sourceRoot":"../src/","sources":["components/Modal/index.ts"],"names":[],"mappings":";;;AAAA,kDAAwB;AACxB,uDAA6B","sourcesContent":["export * from './Modal';\nexport * from './Modal.base';\nexport * from './Modal.types';\nexport { IAccessiblePopupProps } from '../../common/IAccessiblePopupProps';\n"]}
