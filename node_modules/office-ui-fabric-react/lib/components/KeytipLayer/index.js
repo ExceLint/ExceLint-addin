@@ -1,3 +1,0 @@
-export * from './KeytipLayer';
-export * from './KeytipLayer.base';
-//# sourceMappingURL=index.js.map

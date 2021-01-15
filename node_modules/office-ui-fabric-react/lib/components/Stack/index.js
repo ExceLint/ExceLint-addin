@@ -1,3 +1,0 @@
-export * from './StackItem/StackItem';
-export * from './Stack';
-//# sourceMappingURL=index.js.map

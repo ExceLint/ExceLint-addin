@@ -1,1 +1,0 @@
-//# sourceMappingURL=SwatchColorPicker.types.js.map

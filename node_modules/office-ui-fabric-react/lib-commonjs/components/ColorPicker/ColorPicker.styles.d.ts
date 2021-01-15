@@ -1,2 +1,0 @@
-import { IColorPickerStyleProps, IColorPickerStyles } from './ColorPicker.types';
-export declare const getStyles: (props: IColorPickerStyleProps) => IColorPickerStyles;
