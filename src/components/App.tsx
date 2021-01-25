@@ -1,395 +1,409 @@
-import * as React from 'react';
-import { Header } from './Header';
-import { Content } from './Content';
-import Progress from './Progress';
-import { Colorize } from './ExceLint-core/src/colorize';
-import { ExcelUtils } from './ExceLint-core/src/excelutils';
-import { ExcelJSON } from './ExceLint-core/src/exceljson';
-import { RectangleUtils } from './ExceLint-core/src/rectangleutils';
-import { Timer } from './ExceLint-core/src/timer';
+import * as React from "react";
+import { Header } from "./Header";
+import { Content } from "./Content";
+import Progress from "./Progress";
+import { Colorize } from "./ExceLint-core/src/colorize";
+import { ExcelUtils } from "./ExceLint-core/src/excelutils";
+import { ExcelJSON } from "./ExceLint-core/src/exceljson";
+import { RectangleUtils } from "./ExceLint-core/src/rectangleutils";
+import { Timer } from "./ExceLint-core/src/timer";
 
-const xlsx = require('xlsx');
+const xlsx = require("xlsx");
 
-import * as OfficeHelpers from '@microsoft/office-js-helpers';
+import * as OfficeHelpers from "@microsoft/office-js-helpers";
+import { ExceLintVector } from "./ExceLint-core/src/ExceLintTypes";
 
 export interface AppProps {
-    title: string;
-    isOfficeInitialized: boolean;
+  title: string;
+  isOfficeInitialized: boolean;
 }
 
-export interface AppState {
-}
+export interface AppState {}
 
 export default class App extends React.Component<AppProps, AppState> {
+  private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
+  private proposed_fixes_length = 0;
+  private suspicious_cells: ExceLintVector[] = [];
+  private current_suspicious_cell = -1;
+  private current_fix = -1;
+  private total_fixes = -1;
+  private savedFormat: any = null;
+  private savedRange: string = null;
+  private contentElement: any = null;
+  private sheetName: string = "";
 
-    private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
-    private proposed_fixes_length = 0;
-    private suspicious_cells: Array<[number, number, number]> = [];
-    private current_suspicious_cell = -1;
-    private current_fix = -1;
-    private total_fixes = -1;
-    private savedFormat: any = null;
-    private savedRange: string = null;
-    private contentElement: any = null;
-    private sheetName: string = '';
+  private numericFormulaRangeThreshold = 20000;
+  private numericRangeThreshold = 20000;
 
-    private numericFormulaRangeThreshold = 20000;
-    private numericRangeThreshold = 20000;
+  constructor(props, context) {
+    super(props, context);
+    Colorize.initialize();
+    this.contentElement = React.createRef();
+  }
 
-    constructor(props, context) {
-        super(props, context);
-        Colorize.initialize();
-        this.contentElement = React.createRef();
-    }
+  private updateContent(): void {
+    this.contentElement.current.setState({
+      sheetName: this.sheetName,
+      currentFix: this.current_fix,
+      totalFixes: this.total_fixes,
+      themFixes: this.proposed_fixes,
+      numFixes: this.proposed_fixes_length,
+      suspiciousCells: this.suspicious_cells,
+      currentSuspiciousCell: this.current_suspicious_cell,
+    });
+  }
 
-    private updateContent(): void {
+  // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
+  private async adjust_fix_scores(
+    context: any,
+    backupSheet: any,
+    origin_col: any,
+    origin_row: any
+  ) {
+    let t = new Timer("adjust_fix_scores");
+    const fixes = this.proposed_fixes;
 
-        this.contentElement.current.setState({
-            sheetName: this.sheetName,
-            currentFix: this.current_fix,
-            totalFixes: this.total_fixes,
-            themFixes: this.proposed_fixes,
-            numFixes: this.proposed_fixes_length,
-            suspiciousCells: this.suspicious_cells,
-            currentSuspiciousCell: this.current_suspicious_cell
-        });
-    }
+    let usedRange = backupSheet.getUsedRange(false) as any;
 
-    // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
-    private async adjust_fix_scores(context: any, backupSheet: any, origin_col: any, origin_row: any) {
-        let t = new Timer('adjust_fix_scores');
-        const fixes = this.proposed_fixes;
+    // Define the cell properties to get by setting the matching LoadOptions to true.
+    const propertiesToGet = usedRange.getCellProperties({
+      numberFormat: true,
+      format: {
+        fill: {
+          color: true,
+        },
+        font: {
+          color: true,
+          style: true,
+          weight: true,
+          bold: true,
+          italic: true,
+          name: true,
+          size: true,
+          underline: true,
+        },
+        borders: {
+          color: true,
+          style: true,
+          weight: true,
+        },
+      },
+      style: true,
+    });
 
-        let usedRange = backupSheet.getUsedRange(false) as any;
+    // Sync to get the data from the workbook.
+    await context.sync();
+    t.split("got formatting info.");
 
-        // Define the cell properties to get by setting the matching LoadOptions to true.
-        const propertiesToGet = usedRange.getCellProperties({
-            numberFormat: true,
-            format: {
-                fill: {
-                    color: true
-                },
-                font: {
-                    color: true,
-                    style: true,
-                    weight: true,
-                    bold: true,
-                    italic: true,
-                    name: true,
-		    size: true,
-		    underline: true
-                },
-		borders: {
-                    color: true,
-                    style: true,
-                    weight: true
-		},
-            },
-	    style : true
-        });
+    // console.log(JSON.stringify(propertiesToGet.value));
 
-        // Sync to get the data from the workbook.
-        await context.sync();
-        t.split('got formatting info.');
+    this.proposed_fixes = Colorize.adjust_proposed_fixes(
+      fixes,
+      propertiesToGet.value,
+      origin_col,
+      origin_row
+    );
+    t.split("done.");
+  }
 
-        // console.log(JSON.stringify(propertiesToGet.value));
-
-        this.proposed_fixes = Colorize.adjust_proposed_fixes(fixes, propertiesToGet.value, origin_col, origin_row);
-        t.split('done.');
-    }
-
-
-    /// Color the ranges using the specified color function.
-    private color_ranges(grouped_ranges: { [x: string]: any; }, currentWorksheet: Excel.Worksheet, colorfn: any, otherfn: { (): void; (): void; (): void; }) {
-        const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
-        // Process the ranges.
-        let hash_index = 0;
-        Object.keys(grouped_ranges).forEach(hash => {
-            if (!(hash === undefined)) {
-                const v = grouped_ranges[hash];
-                //		console.log("v = " + JSON.stringify(v));
-                for (let theRange of v) {
-                    const rangeStr = ExcelUtils.make_range_string(theRange);
-                    let range = currentWorksheet.getRange(rangeStr);
-                    //if (range.length === 0) {
-                    //    continue;
-                    //}
-                    const color = colorfn(hash_index);
-                    if (color === '#FFFFFF') {
-                        range.format.fill.clear();
-                    } else {
-                        // console.log("setting " + rangeStr + " to " + color);
-                        range.format.fill.color = color;
-                    }
-                    otherfn();
-                }
-                hash_index += 1;
-            }
-        });
-        // console.log('done processing.');
-    }
-
-
-    saveFormats = async (wasPreviouslyProtected: boolean) => {
-        OfficeExtension.config.extendedErrorLogging = true;
-        await Excel.run(async context => {
-            // First, load the current worksheet's name and id.
-            let worksheets = context.workbook.worksheets;
-            // Make a new sheet corresponding to the current sheet (+ a suffix).
-            //	    console.log("saveFormats: loading current worksheet name");
-            let currentWorksheet = worksheets.getActiveWorksheet();
-            currentWorksheet.load(['name', 'id']);
-            await context.sync();
-            this.sheetName = currentWorksheet.name;
-
-            // Find any old backup sheet corresponding to this id.
-            const oldBackupName = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
-            let oldBackupSheet = worksheets.getItemOrNullObject(oldBackupName);
-            await context.sync();
-
-            if (!oldBackupSheet.isNullObject) {
-                // There was an old backup sheet, which we now delete.
-                // Note that we first have to set its visibility to "hidden" or else we can't delete it!
-                oldBackupSheet.visibility = Excel.SheetVisibility.hidden;
-                oldBackupSheet.delete();
-                await context.sync();
-                //		return;
-            }
-
-            // Don't show the copied sheet.
-            let app = context.workbook.application;
-	    try {
-		app.suspendScreenUpdatingUntilNextSync();
-	    } catch (error) {
-		// In case it's not implemented.
-	    }
-
-
-            // Now, generate a new backup sheet. This will take the place of the old backup, if any.
-            let newbackupSheet = currentWorksheet.copy('End');
-            newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
-            newbackupSheet.load(['name']);
-            // Ensure that we remain on the current worksheet.
-            // This addresses an apparent bug in the client product.
-            currentWorksheet.activate();
-            await context.sync();
-
-            // Finally, rename the backup sheet.
-            newbackupSheet.name = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
-            // If the original sheet was protected, protect the backup, too
-            // (we use this to restore the original protection later, if needed).
-            if (wasPreviouslyProtected) {
-                newbackupSheet.protection.protect();
-            }
-
-            await context.sync();
-            // console.log('saveFormats: copied out the formats');
-        });
-    }
-
-    /// Restore formats from the saved hidden sheet corresponding to the active sheet's ID.
-    restoreFormats = async () => {
-        try {
-            await Excel.run(async context => {
-                console.log('restoreFormats: begin');
-                let t = new Timer('restoreFormats');
-
-                let worksheets = context.workbook.worksheets;
-                let currentWorksheet = worksheets.getActiveWorksheet();
-                this.sheetName = '';
-                currentWorksheet.load(['protection', 'id']);
-                await context.sync();
-
-                // If the backup is there, restore it.
-                let backupName = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
-                try {
-                    let backupSheet = worksheets.getItemOrNullObject(backupName);
-                    await context.sync();
-                    // console.log('backupSheet = ' + JSON.stringify(backupSheet));
-                    if (!backupSheet.isNullObject) {
-                        // First, try to unprotect the current worksheet so we can restore into it.
-                        try {
-                            currentWorksheet.protection.unprotect();
-                            await context.sync();
-                        } catch (error) {
-                            console.log('WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.');
-                            return;
-                        }
-                        // Get the current used range.
-                        let destRange = currentWorksheet.getUsedRange(false) as any;
-
-                        // Clear all formatting.
-                        destRange.load(['format']);
-                        await context.sync();
-                        destRange.format.fill.clear();
-                        await context.sync();
-
-                        // Now get the used range again (the idea
-                        // being that clearing the formats will
-                        // potentially reduce the used range size).
-                        destRange = currentWorksheet.getUsedRange(false) as any;
-
-                        // Grab the backup sheet info.
-                        backupSheet.load(['format', 'address', 'protection']);
-                        // Save previous protection status.
-                        await context.sync();
-                        const wasPreviouslyProtected = backupSheet.protection.protected;
-                        backupSheet.protection.unprotect();
-
-                        let backupSheetUsedRange = backupSheet.getUsedRange(false) as any;
-                        backupSheetUsedRange.load(['address']);
-                        await context.sync();
-
-                        // Now copy it all into the original worksheet.
-                        // console.log('copying out ' + JSON.stringify(backupSheetUsedRange.address));
-                        destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
-                        // destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
-                        await context.sync();
-                        // We are done with the backup sheet: delete it.
-                        backupSheet.visibility = Excel.SheetVisibility.hidden;
-                        backupSheet.delete();
-
-                        // If the original sheet was protected (which
-                        // we know because we protected the backup),
-                        // restore that protection.
-
-                        if (wasPreviouslyProtected) {
-                            currentWorksheet.protection.protect();
-                        } else {
-                            currentWorksheet.protection.unprotect();
-                        }
-
-                        await context.sync();
-                    } else {
-                        console.log("restoreFormats: didn't find the sheet " + backupName);
-                    }
-                } catch (error) { console.log('restoreFormats: Nothing to restore: ' + error); }
-                this.proposed_fixes = [];
-                this.suspicious_cells = [];
-                this.current_fix = -1;
-                this.current_suspicious_cell = -1;
-                this.total_fixes = -1;
-                this.updateContent();
-                await context.sync();
-                t.split('end');
-            });
-        } catch (error) {
-            console.log('Error: ' + error);
-            if (error instanceof OfficeExtension.Error) {
-                console.log('Debug info: ' + JSON.stringify(error.debugInfo));
-            }
+  /// Color the ranges using the specified color function.
+  private color_ranges(
+    grouped_ranges: { [x: string]: any },
+    currentWorksheet: Excel.Worksheet,
+    colorfn: any,
+    otherfn: { (): void; (): void; (): void }
+  ) {
+    const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
+    // Process the ranges.
+    let hash_index = 0;
+    Object.keys(grouped_ranges).forEach((hash) => {
+      if (!(hash === undefined)) {
+        const v = grouped_ranges[hash];
+        //		console.log("v = " + JSON.stringify(v));
+        for (let theRange of v) {
+          const rangeStr = ExcelUtils.make_range_string(theRange);
+          let range = currentWorksheet.getRange(rangeStr);
+          //if (range.length === 0) {
+          //    continue;
+          //}
+          const color = colorfn(hash_index);
+          if (color === "#FFFFFF") {
+            range.format.fill.clear();
+          } else {
+            // console.log("setting " + rangeStr + " to " + color);
+            range.format.fill.color = color;
+          }
+          otherfn();
         }
-    }
+        hash_index += 1;
+      }
+    });
+    // console.log('done processing.');
+  }
 
-    // Read in the workbook as a file into XLSX form, so it can be processed by our tools
-    // developed for excelint-cli.
-    getWorkbook() : Promise<any> {
-	return new Promise((resolve, _reject) => {
-	    Office.context.document.getFileAsync(Office.FileType.Compressed, (result) =>
-		{
-		    if (result.status === Office.AsyncResultStatus.Succeeded) {
-			// For now, assume there's just one slice - FIXME.
-			result.value.getSliceAsync(0, (res : Office.AsyncResult<Office.Slice>) => {
-			    if (res.status === Office.AsyncResultStatus.Succeeded) {
-				// File loaded. Grab the data and read it into xlsx.
-				// console.log("successful slice load.");
-				let slice = res.value.data;
-				// console.log("extracted slice.");
-				let workbook = xlsx.read(slice, {type: "array"});
-				// console.log("read workbook from xlsx.");
-				// Close the file (this is mandatory).
-				(async () => {
-				    await result.value.closeAsync();
-				    // console.log("Closed the file.");
-				})();
-				resolve (workbook);
-			    } else {
-			        console.log("slice async failed.");
-				resolve (null);
-			    }
-			});
-		    } else {
-			console.log("getFileAsync somehow is now not working, fail.");
-			resolve (null);
-			// 			reject(result.error);
-		    }
-		});
-	});
-    }
+  saveFormats = async (wasPreviouslyProtected: boolean) => {
+    OfficeExtension.config.extendedErrorLogging = true;
+    await Excel.run(async (context) => {
+      // First, load the current worksheet's name and id.
+      let worksheets = context.workbook.worksheets;
+      // Make a new sheet corresponding to the current sheet (+ a suffix).
+      //	    console.log("saveFormats: loading current worksheet name");
+      let currentWorksheet = worksheets.getActiveWorksheet();
+      currentWorksheet.load(["name", "id"]);
+      await context.sync();
+      this.sheetName = currentWorksheet.name;
 
-    /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
-    setColor = async () => {
-        OfficeExtension.config.extendedErrorLogging = true;
+      // Find any old backup sheet corresponding to this id.
+      const oldBackupName = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
+      let oldBackupSheet = worksheets.getItemOrNullObject(oldBackupName);
+      await context.sync();
+
+      if (!oldBackupSheet.isNullObject) {
+        // There was an old backup sheet, which we now delete.
+        // Note that we first have to set its visibility to "hidden" or else we can't delete it!
+        oldBackupSheet.visibility = Excel.SheetVisibility.hidden;
+        oldBackupSheet.delete();
+        await context.sync();
+        //		return;
+      }
+
+      // Don't show the copied sheet.
+      let app = context.workbook.application;
+      try {
+        app.suspendScreenUpdatingUntilNextSync();
+      } catch (error) {
+        // In case it's not implemented.
+      }
+
+      // Now, generate a new backup sheet. This will take the place of the old backup, if any.
+      let newbackupSheet = currentWorksheet.copy("End");
+      newbackupSheet.visibility = Excel.SheetVisibility.veryHidden;
+      newbackupSheet.load(["name"]);
+      // Ensure that we remain on the current worksheet.
+      // This addresses an apparent bug in the client product.
+      currentWorksheet.activate();
+      await context.sync();
+
+      // Finally, rename the backup sheet.
+      newbackupSheet.name = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
+      // If the original sheet was protected, protect the backup, too
+      // (we use this to restore the original protection later, if needed).
+      if (wasPreviouslyProtected) {
+        newbackupSheet.protection.protect();
+      }
+
+      await context.sync();
+      // console.log('saveFormats: copied out the formats');
+    });
+  };
+
+  /// Restore formats from the saved hidden sheet corresponding to the active sheet's ID.
+  restoreFormats = async () => {
+    try {
+      await Excel.run(async (context) => {
+        console.log("restoreFormats: begin");
+        let t = new Timer("restoreFormats");
+
+        let worksheets = context.workbook.worksheets;
+        let currentWorksheet = worksheets.getActiveWorksheet();
+        this.sheetName = "";
+        currentWorksheet.load(["protection", "id"]);
+        await context.sync();
+
+        // If the backup is there, restore it.
+        let backupName = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
         try {
+          let backupSheet = worksheets.getItemOrNullObject(backupName);
+          await context.sync();
+          // console.log('backupSheet = ' + JSON.stringify(backupSheet));
+          if (!backupSheet.isNullObject) {
+            // First, try to unprotect the current worksheet so we can restore into it.
+            try {
+              currentWorksheet.protection.unprotect();
+              await context.sync();
+            } catch (error) {
+              console.log(
+                "WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again."
+              );
+              return;
+            }
+            // Get the current used range.
+            let destRange = currentWorksheet.getUsedRange(false) as any;
 
-	    let currentWorksheet;
-	    let currentWorksheetName = "";
-	    (async () => {
-		await Excel.run(async context => {
-		    currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-                    currentWorksheet.load(['name']);
-                    await context.sync();
-		    currentWorksheetName = currentWorksheet.name;
-		});
-	    })();
-			   
-	    // Read the workbook into JSON form.
-	    let JSONoutput = {};
-	    
-	    try {
-	    	let workbook = await this.getWorkbook();
-		let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
-		// console.log(JSON.stringify(jsonBook));
-		// console.log("-----");
-		// We need to do the analysis with no lower cutoff so
-		// it can be adjusted via the sliders. If the sliders
-		// go away, this will not be needed.
-		const originalThreshold = Colorize.reportingThreshold;
-		Colorize.reportingThreshold = 0;
-		JSONoutput = Colorize.process_workbook(jsonBook, currentWorksheetName);
-		Colorize.reportingThreshold = originalThreshold;
-	    } catch (error) {
-	      console.log("setColor: failed to read workbook into JSON.");
-	    }
-	    
-            await Excel.run(async context => {
-                console.log('setColor: starting processing.');
-                let t = new Timer("setColor");
+            // Clear all formatting.
+            destRange.load(["format"]);
+            await context.sync();
+            destRange.format.fill.clear();
+            await context.sync();
 
-		let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-                currentWorksheet.load(['protection']);
-		await context.sync();
-                const wasPreviouslyProtected = currentWorksheet.protection.protected;
-                try {
-                    currentWorksheet.protection.unprotect();
-                    await context.sync();
-                } catch (error) {
-                    console.log("WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again.");
-                    return;
-                }
+            // Now get the used range again (the idea
+            // being that clearing the formats will
+            // potentially reduce the used range size).
+            destRange = currentWorksheet.getUsedRange(false) as any;
 
-                /// Save the formats so they can later be restored.
-                await this.saveFormats(wasPreviouslyProtected);
+            // Grab the backup sheet info.
+            backupSheet.load(["format", "address", "protection"]);
+            // Save previous protection status.
+            await context.sync();
+            const wasPreviouslyProtected = backupSheet.protection.protected;
+            backupSheet.protection.unprotect();
 
-                // Disable calculation for now.
-                let app = context.workbook.application;
-                app.load(['calculationMode']);
-                await context.sync();
-                t.split("got calc mode");
+            let backupSheetUsedRange = backupSheet.getUsedRange(false) as any;
+            backupSheetUsedRange.load(["address"]);
+            await context.sync();
 
-                let originalCalculationMode = app.calculationMode;
-                app.calculationMode = 'Manual';
+            // Now copy it all into the original worksheet.
+            // console.log('copying out ' + JSON.stringify(backupSheetUsedRange.address));
+            destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.formats); // FIX ME FIXME WAS THIS
+            // destRange.copyFrom(backupSheetUsedRange, Excel.RangeCopyType.all); // used for restoring VALUES FIXME NOT NEEDED IN GENERAL
+            await context.sync();
+            // We are done with the backup sheet: delete it.
+            backupSheet.visibility = Excel.SheetVisibility.hidden;
+            backupSheet.delete();
 
-                let usedRange = currentWorksheet.getUsedRange(false) as any;
-                usedRange.load(['address', 'values', 'formulas', 'format']);
-		// console.log(JSON.stringify(usedRange));
-                await context.sync();
-                t.split("got address");
-		// console.log(JSON.stringify(usedRange));
+            // If the original sheet was protected (which
+            // we know because we protected the backup),
+            // restore that protection.
 
-                //		let displayComments = false;
+            if (wasPreviouslyProtected) {
+              currentWorksheet.protection.protect();
+            } else {
+              currentWorksheet.protection.unprotect();
+            }
 
-                /*
+            await context.sync();
+          } else {
+            console.log("restoreFormats: didn't find the sheet " + backupName);
+          }
+        } catch (error) {
+          console.log("restoreFormats: Nothing to restore: " + error);
+        }
+        this.proposed_fixes = [];
+        this.suspicious_cells = [];
+        this.current_fix = -1;
+        this.current_suspicious_cell = -1;
+        this.total_fixes = -1;
+        this.updateContent();
+        await context.sync();
+        t.split("end");
+      });
+    } catch (error) {
+      console.log("Error: " + error);
+      if (error instanceof OfficeExtension.Error) {
+        console.log("Debug info: " + JSON.stringify(error.debugInfo));
+      }
+    }
+  };
+
+  // Read in the workbook as a file into XLSX form, so it can be processed by our tools
+  // developed for excelint-cli.
+  getWorkbook(): Promise<any> {
+    return new Promise((resolve, _reject) => {
+      Office.context.document.getFileAsync(Office.FileType.Compressed, (result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          // For now, assume there's just one slice - FIXME.
+          result.value.getSliceAsync(0, (res: Office.AsyncResult<Office.Slice>) => {
+            if (res.status === Office.AsyncResultStatus.Succeeded) {
+              // File loaded. Grab the data and read it into xlsx.
+              // console.log("successful slice load.");
+              let slice = res.value.data;
+              // console.log("extracted slice.");
+              let workbook = xlsx.read(slice, { type: "array" });
+              // console.log("read workbook from xlsx.");
+              // Close the file (this is mandatory).
+              (async () => {
+                await result.value.closeAsync();
+                // console.log("Closed the file.");
+              })();
+              resolve(workbook);
+            } else {
+              console.log("slice async failed.");
+              resolve(null);
+            }
+          });
+        } else {
+          console.log("getFileAsync somehow is now not working, fail.");
+          resolve(null);
+          // 			reject(result.error);
+        }
+      });
+    });
+  }
+
+  /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
+  setColor = async () => {
+    OfficeExtension.config.extendedErrorLogging = true;
+    try {
+      let currentWorksheet;
+      let currentWorksheetName = "";
+      (async () => {
+        await Excel.run(async (context) => {
+          currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+          currentWorksheet.load(["name"]);
+          await context.sync();
+          currentWorksheetName = currentWorksheet.name;
+        });
+      })();
+
+      // Read the workbook into JSON form.
+      let JSONoutput = {};
+
+      try {
+        let workbook = await this.getWorkbook();
+        let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
+        // console.log(JSON.stringify(jsonBook));
+        // console.log("-----");
+        // We need to do the analysis with no lower cutoff so
+        // it can be adjusted via the sliders. If the sliders
+        // go away, this will not be needed.
+        const originalThreshold = Colorize.reportingThreshold;
+        Colorize.reportingThreshold = 0;
+        JSONoutput = Colorize.process_workbook(jsonBook, currentWorksheetName);
+        Colorize.reportingThreshold = originalThreshold;
+      } catch (error) {
+        console.log("setColor: failed to read workbook into JSON.");
+      }
+
+      await Excel.run(async (context) => {
+        console.log("setColor: starting processing.");
+        let t = new Timer("setColor");
+
+        let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+        currentWorksheet.load(["protection"]);
+        await context.sync();
+        const wasPreviouslyProtected = currentWorksheet.protection.protected;
+        try {
+          currentWorksheet.protection.unprotect();
+          await context.sync();
+        } catch (error) {
+          console.log(
+            "WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again."
+          );
+          return;
+        }
+
+        /// Save the formats so they can later be restored.
+        await this.saveFormats(wasPreviouslyProtected);
+
+        // Disable calculation for now.
+        let app = context.workbook.application;
+        app.load(["calculationMode"]);
+        await context.sync();
+        t.split("got calc mode");
+
+        let originalCalculationMode = app.calculationMode;
+        app.calculationMode = "Manual";
+
+        let usedRange = currentWorksheet.getUsedRange(false) as any;
+        usedRange.load(["address", "values", "formulas", "format"]);
+        // console.log(JSON.stringify(usedRange));
+        await context.sync();
+        t.split("got address");
+        // console.log(JSON.stringify(usedRange));
+
+        //		let displayComments = false;
+
+        /*
                 
                             // Display all the named ranges (this should eventually be sent over for processing).
                             // See https://docs.microsoft.com/en-us/javascript/api/excel/excel.nameditemcollection?view=office-js
@@ -400,360 +414,393 @@ export default class App extends React.Component<AppProps, AppState> {
                             console.log(JSON.stringify(currentWorksheet.names.items));
                 */
 
-                t.split("load from used range = " + usedRange.address);
-		
-                // Now start colorizing.
+        t.split("load from used range = " + usedRange.address);
 
-                // Turn off screen updating and calculations while this is happening.
-		try {
-		    app.suspendScreenUpdatingUntilNextSync();
-		} catch (error) {
-		    // In case it's not implemented.
-		}
-                app.suspendApiCalculationUntilNextSync();
-		
-                const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
+        // Now start colorizing.
 
-                let useNumericFormulaRanges = false;
+        // Turn off screen updating and calculations while this is happening.
+        try {
+          app.suspendScreenUpdatingUntilNextSync();
+        } catch (error) {
+          // In case it's not implemented.
+        }
+        app.suspendApiCalculationUntilNextSync();
 
-                // EDB 10 June 2019: HACK. Getting numeric formula
-                // ranges is shockingly slow -- an order of magnitude
-                // slower than getting numeric ranges -- so we only do
-                // it when it takes less than a second (though that is
-                // total guesswork). Arbitrary threshold for now.
-                // Revisit if this gets fixed...
-                if (numberOfCellsUsed < this.numericFormulaRangeThreshold) {
-                    // Activate using numeric formula ranges when
-                    // there aren't "too many" cells.
-                    useNumericFormulaRanges = true;
-                } else {
-                    console.log("Too many cells to use numeric formula ranges.");
-                }
+        const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
 
-                let numericFormulaRanges = null;
-                if (useNumericFormulaRanges) {
-                    numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.formulas,
-                        Excel.SpecialCellValueType.numbers);
-                    await context.sync();
-                    t.split("got numeric formula ranges");
-                }
+        let useNumericFormulaRanges = false;
 
-                let numericRanges = null;
+        // EDB 10 June 2019: HACK. Getting numeric formula
+        // ranges is shockingly slow -- an order of magnitude
+        // slower than getting numeric ranges -- so we only do
+        // it when it takes less than a second (though that is
+        // total guesswork). Arbitrary threshold for now.
+        // Revisit if this gets fixed...
+        if (numberOfCellsUsed < this.numericFormulaRangeThreshold) {
+          // Activate using numeric formula ranges when
+          // there aren't "too many" cells.
+          useNumericFormulaRanges = true;
+        } else {
+          console.log("Too many cells to use numeric formula ranges.");
+        }
 
-                // console.log("number of cells used = " + numberOfCellsUsed);
+        let numericFormulaRanges = null;
+        if (useNumericFormulaRanges) {
+          numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(
+            Excel.SpecialCellType.formulas,
+            Excel.SpecialCellValueType.numbers
+          );
+          await context.sync();
+          t.split("got numeric formula ranges");
+        }
 
-                if (numberOfCellsUsed < this.numericRangeThreshold) { // Check number of cells, as above.
-                    // For very large spreadsheets, this takes AGES.
-                    numericRanges = usedRange.getSpecialCellsOrNullObject(Excel.SpecialCellType.constants,
-                        Excel.SpecialCellValueType.numbers);
-                    await context.sync();
-                    t.split("got numeric ranges");
-                } else {
-                    console.log("Too many cells to use numeric ranges.");
-                }
+        let numericRanges = null;
 
+        // console.log("number of cells used = " + numberOfCellsUsed);
 
-		// await context.sync();
-		
-                const usedRangeAddress = usedRange.address;
-                const formulas = usedRange.formulas;
-                const values = usedRange.values;
+        if (numberOfCellsUsed < this.numericRangeThreshold) {
+          // Check number of cells, as above.
+          // For very large spreadsheets, this takes AGES.
+          numericRanges = usedRange.getSpecialCellsOrNullObject(
+            Excel.SpecialCellType.constants,
+            Excel.SpecialCellValueType.numbers
+          );
+          await context.sync();
+          t.split("got numeric ranges");
+        } else {
+          console.log("Too many cells to use numeric ranges.");
+        }
 
-		//await Colorize.process_sheet(context.workbook, Office.FileType.Compressed);
-                let [suspicious_cells, grouped_formulas, grouped_data, _unused_proposed_fixes]
-                    = Colorize.process_suspicious(usedRangeAddress, formulas, values);
-                this.suspicious_cells = suspicious_cells;
+        // await context.sync();
 
-		// Note that we are duplicating work! FIXME. This work
-		// above has basically been done by the
-		// process_workbook call.
+        const usedRangeAddress = usedRange.address;
+        const formulas = usedRange.formulas;
+        const values = usedRange.values;
 
-		// console.log(JSON.stringify(JSONoutput['worksheets'][currentWorksheetName]));
-		let new_proposed_fixes = JSONoutput['worksheets'][currentWorksheetName]['proposedFixes'];
-		// Convert to the expected format, negating the entropy and adding a true value at the end.
-		for (let i = 0; i < new_proposed_fixes.length; i++) {
-		    new_proposed_fixes[i][0] = -new_proposed_fixes[i][0];
-		    new_proposed_fixes[i].push(true);
-		}
-		
-		// console.log(new_proposed_fixes);
-                this.proposed_fixes = new_proposed_fixes;
+        //await Colorize.process_sheet(context.workbook, Office.FileType.Compressed);
+        let analysis = Colorize.process_suspicious(usedRangeAddress, formulas, values);
+        let suspicious_cells = analysis.suspicious_cells;
+        let grouped_formulas = analysis.grouped_formulas;
+        let grouped_data = analysis.grouped_data;
+        this.suspicious_cells = suspicious_cells;
 
-		//console.log("suspicious cells = " + JSON.stringify(suspicious_cells));
-		//console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
-		//console.log("grouped data = " + JSON.stringify(grouped_data));
-		
-		// Experimental: filter out colors so that only those
-		// identified as proposed fixes get colored.
-		const useReducedColors = false; // disabled by default! // WAS true; // ILDC
-		
-		let only_suspicious_proposed_fixes;
-		let only_suspicious_grouped_formulas = {};
-		if (useReducedColors) {
-		    only_suspicious_proposed_fixes = this.proposed_fixes.reduce((obj, item) => {
-			if (-item[0] > 0.10) { // FIXME hard-coded suspiciousness for now.
-			    obj[JSON.stringify(item[1])] = true ;
-			    obj[JSON.stringify(item[2])] = true ;
-			}
-			return obj; }, {});
-		    for (let key in grouped_formulas) {
-			only_suspicious_grouped_formulas[key] = [];
-			for (let rect of grouped_formulas[key]) {
-			    if (JSON.stringify(rect) in only_suspicious_proposed_fixes) {
-				only_suspicious_grouped_formulas[key].push(rect);
-			    }
-			}
-		    }
-		}
+        // Note that we are duplicating work! FIXME. This work
+        // above has basically been done by the
+        // process_workbook call.
 
-                /// Finally, apply colors.
-		
-                // Remove the background color from all cells.
-                let rangeFill = usedRange.format.fill;
-                rangeFill.clear();
-	
-                // Make all numbers yellow; this will be the default value for unreferenced data.
-                if (numericRanges) {
-		    if (!useReducedColors) {
-			numericRanges.format.fill.color = '#eed202'; // "Safety Yellow"
-		    }
-                }
-		
-                // Color numeric formulas yellow as well, if this is on.
-                if (!useReducedColors) {
-                    if (useNumericFormulaRanges && numericFormulaRanges) {
-                        numericFormulaRanges.format.fill.color = '#eed202'; // "Safety Yellow"
-                    }
-                }
-		
-                // Just color referenced data gray.
-		if (!useReducedColors) {
-		    this.color_ranges(grouped_data, currentWorksheet, (_: string) => { return '#D3D3D3'; }, () => { });
-		}
-		
-                // And color the formulas.
-		if (true) { // Enable colors.
-		    if (useReducedColors) {
-			this.color_ranges(only_suspicious_grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
-		    } else {
-			this.color_ranges(grouped_formulas, currentWorksheet, (hash: string) => { return Colorize.get_color(Math.round(parseFloat(hash))); }, () => { });
-		    }
-		}
-		
-                currentWorksheet.load(['id']);
-                await context.sync();
+        // console.log(JSON.stringify(JSONoutput['worksheets'][currentWorksheetName]));
+        let new_proposed_fixes = JSONoutput["worksheets"][currentWorksheetName]["proposedFixes"];
+        // Convert to the expected format, negating the entropy and adding a true value at the end.
+        for (let i = 0; i < new_proposed_fixes.length; i++) {
+          new_proposed_fixes[i][0] = -new_proposed_fixes[i][0];
+          new_proposed_fixes[i].push(true);
+        }
 
-                //		console.log(JSON.stringify(usedRange.formulasR1C1));
-                t.split("saved formats");
+        // console.log(new_proposed_fixes);
+        this.proposed_fixes = new_proposed_fixes;
 
-                // Grab the backup sheet for use in looking up the formats.
-                const backupSheetname = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
-                let worksheets = context.workbook.worksheets;
-                let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
-                await context.sync();
+        //console.log("suspicious cells = " + JSON.stringify(suspicious_cells));
+        //console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
+        //console.log("grouped data = " + JSON.stringify(grouped_data));
 
-                t.split("about to iterate through fixes.");
+        // Experimental: filter out colors so that only those
+        // identified as proposed fixes get colored.
+        const useReducedColors = false; // disabled by default! // WAS true; // ILDC
 
-                if (this.proposed_fixes.length > 0) {
-                    t.split("about to adjust scores.");
-                    const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-                    const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
+        let only_suspicious_proposed_fixes;
+        let only_suspicious_grouped_formulas = {};
+        if (useReducedColors) {
+          only_suspicious_proposed_fixes = this.proposed_fixes.reduce((obj, item) => {
+            if (-item[0] > 0.1) {
+              // FIXME hard-coded suspiciousness for now.
+              obj[JSON.stringify(item[1])] = true;
+              obj[JSON.stringify(item[2])] = true;
+            }
+            return obj;
+          }, {});
+          for (let key in grouped_formulas) {
+            only_suspicious_grouped_formulas[key] = [];
+            for (let rect of grouped_formulas[key]) {
+              if (JSON.stringify(rect) in only_suspicious_proposed_fixes) {
+                only_suspicious_grouped_formulas[key].push(rect);
+              }
+            }
+          }
+        }
 
-                    // Adjust the fix scores (downward) to take into account formatting in the original sheet.
-                    await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
+        /// Finally, apply colors.
 
-                    t.split("sorting fixes.");
+        // Remove the background color from all cells.
+        let rangeFill = usedRange.format.fill;
+        rangeFill.clear();
 
-                    this.proposed_fixes.sort((a, b) => { return a[0] - b[0]; });
+        // Make all numbers yellow; this will be the default value for unreferenced data.
+        if (numericRanges) {
+          if (!useReducedColors) {
+            numericRanges.format.fill.color = "#eed202"; // "Safety Yellow"
+          }
+        }
 
-                    t.split("generated fixes");
-                }
+        // Color numeric formulas yellow as well, if this is on.
+        if (!useReducedColors) {
+          if (useNumericFormulaRanges && numericFormulaRanges) {
+            numericFormulaRanges.format.fill.color = "#eed202"; // "Safety Yellow"
+          }
+        }
 
-		// Parse out the explanation string for each.
-		// console.log(JSON.stringify(JSONoutput));
-		for (let i = 0; i < this.proposed_fixes.length; i++) {
-		    const fixes = JSONoutput['worksheets'][currentWorksheetName]['exampleFixes'][i];
-		    // console.log(fixes);
-		    const explanation = fixes['bin'][0]; // for now, just the first explanation
-		    const example1 = fixes['formulas'][0];
-		    const example2 = fixes['formulas'][1];
-		    const explanationStr = explanation + '\n' + example1 + '\n' + example2;
-		    this.proposed_fixes[i].push(explanationStr);
-		    // console.log("NEW PROPOSED FIX THANG: " + JSON.stringify(this.proposed_fixes[i]));
-		}
+        // Just color referenced data gray.
+        if (!useReducedColors) {
+          this.color_ranges(
+            grouped_data,
+            currentWorksheet,
+            (_: string) => {
+              return "#D3D3D3";
+            },
+            () => {}
+          );
+        }
 
-                this.total_fixes = formulas.length;
+        // And color the formulas.
+        if (true) {
+          // Enable colors.
+          if (useReducedColors) {
+            this.color_ranges(
+              only_suspicious_grouped_formulas,
+              currentWorksheet,
+              (hash: string) => {
+                return Colorize.get_color(Math.round(parseFloat(hash)));
+              },
+              () => {}
+            );
+          } else {
+            this.color_ranges(
+              grouped_formulas,
+              currentWorksheet,
+              (hash: string) => {
+                return Colorize.get_color(Math.round(parseFloat(hash)));
+              },
+              () => {}
+            );
+          }
+        }
 
-                this.proposed_fixes_length = this.proposed_fixes.length;
+        currentWorksheet.load(["id"]);
+        await context.sync();
 
-                //		app.suspendScreenUpdatingUntilNextSync();
-                t.split("processed formulas");
+        //		console.log(JSON.stringify(usedRange.formulasR1C1));
+        t.split("saved formats");
 
-                this.current_fix = -1;
-                this.current_suspicious_cell = -1;
+        // Grab the backup sheet for use in looking up the formats.
+        const backupSheetname = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
+        let worksheets = context.workbook.worksheets;
+        let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
+        await context.sync();
 
-                // Protect the sheet against changes.
-                currentWorksheet.protection.protect();
-		await context.sync();
+        t.split("about to iterate through fixes.");
 
-                this.updateContent();
+        if (this.proposed_fixes.length > 0) {
+          t.split("about to adjust scores.");
+          const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
+          const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
 
-                // Restore original calculation mode.
-                app.calculationMode = originalCalculationMode;
+          // Adjust the fix scores (downward) to take into account formatting in the original sheet.
+          await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
 
-                await context.sync();
+          t.split("sorting fixes.");
 
-                /*		let currName = currentWorksheet.name;
+          this.proposed_fixes.sort((a, b) => {
+            return a[0] - b[0];
+          });
+
+          t.split("generated fixes");
+        }
+
+        // Parse out the explanation string for each.
+        // console.log(JSON.stringify(JSONoutput));
+        for (let i = 0; i < this.proposed_fixes.length; i++) {
+          const fixes = JSONoutput["worksheets"][currentWorksheetName]["exampleFixes"][i];
+          // console.log(fixes);
+          const explanation = fixes["bin"][0]; // for now, just the first explanation
+          const example1 = fixes["formulas"][0];
+          const example2 = fixes["formulas"][1];
+          const explanationStr = explanation + "\n" + example1 + "\n" + example2;
+          this.proposed_fixes[i].push(explanationStr);
+          // console.log("NEW PROPOSED FIX THANG: " + JSON.stringify(this.proposed_fixes[i]));
+        }
+
+        this.total_fixes = formulas.length;
+
+        this.proposed_fixes_length = this.proposed_fixes.length;
+
+        //		app.suspendScreenUpdatingUntilNextSync();
+        t.split("processed formulas");
+
+        this.current_fix = -1;
+        this.current_suspicious_cell = -1;
+
+        // Protect the sheet against changes.
+        currentWorksheet.protection.protect();
+        await context.sync();
+
+        this.updateContent();
+
+        // Restore original calculation mode.
+        app.calculationMode = originalCalculationMode;
+
+        await context.sync();
+
+        /*		let currName = currentWorksheet.name;
                         currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
 
-                t.split("done");
-
-            });
-        } catch (error) {
-            console.log("Error: " + error);
-            if (error instanceof OfficeExtension.Error) {
-                console.log("Debug info: " + JSON.stringify(error.debugInfo));
-            }
-        }
+        t.split("done");
+      });
+    } catch (error) {
+      console.log("Error: " + error);
+      if (error instanceof OfficeExtension.Error) {
+        console.log("Debug info: " + JSON.stringify(error.debugInfo));
+      }
     }
+  };
 
-    getRange(currentWorksheet: Excel.Worksheet, proposed_fixes: string | any[], current_fix: number) {
-        if (proposed_fixes.length > 0) {
-            let [col0, row0, col1, row1] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
-            let rangeStr = col0 + row0 + ":" + col1 + row1;
-            //	    console.log("getRange: " + rangeStr);
-            let range = currentWorksheet.getRange(rangeStr);
-            return range;
-        } else {
-            return null;
-        }
+  getRange(currentWorksheet: Excel.Worksheet, proposed_fixes: string | any[], current_fix: number) {
+    if (proposed_fixes.length > 0) {
+      let [col0, row0, col1, row1] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
+      let rangeStr = col0 + row0 + ":" + col1 + row1;
+      //	    console.log("getRange: " + rangeStr);
+      let range = currentWorksheet.getRange(rangeStr);
+      return range;
+    } else {
+      return null;
     }
+  }
 
-    selectFix = async (currentFix) => {
-        // console.log("selectFix " + currentFix);
-        try {
-            await Excel.run(async context => {
-                if (this.total_fixes === -1) {
-                    await this.restoreFormats();
-                    await this.setColor();
-                }
-                if (currentFix === -1) {
-                    this.current_fix = -1;
-                    this.updateContent();
-                    return;
-                }
-                let app = context.workbook.application;
+  selectFix = async (currentFix) => {
+    // console.log("selectFix " + currentFix);
+    try {
+      await Excel.run(async (context) => {
+        if (this.total_fixes === -1) {
+          await this.restoreFormats();
+          await this.setColor();
+        }
+        if (currentFix === -1) {
+          this.current_fix = -1;
+          this.updateContent();
+          return;
+        }
+        let app = context.workbook.application;
 
-                let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-                currentWorksheet.load(['protection']);
-                await context.sync();
-                /*
+        let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+        currentWorksheet.load(["protection"]);
+        await context.sync();
+        /*
                   if (currentWorksheet.protection.protected) {
                   // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
                   return;
                   }
                 */
-                //		console.log(this.proposed_fixes);
-                let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
-                if (r) {
-                    r.select();
-                }
-                this.current_fix = currentFix;
-                this.current_suspicious_cell = -1;
-                this.updateContent();
-                /*
+        //		console.log(this.proposed_fixes);
+        let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
+        if (r) {
+          r.select();
+        }
+        this.current_fix = currentFix;
+        this.current_suspicious_cell = -1;
+        this.updateContent();
+        /*
                   this.contentElement.current.setState({ currentFix: currentFix,
                   totalFixes: this.total_fixes,
                   themFixes : this.proposed_fixes });
                 */
-            });
-        } catch (error) {
-            console.log("Error: " + error);
-            if (error instanceof OfficeExtension.Error) {
-                console.log("Debug info: " + JSON.stringify(error.debugInfo));
-            }
-        }
+      });
+    } catch (error) {
+      console.log("Error: " + error);
+      if (error instanceof OfficeExtension.Error) {
+        console.log("Debug info: " + JSON.stringify(error.debugInfo));
+      }
     }
+  };
 
-    selectCell = async (currentCell) => {
-        console.log("selectCell " + currentCell);
-        try {
-            await Excel.run(async context => {
-                if (this.suspicious_cells.length === 0) {
-                    await this.restoreFormats();
-                    await this.setColor();
-                }
-                if (currentCell === -1) {
-                    this.current_suspicious_cell = -1;
-                    this.updateContent();
-                    return;
-                }
-                let app = context.workbook.application;
+  selectCell = async (currentCell) => {
+    console.log("selectCell " + currentCell);
+    try {
+      await Excel.run(async (context) => {
+        if (this.suspicious_cells.length === 0) {
+          await this.restoreFormats();
+          await this.setColor();
+        }
+        if (currentCell === -1) {
+          this.current_suspicious_cell = -1;
+          this.updateContent();
+          return;
+        }
+        let app = context.workbook.application;
 
-                let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-                currentWorksheet.load(['protection']);
-                await context.sync();
-                /*
+        let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+        currentWorksheet.load(["protection"]);
+        await context.sync();
+        /*
                   if (currentWorksheet.protection.protected) {
                   // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
                   return;
                   }
                 */
-                //		console.log("suspicious cells + " + JSON.stringify(this.suspicious_cells));
+        //		console.log("suspicious cells + " + JSON.stringify(this.suspicious_cells));
 
-                const col = this.suspicious_cells[currentCell][0];
-                const row = this.suspicious_cells[currentCell][1];
-                let rangeStr = ExcelUtils.column_index_to_name(col) + row;
-                rangeStr = rangeStr + ":" + rangeStr;
-                let r = currentWorksheet.getRange(rangeStr);
-                if (r) {
-                    r.select();
-                }
-                this.current_suspicious_cell = currentCell;
-                this.current_fix = -1;
-                this.updateContent();
-//                console.log("setting is now " + this.current_suspicious_cell);
-                /*
+        const col = this.suspicious_cells[currentCell][0];
+        const row = this.suspicious_cells[currentCell][1];
+        let rangeStr = ExcelUtils.column_index_to_name(col) + row;
+        rangeStr = rangeStr + ":" + rangeStr;
+        let r = currentWorksheet.getRange(rangeStr);
+        if (r) {
+          r.select();
+        }
+        this.current_suspicious_cell = currentCell;
+        this.current_fix = -1;
+        this.updateContent();
+        //                console.log("setting is now " + this.current_suspicious_cell);
+        /*
                   this.contentElement.current.setState({ currentFix: currentFix,
                   totalFixes: this.total_fixes,
                   themFixes : this.proposed_fixes });
                 */
-            });
-        } catch (error) {
-            console.log("Error: " + error);
-            if (error instanceof OfficeExtension.Error) {
-                console.log("Debug info: " + JSON.stringify(error.debugInfo));
-            }
-        }
+      });
+    } catch (error) {
+      console.log("Error: " + error);
+      if (error instanceof OfficeExtension.Error) {
+        console.log("Debug info: " + JSON.stringify(error.debugInfo));
+      }
+    }
+  };
+
+  render() {
+    const { title, isOfficeInitialized } = this.props;
+
+    if (!isOfficeInitialized) {
+      return <Progress title={title} logo="assets/logo-filled.png" message="Initializing..." />;
     }
 
-
-
-
-    render() {
-        const {
-            title,
-            isOfficeInitialized,
-        } = this.props;
-
-        if (!isOfficeInitialized) {
-            return (
-                <Progress
-                    title={title}
-                    logo='assets/logo-filled.png'
-                    message='Initializing...'
-                />
-            );
-        }
-
-        return (
-            <div className='ms-welcome'>
-                <Header title='ExceLint' />
-                <Content ref={this.contentElement} message1='Click to reveal the deep structure of this spreadsheet.' buttonLabel1='Reveal structure' click1={this.setColor}
-                    message2='Click to restore previous colors and borders.' buttonLabel2='Restore' click2={this.restoreFormats}
-                    sheetName='' currentFix={this.current_fix} totalFixes={this.total_fixes} themFixes={this.proposed_fixes} selector={this.selectFix} numFixes={this.proposed_fixes_length} suspiciousCells={this.suspicious_cells} cellSelector={this.selectCell} currentSuspiciousCell={this.current_suspicious_cell} />
-
-            </div>
-        );
-    }
+    return (
+      <div className="ms-welcome">
+        <Header title="ExceLint" />
+        <Content
+          ref={this.contentElement}
+          message1="Click to reveal the deep structure of this spreadsheet."
+          buttonLabel1="Reveal structure"
+          click1={this.setColor}
+          message2="Click to restore previous colors and borders."
+          buttonLabel2="Restore"
+          click2={this.restoreFormats}
+          sheetName=""
+          currentFix={this.current_fix}
+          totalFixes={this.total_fixes}
+          themFixes={this.proposed_fixes}
+          selector={this.selectFix}
+          numFixes={this.proposed_fixes_length}
+          suspiciousCells={this.suspicious_cells}
+          cellSelector={this.selectCell}
+          currentSuspiciousCell={this.current_suspicious_cell}
+        />
+      </div>
+    );
+  }
 }
