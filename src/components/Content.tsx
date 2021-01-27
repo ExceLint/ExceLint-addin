@@ -4,6 +4,7 @@ import { Slider } from "office-ui-fabric-react/lib/Slider";
 import { ExcelUtils } from "./ExceLint-core/src/excelutils";
 import { Colorize } from "./ExceLint-core/src/colorize";
 import { ExceLintVector } from "./ExceLint-core/src/ExceLintTypes";
+import { Config } from "./ExceLint-core/src/config";
 
 const barWidth = 100; // pixel length of the suspiciousness bar
 
@@ -61,7 +62,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
         // console.log("original score = " + score);
         if (!arr[i][3]) {
           // Different formats.
-          score *= (100 - Colorize.getFormattingDiscount()) / 100;
+          score *= (100 - Config.getFormattingDiscount()) / 100;
         }
         // console.log("score now = " + score);
         score *= barWidth;
@@ -188,7 +189,7 @@ function makeTableSuspiciousCells(
           score = barWidth;
         }
         // Skip really low scores.
-        if (score < Colorize.suspiciousCellsReportingThreshold) {
+        if (score < Config.suspiciousCellsReportingThreshold) {
           console.warn("skipping " + i);
           continue;
         }
@@ -293,9 +294,9 @@ function DisplayFixes(props) {
     let score = -c[0];
     if (!c[3]) {
       // Different formats.
-      score *= (100 - Colorize.getFormattingDiscount()) / 100;
+      score *= (100 - Config.getFormattingDiscount()) / 100;
     }
-    return score >= Colorize.getReportingThreshold() / 100;
+    return score >= Config.getReportingThreshold() / 100;
   });
   let table1 = <div></div>;
   if (true) {
@@ -406,10 +407,10 @@ export class Content extends React.Component<ContentProps, any> {
               min={0}
               max={100}
               step={1}
-              defaultValue={Colorize.getReportingThreshold()}
+              defaultValue={Config.getReportingThreshold()}
               showValue={true}
               onChange={(value: number) => {
-                Colorize.setReportingThreshold(value);
+                Config.setReportingThreshold(value);
                 this.forceUpdate();
               }}
             />
@@ -422,10 +423,10 @@ export class Content extends React.Component<ContentProps, any> {
               min={0}
               max={100}
               step={1}
-              defaultValue={Colorize.getFormattingDiscount()}
+              defaultValue={Config.getFormattingDiscount()}
               showValue={true}
               onChange={(value: number) => {
-                Colorize.setFormattingDiscount(value);
+                Config.setFormattingDiscount(value);
                 this.forceUpdate();
               }}
             />

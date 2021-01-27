@@ -5,8 +5,8 @@ import Progress from "./Progress";
 import { Colorize } from "./ExceLint-core/src/colorize";
 import { ExcelUtils } from "./ExceLint-core/src/excelutils";
 import { ExcelJSON } from "./ExceLint-core/src/exceljson";
-import { RectangleUtils } from "./ExceLint-core/src/rectangleutils";
 import { Timer } from "./ExceLint-core/src/timer";
+import { Config } from "./ExceLint-core/src/config";
 
 const xlsx = require("xlsx");
 
@@ -356,10 +356,10 @@ export default class App extends React.Component<AppProps, AppState> {
         // We need to do the analysis with no lower cutoff so
         // it can be adjusted via the sliders. If the sliders
         // go away, this will not be needed.
-        const originalThreshold = Colorize.reportingThreshold;
-        Colorize.reportingThreshold = 0;
+        const originalThreshold = Config.reportingThreshold;
+        Config.reportingThreshold = 0;
         JSONoutput = Colorize.process_workbook(jsonBook, currentWorksheetName);
-        Colorize.reportingThreshold = originalThreshold;
+        Config.reportingThreshold = originalThreshold;
       } catch (error) {
         console.log("setColor: failed to read workbook into JSON.");
       }
