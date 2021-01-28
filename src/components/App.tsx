@@ -7,11 +7,11 @@ import { ExcelUtils } from "./ExceLint-core/src/excelutils";
 import { ExcelJSON } from "./ExceLint-core/src/exceljson";
 import { Timer } from "./ExceLint-core/src/timer";
 import { Config } from "./ExceLint-core/src/config";
-
-const xlsx = require("xlsx");
-
+import * as XLNT from "./ExceLint-core/src/ExceLintTypes";
+import * as XLSX from "xlsx";
 import * as OfficeHelpers from "@microsoft/office-js-helpers";
 import { ExceLintVector } from "./ExceLint-core/src/ExceLintTypes";
+import { Option, Some, None } from "./ExceLint-core/src/option";
 
 export interface AppProps {
   title: string;
@@ -19,6 +19,55 @@ export interface AppProps {
 }
 
 export interface AppState {}
+
+type XLCalculationMode = Excel.CalculationMode | "Automatic" | "AutomaticExceptTables" | "Manual";
+
+const PROTERR =
+  "WARNING: ExceLint does not work on protected spreadsheets. " +
+  "Please unprotect the sheet and try again.";
+
+// do not update the UI until `context.sync` is called
+function disableScreenUpdating(app: Excel.Application): void {
+  try {
+    app.suspendScreenUpdatingUntilNextSync();
+  } catch (error) {
+    // In case it's not implemented.
+  }
+  app.suspendApiCalculationUntilNextSync();
+}
+
+// switch to manual calculation mode; returns whatever
+// mode Excel happened to be in before.
+async function manualCalcMode(
+  app: Excel.Application,
+  context: Excel.RequestContext
+): Promise<XLCalculationMode> {
+  app.load(["calculationMode"]);
+  await context.sync();
+  let originalCalculationMode = app.calculationMode;
+  app.calculationMode = "Manual";
+  await context.sync();
+  return originalCalculationMode;
+}
+
+// Try to unprotect the sheet.  If this fails, return None,
+// otherwise, return Some of whatever the previous protection
+// level was (true = protected; false = unprotected).
+async function unprotect(
+  context: Excel.RequestContext,
+  currentWorksheet: Excel.Worksheet
+): Promise<Option<boolean>> {
+  currentWorksheet.load(["protection"]);
+  await context.sync();
+  const wasPreviouslyProtected = currentWorksheet.protection.protected;
+  try {
+    currentWorksheet.protection.unprotect();
+    await context.sync();
+  } catch (error) {
+    return None;
+  }
+  return new Some(wasPreviouslyProtected);
+}
 
 export default class App extends React.Component<AppProps, AppState> {
   private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
@@ -308,7 +357,7 @@ export default class App extends React.Component<AppProps, AppState> {
               // console.log("successful slice load.");
               let slice = res.value.data;
               // console.log("extracted slice.");
-              let workbook = xlsx.read(slice, { type: "array" });
+              let workbook = XLSX.read(slice, { type: "array" });
               // console.log("read workbook from xlsx.");
               // Close the file (this is mandatory).
               (async () => {
@@ -346,150 +395,52 @@ export default class App extends React.Component<AppProps, AppState> {
       })();
 
       // Read the workbook into JSON form.
-      let JSONoutput = {};
+      let analysis: XLNT.WorkbookAnalysis;
 
       try {
         let workbook = await this.getWorkbook();
         let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
-        // console.log(JSON.stringify(jsonBook));
-        // console.log("-----");
-        // We need to do the analysis with no lower cutoff so
-        // it can be adjusted via the sliders. If the sliders
-        // go away, this will not be needed.
         const originalThreshold = Config.reportingThreshold;
         Config.reportingThreshold = 0;
-        JSONoutput = Colorize.process_workbook(jsonBook, currentWorksheetName);
+        analysis = Colorize.process_workbook(jsonBook, currentWorksheetName);
         Config.reportingThreshold = originalThreshold;
       } catch (error) {
         console.log("setColor: failed to read workbook into JSON.");
+        return;
       }
 
       await Excel.run(async (context) => {
         console.log("setColor: starting processing.");
         let t = new Timer("setColor");
 
-        let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-        currentWorksheet.load(["protection"]);
-        await context.sync();
-        const wasPreviouslyProtected = currentWorksheet.protection.protected;
-        try {
-          currentWorksheet.protection.unprotect();
-          await context.sync();
-        } catch (error) {
-          console.log(
-            "WARNING: ExceLint does not work on protected spreadsheets. Please unprotect the sheet and try again."
-          );
+        // get a handle to the app
+        const app: Excel.Application = context.workbook.application;
+
+        // get a handle to the current worksheet
+        const ws = context.workbook.worksheets.getActiveWorksheet();
+
+        // try to unprotect
+        const prevProt = await unprotect(context, ws);
+        if (!prevProt.hasValue) {
+          console.log(PROTERR);
           return;
         }
 
-        /// Save the formats so they can later be restored.
-        await this.saveFormats(wasPreviouslyProtected);
+        // Save the formats so they can later be restored.
+        await this.saveFormats(prevProt.value);
 
         // Disable calculation for now.
-        let app = context.workbook.application;
-        app.load(["calculationMode"]);
-        await context.sync();
-        t.split("got calc mode");
+        let originalCalculationMode = await manualCalcMode(app, context);
 
-        let originalCalculationMode = app.calculationMode;
-        app.calculationMode = "Manual";
-
-        let usedRange = currentWorksheet.getUsedRange(false) as any;
-        usedRange.load(["address", "values", "formulas", "format"]);
-        // console.log(JSON.stringify(usedRange));
-        await context.sync();
-        t.split("got address");
-        // console.log(JSON.stringify(usedRange));
-
-        //		let displayComments = false;
-
-        /*
-                
-                            // Display all the named ranges (this should eventually be sent over for processing).
-                            // See https://docs.microsoft.com/en-us/javascript/api/excel/excel.nameditemcollection?view=office-js
-                            currentWorksheet.load(['names']);
-                            await context.sync();
-                            currentWorksheet.names.load(['items']);
-                            await context.sync();
-                            console.log(JSON.stringify(currentWorksheet.names.items));
-                */
-
-        t.split("load from used range = " + usedRange.address);
-
-        // Now start colorizing.
-
-        // Turn off screen updating and calculations while this is happening.
-        try {
-          app.suspendScreenUpdatingUntilNextSync();
-        } catch (error) {
-          // In case it's not implemented.
-        }
-        app.suspendApiCalculationUntilNextSync();
-
-        const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
-
-        let useNumericFormulaRanges = false;
-
-        // EDB 10 June 2019: HACK. Getting numeric formula
-        // ranges is shockingly slow -- an order of magnitude
-        // slower than getting numeric ranges -- so we only do
-        // it when it takes less than a second (though that is
-        // total guesswork). Arbitrary threshold for now.
-        // Revisit if this gets fixed...
-        if (numberOfCellsUsed < this.numericFormulaRangeThreshold) {
-          // Activate using numeric formula ranges when
-          // there aren't "too many" cells.
-          useNumericFormulaRanges = true;
-        } else {
-          console.log("Too many cells to use numeric formula ranges.");
-        }
-
-        let numericFormulaRanges = null;
-        if (useNumericFormulaRanges) {
-          numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(
-            Excel.SpecialCellType.formulas,
-            Excel.SpecialCellValueType.numbers
-          );
-          await context.sync();
-          t.split("got numeric formula ranges");
-        }
-
-        let numericRanges = null;
-
-        // console.log("number of cells used = " + numberOfCellsUsed);
-
-        if (numberOfCellsUsed < this.numericRangeThreshold) {
-          // Check number of cells, as above.
-          // For very large spreadsheets, this takes AGES.
-          numericRanges = usedRange.getSpecialCellsOrNullObject(
-            Excel.SpecialCellType.constants,
-            Excel.SpecialCellValueType.numbers
-          );
-          await context.sync();
-          t.split("got numeric ranges");
-        } else {
-          console.log("Too many cells to use numeric ranges.");
-        }
-
-        // await context.sync();
-
-        const usedRangeAddress = usedRange.address;
-        const formulas = usedRange.formulas;
-        const values = usedRange.values;
-
-        //await Colorize.process_sheet(context.workbook, Office.FileType.Compressed);
-        let analysis = Colorize.process_suspicious(usedRangeAddress, formulas, values);
-        let suspicious_cells = analysis.suspicious_cells;
-        let grouped_formulas = analysis.grouped_formulas;
-        let grouped_data = analysis.grouped_data;
-        this.suspicious_cells = suspicious_cells;
+        // Turn off screen updating to speed up drawing
+        disableScreenUpdating(app);
 
         // Note that we are duplicating work! FIXME. This work
         // above has basically been done by the
         // process_workbook call.
 
         // console.log(JSON.stringify(JSONoutput['worksheets'][currentWorksheetName]));
-        let new_proposed_fixes = JSONoutput["worksheets"][currentWorksheetName]["proposedFixes"];
+        let new_proposed_fixes = analysis["worksheets"][currentWorksheetName]["proposedFixes"];
         // Convert to the expected format, negating the entropy and adding a true value at the end.
         for (let i = 0; i < new_proposed_fixes.length; i++) {
           new_proposed_fixes[i][0] = -new_proposed_fixes[i][0];
@@ -552,7 +503,7 @@ export default class App extends React.Component<AppProps, AppState> {
         if (!useReducedColors) {
           this.color_ranges(
             grouped_data,
-            currentWorksheet,
+            ws,
             (_: string) => {
               return "#D3D3D3";
             },
@@ -566,7 +517,7 @@ export default class App extends React.Component<AppProps, AppState> {
           if (useReducedColors) {
             this.color_ranges(
               only_suspicious_grouped_formulas,
-              currentWorksheet,
+              ws,
               (hash: string) => {
                 return Colorize.get_color(Math.round(parseFloat(hash)));
               },
@@ -575,7 +526,7 @@ export default class App extends React.Component<AppProps, AppState> {
           } else {
             this.color_ranges(
               grouped_formulas,
-              currentWorksheet,
+              ws,
               (hash: string) => {
                 return Colorize.get_color(Math.round(parseFloat(hash)));
               },
@@ -584,14 +535,14 @@ export default class App extends React.Component<AppProps, AppState> {
           }
         }
 
-        currentWorksheet.load(["id"]);
+        ws.load(["id"]);
         await context.sync();
 
         //		console.log(JSON.stringify(usedRange.formulasR1C1));
         t.split("saved formats");
 
         // Grab the backup sheet for use in looking up the formats.
-        const backupSheetname = ExcelUtils.saved_original_sheetname(currentWorksheet.id);
+        const backupSheetname = ExcelUtils.saved_original_sheetname(ws.id);
         let worksheets = context.workbook.worksheets;
         let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
         await context.sync();
@@ -618,7 +569,7 @@ export default class App extends React.Component<AppProps, AppState> {
         // Parse out the explanation string for each.
         // console.log(JSON.stringify(JSONoutput));
         for (let i = 0; i < this.proposed_fixes.length; i++) {
-          const fixes = JSONoutput["worksheets"][currentWorksheetName]["exampleFixes"][i];
+          const fixes = analysis["worksheets"][currentWorksheetName]["exampleFixes"][i];
           // console.log(fixes);
           const explanation = fixes["bin"][0]; // for now, just the first explanation
           const example1 = fixes["formulas"][0];
@@ -639,7 +590,7 @@ export default class App extends React.Component<AppProps, AppState> {
         this.current_suspicious_cell = -1;
 
         // Protect the sheet against changes.
-        currentWorksheet.protection.protect();
+        ws.protection.protect();
         await context.sync();
 
         this.updateContent();
