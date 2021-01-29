@@ -2,8 +2,7 @@ import * as React from "react";
 import { Button, ButtonType } from "office-ui-fabric-react";
 import { Slider } from "office-ui-fabric-react/lib/Slider";
 import { ExcelUtils } from "./ExceLint-core/src/excelutils";
-import { Colorize } from "./ExceLint-core/src/colorize";
-import { ExceLintVector } from "./ExceLint-core/src/ExceLintTypes";
+import { ExceLintVector, ProposedFix } from "./ExceLint-core/src/ExceLintTypes";
 import { Config } from "./ExceLint-core/src/config";
 
 const barWidth = 100; // pixel length of the suspiciousness bar
@@ -18,9 +17,7 @@ export interface ContentProps {
   sheetName: string;
   currentFix: number;
   totalFixes: number;
-  themFixes: Array<
-    [number, [[number, number], [number, number]], [[number, number], [number, number]]]
-  >;
+  themFixes: ProposedFix[];
   suspiciousCells: ExceLintVector[];
   currentSuspiciousCell: number;
   numFixes: number;

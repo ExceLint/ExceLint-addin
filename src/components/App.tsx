@@ -26,6 +26,40 @@ const PROTERR =
   "WARNING: ExceLint does not work on protected spreadsheets. " +
   "Please unprotect the sheet and try again.";
 
+// returns formulas that return numeric values
+async function getNumericFormulaRanges(
+  context: Excel.RequestContext,
+  usedRange: Excel.Range
+): Promise<Excel.RangeAreas> {
+  const numericFormulaRanges = usedRange.getSpecialCellsOrNullObject(
+    Excel.SpecialCellType.formulas,
+    Excel.SpecialCellValueType.numbers
+  );
+  await context.sync();
+  return numericFormulaRanges;
+}
+
+// returns an Excel.RangeAreas of numeric cells, or if the spreasheet
+// is too big, nothing.
+async function getNumericRangesOrNot(
+  context: Excel.RequestContext,
+  usedRange: Excel.Range
+): Promise<Option<Excel.RangeAreas>> {
+  const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
+  if (numberOfCellsUsed < this.numericRangeThreshold) {
+    // Check number of cells, as above.
+    // For very large spreadsheets, this takes AGES.
+    const numericRanges = usedRange.getSpecialCellsOrNullObject(
+      Excel.SpecialCellType.constants,
+      Excel.SpecialCellValueType.numbers
+    );
+    await context.sync();
+    return new Some(numericRanges);
+  }
+  console.log("Too many cells to use numeric ranges.");
+  return None;
+}
+
 // do not update the UI until `context.sync` is called
 function disableScreenUpdating(app: Excel.Application): void {
   try {
@@ -70,7 +104,7 @@ async function unprotect(
 }
 
 export default class App extends React.Component<AppProps, AppState> {
-  private proposed_fixes = []; //  Array<[number, [[number, number], [number, number]], [[number, number], [number, number]]]> = [];
+  private proposed_fixes: XLNT.ProposedFix[] = [];
   private proposed_fixes_length = 0;
   private suspicious_cells: ExceLintVector[] = [];
   private current_suspicious_cell = -1;
@@ -102,65 +136,11 @@ export default class App extends React.Component<AppProps, AppState> {
     });
   }
 
-  // Discount the score of proposed fixes that cross formatting regimes (e.g., different colors).
-  private async adjust_fix_scores(
-    context: any,
-    backupSheet: any,
-    origin_col: any,
-    origin_row: any
-  ) {
-    let t = new Timer("adjust_fix_scores");
-    const fixes = this.proposed_fixes;
-
-    let usedRange = backupSheet.getUsedRange(false) as any;
-
-    // Define the cell properties to get by setting the matching LoadOptions to true.
-    const propertiesToGet = usedRange.getCellProperties({
-      numberFormat: true,
-      format: {
-        fill: {
-          color: true,
-        },
-        font: {
-          color: true,
-          style: true,
-          weight: true,
-          bold: true,
-          italic: true,
-          name: true,
-          size: true,
-          underline: true,
-        },
-        borders: {
-          color: true,
-          style: true,
-          weight: true,
-        },
-      },
-      style: true,
-    });
-
-    // Sync to get the data from the workbook.
-    await context.sync();
-    t.split("got formatting info.");
-
-    // console.log(JSON.stringify(propertiesToGet.value));
-
-    this.proposed_fixes = Colorize.adjust_proposed_fixes(
-      fixes,
-      propertiesToGet.value,
-      origin_col,
-      origin_row
-    );
-    t.split("done.");
-  }
-
   /// Color the ranges using the specified color function.
   private color_ranges(
-    grouped_ranges: { [x: string]: any },
+    grouped_ranges: XLNT.Dict<XLNT.Rectangle[]>,
     currentWorksheet: Excel.Worksheet,
-    colorfn: any,
-    otherfn: { (): void; (): void; (): void }
+    colorfn: (n: number) => string
   ) {
     const g = JSON.parse(JSON.stringify(grouped_ranges)); // deep copy
     // Process the ranges.
@@ -168,26 +148,19 @@ export default class App extends React.Component<AppProps, AppState> {
     Object.keys(grouped_ranges).forEach((hash) => {
       if (!(hash === undefined)) {
         const v = grouped_ranges[hash];
-        //		console.log("v = " + JSON.stringify(v));
         for (let theRange of v) {
           const rangeStr = ExcelUtils.make_range_string(theRange);
           let range = currentWorksheet.getRange(rangeStr);
-          //if (range.length === 0) {
-          //    continue;
-          //}
           const color = colorfn(hash_index);
           if (color === "#FFFFFF") {
             range.format.fill.clear();
           } else {
-            // console.log("setting " + rangeStr + " to " + color);
             range.format.fill.color = color;
           }
-          otherfn();
         }
         hash_index += 1;
       }
     });
-    // console.log('done processing.');
   }
 
   saveFormats = async (wasPreviouslyProtected: boolean) => {
@@ -381,6 +354,11 @@ export default class App extends React.Component<AppProps, AppState> {
 
   /// Colorize the formulas and data on the active sheet, saving the old formats so they can be later restored.
   setColor = async () => {
+    // Experimental: filter out colors so that only those
+    // identified as proposed fixes get colored.
+    const useReducedColors = false; // disabled by default! // WAS true; // ILDC
+    const useNumericFormulaRanges = false;
+
     OfficeExtension.config.extendedErrorLogging = true;
     try {
       let currentWorksheet;
@@ -435,157 +413,73 @@ export default class App extends React.Component<AppProps, AppState> {
         // Turn off screen updating to speed up drawing
         disableScreenUpdating(app);
 
-        // Note that we are duplicating work! FIXME. This work
-        // above has basically been done by the
-        // process_workbook call.
+        // get the analyzed sheet
+        const sheetAnalysis = analysis.getSheet(currentWorksheetName);
 
-        // console.log(JSON.stringify(JSONoutput['worksheets'][currentWorksheetName]));
-        let new_proposed_fixes = analysis["worksheets"][currentWorksheetName]["proposedFixes"];
-        // Convert to the expected format, negating the entropy and adding a true value at the end.
-        for (let i = 0; i < new_proposed_fixes.length; i++) {
-          new_proposed_fixes[i][0] = -new_proposed_fixes[i][0];
-          new_proposed_fixes[i].push(true);
-        }
+        // Convert to the expected format
+        // TODO: Dan: I don't know if this is necessary-- we negate the score elsewhere
+        // for (let i = 0; i < sheetAnalysis.proposedFixes.length; i++) {
+        //   // negate score and add a true value
+        //   let pf = sheetAnalysis.proposedFixes[i];
+        //   this.proposed_fixes.push(new UIProposedFix(pf.score, pf.rect1, pf.rect2, true));
+        // }
+        // TODO: Dan: Instead, I am just going to add a ref to the proposed fixes to
+        //            this object instead.
+        this.proposed_fixes = sheetAnalysis.proposedFixes;
 
-        // console.log(new_proposed_fixes);
-        this.proposed_fixes = new_proposed_fixes;
-
-        //console.log("suspicious cells = " + JSON.stringify(suspicious_cells));
-        //console.log("grouped formulas = " + JSON.stringify(grouped_formulas));
-        //console.log("grouped data = " + JSON.stringify(grouped_data));
-
-        // Experimental: filter out colors so that only those
-        // identified as proposed fixes get colored.
-        const useReducedColors = false; // disabled by default! // WAS true; // ILDC
-
-        let only_suspicious_proposed_fixes;
-        let only_suspicious_grouped_formulas = {};
-        if (useReducedColors) {
-          only_suspicious_proposed_fixes = this.proposed_fixes.reduce((obj, item) => {
-            if (-item[0] > 0.1) {
-              // FIXME hard-coded suspiciousness for now.
-              obj[JSON.stringify(item[1])] = true;
-              obj[JSON.stringify(item[2])] = true;
-            }
-            return obj;
-          }, {});
-          for (let key in grouped_formulas) {
-            only_suspicious_grouped_formulas[key] = [];
-            for (let rect of grouped_formulas[key]) {
-              if (JSON.stringify(rect) in only_suspicious_proposed_fixes) {
-                only_suspicious_grouped_formulas[key].push(rect);
-              }
-            }
-          }
-        }
+        // Get some handles to various Excel objects
+        const usedRange = ws.getUsedRange(false);
+        const numericRanges = await getNumericRangesOrNot(context, usedRange);
+        const numericFormulaRanges = await getNumericFormulaRanges(context, usedRange);
 
         /// Finally, apply colors.
 
         // Remove the background color from all cells.
-        let rangeFill = usedRange.format.fill;
+        const rangeFill = usedRange.format.fill;
         rangeFill.clear();
 
-        // Make all numbers yellow; this will be the default value for unreferenced data.
-        if (numericRanges) {
-          if (!useReducedColors) {
-            numericRanges.format.fill.color = "#eed202"; // "Safety Yellow"
-          }
+        // Make all numbers are yellow; this will be the default value for unreferenced data.
+        if (!useReducedColors && numericRanges.hasValue && numericRanges.value) {
+          numericRanges.value.format.fill.color = "#eed202"; // "Safety Yellow"
         }
 
         // Color numeric formulas yellow as well, if this is on.
-        if (!useReducedColors) {
-          if (useNumericFormulaRanges && numericFormulaRanges) {
-            numericFormulaRanges.format.fill.color = "#eed202"; // "Safety Yellow"
-          }
+        if (!useReducedColors && useNumericFormulaRanges && numericFormulaRanges) {
+          numericFormulaRanges.format.fill.color = "#eed202"; // "Safety Yellow"
         }
 
         // Just color referenced data gray.
         if (!useReducedColors) {
-          this.color_ranges(
-            grouped_data,
-            ws,
-            (_: string) => {
-              return "#D3D3D3";
-            },
-            () => {}
-          );
+          this.color_ranges(sheetAnalysis.groupedData, ws, (_) => "#D3D3D3");
         }
 
         // And color the formulas.
-        if (true) {
-          // Enable colors.
-          if (useReducedColors) {
-            this.color_ranges(
-              only_suspicious_grouped_formulas,
-              ws,
-              (hash: string) => {
-                return Colorize.get_color(Math.round(parseFloat(hash)));
-              },
-              () => {}
-            );
-          } else {
-            this.color_ranges(
-              grouped_formulas,
-              ws,
-              (hash: string) => {
-                return Colorize.get_color(Math.round(parseFloat(hash)));
-              },
-              () => {}
-            );
-          }
+        if (!useReducedColors) {
+          this.color_ranges(sheetAnalysis.groupedFormulas, ws, (hash: number) => {
+            // TODO: Dan: why do we round the hash?
+            return Colorize.get_color(Math.round(hash));
+          });
         }
 
+        // TODO: Dan: what does this do?
         ws.load(["id"]);
         await context.sync();
 
-        //		console.log(JSON.stringify(usedRange.formulasR1C1));
-        t.split("saved formats");
-
-        // Grab the backup sheet for use in looking up the formats.
-        const backupSheetname = ExcelUtils.saved_original_sheetname(ws.id);
-        let worksheets = context.workbook.worksheets;
-        let backupSheet = worksheets.getItemOrNullObject(backupSheetname);
-        await context.sync();
-
-        t.split("about to iterate through fixes.");
-
-        if (this.proposed_fixes.length > 0) {
-          t.split("about to adjust scores.");
-          const [sheetName, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-          const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
-
-          // Adjust the fix scores (downward) to take into account formatting in the original sheet.
-          await this.adjust_fix_scores(context, backupSheet, origin[0] - 1, origin[1] - 1);
-
-          t.split("sorting fixes.");
-
-          this.proposed_fixes.sort((a, b) => {
-            return a[0] - b[0];
-          });
-
-          t.split("generated fixes");
-        }
-
-        // Parse out the explanation string for each.
-        // console.log(JSON.stringify(JSONoutput));
+        // Generate an example fix for each proposed fix
+        const explanations: string[] = [];
         for (let i = 0; i < this.proposed_fixes.length; i++) {
-          const fixes = analysis["worksheets"][currentWorksheetName]["exampleFixes"][i];
-          // console.log(fixes);
-          const explanation = fixes["bin"][0]; // for now, just the first explanation
-          const example1 = fixes["formulas"][0];
-          const example2 = fixes["formulas"][1];
+          // get the "example fix" for this proposed fix
+          const pf = this.proposed_fixes[i];
+          const ex = pf.analysis;
+          const explanation = ex.classification[0]; // for now, just the first explanation
+          const example1 = ex.analysis[0].formula;
+          const example2 = ex.analysis[1].formula;
+          // convert it into a string
           const explanationStr = explanation + "\n" + example1 + "\n" + example2;
-          this.proposed_fixes[i].push(explanationStr);
-          // console.log("NEW PROPOSED FIX THANG: " + JSON.stringify(this.proposed_fixes[i]));
+          explanations.push(explanationStr);
         }
 
-        this.total_fixes = formulas.length;
-
-        this.proposed_fixes_length = this.proposed_fixes.length;
-
-        //		app.suspendScreenUpdatingUntilNextSync();
-        t.split("processed formulas");
-
+        // reset some stuff?
         this.current_fix = -1;
         this.current_suspicious_cell = -1;
 
@@ -599,11 +493,6 @@ export default class App extends React.Component<AppProps, AppState> {
         app.calculationMode = originalCalculationMode;
 
         await context.sync();
-
-        /*		let currName = currentWorksheet.name;
-                        currentWorksheet.onChanged.add((eventArgs) => { Excel.run((context) => { context.workbook.worksheets.getActiveWorksheet().name = currName; await context.sync(); }); }); */
-
-        t.split("done");
       });
     } catch (error) {
       console.log("Error: " + error);

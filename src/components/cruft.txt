@@ -63,3 +63,24 @@
 	    this.light_color_dict[darkstr] = lightstr;
 	}
     }
+
+        // let only_suspicious_proposed_fixes;
+        // let only_suspicious_grouped_formulas = {};
+        // if (useReducedColors) {
+        //   only_suspicious_proposed_fixes = this.proposed_fixes.reduce((obj, item) => {
+        //     if (-item[0] > 0.1) {
+        //       // FIXME hard-coded suspiciousness for now.
+        //       obj[JSON.stringify(item[1])] = true;
+        //       obj[JSON.stringify(item[2])] = true;
+        //     }
+        //     return obj;
+        //   }, {});
+        //   for (let key in grouped_formulas) {
+        //     only_suspicious_grouped_formulas[key] = [];
+        //     for (let rect of grouped_formulas[key]) {
+        //       if (JSON.stringify(rect) in only_suspicious_proposed_fixes) {
+        //         only_suspicious_grouped_formulas[key].push(rect);
+        //       }
+        //     }
+        //   }
+        // }
