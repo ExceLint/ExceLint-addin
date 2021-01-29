@@ -45,8 +45,12 @@ async function getNumericRangesOrNot(
   context: Excel.RequestContext,
   usedRange: Excel.Range
 ): Promise<Option<Excel.RangeAreas>> {
+  // The address field needs to be loaded in order to access it
+  usedRange.load(["address"]);
+  await context.sync();
+
   const numberOfCellsUsed = ExcelUtils.get_number_of_cells(usedRange.address);
-  if (numberOfCellsUsed < this.numericRangeThreshold) {
+  if (numberOfCellsUsed < App.numericRangeThreshold) {
     // Check number of cells, as above.
     // For very large spreadsheets, this takes AGES.
     const numericRanges = usedRange.getSpecialCellsOrNullObject(
@@ -115,8 +119,8 @@ export default class App extends React.Component<AppProps, AppState> {
   private contentElement: any = null;
   private sheetName: string = "";
 
-  private numericFormulaRangeThreshold = 20000;
-  private numericRangeThreshold = 20000;
+  public static readonly numericFormulaRangeThreshold = 20000;
+  public static readonly numericRangeThreshold = 20000;
 
   constructor(props, context) {
     super(props, context);
