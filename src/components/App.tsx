@@ -114,8 +114,6 @@ export default class App extends React.Component<AppProps, AppState> {
   private current_suspicious_cell = -1;
   private current_fix = -1;
   private total_fixes = -1;
-  private savedFormat: any = null;
-  private savedRange: string = null;
   private contentElement: any = null;
   private sheetName: string = "";
 
@@ -465,10 +463,6 @@ export default class App extends React.Component<AppProps, AppState> {
           });
         }
 
-        // TODO: Dan: what does this do?
-        ws.load(["id"]);
-        await context.sync();
-
         // Generate an example fix for each proposed fix
         const explanations: string[] = [];
         for (let i = 0; i < this.proposed_fixes.length; i++) {
@@ -483,14 +477,11 @@ export default class App extends React.Component<AppProps, AppState> {
           explanations.push(explanationStr);
         }
 
-        // reset some stuff?
-        this.current_fix = -1;
-        this.current_suspicious_cell = -1;
-
         // Protect the sheet against changes.
         ws.protection.protect();
         await context.sync();
 
+        // Display stuff on the pane
         this.updateContent();
 
         // Restore original calculation mode.

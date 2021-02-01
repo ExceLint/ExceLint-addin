@@ -282,7 +282,7 @@ function DisplayFixes(props) {
   if (props.sheetName === "") {
     return <div></div>;
   }
-  // console.log('DisplayFixes: ' + props.totalFixes + ', ' + props.suspiciousCells.length);
+
   let result1 = <div></div>;
   let str = "";
   // Filter out fixes whose score is below the threshold.
