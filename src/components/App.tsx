@@ -497,7 +497,11 @@ export default class App extends React.Component<AppProps, AppState> {
     }
   };
 
-  getRange(currentWorksheet: Excel.Worksheet, proposed_fixes: string | any[], current_fix: number) {
+  getRange(
+    currentWorksheet: Excel.Worksheet,
+    proposed_fixes: XLNT.ProposedFix[],
+    current_fix: number
+  ) {
     if (proposed_fixes.length > 0) {
       let [col0, row0, col1, row1] = ExcelUtils.get_rectangle(proposed_fixes, current_fix);
       let rangeStr = col0 + row0 + ":" + col1 + row1;

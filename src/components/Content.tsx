@@ -41,7 +41,13 @@ const notSuspiciousStyle: any = {
   color: "red",
 };
 
-function makeTable(sheetName: string, arr, selector, current: number, numFixes: number): any {
+function makeTable(
+  sheetName: string,
+  arr: ProposedFix[],
+  selector,
+  current: number,
+  numFixes: number
+): any {
   if (numFixes === 0) {
     numFixes = 1;
   }
@@ -161,7 +167,7 @@ function makeTable(sheetName: string, arr, selector, current: number, numFixes: 
 
 function makeTableSuspiciousCells(
   sheetName: string,
-  arr: any[],
+  arr: ExceLintVector[],
   selector: (arg0: number) => void,
   current: number,
   numFixes: number
@@ -178,7 +184,10 @@ function makeTableSuspiciousCells(
       //	    let r = ExcelUtils.get_rectangle(arr, i);
       let r = arr[i];
       if (r) {
-        let [col, row, val] = r;
+        // unpack vector
+        const col = r.x;
+        const row = r.y;
+        const val = r.c;
         // console.log("value = " + val);
         let score = (1.0 - val) * barWidth;
         // Sort from largest to smallest (by making negative).
@@ -278,7 +287,19 @@ function makeTableSuspiciousCells(
   return <div></div>;
 }
 
-function DisplayFixes(props) {
+class PropsThing {
+  sheetName: string;
+  currentFix: number;
+  totalFixes: number;
+  themFixes: ProposedFix[];
+  selector: any;
+  numFixes: number;
+  suspiciousCells: ExceLintVector[];
+  cellSelector: any;
+  currentSuspiciousCell: number;
+}
+
+function DisplayFixes(props: PropsThing) {
   if (props.sheetName === "") {
     return <div></div>;
   }
@@ -286,13 +307,13 @@ function DisplayFixes(props) {
   let result1 = <div></div>;
   let str = "";
   // Filter out fixes whose score is below the threshold.
-  let filteredFixes = props.themFixes.filter((c: any[]) => {
-    //	console.log("c = " + JSON.stringify(c));
-    let score = -c[0];
-    if (!c[3]) {
-      // Different formats.
-      score *= (100 - Config.getFormattingDiscount()) / 100;
-    }
+  let filteredFixes = props.themFixes.filter((pf: ProposedFix) => {
+    let score = pf.score;
+    // TODO: DAN FIX "DIFFERENT FORMATS" FILTER
+    // if (!pf[3]) {
+    //   // Different formats.
+    //   score *= (100 - Config.getFormattingDiscount()) / 100;
+    // }
     return score >= Config.getReportingThreshold() / 100;
   });
   let table1 = <div></div>;
@@ -341,8 +362,29 @@ function DisplayFixes(props) {
   );
 }
 
-export class Content extends React.Component<ContentProps, any> {
-  constructor(props: ContentProps, context: any) {
+class ReactState implements ContentProps {
+  // obligatory react stuff
+  message1: string;
+  buttonLabel1: string;
+  click1: any;
+  message2: string;
+  buttonLabel2: string;
+  click2: any;
+  selector: any;
+  cellSelector: any;
+
+  // my stuff
+  sheetName: string;
+  currentFix: number;
+  totalFixes: number;
+  themFixes: ProposedFix[];
+  numFixes: number;
+  suspiciousCells: ExceLintVector[];
+  currentSuspiciousCell: number;
+}
+
+export class Content extends React.Component<ReactState, any> {
+  constructor(props: ReactState, context: any) {
     super(props, context);
     this.state = {
       sheetName: props.sheetName,
@@ -443,15 +485,15 @@ export class Content extends React.Component<ContentProps, any> {
             {this.props.buttonLabel2}
           </Button>
           <DisplayFixes
-            sheetName={this.state.sheetName}
-            currentFix={this.state.currentFix}
-            totalFixes={this.state.totalFixes}
-            themFixes={this.state.themFixes}
+            sheetName={this.state.sheetName as string}
+            currentFix={this.state.currentFix as number}
+            totalFixes={this.state.totalFixes as number}
+            themFixes={this.state.themFixes as ProposedFix[]}
             selector={this.props.selector}
-            numFixes={this.state.numFixes}
-            suspiciousCells={this.state.suspiciousCells}
+            numFixes={this.state.numFixes as number}
+            suspiciousCells={this.state.suspiciousCells as ExceLintVector[]}
             cellSelector={this.props.cellSelector}
-            currentSuspiciousCell={this.state.currentSuspiciousCell}
+            currentSuspiciousCell={this.state.currentSuspiciousCell as number}
           />
           {instructions}
           {slider1}
