@@ -55,19 +55,11 @@ function makeTable(
   if (arr.length > 0) {
     let children = [];
     for (let i = 0; i < arr.length; i++) {
-      //	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
       let r = ExcelUtils.get_rectangle(arr, i);
       if (r) {
         let [col0, row0, col1, row1] = r;
         // Sort from largest to smallest (by making negative).
-        // console.log("TABLE IN CONTENT: " + JSON.stringify(arr[i]));
-        let score = -arr[i][0];
-        // console.log("original score = " + score);
-        if (!arr[i][3]) {
-          // Different formats.
-          score *= (100 - Config.getFormattingDiscount()) / 100;
-        }
-        // console.log("score now = " + score);
+        let score = -arr[i].score;
         score *= barWidth;
         if (score > barWidth) {
           score = barWidth;
@@ -93,7 +85,7 @@ function makeTable(
             </td>
           );
         }
-        const scoreStr = arr[i][4]; //  + "\n" + "(" + Math.round(score).toString() + "% anomalous)";
+        const scoreStr = arr[i].score.toString(); //  + "\n" + "(" + Math.round(score).toString() + "% anomalous)";
         let barColor = "red";
         if (Math.round(score) < 50) {
           barColor = "yellow";
@@ -307,29 +299,23 @@ function DisplayFixes(props: PropsThing) {
   let result1 = <div></div>;
   let str = "";
   // Filter out fixes whose score is below the threshold.
-  let filteredFixes = props.themFixes.filter((pf: ProposedFix) => {
-    let score = pf.score;
-    // TODO: DAN FIX "DIFFERENT FORMATS" FILTER
-    // if (!pf[3]) {
-    //   // Different formats.
-    //   score *= (100 - Config.getFormattingDiscount()) / 100;
-    // }
-    return score >= Config.getReportingThreshold() / 100;
-  });
+  let filteredFixes = props.themFixes.filter((pf) =>
+    pf.score >= Config.getReportingThreshold() / 100
+  );
   let table1 = <div></div>;
-  if (true) {
-    // OK, if we got here, we did some analysis.
-    if (filteredFixes.length === 0 && props.suspiciousCells.length === 0) {
-      // We got nothing.
-      table1 = (
-        <div style={notSuspiciousStyle}>
-          <br />
+
+  // OK, if we got here, we did some analysis.
+  if (filteredFixes.length === 0 && props.suspiciousCells.length === 0) {
+    // We got nothing.
+    table1 = (
+      <div style={notSuspiciousStyle}>
+        <br />
           Nothing anomalous found in {props.sheetName}.<br />
-          <br />
-        </div>
-      );
-    }
+        <br />
+      </div>
+    );
   }
+
   table1 = makeTable(
     props.sheetName,
     filteredFixes,
@@ -396,7 +382,6 @@ export class Content extends React.Component<ReactState, any> {
       currentSuspiciousCell: props.currentSuspiciousCell,
     };
   }
-  // <p>{this.props.message}</p>
 
   private static colorPalette(): any {
     return (
