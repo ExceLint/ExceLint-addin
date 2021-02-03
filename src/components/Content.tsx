@@ -58,11 +58,10 @@ function makeTable(
       let r = ExcelUtils.get_rectangle(arr, i);
       if (r) {
         let [col0, row0, col1, row1] = r;
-        // Sort from largest to smallest (by making negative).
-        let score = -arr[i].score;
-        score *= barWidth;
-        if (score > barWidth) {
-          score = barWidth;
+        let scoreBar = arr[i].score;
+        scoreBar *= barWidth;
+        if (scoreBar > barWidth) {
+          scoreBar = barWidth;
         }
         counter += 1;
         let rangeDisplay = <b></b>;
@@ -87,7 +86,7 @@ function makeTable(
         }
         const scoreStr = arr[i].score.toString(); //  + "\n" + "(" + Math.round(score).toString() + "% anomalous)";
         let barColor = "red";
-        if (Math.round(score) < 50) {
+        if (Math.round(scoreBar) < 50) {
           barColor = "yellow";
         }
         children.push(
@@ -102,7 +101,7 @@ function makeTable(
             <td
               title={scoreStr}
               style={{
-                width: Math.round(score),
+                width: Math.round(scoreBar),
                 backgroundColor: barColor,
                 display: "inline-block",
               }}
@@ -112,7 +111,7 @@ function makeTable(
             <td
               title={scoreStr}
               style={{
-                width: barWidth - Math.round(score),
+                width: barWidth - Math.round(scoreBar),
                 backgroundColor: "lightgray",
                 display: "inline-block",
               }}
