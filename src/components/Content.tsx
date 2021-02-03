@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Button, ButtonType } from "office-ui-fabric-react";
-import { Slider } from "office-ui-fabric-react/lib/Slider";
 import { ExcelUtils } from "./ExceLint-core/src/excelutils";
 import { ExceLintVector, ProposedFix } from "./ExceLint-core/src/ExceLintTypes";
 import { Config } from "./ExceLint-core/src/config";
@@ -156,128 +155,6 @@ function makeTable(
   );
 }
 
-function makeTableSuspiciousCells(
-  sheetName: string,
-  arr: ExceLintVector[],
-  selector: (arg0: number) => void,
-  current: number,
-  numFixes: number
-): any {
-  // console.log('makeTableSuspiciousCells');
-  if (numFixes === 0) {
-    numFixes = 1;
-  }
-  let counter = 0;
-  if (arr.length > 0) {
-    let children = [];
-    for (let i = 0; i < arr.length; i++) {
-      //	    console.log("makeTable: arr[" + i + "] = " + JSON.stringify(arr[i]));
-      //	    let r = ExcelUtils.get_rectangle(arr, i);
-      let r = arr[i];
-      if (r) {
-        // unpack vector
-        const col = r.x;
-        const row = r.y;
-        const val = r.c;
-        // console.log("value = " + val);
-        let score = (1.0 - val) * barWidth;
-        // Sort from largest to smallest (by making negative).
-        if (score > barWidth) {
-          score = barWidth;
-        }
-        // Skip really low scores.
-        if (score < Config.suspiciousCellsReportingThreshold) {
-          console.warn("skipping " + i);
-          continue;
-        }
-        counter += 1;
-        //		console.log("score is now = " + score);
-        let rangeDisplay = <b></b>;
-        let colName = ExcelUtils.column_index_to_name(col);
-        if (current === i) {
-          rangeDisplay = (
-            <td style={{ width: 100 }}>
-              <b>
-                {colName}
-                {row}
-              </b>
-            </td>
-          );
-        } else {
-          rangeDisplay = (
-            <td style={{ width: 100 }}>
-              {colName}
-              {row}
-            </td>
-          );
-        }
-        const scoreStr = "{" + Math.round(score).toString() + "% anomalous" + "}";
-        let barColor = "red";
-        if (Math.round(score) < 50) {
-          barColor = "yellow";
-        }
-        children.push(
-          <tr
-            style={lineStyle}
-            onClick={(ev) => {
-              ev.preventDefault();
-              selector(i);
-            }}
-          >
-            {rangeDisplay}
-            <td
-              title={scoreStr}
-              style={{
-                width: Math.round(score),
-                backgroundColor: barColor,
-                display: "inline-block",
-              }}
-            >
-              &nbsp;
-            </td>
-            <td
-              title={scoreStr}
-              style={{
-                width: barWidth - Math.round(score),
-                backgroundColor: "lightgray",
-                display: "inline-block",
-              }}
-            >
-              &nbsp;
-            </td>
-          </tr>
-        );
-        //		children.push(<tr style={lineStyle} onClick={(ev) => { ev.preventDefault(); selector(i); }}>{rangeDisplay}<td title={scoreStr} style={{width: Math.round(score), backgroundColor: 'yellow', display:'inline-block'}}>&nbsp;</td><td style={{width: barWidth-Math.round(score), backgroundColor: 'lightgray', display:'inline-block'}}>&nbsp;</td></tr>);
-      }
-    }
-    if (counter > 0) {
-      let table = [];
-      let header = (
-        <tr>
-          <th align="left">Cell</th>
-          <th align="left">Anomalousness</th>
-        </tr>
-      );
-      table.push(
-        <div style={notSuspiciousStyle}>
-          Click to jump to anomalous cells in {sheetName}:<br />
-          <div style={divStyle}>
-            <table style={{ width: "300px" }}>
-              <tbody>
-                {header}
-                {children}
-              </tbody>
-            </table>
-          </div>
-          <br />
-        </div>
-      );
-      return table;
-    }
-  }
-  return <div></div>;
-}
-
 class PropsThing {
   sheetName: string;
   currentFix: number;
@@ -329,20 +206,9 @@ function DisplayFixes(props: PropsThing) {
       {table1}
     </div>
   );
-  // Suspicious cells.
-  let result2 = <div></div>;
-  const table2 = makeTableSuspiciousCells(
-    props.sheetName,
-    props.suspiciousCells,
-    props.cellSelector,
-    props.currentSuspiciousCell,
-    props.suspiciousCells.length
-  );
-  result2 = <div>{table2}</div>;
   return (
     <div>
       {result1}
-      {result2}
     </div>
   );
 }
@@ -382,19 +248,6 @@ export class Content extends React.Component<ReactState, any> {
     };
   }
 
-  private static colorPalette(): any {
-    return (
-      <div>
-        <svg width="300" height="20">
-          <rect x="0" y="0" width="50" height="20" fill="lightblue" />
-          <text x="55" y="13">
-            formulas (pastel colors)
-          </text>
-        </svg>
-      </div>
-    );
-  }
-
   render() {
     let instructions = <div></div>;
     let slider1 = <div></div>;
@@ -415,47 +268,6 @@ export class Content extends React.Component<ReactState, any> {
           <br />
         </div>
       );
-    } else {
-      if (false) {
-        // show advanced settings
-        instructions = (
-          <div style={notSuspiciousStyle}>
-            <em>Advanced settings:</em>
-          </div>
-        );
-        slider1 = (
-          <div>
-            <Slider
-              label="Anomalousness threshold (%)"
-              min={0}
-              max={100}
-              step={1}
-              defaultValue={Config.getReportingThreshold()}
-              showValue={true}
-              onChange={(value: number) => {
-                Config.setReportingThreshold(value);
-                this.forceUpdate();
-              }}
-            />
-          </div>
-        );
-        slider2 = (
-          <div>
-            <Slider
-              label="Impact of different formats (%)"
-              min={0}
-              max={100}
-              step={1}
-              defaultValue={Config.getFormattingDiscount()}
-              showValue={true}
-              onChange={(value: number) => {
-                Config.setFormattingDiscount(value);
-                this.forceUpdate();
-              }}
-            />
-          </div>
-        );
-      }
     }
 
     return (

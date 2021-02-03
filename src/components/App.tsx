@@ -9,7 +9,6 @@ import { Timer } from "./ExceLint-core/src/timer";
 import { Config } from "./ExceLint-core/src/config";
 import * as XLNT from "./ExceLint-core/src/ExceLintTypes";
 import * as XLSX from "xlsx";
-import * as OfficeHelpers from "@microsoft/office-js-helpers";
 import { ExceLintVector } from "./ExceLint-core/src/ExceLintTypes";
 import { Option, Some, None } from "./ExceLint-core/src/option";
 
@@ -18,7 +17,7 @@ export interface AppProps {
   isOfficeInitialized: boolean;
 }
 
-export interface AppState {}
+export interface AppState { }
 
 type XLCalculationMode = Excel.CalculationMode | "Automatic" | "AutomaticExceptTables" | "Manual";
 
@@ -418,15 +417,7 @@ export default class App extends React.Component<AppProps, AppState> {
         // get the analyzed sheet
         const sheetAnalysis = analysis.getSheet(currentWorksheetName);
 
-        // Convert to the expected format
-        // TODO: Dan: I don't know if this is necessary-- we negate the score elsewhere
-        // for (let i = 0; i < sheetAnalysis.proposedFixes.length; i++) {
-        //   // negate score and add a true value
-        //   let pf = sheetAnalysis.proposedFixes[i];
-        //   this.proposed_fixes.push(new UIProposedFix(pf.score, pf.rect1, pf.rect2, true));
-        // }
-        // TODO: Dan: Instead, I am just going to add a ref to the proposed fixes to
-        //            this object instead.
+        // assign fixes to Content object
         this.proposed_fixes = sheetAnalysis.proposedFixes;
 
         // Get some handles to various Excel objects
@@ -514,7 +505,6 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   selectFix = async (currentFix) => {
-    // console.log("selectFix " + currentFix);
     try {
       await Excel.run(async (context) => {
         if (this.total_fixes === -1) {
@@ -531,13 +521,7 @@ export default class App extends React.Component<AppProps, AppState> {
         let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
         currentWorksheet.load(["protection"]);
         await context.sync();
-        /*
-                  if (currentWorksheet.protection.protected) {
-                  // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-                  return;
-                  }
-                */
-        //		console.log(this.proposed_fixes);
+
         let r = this.getRange(currentWorksheet, this.proposed_fixes, currentFix);
         if (r) {
           r.select();
@@ -545,11 +529,6 @@ export default class App extends React.Component<AppProps, AppState> {
         this.current_fix = currentFix;
         this.current_suspicious_cell = -1;
         this.updateContent();
-        /*
-                  this.contentElement.current.setState({ currentFix: currentFix,
-                  totalFixes: this.total_fixes,
-                  themFixes : this.proposed_fixes });
-                */
       });
     } catch (error) {
       console.log("Error: " + error);
@@ -577,13 +556,6 @@ export default class App extends React.Component<AppProps, AppState> {
         let currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
         currentWorksheet.load(["protection"]);
         await context.sync();
-        /*
-                  if (currentWorksheet.protection.protected) {
-                  // Office.context.ui.displayDialogAsync('https://localhost:3000/protected-sheet.html', { height: 20, width: 20 });
-                  return;
-                  }
-                */
-        //		console.log("suspicious cells + " + JSON.stringify(this.suspicious_cells));
 
         const col = this.suspicious_cells[currentCell][0];
         const row = this.suspicious_cells[currentCell][1];
@@ -596,12 +568,6 @@ export default class App extends React.Component<AppProps, AppState> {
         this.current_suspicious_cell = currentCell;
         this.current_fix = -1;
         this.updateContent();
-        //                console.log("setting is now " + this.current_suspicious_cell);
-        /*
-                  this.contentElement.current.setState({ currentFix: currentFix,
-                  totalFixes: this.total_fixes,
-                  themFixes : this.proposed_fixes });
-                */
       });
     } catch (error) {
       console.log("Error: " + error);
