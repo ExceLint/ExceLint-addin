@@ -1,3 +1,8 @@
+/*
+ * This serves no purpose in ExceLint.  However, I am keeping it here
+ * as an example of building a React component with Typescript.
+ */
+
 import * as React from "react";
 
 export interface HeroListItem {
