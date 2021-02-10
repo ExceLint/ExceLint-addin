@@ -1,32 +1,92 @@
-# Office-Addin-TaskPane-React
+![[ExceLint logo]](logos/ExceLint/ExceLint.png)
 
-This repository contains the source code used by the [Yo Office generator](https://github.com/OfficeDev/generator-office) when you create a new Office Add-in that appears in the task pane. You can also use this repository as a sample to base your own project from if you choose not to use the generator. 
+ExceLint is an Excel add-in that automatically finds formula errors in
+spreadsheets. It is a product of research from the [PLASMA lab @ UMass
+Amherst](https://plasma-umass.org) and Microsoft Research.
 
-## TypeScript
+by [Dan Barowy](http://www.cs.williams.edu/~dbarowy/) (Williams
+College), [Emery Berger](https://www.emeryberger.com/) (UMass Amherst /
+Microsoft Research), and [Ben
+Zorn](https://www.microsoft.com/en-us/research/people/zorn/) (Microsoft
+Research).
 
-This template is written using [TypeScript](http://www.typescriptlang.org/). For the JavaScript version of this template, go to [Office-Addin-TaskPane-React-JS](https://github.com/OfficeDev/Office-Addin-TaskPane-React-JS).
+## Talks on ExceLint
 
-## Debugging
+- [ExceLint - Automatically Finding Spreadsheet Formula Errors](https://www.youtube.com/watch?v=rEwUA0h2dsw), OOPSLA 2018 conference talk by Dan Barowy
+- [Saving the world from spreadsheets](https://www.youtube.com/watch?list=SRYearby%20Super%20Mesh%20Task%20Chair&v=GyWKxFxyyrQ), Univ. of Washington PLSE seminar, by Emery Berger
+- [The next generation of developer tools for data programming](https://note.microsoft.com/MSR-Webinar-Data-Programming-Registration-On-Demand.html), Microsoft Research Webinar Series, by Ben Zorn
 
-This template supports debugging using any of the following techniques:
+## Installation
 
-- [Use a browser's developer tools](https://docs.microsoft.com/office/dev/add-ins/testing/debug-add-ins-in-office-online)
-- [Attach a debugger from the task pane](https://docs.microsoft.com/office/dev/add-ins/testing/attach-debugger-from-task-pane)
-- [Use F12 developer tools on Windows 10](https://docs.microsoft.com/office/dev/add-ins/testing/debug-add-ins-using-f12-developer-tools-on-windows-10)
+ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
+You need to install the file `manifest.xml` following the appropriate instructions for each platform:
 
-## Questions and comments
+- Windows: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins
+- on-line: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing
+- Mac: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac
 
-We'd love to get your feedback about this sample. You can send your feedback to us in the *Issues* section of this repository.
+## Source code
 
-Questions about Microsoft Office 365 development in general should be posted to [Stack Overflow](http://stackoverflow.com/questions/tagged/office-js+API).  If your question is about the Office JavaScript APIs, make sure it's tagged with  [office-js].
+Source code for the add-in may be found [at its GitHub
+repository](https://github.com/plasma-umass/ExceLint-addin).
 
-## Additional resources
+## Privacy
 
-* [Office add-in documentation](https://docs.microsoft.com/office/dev/add-ins/overview/office-add-ins)
-* More Office Add-in samples at [OfficeDev on Github](https://github.com/officedev)
+The ExceLint add-in does not collect personally identifiable
+information. See [the privacy statement](privacy.html) for more details.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+## Support
 
-## Copyright
+ExceLint is provided without any guarantee of support. However, we
+welcome [bug
+reports](https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=bug&template=bug_report.md&title=)
+and [enhancement/feature
+requests](https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=dbarowy%2C+emeryberger%2C+bzorn&labels=enhancement&template=feature_request.md&title=).
 
-Copyright (c) 2019 Microsoft Corporation. All rights reserved.
+## Technical Details
+
+The following technical paper describes how ExceLint works and includes
+an extensive empirical evaluation: [_ExceLint: Automatically Finding
+Spreadsheet Formula
+Errors_](https://github.com/ExceLint/ExceLint/blob/master/ExceLint-OOPSLA2018.pdf),
+Daniel W. Barowy (Williams College), Emery D. Berger (University of
+Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In
+_Proceedings of the ACM on Programming Languages_, Volume 2, Number
+OOPSLA.
+
+## Development
+
+The ExceLint addin is written entirely in TypeScript. It is already set up to be hostable locally.
+
+### Requirements
+
+To run ExceLint locally, you will first need to install [Node](https://nodejs.org/en/) and [Git](https://git-scm.com/downloads).
+
+### Running the ExceLint service locally
+
+First, run the following commands to build and start the local ExceLint service (which just hosts the assets).
+
+```
+git clone https://github.com/plasma-umass/ExceLint-addin
+cd ExceLint-addin
+npm install
+npm run start-local
+```
+
+### Testing
+
+The easiest way to test the local service is to use Excel 365
+(https://www.office.com/launch/excel?auth=2). Open a workbook, click
+the Insert menu, then click "Office Add-ins" on the ribbon. Click
+"Upload My Add-in" (in the upper-right hand corner), and select the
+file `manifest-localhost.xml`. If everything works as planned, you should
+see an icon for ExceLint on the Home ribbon. Click on it and it should open
+the task pane on the right-hand side of the window.
+
+## Acknowledgements
+
+This material is based upon work supported by the National Science
+Foundation under Grant No. CCF-1617892. Any opinions, findings, and
+conclusions or recommendations expressed in this material are those
+of the author(s) and do not necessarily reflect the views of the National
+Science Foundation.
