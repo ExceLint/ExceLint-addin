@@ -1,6 +1,14 @@
 {
-  "name": "office-addin-taskpane-react",
-  "version": "0.0.1",
+  "name": "exce-lint",
+  "version": "1.1.0",
+  "contributors": [
+    {"name": "Emery Berger",
+      "url": "https://emeryberger.com"},
+    {"name": "Daniel W. Barowy",
+     "email": "dbarowy@cs.williams.edu",
+     "url": "https://www.cs.williams.edu/~dbarowy/"
+    }  
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/OfficeDev/Office-Addin-TaskPane-React.git"
