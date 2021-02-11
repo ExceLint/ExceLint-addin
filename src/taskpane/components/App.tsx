@@ -1,9 +1,7 @@
 import * as React from "react";
-
-// images references in the manifest
-// import "../../../assets/icon-16.png";
-// import "../../../assets/icon-32.png";
-// import "../../../assets/icon-80.png";
+import * as XLSX from "xlsx";
+import { Colorize } from "../../core/src/colorize";
+import { ExcelJSON } from "../../core/src/exceljson";
 
 /**
  * Represents the underlying data model.
@@ -23,7 +21,7 @@ export interface AppState {
 
 /**
  * Global startup function for the plugin. Excel API and spreadsheet will be
- * initialized.  App class (below) and React state will note initialized.
+ * initialized.  App class (below) and React state will not be initialized.
  */
 (async () => {
   await Office.onReady();
@@ -42,17 +40,66 @@ export default class App extends React.Component<AppProps, AppState> {
     this.state = {
       placeholder: "start"
     };
+
+    // run the initial analysis
+  }
+
+  public static async initialize() {
+    let workbook = await App.getWorkbook();
+    let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
+    return Colorize.process_workbook(jsonBook, currentWorksheetName);
+  }
+
+  public static async getWorksheet() {
+    let currentWorksheet;
+    let currentWorksheetName = "";
+    (async () => {
+      await Excel.run(async context => {
+        currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+        currentWorksheet.load(["name"]);
+        await context.sync();
+        currentWorksheetName = currentWorksheet.name;
+      });
+    })();
+  }
+
+  // Read in the workbook as a file into XLSX form, so it can be processed by our tools
+  // developed for excelint-cli.
+  public static async getWorkbook(): Promise<any> {
+    return new Promise((resolve, _reject) => {
+      Office.context.document.getFileAsync(Office.FileType.Compressed, result => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          // For now, assume there's just one slice - FIXME.
+          result.value.getSliceAsync(0, (res: Office.AsyncResult<Office.Slice>) => {
+            if (res.status === Office.AsyncResultStatus.Succeeded) {
+              // File loaded. Grab the data and read it into xlsx.
+              let slice = res.value.data;
+              let workbook = XLSX.read(slice, { type: "array" });
+              // Close the file (this is mandatory).
+              (async () => {
+                await result.value.closeAsync();
+              })();
+              resolve(workbook);
+            } else {
+              console.log("slice async failed.");
+              resolve(null);
+            }
+          });
+        } else {
+          console.log("getFileAsync somehow is now not working, fail.");
+          resolve(null);
+        }
+      });
+    });
   }
 
   /**
    * onChange event handler for a cell that can modify a react component.
-   * Note that this handler cannot be registered directly since event handlers
-   * must have the signature: Excel.WorksheetChangedEventArgs => Promise<any>.
    *
    * @param args WorksheetChangedEvent information.
    * @param appInstance A reference to the `appInstance` instance.
    */
-  public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs, appInstance: App): Promise<any> {
+  public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs): Promise<any> {
     if (args.changeType === "RangeEdited") {
       /* const address = args.address; */
       await Excel.run(async (context: Excel.RequestContext) => {
@@ -71,7 +118,7 @@ export default class App extends React.Component<AppProps, AppState> {
            */
 
           // update the UI state
-          appInstance.setState({
+          this.setState({
             placeholder: Date.now().toString()
           });
         }
@@ -92,7 +139,7 @@ export default class App extends React.Component<AppProps, AppState> {
     Excel.run(async (context: Excel.RequestContext) => {
       const worksheets = context.workbook.worksheets;
       // here, we use a closure to capture the `this` param to pass to the handler
-      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact(args, this);
+      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact.bind(args);
       worksheets.onChanged.add(handler);
     });
   }
