@@ -1,7 +1,9 @@
 import * as React from "react";
 import * as XLSX from "xlsx";
 import { Colorize } from "../../core/src/colorize";
+import { WorkbookAnalysis } from "../../core/src/ExceLintTypes";
 import { ExcelJSON } from "../../core/src/exceljson";
+import { Option, Some, None } from "../../core/src/option";
 
 /**
  * Represents the underlying data model.
@@ -20,47 +22,54 @@ export interface AppState {
 }
 
 /**
- * Global startup function for the plugin. Excel API and spreadsheet will be
+ * Global startup routine for the plugin. Excel API and spreadsheet will be
  * initialized.  App class (below) and React state will not be initialized.
  */
-(async () => {
+run(async () => {
   await Office.onReady();
+
+  // Check the version of Office
   if (!Office.context.requirements.isSetSupported("ExcelApi", "1.7")) {
     console.log("Sorry, this add-in only works with newer versions of Excel.");
   }
-  // Put stuff here, like handlers
-})();
+  // Register handlers here.
+});
 
 /**
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
+  analysis: Option<WorkbookAnalysis> = None;
+
   constructor(props, context) {
     super(props, context);
     this.state = {
       placeholder: "start"
     };
-
-    // run the initial analysis
   }
 
-  public static async initialize() {
-    let workbook = await App.getWorkbook();
-    let jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
-    return Colorize.process_workbook(jsonBook, currentWorksheetName);
+  /*
+   * Runs the initial analysis and returns an App instance.  Call this at startup.
+   */
+  public static async initialize(): Promise<Option<WorkbookAnalysis>> {
+    const workbook = await App.getWorkbook();
+    const currentWorksheetName = await App.getWorksheetName();
+    const jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
+    return new Some(Colorize.process_workbook(jsonBook, currentWorksheetName));
   }
 
-  public static async getWorksheet() {
-    let currentWorksheet;
-    let currentWorksheetName = "";
-    (async () => {
-      await Excel.run(async context => {
-        currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
-        currentWorksheet.load(["name"]);
-        await context.sync();
-        currentWorksheetName = currentWorksheet.name;
-      });
-    })();
+  /*
+   * Gets the worksheet name from the current worksheet.
+   */
+  public static async getWorksheetName(): Promise<string> {
+    let name: string = "";
+    await Excel.run(async context => {
+      const currentWorksheet = context.workbook.worksheets.getActiveWorksheet();
+      currentWorksheet.load(["name"]);
+      await context.sync();
+      name = currentWorksheet.name;
+    });
+    return name;
   }
 
   // Read in the workbook as a file into XLSX form, so it can be processed by our tools
@@ -117,6 +126,11 @@ export default class App extends React.Component<AppProps, AppState> {
            * const formula: string = rng.formulas[0][0];
            */
 
+          if (this.analysis.hasValue) {
+            // DAN TODO: compute edits
+            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, [], "A1"));
+          }
+
           // update the UI state
           this.setState({
             placeholder: Date.now().toString()
@@ -138,9 +152,13 @@ export default class App extends React.Component<AppProps, AppState> {
     // Registers an event handler "in context" AFTER React is done rendering.
     Excel.run(async (context: Excel.RequestContext) => {
       const worksheets = context.workbook.worksheets;
-      // here, we use a closure to capture the `this` param to pass to the handler
       const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact.bind(args);
       worksheets.onChanged.add(handler);
+    });
+
+    // Run the initial analysis
+    run(async () => {
+      this.analysis = await App.initialize();
     });
   }
 
@@ -150,4 +168,13 @@ export default class App extends React.Component<AppProps, AppState> {
   render() {
     return <div className="ms-welcome">{this.state.placeholder}</div>;
   }
+}
+
+/**
+ * I made this solely because I hate how IIFE looks. It's just a
+ * thing that runs an async lambda.
+ * @param f An async lambda.
+ */
+async function run<T>(f: () => Promise<T>): Promise<T> {
+  return f();
 }
