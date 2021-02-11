@@ -24,14 +24,19 @@
     "start:web": "office-addin-debugging start manifest.xml web",
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
-    "watch": "webpack --mode development --watch"
+    "watch": "webpack --mode development --watch",
+    "postinstall": "submodules-install"
   },
+  "submodules": [
+    "src/core/*"
+  ],
   "dependencies": {
     "core-js": "^3.1.4",
     "es6-promise": "^4.2.8",
     "office-ui-fabric-react": "^7.10.0",
     "react": "^16.8.2",
-    "react-dom": "^16.8.2"
+    "react-dom": "^16.8.2",
+    "submodules-install": "^1.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",

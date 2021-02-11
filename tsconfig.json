@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2019",
     "module": "commonjs",
     "jsx": "react",
     "moduleResolution": "node",
@@ -14,7 +14,7 @@
     "noUnusedParameters": true,
     "noUnusedLocals": true,
     "lib": [
-      "es7",
+      "ES2019",
       "dom"
     ],
     "pretty": true,
