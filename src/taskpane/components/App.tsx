@@ -127,8 +127,8 @@ export default class App extends React.Component<AppProps, AppState> {
            */
 
           if (this.analysis.hasValue) {
-            // DAN TODO: compute edits
-            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, [], "A1"));
+            // DAN TODO: compute edit
+            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, , "A1"));
           }
 
           // update the UI state
