@@ -4,6 +4,8 @@ import { Colorize } from "../../core/src/colorize";
 import { WorkbookAnalysis } from "../../core/src/ExceLintTypes";
 import { ExcelJSON } from "../../core/src/exceljson";
 import { Option, Some, None } from "../../core/src/option";
+import { suffixUpdate } from "../../core/src/lcs";
+import { ExcelUtils } from "../../core/src/excelutils";
 
 /**
  * Represents the underlying data model.
@@ -116,19 +118,20 @@ export default class App extends React.Component<AppProps, AppState> {
         await context.sync();
 
         // we only care about events where the user changes a single cell
-        rng.load(["cellCount", "values", "formulas"]);
+        rng.load(["cellCount", "formulas", "address"]);
         await context.sync();
 
         // now that we have all the data loaded...
         if (rng.cellCount === 1) {
-          /*
-           * const value: string = rng.values[0][0];
-           * const formula: string = rng.formulas[0][0];
-           */
+          const [col, row] = ExcelUtils.addrA1toR1C1(rng.address);
+          const formula: string = rng.formulas[0][0];
 
           if (this.analysis.hasValue) {
-            // DAN TODO: compute edit
-            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, , "A1"));
+            // get the last seen formula
+            const sheetName = "TODO";
+            const old_formula = this.analysis.value.getSheet(sheetName).worksheet.formulas[col][row];
+            const update = suffixUpdate(old_formula, formula);
+            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, update, "A1"));
           }
 
           // update the UI state
