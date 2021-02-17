@@ -20,7 +20,10 @@ export interface AppProps {
  * Currently just a stub.
  */
 export interface AppState {
-  placeholder: string;
+  changeat: string;
+  oldformula: string;
+  newformula: string;
+  change: string;
 }
 
 /**
@@ -46,7 +49,10 @@ export default class App extends React.Component<AppProps, AppState> {
   constructor(props, context) {
     super(props, context);
     this.state = {
-      placeholder: "start"
+      changeat: "",
+      oldformula: "",
+      newformula: "",
+      change: ""
     };
   }
 
@@ -112,7 +118,6 @@ export default class App extends React.Component<AppProps, AppState> {
    */
   public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs): Promise<any> {
     if (args.changeType === "RangeEdited") {
-      /* const address = args.address; */
       await Excel.run(async (context: Excel.RequestContext) => {
         const rng = args.getRange(context);
         await context.sync();
@@ -123,21 +128,34 @@ export default class App extends React.Component<AppProps, AppState> {
 
         // now that we have all the data loaded...
         if (rng.cellCount === 1) {
-          const [col, row] = ExcelUtils.addrA1toR1C1(rng.address);
+          // get the range's address
+          const addr = ExcelUtils.addrA1toR1C1(rng.address);
+          const [sheet, col, row] = addr;
+
+          // get the formula
           const formula: string = rng.formulas[0][0];
 
           if (this.analysis.hasValue) {
-            // get the last seen formula
-            const sheetName = "TODO";
-            const old_formula = this.analysis.value.getSheet(sheetName).worksheet.formulas[col][row];
-            const update = suffixUpdate(old_formula, formula);
-            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, update, "A1"));
-          }
+            // We've run an analysis before
 
-          // update the UI state
-          this.setState({
-            placeholder: Date.now().toString()
-          });
+            const wsObj = this.analysis.value.getSheet(sheet).worksheet;
+            // note that formulas are stored with zero-based row and column indices as opposed
+            // to Excel's 1-based indices, so we have to adjust.
+            // Also, it is stored in row-major format!
+            const old_formula = wsObj.formulas[row - 1][col - 1];
+            const update = suffixUpdate(old_formula, formula);
+            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, update, addr));
+
+            // update the UI state
+            this.setState({
+              changeat: sheet + "!R" + row + "C" + col + " (" + rng.address + ")",
+              oldformula: old_formula,
+              newformula: formula,
+              change: "'" + update[1] + "' at index " + update[0] + "."
+            });
+          } else {
+            // We are still waiting for the first analysis to finish.  Do nothing for now.
+          }
         }
       });
     }
@@ -148,14 +166,11 @@ export default class App extends React.Component<AppProps, AppState> {
    * event handlers, etc.
    */
   public componentDidMount(): void {
-    this.setState({
-      placeholder: Date.now().toString()
-    });
-
     // Registers an event handler "in context" AFTER React is done rendering.
     Excel.run(async (context: Excel.RequestContext) => {
       const worksheets = context.workbook.worksheets;
-      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact.bind(args);
+      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact(args);
+
       worksheets.onChanged.add(handler);
     });
 
@@ -163,13 +178,35 @@ export default class App extends React.Component<AppProps, AppState> {
     run(async () => {
       this.analysis = await App.initialize();
     });
+
+    this.setState({
+      changeat: "",
+      oldformula: "",
+      newformula: "",
+      change: "loaded"
+    });
   }
 
   /**
    * Renders the task pane.
    */
   render() {
-    return <div className="ms-welcome">{this.state.placeholder}</div>;
+    return (
+      <div>
+        <div className="ms-welcome">
+          At: <em>{this.state.changeat}</em>
+        </div>
+        <div className="ms-welcome">
+          Old formula: <em>{this.state.oldformula}</em>
+        </div>
+        <div className="ms-welcome">
+          New formula: <em>{this.state.newformula}</em>
+        </div>
+        <div className="ms-welcome">
+          Changed: <em>{this.state.change}</em>
+        </div>
+      </div>
+    );
   }
 }
 
