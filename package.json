@@ -20,6 +20,7 @@
     "@types/react-hot-loader": "^4.1.1",
     "@types/webpack": "4.41.25",
     "@types/webpack-dev-server": "3.11.1",
+    "@types/yargs": "^16.0.0",
     "acorn": "^6.4.2",
     "acorn-dynamic-import": "^4.0.0",
     "array.prototype.flat": "^1.2.4",
