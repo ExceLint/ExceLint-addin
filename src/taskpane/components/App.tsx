@@ -2,7 +2,7 @@ import * as React from "react";
 import * as XLSX from "xlsx";
 import { Colorize } from "../../core/src/colorize";
 import { WorkbookAnalysis } from "../../core/src/ExceLintTypes";
-import { ExcelJSON } from "../../core/src/exceljson";
+import { ExcelJSON, WorkbookOutput } from "../../core/src/exceljson";
 import { Option, Some, None } from "../../core/src/option";
 import { suffixUpdate } from "../../core/src/lcs";
 import { ExcelUtils } from "../../core/src/excelutils";
@@ -60,10 +60,8 @@ export default class App extends React.Component<AppProps, AppState> {
    * Runs the initial analysis and returns an App instance.  Call this at startup.
    */
   public static async initialize(): Promise<Option<WorkbookAnalysis>> {
-    const workbook = await App.getWorkbook();
-    const currentWorksheetName = await App.getWorksheetName();
-    const jsonBook = ExcelJSON.processWorkbookFromXLSX(workbook, "thisbook");
-    return new Some(Colorize.process_workbook(jsonBook, currentWorksheetName));
+    const [wb, sheetName] = await App.getWorkbookOutputAndCurrentSheet();
+    return new Some(Colorize.process_workbook(wb, sheetName));
   }
 
   /*
@@ -82,7 +80,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
   // Read in the workbook as a file into XLSX form, so it can be processed by our tools
   // developed for excelint-cli.
-  public static async getWorkbook(): Promise<any> {
+  public static async getWorkbook(): Promise<XLSX.WorkBook> {
     return new Promise((resolve, _reject) => {
       Office.context.document.getFileAsync(Office.FileType.Compressed, result => {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -110,6 +108,13 @@ export default class App extends React.Component<AppProps, AppState> {
     });
   }
 
+  public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
+    const wb = await this.getWorkbook();
+    const currentWorksheetName = await App.getWorksheetName();
+    const jsonBook = ExcelJSON.processWorkbookFromXLSX(wb, "thisbook");
+    return [jsonBook, currentWorksheetName];
+  }
+
   /**
    * onChange event handler for a cell that can modify a react component.
    *
@@ -130,7 +135,6 @@ export default class App extends React.Component<AppProps, AppState> {
         if (rng.cellCount === 1) {
           // get the range's address
           const addr = ExcelUtils.addrA1toR1C1(rng.address);
-          const [sheet, col, row] = addr;
 
           // get the formula
           const formula: string = rng.formulas[0][0];
@@ -138,17 +142,20 @@ export default class App extends React.Component<AppProps, AppState> {
           if (this.analysis.hasValue) {
             // We've run an analysis before
 
-            const wsObj = this.analysis.value.getSheet(sheet).worksheet;
+            const wsObj = this.analysis.value.getSheet(addr.worksheet).worksheet;
             // note that formulas are stored with zero-based row and column indices as opposed
             // to Excel's 1-based indices, so we have to adjust.
             // Also, it is stored in row-major format!
-            const old_formula = wsObj.formulas[row - 1][col - 1];
+            const old_formula = wsObj.formulas[addr.row - 1][addr.column - 1];
             const update = suffixUpdate(old_formula, formula);
-            this.analysis = new Some(Colorize.update_analysis(this.analysis.value, update, addr));
+
+            // read the workbook again: TODO, actually just reuse old data
+            const [wb] = await App.getWorkbookOutputAndCurrentSheet();
+            this.analysis = new Some(Colorize.update_analysis(wb, this.analysis.value, update, addr));
 
             // update the UI state
             this.setState({
-              changeat: sheet + "!R" + row + "C" + col + " (" + rng.address + ")",
+              changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
               oldformula: old_formula,
               newformula: formula,
               change: "'" + update[1] + "' at index " + update[0] + "."
@@ -156,6 +163,7 @@ export default class App extends React.Component<AppProps, AppState> {
           } else {
             // We are still waiting for the first analysis to finish.  Do nothing for now.
           }
+          console.log("We finished");
         }
       });
     }
