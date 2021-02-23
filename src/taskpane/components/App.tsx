@@ -24,6 +24,7 @@ export interface AppState {
   oldformula: string;
   newformula: string;
   change: string;
+  verdict: string;
 }
 
 /**
@@ -52,7 +53,8 @@ export default class App extends React.Component<AppProps, AppState> {
       changeat: "",
       oldformula: "",
       newformula: "",
-      change: ""
+      change: "",
+      verdict: "No bugs found."
     };
   }
 
@@ -153,17 +155,30 @@ export default class App extends React.Component<AppProps, AppState> {
             const [wb] = await App.getWorkbookOutputAndCurrentSheet();
             this.analysis = new Some(Colorize.update_analysis(wb, this.analysis.value, update, addr));
 
+            // is this cell one of the proposed fixes?
+            let buggy = false;
+            if (this.analysis.hasValue) {
+              const pfs = this.analysis.value.getSheet(addr.worksheet).proposedFixes;
+              for (let i = 0; i < pfs.length; i++) {
+                const pf = pfs[i];
+                if (pf.includesCellAt(addr)) {
+                  buggy = true;
+                }
+              }
+            }
+
             // update the UI state
             this.setState({
               changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
               oldformula: old_formula,
               newformula: formula,
-              change: "'" + update[1] + "' at index " + update[0] + "."
+              change: "'" + update[1] + "' at index " + update[0] + ".",
+              verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found."
             });
           } else {
             // We are still waiting for the first analysis to finish.  Do nothing for now.
           }
-          console.log("We finished");
+          console.log("Analysis finished");
         }
       });
     }
@@ -191,7 +206,8 @@ export default class App extends React.Component<AppProps, AppState> {
       changeat: "",
       oldformula: "",
       newformula: "",
-      change: "loaded"
+      change: "loaded",
+      verdict: "No bugs found."
     });
   }
 
@@ -212,6 +228,11 @@ export default class App extends React.Component<AppProps, AppState> {
         </div>
         <div className="ms-welcome">
           Changed: <em>{this.state.change}</em>
+        </div>
+        <div className="ms-welcome">
+          <em>
+            <span style={{ color: "red" }}>{this.state.verdict}</span>
+          </em>
         </div>
       </div>
     );
