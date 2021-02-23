@@ -6,6 +6,7 @@ import { ExcelJSON, WorkbookOutput } from "../../core/src/exceljson";
 import { Option, Some, None } from "../../core/src/option";
 import { suffixUpdate } from "../../core/src/lcs";
 import { ExcelUtils } from "../../core/src/excelutils";
+import { Timer } from "../../core/src/timer";
 
 /**
  * Represents the underlying data model.
@@ -13,6 +14,10 @@ import { ExcelUtils } from "../../core/src/excelutils";
 export interface AppProps {
   title: string;
   isOfficeInitialized: boolean;
+}
+
+interface ExceLintTime {
+  total_μs: number;
 }
 
 /**
@@ -25,6 +30,7 @@ export interface AppState {
   newformula: string;
   change: string;
   verdict: string;
+  time_data: Option<ExceLintTime>;
 }
 
 /**
@@ -54,7 +60,8 @@ export default class App extends React.Component<AppProps, AppState> {
       oldformula: "",
       newformula: "",
       change: "",
-      verdict: "No bugs found."
+      verdict: "No bugs found.",
+      time_data: None
     };
   }
 
@@ -125,6 +132,7 @@ export default class App extends React.Component<AppProps, AppState> {
    */
   public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs): Promise<any> {
     if (args.changeType === "RangeEdited") {
+      const t = new Timer("onUpdate");
       await Excel.run(async (context: Excel.RequestContext) => {
         const rng = args.getRange(context);
         await context.sync();
@@ -167,13 +175,21 @@ export default class App extends React.Component<AppProps, AppState> {
               }
             }
 
+            // total time
+            const elapsed = t.elapsedTime();
+
+            const td = {
+              total_μs: elapsed
+            };
+
             // update the UI state
             this.setState({
               changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
               oldformula: old_formula,
               newformula: formula,
               change: "'" + update[1] + "' at index " + update[0] + ".",
-              verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found."
+              verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found.",
+              time_data: new Some(td)
             });
           } else {
             // We are still waiting for the first analysis to finish.  Do nothing for now.
@@ -207,7 +223,8 @@ export default class App extends React.Component<AppProps, AppState> {
       oldformula: "",
       newformula: "",
       change: "loaded",
-      verdict: "No bugs found."
+      verdict: "No bugs found.",
+      time_data: None
     });
   }
 
@@ -233,6 +250,9 @@ export default class App extends React.Component<AppProps, AppState> {
           <em>
             <span style={{ color: "red" }}>{this.state.verdict}</span>
           </em>
+        </div>
+        <div className="ms-welcome">
+          Total time: {this.state.time_data.hasValue ? this.state.time_data.value.total_μs : ""} μs
         </div>
       </div>
     );
