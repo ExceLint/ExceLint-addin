@@ -53,7 +53,7 @@ run(async () => {
 export default class App extends React.Component<AppProps, AppState> {
   analysis: Option<WorkbookAnalysis> = None;
 
-  constructor(props, context) {
+  constructor(props: AppProps, context: Office.Context) {
     super(props, context);
     this.state = {
       changeat: "",
@@ -105,13 +105,11 @@ export default class App extends React.Component<AppProps, AppState> {
               })();
               resolve(workbook);
             } else {
-              console.log("slice async failed.");
-              resolve(null);
+              throw new Error("slice async failed.");
             }
           });
         } else {
-          console.log("getFileAsync somehow is now not working, fail.");
-          resolve(null);
+          throw new Error("getFileAsync somehow is now not working, fail.");
         }
       });
     });
@@ -148,6 +146,14 @@ export default class App extends React.Component<AppProps, AppState> {
 
           // get the formula
           const formula: string = rng.formulas[0][0];
+
+          // DEBUG FULL ANALYSIS
+          // THIS IS HERE BECAUSE WE CANNOT SET BREAKPOINTS AT PLUGIN STARTUP
+          // TODO START REMOVE
+          const [wb, sn] = await App.getWorkbookOutputAndCurrentSheet();
+          const debuganalysis = Colorize.process_workbook(wb, sn, true);
+          console.log(debuganalysis);
+          // END REMOVE
 
           if (this.analysis.hasValue) {
             // We've run an analysis before

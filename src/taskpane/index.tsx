@@ -11,7 +11,7 @@ let isOfficeInitialized = false;
 
 const title = "React taskpane proof of concept";
 
-const render = Component => {
+const render = (Component: any) => {
   ReactDOM.render(
     <AppContainer>
       <Component title={title} isOfficeInitialized={isOfficeInitialized} />
