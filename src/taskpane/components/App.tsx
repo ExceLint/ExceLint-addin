@@ -165,11 +165,11 @@ export default class App extends React.Component<AppProps, AppState> {
     context: Excel.RequestContext
   ): Promise<XLNT.Dictionary<string>> {
     var range = ws.getRange(r.toA1Ref());
-    ws.load("name");
     range.load("formulas");
     await context.sync();
     let formulas: string[][] = range.formulas;
 
+    // find origin
     const origin_x = r.upperLeftColumn;
     const origin_y = r.upperLeftRow;
 
@@ -183,11 +183,9 @@ export default class App extends React.Component<AppProps, AppState> {
          * or equal sign ("="), Excel interprets this value as a formula.'
          * https://docs.microsoft.com/en-us/javascript/api/excel/excel.range?view=excel-js-preview#values
          */
-        if (val[0] !== "=" && val[0] !== "+" && val[0] !== "-") {
-          // it's not a formula; we don't care
-        } else {
+        if (val[0] === "=" || val[0] === "+" || val[0] === "-") {
           // save as 1-based Excel address
-          const key = new XLNT.Address(ws.name, origin_y + row, origin_x + col).asVector().asKey();
+          const key = new XLNT.ExceLintVector(origin_x + col, origin_y + row, 0).asKey();
 
           if (val[0] === "=") {
             // remove "=" from start of string and
@@ -196,6 +194,36 @@ export default class App extends React.Component<AppProps, AppState> {
             // it's a "+/-" formula
             d.put(key, val);
           }
+        }
+      }
+    }
+    return d;
+  }
+
+  public static async getNumericDictFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<XLNT.Dictionary<number>> {
+    var range = ws.getRange(r.toA1Ref());
+    range.load("values");
+    await context.sync();
+    const data: number[][] = range.values;
+
+    // find origin
+    const origin_x = r.upperLeftColumn;
+    const origin_y = r.upperLeftRow;
+
+    // we only care about numeric values
+    const d = new XLNT.Dictionary<number>();
+    for (let row = 0; row < data.length; row++) {
+      for (let col = 0; col < data[row].length; col++) {
+        const val = data[row][col];
+        if (typeof val === "number") {
+          // save as 1-based Excel address
+          const key = new XLNT.ExceLintVector(origin_x + col, origin_y + row, 0).asKey();
+
+          d.put(key, val);
         }
       }
     }
@@ -226,6 +254,34 @@ export default class App extends React.Component<AppProps, AppState> {
       }
     }
     return output;
+  }
+
+  public static async getStringDictFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<XLNT.Dictionary<string>> {
+    var range = ws.getRange(r.toA1Ref());
+    range.load("values");
+    await context.sync();
+    const data: string[][] = range.values;
+
+    // find origin
+    const origin_x = r.upperLeftColumn;
+    const origin_y = r.upperLeftRow;
+
+    // we only care about string values
+    const d = new XLNT.Dictionary<string>();
+    for (let row = 0; row < data.length; row++) {
+      for (let col = 0; col < data[row].length; col++) {
+        const val = data[row][col];
+        if (typeof val !== "number" && val !== "") {
+          const key = new XLNT.ExceLintVector(origin_x + col, origin_y + row, 0).asKey();
+          d.put(key, val);
+        }
+      }
+    }
+    return d;
   }
 
   public static async getStringDataFromRange(
@@ -293,21 +349,19 @@ export default class App extends React.Component<AppProps, AppState> {
           // const debuganalysis = Colorize.process_workbook(wb, sn, true);
           // console.log(debuganalysis);
           const activeSheet = context.workbook.worksheets.getActiveWorksheet();
-          activeSheet.load("name");
-          await context.sync();
           const r = await App.getCurrentUsedRange(activeSheet, context);
-          const r1c1_str = r.toR1C1Ref();
-          const a1_str = r.toA1Ref();
+          const r1c1_str = r.toFullyQualifiedR1C1Ref();
+          const a1_str = r.toFullyQualifiedA1Ref();
           console.log("R1C1: " + r1c1_str);
           console.log("A1: " + a1_str);
-          const ur_data = await App.getNumericDataFromRange(activeSheet, r, context);
-          const ur_formulas = await App.getFormulasFromRange(activeSheet, r, context);
-          const ur_formulas2 = await App.getFormulaDictFromRange(activeSheet, r, context);
-          const ur_strings = await App.getStringDataFromRange(activeSheet, r, context);
+          const ur_data = await App.getNumericDictFromRange(activeSheet, r, context);
+          const ur_formulas = await App.getFormulaDictFromRange(activeSheet, r, context);
+          const ur_strings = await App.getStringDictFromRange(activeSheet, r, context);
+
           console.log(ur_data);
           console.log(ur_formulas);
-          console.log(ur_formulas2);
           console.log(ur_strings);
+
           // END REMOVE
 
           if (this.analysis.hasValue) {
