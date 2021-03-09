@@ -159,6 +159,49 @@ export default class App extends React.Component<AppProps, AppState> {
     return output;
   }
 
+  public static async getFormulaDictFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<XLNT.Dictionary<string>> {
+    var range = ws.getRange(r.toA1Ref());
+    ws.load("name");
+    range.load("formulas");
+    await context.sync();
+    let formulas: string[][] = range.formulas;
+
+    const origin_x = r.upperLeftColumn;
+    const origin_y = r.upperLeftRow;
+
+    // we don't care about values, only formulas
+    const d = new XLNT.Dictionary<string>();
+    for (let row = 0; row < formulas.length; row++) {
+      for (let col = 0; col < formulas[row].length; col++) {
+        const val = formulas[row][col];
+        /*
+         * 'If the returned value starts with a plus ("+"), minus ("-"),
+         * or equal sign ("="), Excel interprets this value as a formula.'
+         * https://docs.microsoft.com/en-us/javascript/api/excel/excel.range?view=excel-js-preview#values
+         */
+        if (val[0] !== "=" && val[0] !== "+" && val[0] !== "-") {
+          // it's not a formula; we don't care
+        } else {
+          // save as 1-based Excel address
+          const key = new XLNT.Address(ws.name, origin_y + row, origin_x + col).asVector().asKey();
+
+          if (val[0] === "=") {
+            // remove "=" from start of string and
+            d.put(key, val.substr(1));
+          } else {
+            // it's a "+/-" formula
+            d.put(key, val);
+          }
+        }
+      }
+    }
+    return d;
+  }
+
   public static async getNumericDataFromRange(
     ws: Excel.Worksheet,
     r: XLNT.Range,
@@ -259,9 +302,11 @@ export default class App extends React.Component<AppProps, AppState> {
           console.log("A1: " + a1_str);
           const ur_data = await App.getNumericDataFromRange(activeSheet, r, context);
           const ur_formulas = await App.getFormulasFromRange(activeSheet, r, context);
+          const ur_formulas2 = await App.getFormulaDictFromRange(activeSheet, r, context);
           const ur_strings = await App.getStringDataFromRange(activeSheet, r, context);
           console.log(ur_data);
           console.log(ur_formulas);
+          console.log(ur_formulas2);
           console.log(ur_strings);
           // END REMOVE
 
