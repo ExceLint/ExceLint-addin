@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as XLSX from "xlsx";
 import { Colorize } from "../../core/src/colorize";
-import { WorkbookAnalysis } from "../../core/src/ExceLintTypes";
+import * as XLNT from "../../core/src/ExceLintTypes";
 import { ExcelJSON, WorkbookOutput } from "../../core/src/exceljson";
 import { Option, Some, None } from "../../core/src/option";
 import { suffixUpdate } from "../../core/src/lcs";
@@ -51,7 +51,7 @@ run(async () => {
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
-  analysis: Option<WorkbookAnalysis> = None;
+  analysis: Option<XLNT.WorkbookAnalysis> = None;
 
   constructor(props: AppProps, context: Office.Context) {
     super(props, context);
@@ -68,7 +68,7 @@ export default class App extends React.Component<AppProps, AppState> {
   /*
    * Runs the initial analysis and returns an App instance.  Call this at startup.
    */
-  public static async initialize(): Promise<Option<WorkbookAnalysis>> {
+  public static async initialize(): Promise<Option<XLNT.WorkbookAnalysis>> {
     const [wb, sheetName] = await App.getWorkbookOutputAndCurrentSheet();
     return new Some(Colorize.process_workbook(wb, sheetName));
   }
@@ -115,6 +115,102 @@ export default class App extends React.Component<AppProps, AppState> {
     });
   }
 
+  public static async getCurrentUsedRange(ws: Excel.Worksheet, context: Excel.RequestContext): Promise<XLNT.Range> {
+    const usedRange = ws.getUsedRange();
+    usedRange.load("address");
+    await context.sync();
+    const addr = usedRange.address;
+    return ExcelUtils.rngA1toR1C1(addr);
+  }
+
+  public static async getFormulasFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<Option<string>[][]> {
+    var range = ws.getRange(r.toA1Ref());
+    range.load("formulas");
+    await context.sync();
+    let formulas: string[][] = range.formulas;
+
+    // we don't care about values, only formulas
+    const output: Option<string>[][] = [];
+    for (let row = 0; row < formulas.length; row++) {
+      output[row] = []; // initialize row
+      for (let col = 0; col < formulas[row].length; col++) {
+        const val = formulas[row][col];
+        /*
+         * 'If the returned value starts with a plus ("+"), minus ("-"),
+         * or equal sign ("="), Excel interprets this value as a formula.'
+         * https://docs.microsoft.com/en-us/javascript/api/excel/excel.range?view=excel-js-preview#values
+         */
+        if (val[0] !== "=" && val[0] !== "+" && val[0] !== "-") {
+          // it's not a formula; we don't care
+          output[row][col] = None;
+        } else if (val[0] === "=") {
+          // remove "=" from start of string
+          output[row][col] = new Some(val.substr(1));
+        } else {
+          // it's a "+/-" formula
+          output[row][col] = new Some(val);
+        }
+      }
+    }
+    return output;
+  }
+
+  public static async getNumericDataFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<Option<number>[][]> {
+    var range = ws.getRange(r.toA1Ref());
+    range.load("values");
+    await context.sync();
+    const data: number[][] = range.values;
+
+    // we only care about numeric values
+    const output: Option<number>[][] = [];
+    for (let row = 0; row < data.length; row++) {
+      output[row] = []; // initialize row
+      for (let col = 0; col < data[row].length; col++) {
+        const val = data[row][col];
+        if (typeof val === "number") {
+          output[row][col] = new Some(val);
+        } else {
+          output[row][col] = None;
+        }
+      }
+    }
+    return output;
+  }
+
+  public static async getStringDataFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<Option<string>[][]> {
+    var range = ws.getRange(r.toA1Ref());
+    range.load("values");
+    await context.sync();
+    const data: string[][] = range.values;
+
+    // we only care about string values
+    const output: Option<string>[][] = [];
+    for (let row = 0; row < data.length; row++) {
+      output[row] = []; // initialize row
+      for (let col = 0; col < data[row].length; col++) {
+        const val = data[row][col];
+        if (typeof val !== "number" && val !== "") {
+          output[row][col] = new Some(val);
+        } else {
+          output[row][col] = None;
+        }
+      }
+    }
+    return output;
+  }
+
   public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
     const wb = await this.getWorkbook();
     const currentWorksheetName = await App.getWorksheetName();
@@ -150,9 +246,23 @@ export default class App extends React.Component<AppProps, AppState> {
           // DEBUG FULL ANALYSIS
           // THIS IS HERE BECAUSE WE CANNOT SET BREAKPOINTS AT PLUGIN STARTUP
           // TODO START REMOVE
-          const [wb, sn] = await App.getWorkbookOutputAndCurrentSheet();
-          const debuganalysis = Colorize.process_workbook(wb, sn, true);
-          console.log(debuganalysis);
+          // const [wb, sn] = await App.getWorkbookOutputAndCurrentSheet();
+          // const debuganalysis = Colorize.process_workbook(wb, sn, true);
+          // console.log(debuganalysis);
+          const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+          activeSheet.load("name");
+          await context.sync();
+          const r = await App.getCurrentUsedRange(activeSheet, context);
+          const r1c1_str = r.toR1C1Ref();
+          const a1_str = r.toA1Ref();
+          console.log("R1C1: " + r1c1_str);
+          console.log("A1: " + a1_str);
+          const ur_data = await App.getNumericDataFromRange(activeSheet, r, context);
+          const ur_formulas = await App.getFormulasFromRange(activeSheet, r, context);
+          const ur_strings = await App.getStringDataFromRange(activeSheet, r, context);
+          console.log(ur_data);
+          console.log(ur_formulas);
+          console.log(ur_strings);
           // END REMOVE
 
           if (this.analysis.hasValue) {
