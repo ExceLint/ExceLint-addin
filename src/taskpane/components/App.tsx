@@ -123,43 +123,15 @@ export default class App extends React.Component<AppProps, AppState> {
     return ExcelUtils.rngA1toR1C1(addr);
   }
 
+  /**
+   * Retrieves all formulas inside the given range.  Must be run
+   * inside an active Excel request context.
+   * @param ws An Excel.Worksheet object.
+   * @param r An XLNT.Range object representing the region of interest.
+   * @param context An Excel.RequestContext.
+   * @returns A dictionary containing only formulas.
+   */
   public static async getFormulasFromRange(
-    ws: Excel.Worksheet,
-    r: XLNT.Range,
-    context: Excel.RequestContext
-  ): Promise<Option<string>[][]> {
-    var range = ws.getRange(r.toA1Ref());
-    range.load("formulas");
-    await context.sync();
-    let formulas: string[][] = range.formulas;
-
-    // we don't care about values, only formulas
-    const output: Option<string>[][] = [];
-    for (let row = 0; row < formulas.length; row++) {
-      output[row] = []; // initialize row
-      for (let col = 0; col < formulas[row].length; col++) {
-        const val = formulas[row][col];
-        /*
-         * 'If the returned value starts with a plus ("+"), minus ("-"),
-         * or equal sign ("="), Excel interprets this value as a formula.'
-         * https://docs.microsoft.com/en-us/javascript/api/excel/excel.range?view=excel-js-preview#values
-         */
-        if (val[0] !== "=" && val[0] !== "+" && val[0] !== "-") {
-          // it's not a formula; we don't care
-          output[row][col] = None;
-        } else if (val[0] === "=") {
-          // remove "=" from start of string
-          output[row][col] = new Some(val.substr(1));
-        } else {
-          // it's a "+/-" formula
-          output[row][col] = new Some(val);
-        }
-      }
-    }
-    return output;
-  }
-
-  public static async getFormulaDictFromRange(
     ws: Excel.Worksheet,
     r: XLNT.Range,
     context: Excel.RequestContext
@@ -200,7 +172,15 @@ export default class App extends React.Component<AppProps, AppState> {
     return d;
   }
 
-  public static async getNumericDictFromRange(
+  /**
+   * Retrieves all data of type number inside the given range.  Must be run
+   * inside an active Excel request context.
+   * @param ws An Excel.Worksheet object.
+   * @param r An XLNT.Range object representing the region of interest.
+   * @param context An Excel.RequestContext.
+   * @returns A dictionary containing only numeric data, including formula outputs.
+   */
+  public static async getNumericaDataFromRange(
     ws: Excel.Worksheet,
     r: XLNT.Range,
     context: Excel.RequestContext
@@ -230,33 +210,15 @@ export default class App extends React.Component<AppProps, AppState> {
     return d;
   }
 
-  public static async getNumericDataFromRange(
-    ws: Excel.Worksheet,
-    r: XLNT.Range,
-    context: Excel.RequestContext
-  ): Promise<Option<number>[][]> {
-    var range = ws.getRange(r.toA1Ref());
-    range.load("values");
-    await context.sync();
-    const data: number[][] = range.values;
-
-    // we only care about numeric values
-    const output: Option<number>[][] = [];
-    for (let row = 0; row < data.length; row++) {
-      output[row] = []; // initialize row
-      for (let col = 0; col < data[row].length; col++) {
-        const val = data[row][col];
-        if (typeof val === "number") {
-          output[row][col] = new Some(val);
-        } else {
-          output[row][col] = None;
-        }
-      }
-    }
-    return output;
-  }
-
-  public static async getStringDictFromRange(
+  /**
+   * Retrieves all data of type string inside the given range.  Must be run
+   * inside an active Excel request context.
+   * @param ws An Excel.Worksheet object.
+   * @param r An XLNT.Range object representing the region of interest.
+   * @param context An Excel.RequestContext.
+   * @returns A dictionary containing only string data, excluding formulas.
+   */
+  public static async getStringDataFromRange(
     ws: Excel.Worksheet,
     r: XLNT.Range,
     context: Excel.RequestContext
@@ -282,32 +244,6 @@ export default class App extends React.Component<AppProps, AppState> {
       }
     }
     return d;
-  }
-
-  public static async getStringDataFromRange(
-    ws: Excel.Worksheet,
-    r: XLNT.Range,
-    context: Excel.RequestContext
-  ): Promise<Option<string>[][]> {
-    var range = ws.getRange(r.toA1Ref());
-    range.load("values");
-    await context.sync();
-    const data: string[][] = range.values;
-
-    // we only care about string values
-    const output: Option<string>[][] = [];
-    for (let row = 0; row < data.length; row++) {
-      output[row] = []; // initialize row
-      for (let col = 0; col < data[row].length; col++) {
-        const val = data[row][col];
-        if (typeof val !== "number" && val !== "") {
-          output[row][col] = new Some(val);
-        } else {
-          output[row][col] = None;
-        }
-      }
-    }
-    return output;
   }
 
   public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
@@ -354,24 +290,30 @@ export default class App extends React.Component<AppProps, AppState> {
           const a1_str = r.toFullyQualifiedA1Ref();
           console.log("R1C1: " + r1c1_str);
           console.log("A1: " + a1_str);
-          const ur_data = await App.getNumericDictFromRange(activeSheet, r, context);
-          const ur_formulas = await App.getFormulaDictFromRange(activeSheet, r, context);
-          const ur_strings = await App.getStringDictFromRange(activeSheet, r, context);
+          const ur_data = await App.getNumericaDataFromRange(activeSheet, r, context);
+          const ur_formulas = await App.getFormulasFromRange(activeSheet, r, context);
+          const ur_strings = await App.getStringDataFromRange(activeSheet, r, context);
 
           console.log(ur_data);
           console.log(ur_formulas);
           console.log(ur_strings);
 
+          const fRefs = Colorize.formulaRefs(ur_formulas);
+          console.log(fRefs);
+          const fps = Colorize.fingerprints(fRefs);
+          console.log(fps);
+
           // END REMOVE
 
-          if (this.analysis.hasValue) {
-            // We've run an analysis before
-
+          // if we've done an analysis before, and the changed thing is a formula
+          if (this.analysis.hasValue && ur_formulas.contains(addr.asVector().asKey())) {
             const wsObj = this.analysis.value.getSheet(addr.worksheet).worksheet;
             // note that formulas are stored with zero-based row and column indices as opposed
             // to Excel's 1-based indices, so we have to adjust.
             // Also, it is stored in row-major format!
-            const old_formula = wsObj.formulas[addr.row - 1][addr.column - 1];
+            const old_formulas = Colorize.formulaSpreadsheetToDict(wsObj.formulas, 0, 0);
+            const old_formula = old_formulas.contains(addr.asKey()) ? old_formulas.get(addr.asKey()) : "something else";
+            // const old_formula = wsObj.formulas[addr.row - 1][addr.column - 1];
             const update = suffixUpdate(old_formula, formula);
 
             // read the workbook again: TODO, actually just reuse old data
