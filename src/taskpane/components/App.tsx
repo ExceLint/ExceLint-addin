@@ -378,11 +378,25 @@ export default class App extends React.Component<AppProps, AppState> {
           // adjust proposed fixes by style (mutates input)
           Colorize.adjustProposedFixesByStyleHash(pfs2, ur_styles);
 
-          // // REMOVE THIS:
-          // const output = App.initialize();
-          // console.log(output);
+          // filter fixes with heuristics
+          const pfs3: XLNT.ProposedFix[] = [];
+          for (const fix of pfs2) {
+            // function to get rectangle info for a rectangle;
+            // closes over sheet data
+            const rectf = (rect: XLNT.Rectangle) => {
+              const formulaCoord = rect.upperleft;
+              const firstFormula = ur_formulas.get(formulaCoord.asKey());
+              return new XLNT.RectInfo(rect, firstFormula);
+            };
 
-          // are those rectangles "close"?
+            const ffix = Colorize.filterFix(fix, rectf, true);
+            if (ffix.hasValue) pfs3.push(ffix.value);
+          }
+          console.log(pfs3);
+
+          // // ORIGINAL ANALYSIS FOR COMPARISON-- REMOVE THIS
+          // const output = await App.initialize();
+          // console.log(output);
 
           // END REMOVE
 
