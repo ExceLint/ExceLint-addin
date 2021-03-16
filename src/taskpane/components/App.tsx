@@ -7,6 +7,7 @@ import { Option, Some, None } from "../../core/src/option";
 import { suffixUpdate } from "../../core/src/lcs";
 import { ExcelUtils } from "../../core/src/excelutils";
 import { Timer } from "../../core/src/timer";
+import { Config } from "../../core/src/config";
 
 /**
  * Represents the underlying data model.
@@ -285,23 +286,50 @@ export default class App extends React.Component<AppProps, AppState> {
           // const debuganalysis = Colorize.process_workbook(wb, sn, true);
           // console.log(debuganalysis);
           const activeSheet = context.workbook.worksheets.getActiveWorksheet();
-          const r = await App.getCurrentUsedRange(activeSheet, context);
-          const r1c1_str = r.toFullyQualifiedR1C1Ref();
-          const a1_str = r.toFullyQualifiedA1Ref();
+          const ur = await App.getCurrentUsedRange(activeSheet, context);
+          const r1c1_str = ur.toFullyQualifiedR1C1Ref();
+          const a1_str = ur.toFullyQualifiedA1Ref();
           console.log("R1C1: " + r1c1_str);
           console.log("A1: " + a1_str);
-          const ur_data = await App.getNumericaDataFromRange(activeSheet, r, context);
-          const ur_formulas = await App.getFormulasFromRange(activeSheet, r, context);
-          const ur_strings = await App.getStringDataFromRange(activeSheet, r, context);
+
+          // read usedrange from active sheet
+          const ur_data = await App.getNumericaDataFromRange(activeSheet, ur, context);
+          const ur_formulas = await App.getFormulasFromRange(activeSheet, ur, context);
+          const ur_strings = await App.getStringDataFromRange(activeSheet, ur, context);
 
           console.log(ur_data);
           console.log(ur_formulas);
           console.log(ur_strings);
 
-          const fRefs = Colorize.formulaRefs(ur_formulas);
+          // get every reference vector set for every formula, indexed by address vector
+          const fRefs = Colorize.relativeFormulaRefs(ur_formulas);
           console.log(fRefs);
+
+          // compute fingerprints for reference vector sets, indexed by address vector
           const fps = Colorize.fingerprints(fRefs);
           console.log(fps);
+
+          // decompose into rectangles, indexed by fingerprint
+          const rects = Colorize.identify_groups(fps);
+          console.log(rects);
+
+          // to what rectangle does the updated cell belong?
+          const updated_rect = rects.get(fps.get(addr.asVector().asKey()).asKey());
+          console.log(updated_rect);
+
+          // generate proposed fixes
+          const pfs = Colorize.generate_proposed_fixes(rects);
+          console.log(pfs);
+
+          // filter fixes by user threshold
+          const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
+          console.log(pfs2);
+
+          // REMOVE THIS:
+          const output = App.initialize();
+          console.log(output);
+
+          // are those rectangles "close"?
 
           // END REMOVE
 
@@ -370,10 +398,10 @@ export default class App extends React.Component<AppProps, AppState> {
       worksheets.onChanged.add(handler);
     });
 
-    // Run the initial analysis
-    run(async () => {
-      this.analysis = await App.initialize();
-    });
+    // // Run the initial analysis
+    // run(async () => {
+    //   this.analysis = await App.initialize();
+    // });
 
     this.setState({
       changeat: "",
