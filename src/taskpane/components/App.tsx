@@ -4,7 +4,6 @@ import { Colorize } from "../../core/src/colorize";
 import * as XLNT from "../../core/src/ExceLintTypes";
 import { ExcelJSON, WorkbookOutput } from "../../core/src/exceljson";
 import { Option, Some, None } from "../../core/src/option";
-import { suffixUpdate } from "../../core/src/lcs";
 import { ExcelUtils } from "../../core/src/excelutils";
 import { Timer } from "../../core/src/timer";
 import { Config } from "../../core/src/config";
@@ -324,9 +323,6 @@ export default class App extends React.Component<AppProps, AppState> {
           // get the range's address
           const addr = ExcelUtils.addrA1toR1C1(rng.address);
 
-          // get the formula
-          const formula: string = rng.formulas[0][0];
-
           // DEBUG FULL ANALYSIS
           // THIS IS HERE BECAUSE WE CANNOT SET BREAKPOINTS AT PLUGIN STARTUP
           // TODO START REMOVE
@@ -400,52 +396,24 @@ export default class App extends React.Component<AppProps, AppState> {
 
           // END REMOVE
 
-          // if we've done an analysis before, and the changed thing is a formula
-          if (this.analysis.hasValue && ur_formulas.contains(addr.asVector().asKey())) {
-            const wsObj = this.analysis.value.getSheet(addr.worksheet).worksheet;
-            // note that formulas are stored with zero-based row and column indices as opposed
-            // to Excel's 1-based indices, so we have to adjust.
-            // Also, it is stored in row-major format!
-            const old_formulas = Colorize.formulaSpreadsheetToDict(wsObj.formulas, 0, 0);
-            const old_formula = old_formulas.contains(addr.asKey()) ? old_formulas.get(addr.asKey()) : "something else";
-            // const old_formula = wsObj.formulas[addr.row - 1][addr.column - 1];
-            const update = suffixUpdate(old_formula, formula);
+          // total time
+          const elapsed = t.elapsedTime();
+          console.log(elapsed);
 
-            // read the workbook again: TODO, actually just reuse old data
-            const [wb] = await App.getWorkbookOutputAndCurrentSheet();
-            this.analysis = new Some(Colorize.update_analysis(wb, this.analysis.value, update, addr));
+          // const td = {
+          //   total_μs: elapsed
+          // };
 
-            // is this cell one of the proposed fixes?
-            let buggy = false;
-            if (this.analysis.hasValue) {
-              const pfs = this.analysis.value.getSheet(addr.worksheet).proposedFixes;
-              for (let i = 0; i < pfs.length; i++) {
-                const pf = pfs[i];
-                if (pf.includesCellAt(addr)) {
-                  buggy = true;
-                }
-              }
-            }
-
-            // total time
-            const elapsed = t.elapsedTime();
-
-            const td = {
-              total_μs: elapsed
-            };
-
-            // update the UI state
-            this.setState({
-              changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
-              oldformula: old_formula,
-              newformula: formula,
-              change: "'" + update[1] + "' at index " + update[0] + ".",
-              verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found.",
-              time_data: new Some(td)
-            });
-          } else {
-            // We are still waiting for the first analysis to finish.  Do nothing for now.
-          }
+          // TODO: at some point, update this:
+          // update the UI state
+          // this.setState({
+          //   changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
+          //   oldformula: old_formula,
+          //   newformula: formula,
+          //   change: "'" + update[1] + "' at index " + update[0] + ".",
+          //   verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found.",
+          //   time_data: new Some(td)
+          // });
           console.log("Analysis finished");
         }
       });
