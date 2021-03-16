@@ -247,6 +247,54 @@ export default class App extends React.Component<AppProps, AppState> {
     return d;
   }
 
+  /**
+   * Retrieves all formatting information inside the given range.  Must be run
+   * inside an active Excel request context.
+   * @param ws An Excel.Worksheet object.
+   * @param r An XLNT.Range object representing the region of interest.
+   * @param context An Excel.RequestContext.
+   * @returns A dictionary containing only string data, excluding formulas.
+   */
+  public static async getFormattingFromRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    context: Excel.RequestContext
+  ): Promise<XLNT.Dictionary<string>> {
+    // find extents
+    const ul_x = r.upperLeftColumn;
+    const ul_y = r.upperLeftRow;
+    const br_x = r.bottomRightColumn;
+    const br_y = r.bottomRightRow;
+
+    // we only care about string values
+    const d = new XLNT.Dictionary<string>();
+    for (let row = ul_y; row <= br_y; row++) {
+      for (let col = ul_x; col <= br_x; col++) {
+        // get the cell; getCell is zero-indexed!
+        var range = ws.getCell(row - 1, col - 1);
+
+        // load all of the properties we care about;
+        // this is necessarily a mess :(
+        range.load(["format", "style", "valueTypes"]);
+        await context.sync();
+        const key = new XLNT.ExceLintVector(col, row, 0).asKey();
+        const xl_fmt = range.format.load(["fill", "font"]);
+        await context.sync();
+        range.format.fill.load({ $all: true });
+        range.format.font.load({ $all: true });
+        await context.sync();
+        const xl_stl = range.style;
+        const xl_vtp = range.valueTypes;
+        const fmt = JSON.stringify(xl_fmt);
+        const stl = JSON.stringify(xl_stl);
+        const vtp = JSON.stringify(xl_vtp);
+        const fmtHash = ExcelJSON.styleHash(fmt + stl + vtp);
+        d.put(key, fmtHash);
+      }
+    }
+    return d;
+  }
+
   public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
     const wb = await this.getWorkbook();
     const currentWorksheetName = await App.getWorksheetName();
@@ -296,10 +344,12 @@ export default class App extends React.Component<AppProps, AppState> {
           const ur_data = await App.getNumericaDataFromRange(activeSheet, ur, context);
           const ur_formulas = await App.getFormulasFromRange(activeSheet, ur, context);
           const ur_strings = await App.getStringDataFromRange(activeSheet, ur, context);
+          const ur_styles = await App.getFormattingFromRange(activeSheet, ur, context);
 
           console.log(ur_data);
           console.log(ur_formulas);
           console.log(ur_strings);
+          console.log(ur_styles);
 
           // get every reference vector set for every formula, indexed by address vector
           const fRefs = Colorize.relativeFormulaRefs(ur_formulas);
@@ -325,9 +375,12 @@ export default class App extends React.Component<AppProps, AppState> {
           const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
           console.log(pfs2);
 
-          // REMOVE THIS:
-          const output = App.initialize();
-          console.log(output);
+          // adjust proposed fixes by style (mutates input)
+          Colorize.adjustProposedFixesByStyleHash(pfs2, ur_styles);
+
+          // // REMOVE THIS:
+          // const output = App.initialize();
+          // console.log(output);
 
           // are those rectangles "close"?
 
