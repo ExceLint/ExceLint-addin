@@ -62,7 +62,8 @@ run(async () => {
  */
 export async function* incrementalFatCrossAnalysis(
   context: Excel.RequestContext,
-  xlrng: Excel.Range
+  xlrng: Excel.Range,
+  use_colors_for_debugging: boolean
 ): AsyncGenerator<Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>> {
   // we only care about events where the user changes a single cell
   xlrng.load(["cellCount", "formulas", "address"]);
@@ -80,17 +81,24 @@ export async function* incrementalFatCrossAnalysis(
 
     // read formulas/styles from active sheet
     const steps = [fc.center, fc.up, fc.left, fc.down, fc.right];
-    const formulas = new XLNT.Dictionary<string>();
-    const styles = new XLNT.Dictionary<string>();
+    let formulas = new XLNT.Dictionary<string>();
+    let styles = new XLNT.Dictionary<string>();
+
+    // this is for debugging
+    const debug_colors = ["#FFFFB5", "#CBAACB", "#FFCCB6", "#ABDEE6", "#F3B0C3"];
 
     // output
     let pfs3: XLNT.ProposedFix[] = [];
     for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      const fs = await App.getFormulasFromRange(activeSheet, step, context);
-      const ss = await App.getFormattingFromRange(activeSheet, step, context);
-      formulas.merge(fs);
-      styles.merge(ss);
+      if (use_colors_for_debugging) {
+        await App.colorRange(activeSheet, steps[i], debug_colors[i]);
+        // context.sync();
+      }
+
+      const fs = await App.getFormulasFromRange(activeSheet, steps[i], context);
+      const ss = await App.getFormattingFromRange(activeSheet, steps[i], context);
+      formulas = formulas.merge(fs);
+      styles = styles.merge(ss);
 
       // get every reference vector set for every formula, indexed by address vector
       const fRefs = Colorize.relativeFormulaRefs(formulas);
@@ -126,14 +134,13 @@ export async function* incrementalFatCrossAnalysis(
         const ffix = Colorize.filterFix(fix, rectf, true);
         if (ffix.hasValue) pfs3.push(ffix.value);
       }
-      console.log(pfs3);
 
       if (i === steps.length - 1) {
         // if this is the last step, the answer is conclusive
         if (pfs3.length === 0) {
-          return No;
+          yield No;
         } else {
-          return new Definitely(pfs3);
+          yield new Definitely(pfs3);
         }
       } else {
         // return what we know so far
@@ -542,6 +549,8 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param appInstance A reference to the `appInstance` instance.
    */
   public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs): Promise<any> {
+    const DEBUG = true; // true: shows colors, false: hides colors
+
     if (args.changeType === "RangeEdited") {
       const t = new Timer("onUpdate");
       await Excel.run(async (context: Excel.RequestContext) => {
@@ -550,7 +559,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
         // const pfs = await App.fullAnalysisOnCellChange(context, rng);
         // const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
-        const proposed_fixes = await incrementalFatCrossAnalysis(context, rng);
+        const proposed_fixes = await incrementalFatCrossAnalysis(context, rng, DEBUG);
         let it: IteratorResult<Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>>;
         for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
           const v = it.value;
@@ -559,10 +568,10 @@ export default class App extends React.Component<AppProps, AppState> {
               console.log("No bugs found.");
               break;
             case "possibly":
-              console.log("Possibly: " + v.value);
+              console.log(v.value);
               break;
             case "definitely":
-              console.log("Definitely: " + v.value);
+              console.log(v.value);
               break;
             default:
               console.log("This case should not be possible.");
