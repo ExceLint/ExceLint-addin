@@ -2,7 +2,7 @@ import * as React from "react";
 import { Colorize } from "../../core/src/colorize";
 import * as XLNT from "../../core/src/ExceLintTypes";
 import { ExcelJSON } from "../../core/src/exceljson";
-import { Option, None } from "../../core/src/option";
+import { Option, None, Maybe, Possibly, Definitely, No } from "../../core/src/option";
 import { ExcelUtils } from "../../core/src/excelutils";
 import { Timer } from "../../core/src/timer";
 import { Config } from "../../core/src/config";
@@ -48,6 +48,110 @@ run(async () => {
 });
 
 /**
+ * Run a fat cross analysis.  This method is a generator and will yield
+ * four times before finally returning for good.  Each time the function
+ * resumes, it will continue the analysis where it left off.  When the
+ * method yields, it will either return a No object, meaning that the
+ * cell is not an error, or Possibly, meaning that further analysis is needed
+ * to be conclusive.  On the function's final return, it will return either
+ * No with the same meaning above, or Definitely, meaning that the cell
+ * is definitely a bug.  The payload for
+ * @param context Excel request context.
+ * @param xlrng An Excel range.
+ * @returns An array of proposed fixes.
+ */
+export async function* incrementalFatCrossAnalysis(
+  context: Excel.RequestContext,
+  xlrng: Excel.Range
+): AsyncGenerator<Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>> {
+  // we only care about events where the user changes a single cell
+  xlrng.load(["cellCount", "formulas", "address"]);
+  await context.sync();
+
+  // now that we have all the data loaded...
+  if (xlrng.cellCount === 1) {
+    // get the range's address
+    const addr = ExcelUtils.addrA1toR1C1(xlrng.address);
+    const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+    const usedRange = await App.getCurrentUsedRange(activeSheet, context);
+
+    // get fat cross
+    const fc = RectangleUtils.findFatCross(usedRange, addr);
+
+    // read formulas/styles from active sheet
+    const steps = [fc.center, fc.up, fc.left, fc.down, fc.right];
+    const formulas = new XLNT.Dictionary<string>();
+    const styles = new XLNT.Dictionary<string>();
+
+    // output
+    let pfs3: XLNT.ProposedFix[] = [];
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const fs = await App.getFormulasFromRange(activeSheet, step, context);
+      const ss = await App.getFormattingFromRange(activeSheet, step, context);
+      formulas.merge(fs);
+      styles.merge(ss);
+
+      // get every reference vector set for every formula, indexed by address vector
+      const fRefs = Colorize.relativeFormulaRefs(formulas);
+
+      // compute fingerprints for reference vector sets, indexed by address vector
+      const fps = Colorize.fingerprints(fRefs);
+
+      // decompose into rectangles, indexed by fingerprint
+      const rects = Colorize.identify_groups(fps);
+
+      // generate proposed fixes
+      const pfs = Colorize.generate_proposed_fixes(rects);
+
+      // filter fixes by user threshold
+      const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
+
+      // adjust proposed fixes by style (mutates input)
+      Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
+
+      // clear pfs3
+      pfs3 = [];
+
+      // filter fixes with heuristics
+      for (const fix of pfs2) {
+        // function to get rectangle info for a rectangle;
+        // closes over sheet data
+        const rectf = (rect: XLNT.Rectangle) => {
+          const formulaCoord = rect.upperleft;
+          const firstFormula = formulas.get(formulaCoord.asKey());
+          return new XLNT.RectInfo(rect, firstFormula);
+        };
+
+        const ffix = Colorize.filterFix(fix, rectf, true);
+        if (ffix.hasValue) pfs3.push(ffix.value);
+      }
+      console.log(pfs3);
+
+      if (i === steps.length - 1) {
+        // if this is the last step, the answer is conclusive
+        if (pfs3.length === 0) {
+          return No;
+        } else {
+          return new Definitely(pfs3);
+        }
+      } else {
+        // return what we know so far
+        yield new Possibly(pfs3);
+      }
+    }
+    // the answer is always conclusive from this point forward
+    if (pfs3.length === 0) {
+      return No;
+    } else {
+      return new Definitely(pfs3);
+    }
+  }
+  // if the user did not update a cell, return No (for now)
+  return No;
+}
+
+/**
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
@@ -66,14 +170,6 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   /*
-   * Runs the initial analysis and returns an App instance.  Call this at startup.
-   */
-  // public static async initialize(): Promise<Option<XLNT.WorkbookAnalysis>> {
-  //   const [wb, sheetName] = await App.getWorkbookOutputAndCurrentSheet();
-  //   return new Some(Colorize.process_workbook(wb, sheetName));
-  // }
-
-  /*
    * Gets the worksheet name from the current worksheet.
    */
   public static async getWorksheetName(): Promise<string> {
@@ -86,34 +182,6 @@ export default class App extends React.Component<AppProps, AppState> {
     });
     return name;
   }
-
-  // // Read in the workbook as a file into XLSX form, so it can be processed by our tools
-  // // developed for excelint-cli.
-  // public static async getWorkbook(): Promise<XLSX.WorkBook> {
-  //   return new Promise((resolve, _reject) => {
-  //     Office.context.document.getFileAsync(Office.FileType.Compressed, result => {
-  //       if (result.status === Office.AsyncResultStatus.Succeeded) {
-  //         // For now, assume there's just one slice - FIXME.
-  //         result.value.getSliceAsync(0, (res: Office.AsyncResult<Office.Slice>) => {
-  //           if (res.status === Office.AsyncResultStatus.Succeeded) {
-  //             // File loaded. Grab the data and read it into xlsx.
-  //             let slice = res.value.data;
-  //             let workbook = XLSX.read(slice, { type: "array" });
-  //             // Close the file (this is mandatory).
-  //             (async () => {
-  //               await result.value.closeAsync();
-  //             })();
-  //             resolve(workbook);
-  //           } else {
-  //             throw new Error("slice async failed.");
-  //           }
-  //         });
-  //       } else {
-  //         throw new Error("getFileAsync somehow is now not working, fail.");
-  //       }
-  //     });
-  //   });
-  // }
 
   public static async getCurrentUsedRange(ws: Excel.Worksheet, context: Excel.RequestContext): Promise<XLNT.Range> {
     const usedRange = ws.getUsedRange();
@@ -293,13 +361,6 @@ export default class App extends React.Component<AppProps, AppState> {
     }
     return d;
   }
-
-  // public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
-  //   const wb = await this.getWorkbook();
-  //   const currentWorksheetName = await App.getWorksheetName();
-  //   const jsonBook = ExcelJSON.processWorkbookFromXLSX(wb, "thisbook");
-  //   return [jsonBook, currentWorksheetName];
-  // }
 
   /**
    * Color all cells in the given range with the given color.
@@ -488,8 +549,25 @@ export default class App extends React.Component<AppProps, AppState> {
         await context.sync();
 
         // const pfs = await App.fullAnalysisOnCellChange(context, rng);
-        const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
-        console.log(pfs);
+        // const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
+        const proposed_fixes = await incrementalFatCrossAnalysis(context, rng);
+        let it: IteratorResult<Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>>;
+        for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
+          const v = it.value;
+          switch (v.type) {
+            case "no":
+              console.log("No bugs found.");
+              break;
+            case "possibly":
+              console.log("Possibly: " + v.value);
+              break;
+            case "definitely":
+              console.log("Definitely: " + v.value);
+              break;
+            default:
+              console.log("This case should not be possible.");
+          }
+        }
 
         // total time
         const elapsed = t.elapsedTime();
@@ -526,11 +604,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
       worksheets.onChanged.add(handler);
     });
-
-    // // Run the initial analysis
-    // run(async () => {
-    //   this.analysis = await App.initialize();
-    // });
 
     this.setState({
       changeat: "",
