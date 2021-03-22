@@ -1,12 +1,12 @@
 import * as React from "react";
-import * as XLSX from "xlsx";
 import { Colorize } from "../../core/src/colorize";
 import * as XLNT from "../../core/src/ExceLintTypes";
-import { ExcelJSON, WorkbookOutput } from "../../core/src/exceljson";
-import { Option, Some, None } from "../../core/src/option";
+import { ExcelJSON } from "../../core/src/exceljson";
+import { Option, None } from "../../core/src/option";
 import { ExcelUtils } from "../../core/src/excelutils";
 import { Timer } from "../../core/src/timer";
 import { Config } from "../../core/src/config";
+import { RectangleUtils } from "../../core/src/rectangleutils";
 
 /**
  * Represents the underlying data model.
@@ -68,10 +68,10 @@ export default class App extends React.Component<AppProps, AppState> {
   /*
    * Runs the initial analysis and returns an App instance.  Call this at startup.
    */
-  public static async initialize(): Promise<Option<XLNT.WorkbookAnalysis>> {
-    const [wb, sheetName] = await App.getWorkbookOutputAndCurrentSheet();
-    return new Some(Colorize.process_workbook(wb, sheetName));
-  }
+  // public static async initialize(): Promise<Option<XLNT.WorkbookAnalysis>> {
+  //   const [wb, sheetName] = await App.getWorkbookOutputAndCurrentSheet();
+  //   return new Some(Colorize.process_workbook(wb, sheetName));
+  // }
 
   /*
    * Gets the worksheet name from the current worksheet.
@@ -87,33 +87,33 @@ export default class App extends React.Component<AppProps, AppState> {
     return name;
   }
 
-  // Read in the workbook as a file into XLSX form, so it can be processed by our tools
-  // developed for excelint-cli.
-  public static async getWorkbook(): Promise<XLSX.WorkBook> {
-    return new Promise((resolve, _reject) => {
-      Office.context.document.getFileAsync(Office.FileType.Compressed, result => {
-        if (result.status === Office.AsyncResultStatus.Succeeded) {
-          // For now, assume there's just one slice - FIXME.
-          result.value.getSliceAsync(0, (res: Office.AsyncResult<Office.Slice>) => {
-            if (res.status === Office.AsyncResultStatus.Succeeded) {
-              // File loaded. Grab the data and read it into xlsx.
-              let slice = res.value.data;
-              let workbook = XLSX.read(slice, { type: "array" });
-              // Close the file (this is mandatory).
-              (async () => {
-                await result.value.closeAsync();
-              })();
-              resolve(workbook);
-            } else {
-              throw new Error("slice async failed.");
-            }
-          });
-        } else {
-          throw new Error("getFileAsync somehow is now not working, fail.");
-        }
-      });
-    });
-  }
+  // // Read in the workbook as a file into XLSX form, so it can be processed by our tools
+  // // developed for excelint-cli.
+  // public static async getWorkbook(): Promise<XLSX.WorkBook> {
+  //   return new Promise((resolve, _reject) => {
+  //     Office.context.document.getFileAsync(Office.FileType.Compressed, result => {
+  //       if (result.status === Office.AsyncResultStatus.Succeeded) {
+  //         // For now, assume there's just one slice - FIXME.
+  //         result.value.getSliceAsync(0, (res: Office.AsyncResult<Office.Slice>) => {
+  //           if (res.status === Office.AsyncResultStatus.Succeeded) {
+  //             // File loaded. Grab the data and read it into xlsx.
+  //             let slice = res.value.data;
+  //             let workbook = XLSX.read(slice, { type: "array" });
+  //             // Close the file (this is mandatory).
+  //             (async () => {
+  //               await result.value.closeAsync();
+  //             })();
+  //             resolve(workbook);
+  //           } else {
+  //             throw new Error("slice async failed.");
+  //           }
+  //         });
+  //       } else {
+  //         throw new Error("getFileAsync somehow is now not working, fail.");
+  //       }
+  //     });
+  //   });
+  // }
 
   public static async getCurrentUsedRange(ws: Excel.Worksheet, context: Excel.RequestContext): Promise<XLNT.Range> {
     const usedRange = ws.getUsedRange();
@@ -294,11 +294,184 @@ export default class App extends React.Component<AppProps, AppState> {
     return d;
   }
 
-  public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
-    const wb = await this.getWorkbook();
-    const currentWorksheetName = await App.getWorksheetName();
-    const jsonBook = ExcelJSON.processWorkbookFromXLSX(wb, "thisbook");
-    return [jsonBook, currentWorksheetName];
+  // public static async getWorkbookOutputAndCurrentSheet(): Promise<[WorkbookOutput, string]> {
+  //   const wb = await this.getWorkbook();
+  //   const currentWorksheetName = await App.getWorksheetName();
+  //   const jsonBook = ExcelJSON.processWorkbookFromXLSX(wb, "thisbook");
+  //   return [jsonBook, currentWorksheetName];
+  // }
+
+  /**
+   * Color all cells in the given range with the given color.
+   * @param ws The worksheet containing the given range.
+   * @param r The range to color.
+   * @param color The hexadecimal #RRGGBB color code to use as a string, e.g., "#C0FFEE".
+   */
+  public static async colorRange(ws: Excel.Worksheet, r: XLNT.Range, color: string): Promise<void> {
+    var range = ws.getRange(r.toA1Ref());
+    if (color === "#FFFFFF") {
+      range.format.fill.clear();
+    } else {
+      range.format.fill.color = color;
+    }
+  }
+
+  public static async fullAnalysisOnCellChange(
+    context: Excel.RequestContext,
+    xlrng: Excel.Range
+  ): Promise<XLNT.ProposedFix[]> {
+    // we only care about events where the user changes a single cell
+    xlrng.load(["cellCount", "formulas", "address"]);
+    await context.sync();
+
+    // now that we have all the data loaded...
+    if (xlrng.cellCount === 1) {
+      // get the range's address
+      const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+      const ur = await App.getCurrentUsedRange(activeSheet, context);
+
+      // read usedrange from active sheet
+      // const ur_data = await App.getNumericaDataFromRange(activeSheet, ur, context);
+      const ur_formulas = await App.getFormulasFromRange(activeSheet, ur, context);
+      // const ur_strings = await App.getStringDataFromRange(activeSheet, ur, context);
+      const ur_styles = await App.getFormattingFromRange(activeSheet, ur, context);
+
+      // get every reference vector set for every formula, indexed by address vector
+      const fRefs = Colorize.relativeFormulaRefs(ur_formulas);
+
+      // compute fingerprints for reference vector sets, indexed by address vector
+      const fps = Colorize.fingerprints(fRefs);
+
+      // decompose into rectangles, indexed by fingerprint
+      const rects = Colorize.identify_groups(fps);
+
+      // to what rectangle does the updated cell belong?
+      // const updated_rect = rects.get(fps.get(addr.asVector().asKey()).asKey());
+
+      // generate proposed fixes
+      const pfs = Colorize.generate_proposed_fixes(rects);
+
+      // filter fixes by user threshold
+      const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
+
+      // adjust proposed fixes by style (mutates input)
+      Colorize.adjustProposedFixesByStyleHash(pfs2, ur_styles);
+
+      // filter fixes with heuristics
+      const pfs3: XLNT.ProposedFix[] = [];
+      for (const fix of pfs2) {
+        // function to get rectangle info for a rectangle;
+        // closes over sheet data
+        const rectf = (rect: XLNT.Rectangle) => {
+          const formulaCoord = rect.upperleft;
+          const firstFormula = ur_formulas.get(formulaCoord.asKey());
+          return new XLNT.RectInfo(rect, firstFormula);
+        };
+
+        const ffix = Colorize.filterFix(fix, rectf, true);
+        if (ffix.hasValue) pfs3.push(ffix.value);
+      }
+
+      return pfs3;
+    }
+    return [];
+  }
+
+  /**
+   * Run a fat cross analysis.
+   * @param context Excel request context.
+   * @param xlrng An Excel range.
+   * @returns An array of proposed fixes.
+   */
+  public static async fatCrossAnalysisOnCellChange(
+    context: Excel.RequestContext,
+    xlrng: Excel.Range
+  ): Promise<XLNT.ProposedFix[]> {
+    // we only care about events where the user changes a single cell
+    xlrng.load(["cellCount", "formulas", "address"]);
+    await context.sync();
+
+    // now that we have all the data loaded...
+    if (xlrng.cellCount === 1) {
+      // get the range's address
+      const addr = ExcelUtils.addrA1toR1C1(xlrng.address);
+      const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+      const usedRange = await App.getCurrentUsedRange(activeSheet, context);
+
+      // get fat cross
+      const fc = RectangleUtils.findFatCross(usedRange, addr);
+
+      // DEBUG: color the fat cross
+      // await App.colorRange(activeSheet, fc.center, "#FFFFB5");
+      // await App.colorRange(activeSheet, fc.up, "#CBAACB");
+      // await App.colorRange(activeSheet, fc.down, "#FFCCB6");
+      // await App.colorRange(activeSheet, fc.left, "#ABDEE6");
+      // await App.colorRange(activeSheet, fc.right, "#F3B0C3");
+      // context.sync();
+
+      // read formulas/styles from active sheet
+      const center_formulas = await App.getFormulasFromRange(activeSheet, fc.center, context);
+      const center_styles = await App.getFormattingFromRange(activeSheet, fc.center, context);
+      const up_formulas = await App.getFormulasFromRange(activeSheet, fc.up, context);
+      const up_styles = await App.getFormattingFromRange(activeSheet, fc.up, context);
+      const down_formulas = await App.getFormulasFromRange(activeSheet, fc.down, context);
+      const down_styles = await App.getFormattingFromRange(activeSheet, fc.down, context);
+      const left_formulas = await App.getFormulasFromRange(activeSheet, fc.left, context);
+      const left_styles = await App.getFormattingFromRange(activeSheet, fc.left, context);
+      const right_formulas = await App.getFormulasFromRange(activeSheet, fc.right, context);
+      const right_styles = await App.getFormattingFromRange(activeSheet, fc.right, context);
+
+      const formulas = center_formulas
+        .merge(up_formulas)
+        .merge(down_formulas)
+        .merge(left_formulas)
+        .merge(right_formulas);
+      const styles = center_styles
+        .merge(up_styles)
+        .merge(down_styles)
+        .merge(left_styles)
+        .merge(right_styles);
+
+      // get every reference vector set for every formula, indexed by address vector
+      const fRefs = Colorize.relativeFormulaRefs(formulas);
+
+      // compute fingerprints for reference vector sets, indexed by address vector
+      const fps = Colorize.fingerprints(fRefs);
+
+      // decompose into rectangles, indexed by fingerprint
+      const rects = Colorize.identify_groups(fps);
+
+      // to what rectangle does the updated cell belong?
+      // const updated_rect = rects.get(fps.get(addr.asVector().asKey()).asKey());
+
+      // generate proposed fixes
+      const pfs = Colorize.generate_proposed_fixes(rects);
+
+      // filter fixes by user threshold
+      const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
+
+      // adjust proposed fixes by style (mutates input)
+      Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
+
+      // filter fixes with heuristics
+      const pfs3: XLNT.ProposedFix[] = [];
+      for (const fix of pfs2) {
+        // function to get rectangle info for a rectangle;
+        // closes over sheet data
+        const rectf = (rect: XLNT.Rectangle) => {
+          const formulaCoord = rect.upperleft;
+          const firstFormula = formulas.get(formulaCoord.asKey());
+          return new XLNT.RectInfo(rect, firstFormula);
+        };
+
+        const ffix = Colorize.filterFix(fix, rectf, true);
+        if (ffix.hasValue) pfs3.push(ffix.value);
+      }
+      console.log(pfs3);
+
+      return pfs3;
+    }
+    return [];
   }
 
   /**
@@ -314,108 +487,29 @@ export default class App extends React.Component<AppProps, AppState> {
         const rng = args.getRange(context);
         await context.sync();
 
-        // we only care about events where the user changes a single cell
-        rng.load(["cellCount", "formulas", "address"]);
-        await context.sync();
+        // const pfs = await App.fullAnalysisOnCellChange(context, rng);
+        const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
+        console.log(pfs);
 
-        // now that we have all the data loaded...
-        if (rng.cellCount === 1) {
-          // get the range's address
-          const addr = ExcelUtils.addrA1toR1C1(rng.address);
+        // total time
+        const elapsed = t.elapsedTime();
+        console.log(elapsed);
 
-          // DEBUG FULL ANALYSIS
-          // THIS IS HERE BECAUSE WE CANNOT SET BREAKPOINTS AT PLUGIN STARTUP
-          // TODO START REMOVE
-          // const [wb, sn] = await App.getWorkbookOutputAndCurrentSheet();
-          // const debuganalysis = Colorize.process_workbook(wb, sn, true);
-          // console.log(debuganalysis);
-          const activeSheet = context.workbook.worksheets.getActiveWorksheet();
-          const ur = await App.getCurrentUsedRange(activeSheet, context);
-          const r1c1_str = ur.toFullyQualifiedR1C1Ref();
-          const a1_str = ur.toFullyQualifiedA1Ref();
-          console.log("R1C1: " + r1c1_str);
-          console.log("A1: " + a1_str);
+        // const td = {
+        //   total_μs: elapsed
+        // };
 
-          // read usedrange from active sheet
-          const ur_data = await App.getNumericaDataFromRange(activeSheet, ur, context);
-          const ur_formulas = await App.getFormulasFromRange(activeSheet, ur, context);
-          const ur_strings = await App.getStringDataFromRange(activeSheet, ur, context);
-          const ur_styles = await App.getFormattingFromRange(activeSheet, ur, context);
-
-          console.log(ur_data);
-          console.log(ur_formulas);
-          console.log(ur_strings);
-          console.log(ur_styles);
-
-          // get every reference vector set for every formula, indexed by address vector
-          const fRefs = Colorize.relativeFormulaRefs(ur_formulas);
-          console.log(fRefs);
-
-          // compute fingerprints for reference vector sets, indexed by address vector
-          const fps = Colorize.fingerprints(fRefs);
-          console.log(fps);
-
-          // decompose into rectangles, indexed by fingerprint
-          const rects = Colorize.identify_groups(fps);
-          console.log(rects);
-
-          // to what rectangle does the updated cell belong?
-          const updated_rect = rects.get(fps.get(addr.asVector().asKey()).asKey());
-          console.log(updated_rect);
-
-          // generate proposed fixes
-          const pfs = Colorize.generate_proposed_fixes(rects);
-          console.log(pfs);
-
-          // filter fixes by user threshold
-          const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
-          console.log(pfs2);
-
-          // adjust proposed fixes by style (mutates input)
-          Colorize.adjustProposedFixesByStyleHash(pfs2, ur_styles);
-
-          // filter fixes with heuristics
-          const pfs3: XLNT.ProposedFix[] = [];
-          for (const fix of pfs2) {
-            // function to get rectangle info for a rectangle;
-            // closes over sheet data
-            const rectf = (rect: XLNT.Rectangle) => {
-              const formulaCoord = rect.upperleft;
-              const firstFormula = ur_formulas.get(formulaCoord.asKey());
-              return new XLNT.RectInfo(rect, firstFormula);
-            };
-
-            const ffix = Colorize.filterFix(fix, rectf, true);
-            if (ffix.hasValue) pfs3.push(ffix.value);
-          }
-          console.log(pfs3);
-
-          // // ORIGINAL ANALYSIS FOR COMPARISON-- REMOVE THIS
-          // const output = await App.initialize();
-          // console.log(output);
-
-          // END REMOVE
-
-          // total time
-          const elapsed = t.elapsedTime();
-          console.log(elapsed);
-
-          // const td = {
-          //   total_μs: elapsed
-          // };
-
-          // TODO: at some point, update this:
-          // update the UI state
-          // this.setState({
-          //   changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
-          //   oldformula: old_formula,
-          //   newformula: formula,
-          //   change: "'" + update[1] + "' at index " + update[0] + ".",
-          //   verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found.",
-          //   time_data: new Some(td)
-          // });
-          console.log("Analysis finished");
-        }
+        // TODO: at some point, update this:
+        // update the UI state
+        // this.setState({
+        //   changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
+        //   oldformula: old_formula,
+        //   newformula: formula,
+        //   change: "'" + update[1] + "' at index " + update[0] + ".",
+        //   verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found.",
+        //   time_data: new Some(td)
+        // });
+        console.log("Analysis finished");
       });
     }
   }
