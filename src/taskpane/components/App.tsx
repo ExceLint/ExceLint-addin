@@ -2,7 +2,7 @@ import * as React from "react";
 import { Colorize } from "../../core/src/colorize";
 import * as XLNT from "../../core/src/ExceLintTypes";
 import { ExcelJSON } from "../../core/src/exceljson";
-import { Option, None, Maybe, Possibly, Definitely, No } from "../../core/src/option";
+import { Option, None, Some, Maybe, Possibly, Definitely, No } from "../../core/src/option";
 import { ExcelUtils } from "../../core/src/excelutils";
 import { Timer } from "../../core/src/timer";
 import { Config } from "../../core/src/config";
@@ -21,15 +21,25 @@ interface ExceLintTime {
 }
 
 /**
+ * For storing old color values;
+ */
+class OldColor {
+  public color: string = "#FFFFFF";
+  public range: XLNT.Range;
+
+  constructor(color: string, range: XLNT.Range) {
+    this.color = color;
+    this.range = range;
+  }
+}
+
+/**
  * An interface representing React App UI state.
  * Currently just a stub.
  */
 export interface AppState {
+  canRestore: boolean;
   changeat: string;
-  oldformula: string;
-  newformula: string;
-  change: string;
-  verdict: string;
   time_data: Option<ExceLintTime>;
 }
 
@@ -48,130 +58,125 @@ run(async () => {
 });
 
 /**
- * Run a fat cross analysis.  This method is a generator and will yield
- * four times before finally returning for good.  Each time the function
- * resumes, it will continue the analysis where it left off.  When the
- * method yields, it will either return a No object, meaning that the
- * cell is not an error, or Possibly, meaning that further analysis is needed
- * to be conclusive.  On the function's final return, it will return either
- * No with the same meaning above, or Definitely, meaning that the cell
- * is definitely a bug.  The payload for
+ * Run a fat cross analysis.  The caller of this function must have previously
+ * loaded the "cellCount", "formulas", and "address" properties of the given
+ * xlrng.  The given address must correspond to a single cell.
+ *
+ * This method is a generator and will yield four times before finally
+ * returning for good.  Each time the function resumes, it will continue the
+ * analysis where it left off.  When the method yields, it will either return a
+ * No object, meaning that the cell is not an error, or Possibly, meaning that
+ * further analysis is needed to be conclusive.  On the function's final return,
+ * it will return either No with the same meaning above, or Definitely, meaning
+ * that the cell is definitely a bug.
  * @param context Excel request context.
- * @param xlrng An Excel range.
- * @returns An array of proposed fixes.
+ * @param ws An Excel worksheet.
+ * @param ur The used range.
+ * @param addr An Excel address.
+ * @returns A tuple containing array of proposed fixes and an array of old colors.
  */
 export async function* incrementalFatCrossAnalysis(
   context: Excel.RequestContext,
-  xlrng: Excel.Range,
+  ws: Excel.Worksheet,
+  ur: XLNT.Range,
+  addr: XLNT.Address,
   use_colors_for_debugging: boolean
-): AsyncGenerator<Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>> {
-  // we only care about events where the user changes a single cell
-  xlrng.load(["cellCount", "formulas", "address"]);
-  await context.sync();
+): AsyncGenerator<
+  Maybe<[XLNT.ProposedFix[], OldColor[]]>,
+  Maybe<[XLNT.ProposedFix[], OldColor[]]>,
+  Maybe<[XLNT.ProposedFix[], OldColor[]]>
+> {
+  // get fat cross
+  const fc = RectangleUtils.findFatCross(ur, addr);
 
-  // now that we have all the data loaded...
-  if (xlrng.cellCount === 1) {
-    // get the range's address
-    const addr = ExcelUtils.addrA1toR1C1(xlrng.address);
-    const activeSheet = context.workbook.worksheets.getActiveWorksheet();
-    const usedRange = await App.getCurrentUsedRange(activeSheet, context);
+  // read formulas/styles from active sheet
+  const steps = [fc.up, fc.left, fc.down, fc.right];
+  let formulas = new XLNT.Dictionary<string>();
+  let styles = new XLNT.Dictionary<string>();
 
-    // get fat cross
-    const fc = RectangleUtils.findFatCross(usedRange, addr);
+  // this is for debugging
+  const debug_colors = ["#CBAACB", "#FFCCB6", "#ABDEE6", "#F3B0C3"];
+  const old_colors: OldColor[] = [];
 
-    // read formulas/styles from active sheet
-    const steps = [fc.center, fc.up, fc.left, fc.down, fc.right];
-    let formulas = new XLNT.Dictionary<string>();
-    let styles = new XLNT.Dictionary<string>();
-
-    // this is for debugging
-    const debug_colors = ["#FFFFB5", "#CBAACB", "#FFCCB6", "#ABDEE6", "#F3B0C3"];
-
-    // output
-    let pfs3: XLNT.ProposedFix[] = [];
-    for (let i = 0; i < steps.length; i++) {
-      if (use_colors_for_debugging) {
-        await App.colorRange(activeSheet, steps[i], debug_colors[i]);
-        // context.sync();
-      }
-
-      const fs = await App.getFormulasFromRange(activeSheet, steps[i], context);
-      const ss = await App.getFormattingFromRange(activeSheet, steps[i], context);
-      formulas = formulas.merge(fs);
-      styles = styles.merge(ss);
-
-      // get every reference vector set for every formula, indexed by address vector
-      const fRefs = Colorize.relativeFormulaRefs(formulas);
-
-      // compute fingerprints for reference vector sets, indexed by address vector
-      const fps = Colorize.fingerprints(fRefs);
-
-      // decompose into rectangles, indexed by fingerprint
-      const rects = Colorize.identify_groups(fps);
-
-      // generate proposed fixes
-      const pfs = Colorize.generate_proposed_fixes(rects);
-
-      // filter fixes by user threshold
-      const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
-
-      // adjust proposed fixes by style (mutates input)
-      Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
-
-      // clear pfs3
-      pfs3 = [];
-
-      // filter fixes with heuristics
-      for (const fix of pfs2) {
-        // function to get rectangle info for a rectangle;
-        // closes over sheet data
-        const rectf = (rect: XLNT.Rectangle) => {
-          const formulaCoord = rect.upperleft;
-          const firstFormula = formulas.get(formulaCoord.asKey());
-          return new XLNT.RectInfo(rect, firstFormula);
-        };
-
-        const ffix = Colorize.filterFix(fix, rectf, true);
-        if (ffix.hasValue) pfs3.push(ffix.value);
-      }
-
-      if (i === steps.length - 1) {
-        // if this is the last step, the answer is conclusive
-        if (pfs3.length === 0) {
-          yield No;
-        } else {
-          yield new Definitely(pfs3);
-        }
-      } else {
-        // return what we know so far
-        yield new Possibly(pfs3);
-      }
+  // output
+  let pfs3: XLNT.ProposedFix[] = [];
+  for (let i = 0; i < steps.length; i++) {
+    if (use_colors_for_debugging) {
+      old_colors.push(await App.colorRange(ws, steps[i], debug_colors[i], context));
     }
-    // the answer is always conclusive from this point forward
-    if (pfs3.length === 0) {
-      return No;
+
+    const fs = await App.getFormulasFromRange(ws, steps[i], context);
+    const ss = await App.getFormattingFromRange(ws, steps[i], context);
+    formulas = formulas.merge(fs);
+    styles = styles.merge(ss);
+
+    // get every reference vector set for every formula, indexed by address vector
+    const fRefs = Colorize.relativeFormulaRefs(formulas);
+
+    // compute fingerprints for reference vector sets, indexed by address vector
+    const fps = Colorize.fingerprints(fRefs);
+
+    // decompose into rectangles, indexed by fingerprint
+    const rects = Colorize.identify_groups(fps);
+
+    // generate proposed fixes
+    const pfs = Colorize.generate_proposed_fixes(rects);
+
+    // filter fixes by user threshold
+    const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
+
+    // adjust proposed fixes by style (mutates input)
+    Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
+
+    // clear pfs3
+    pfs3 = [];
+
+    // filter fixes with heuristics
+    for (const fix of pfs2) {
+      // function to get rectangle info for a rectangle;
+      // closes over sheet data
+      const rectf = (rect: XLNT.Rectangle) => {
+        const formulaCoord = rect.upperleft;
+        const firstFormula = formulas.get(formulaCoord.asKey());
+        return new XLNT.RectInfo(rect, firstFormula);
+      };
+
+      const ffix = Colorize.filterFix(fix, rectf, true);
+      if (ffix.hasValue) pfs3.push(ffix.value);
+    }
+
+    if (i === steps.length - 1) {
+      // if this is the last step, the answer is conclusive
+      if (pfs3.length === 0) {
+        yield No;
+      } else {
+        const tup: [XLNT.ProposedFix[], OldColor[]] = [pfs3, old_colors];
+        yield new Definitely(tup);
+      }
     } else {
-      return new Definitely(pfs3);
+      // return what we know so far
+      const tup: [XLNT.ProposedFix[], OldColor[]] = [pfs3, old_colors];
+      yield new Possibly(tup);
     }
   }
-  // if the user did not update a cell, return No (for now)
-  return No;
+  // the answer is always conclusive from this point forward
+  if (pfs3.length === 0) {
+    return No;
+  } else {
+    const tup: [XLNT.ProposedFix[], OldColor[]] = [pfs3, old_colors];
+    return new Definitely(tup);
+  }
 }
 
 /**
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
-  analysis: Option<XLNT.WorkbookAnalysis> = None;
-
   constructor(props: AppProps, context: Office.Context) {
     super(props, context);
     this.state = {
+      canRestore: false,
       changeat: "",
-      oldformula: "",
-      newformula: "",
-      change: "",
-      verdict: "No bugs found.",
       time_data: None
     };
   }
@@ -374,14 +379,36 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param ws The worksheet containing the given range.
    * @param r The range to color.
    * @param color The hexadecimal #RRGGBB color code to use as a string, e.g., "#C0FFEE".
+   * @returns The original color.
    */
-  public static async colorRange(ws: Excel.Worksheet, r: XLNT.Range, color: string): Promise<void> {
-    var range = ws.getRange(r.toA1Ref());
-    if (color === "#FFFFFF") {
-      range.format.fill.clear();
-    } else {
-      range.format.fill.color = color;
+  public static async colorRange(
+    ws: Excel.Worksheet,
+    r: XLNT.Range,
+    color: string,
+    context: Excel.RequestContext
+  ): Promise<OldColor> {
+    const range = ws.getRange(r.toA1Ref());
+
+    // save original color
+    let oldColor: string = "";
+    try {
+      range.load("format/fill/color");
+      await context.sync();
+      oldColor = range.format.fill.color;
+
+      // set new color
+      if (color === oldColor) {
+        return new OldColor(color, r); // don't bother
+      } else if (color === "#FFFFFF") {
+        range.format.fill.clear();
+      } else {
+        range.format.fill.color = color;
+      }
+    } catch (e) {
+      console.log(e);
     }
+
+    return new OldColor(oldColor, r);
   }
 
   public static async fullAnalysisOnCellChange(
@@ -446,100 +473,32 @@ export default class App extends React.Component<AppProps, AppState> {
   }
 
   /**
-   * Run a fat cross analysis.
-   * @param context Excel request context.
-   * @param xlrng An Excel range.
-   * @returns An array of proposed fixes.
+   * Handler to restore old colors to the given range.
+   * Should be registered after the user runs an analysis.
+   * @param oldColors An array of old colors.
    */
-  public static async fatCrossAnalysisOnCellChange(
-    context: Excel.RequestContext,
-    xlrng: Excel.Range
-  ): Promise<XLNT.ProposedFix[]> {
-    // we only care about events where the user changes a single cell
-    xlrng.load(["cellCount", "formulas", "address"]);
-    await context.sync();
-
-    // now that we have all the data loaded...
-    if (xlrng.cellCount === 1) {
-      // get the range's address
-      const addr = ExcelUtils.addrA1toR1C1(xlrng.address);
+  public async restoreColors(oldColors: OldColor[]): Promise<void> {
+    // can't reuse the Excel request context from when the handler was registered
+    // because the user is going to ask to restore at a later time
+    await Excel.run(async (context: Excel.RequestContext) => {
       const activeSheet = context.workbook.worksheets.getActiveWorksheet();
-      const usedRange = await App.getCurrentUsedRange(activeSheet, context);
 
-      // get fat cross
-      const fc = RectangleUtils.findFatCross(usedRange, addr);
-
-      // DEBUG: color the fat cross
-      // await App.colorRange(activeSheet, fc.center, "#FFFFB5");
-      // await App.colorRange(activeSheet, fc.up, "#CBAACB");
-      // await App.colorRange(activeSheet, fc.down, "#FFCCB6");
-      // await App.colorRange(activeSheet, fc.left, "#ABDEE6");
-      // await App.colorRange(activeSheet, fc.right, "#F3B0C3");
-      // context.sync();
-
-      // read formulas/styles from active sheet
-      const center_formulas = await App.getFormulasFromRange(activeSheet, fc.center, context);
-      const center_styles = await App.getFormattingFromRange(activeSheet, fc.center, context);
-      const up_formulas = await App.getFormulasFromRange(activeSheet, fc.up, context);
-      const up_styles = await App.getFormattingFromRange(activeSheet, fc.up, context);
-      const down_formulas = await App.getFormulasFromRange(activeSheet, fc.down, context);
-      const down_styles = await App.getFormattingFromRange(activeSheet, fc.down, context);
-      const left_formulas = await App.getFormulasFromRange(activeSheet, fc.left, context);
-      const left_styles = await App.getFormattingFromRange(activeSheet, fc.left, context);
-      const right_formulas = await App.getFormulasFromRange(activeSheet, fc.right, context);
-      const right_styles = await App.getFormattingFromRange(activeSheet, fc.right, context);
-
-      const formulas = center_formulas
-        .merge(up_formulas)
-        .merge(down_formulas)
-        .merge(left_formulas)
-        .merge(right_formulas);
-      const styles = center_styles
-        .merge(up_styles)
-        .merge(down_styles)
-        .merge(left_styles)
-        .merge(right_styles);
-
-      // get every reference vector set for every formula, indexed by address vector
-      const fRefs = Colorize.relativeFormulaRefs(formulas);
-
-      // compute fingerprints for reference vector sets, indexed by address vector
-      const fps = Colorize.fingerprints(fRefs);
-
-      // decompose into rectangles, indexed by fingerprint
-      const rects = Colorize.identify_groups(fps);
-
-      // to what rectangle does the updated cell belong?
-      // const updated_rect = rects.get(fps.get(addr.asVector().asKey()).asKey());
-
-      // generate proposed fixes
-      const pfs = Colorize.generate_proposed_fixes(rects);
-
-      // filter fixes by user threshold
-      const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
-
-      // adjust proposed fixes by style (mutates input)
-      Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
-
-      // filter fixes with heuristics
-      const pfs3: XLNT.ProposedFix[] = [];
-      for (const fix of pfs2) {
-        // function to get rectangle info for a rectangle;
-        // closes over sheet data
-        const rectf = (rect: XLNT.Rectangle) => {
-          const formulaCoord = rect.upperleft;
-          const firstFormula = formulas.get(formulaCoord.asKey());
-          return new XLNT.RectInfo(rect, firstFormula);
-        };
-
-        const ffix = Colorize.filterFix(fix, rectf, true);
-        if (ffix.hasValue) pfs3.push(ffix.value);
+      for (const oldColor of oldColors) {
+        // ignore return value
+        await App.colorRange(activeSheet, oldColor.range, oldColor.color, context);
       }
-      console.log(pfs3);
 
-      return pfs3;
-    }
-    return [];
+      // unregister button handler
+      const button = document.getElementById("RestoreButton")!;
+      button.onclick = null;
+
+      // disable button
+      this.setState({
+        canRestore: false,
+        changeat: this.state.changeat,
+        time_data: this.state.time_data
+      });
+    });
   }
 
   /**
@@ -555,48 +514,70 @@ export default class App extends React.Component<AppProps, AppState> {
       const t = new Timer("onUpdate");
       await Excel.run(async (context: Excel.RequestContext) => {
         const rng = args.getRange(context);
+        const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+        const usedRange = await App.getCurrentUsedRange(activeSheet, context);
+        // await context.sync();
+
+        // we only care about events where the user changes a single cell
+        rng.load(["cellCount", "formulas", "address"]);
         await context.sync();
 
-        // const pfs = await App.fullAnalysisOnCellChange(context, rng);
-        // const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
-        const proposed_fixes = await incrementalFatCrossAnalysis(context, rng, DEBUG);
-        let it: IteratorResult<Maybe<XLNT.ProposedFix[]>, Maybe<XLNT.ProposedFix[]>>;
-        for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
-          const v = it.value;
-          switch (v.type) {
-            case "no":
-              console.log("No bugs found.");
-              break;
-            case "possibly":
-              console.log(v.value);
-              break;
-            case "definitely":
-              console.log(v.value);
-              break;
-            default:
-              console.log("This case should not be possible.");
+        // now that we have all the data loaded...
+        if (rng.cellCount === 1) {
+          // get the restore button
+          const button = document.getElementById("RestoreButton")!;
+
+          // get the range's address
+          const addr = ExcelUtils.addrA1toR1C1(rng.address);
+
+          // const pfs = await App.fullAnalysisOnCellChange(context, rng);
+          // const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
+          const proposed_fixes = await incrementalFatCrossAnalysis(context, activeSheet, usedRange, addr, DEBUG);
+          let it: IteratorResult<Maybe<[XLNT.ProposedFix[], OldColor[]]>, Maybe<[XLNT.ProposedFix[], OldColor[]]>>;
+          for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
+            const v = it.value;
+            switch (v.type) {
+              case "no":
+                console.log("No bugs found.");
+                break;
+              case "possibly": {
+                const [pfs, oc] = v.value;
+                // update handler
+                const handler = () => this.restoreColors(oc);
+                button.onclick = handler.bind(this);
+
+                console.log(pfs);
+                break;
+              }
+              case "definitely": {
+                const [pfs, oc] = v.value;
+                // update handler
+                const handler = () => this.restoreColors(oc);
+                button.onclick = handler.bind(this);
+                console.log(pfs);
+                break;
+              }
+              default:
+                console.log("This case should not be possible.");
+            }
           }
+
+          // total time
+          const elapsed = t.elapsedTime();
+          console.log(elapsed);
+
+          const td = {
+            total_μs: elapsed
+          };
+
+          // update the UI state
+          this.setState({
+            canRestore: button.onclick !== null,
+            changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
+            time_data: new Some(td)
+          });
+          console.log("Analysis finished");
         }
-
-        // total time
-        const elapsed = t.elapsedTime();
-        console.log(elapsed);
-
-        // const td = {
-        //   total_μs: elapsed
-        // };
-
-        // TODO: at some point, update this:
-        // update the UI state
-        // this.setState({
-        //   changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
-        //   oldformula: old_formula,
-        //   newformula: formula,
-        //   change: "'" + update[1] + "' at index " + update[0] + ".",
-        //   verdict: buggy ? "Cell " + addr.toString() + " is buggy." : "No bugs found.",
-        //   time_data: new Some(td)
-        // });
-        console.log("Analysis finished");
       });
     }
   }
@@ -609,17 +590,14 @@ export default class App extends React.Component<AppProps, AppState> {
     // Registers an event handler "in context" AFTER React is done rendering.
     Excel.run(async (context: Excel.RequestContext) => {
       const worksheets = context.workbook.worksheets;
-      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact(args);
 
+      // register change event with onRangeChange In React
+      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact(args);
       worksheets.onChanged.add(handler);
     });
 
     this.setState({
       changeat: "",
-      oldformula: "",
-      newformula: "",
-      change: "loaded",
-      verdict: "No bugs found.",
       time_data: None
     });
   }
@@ -634,22 +612,11 @@ export default class App extends React.Component<AppProps, AppState> {
           At: <em>{this.state.changeat}</em>
         </div>
         <div className="ms-welcome">
-          Old formula: <em>{this.state.oldformula}</em>
-        </div>
-        <div className="ms-welcome">
-          New formula: <em>{this.state.newformula}</em>
-        </div>
-        <div className="ms-welcome">
-          Changed: <em>{this.state.change}</em>
-        </div>
-        <div className="ms-welcome">
-          <em>
-            <span style={{ color: "red" }}>{this.state.verdict}</span>
-          </em>
-        </div>
-        <div className="ms-welcome">
           Total time: {this.state.time_data.hasValue ? this.state.time_data.value.total_μs : ""} μs
         </div>
+        <button type="button" disabled={!this.state.canRestore} id="RestoreButton">
+          Restore
+        </button>
       </div>
     );
   }
