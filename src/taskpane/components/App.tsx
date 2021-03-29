@@ -94,8 +94,6 @@ export async function* incrementalFatCrossAnalysis(
 
   // read formulas/styles from active sheet
   const steps = [fc.up, fc.left, fc.down, fc.right];
-  let formulas = new XLNT.Dictionary<string>();
-  let styles = new XLNT.Dictionary<string>();
 
   // this is for debugging
   const debug_colors = ["#CBAACB", "#FFCCB6", "#ABDEE6", "#F3B0C3"];
@@ -103,6 +101,9 @@ export async function* incrementalFatCrossAnalysis(
 
   // get all the formula data in the range once, at the beginning
   const all_formulas = await App.getFormulasFromRange(ws, rng, context);
+
+  // storage for formula groups
+  const rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
   // output
   let pfs3: XLNT.ProposedFix[] = [];
@@ -121,17 +122,16 @@ export async function* incrementalFatCrossAnalysis(
 
     // get formatting
     const ss = use_styles ? await App.getFormattingFromRange(ws, steps[i], context) : new XLNT.Dictionary<string>();
-    formulas = formulas.merge(fs);
-    styles = styles.merge(ss);
 
     // get every reference vector set for every formula, indexed by address vector
-    const fRefs = Colorize.relativeFormulaRefs(formulas);
+    const fRefs = Colorize.relativeFormulaRefs(fs);
 
     // compute fingerprints for reference vector sets, indexed by address vector
     const fps = Colorize.fingerprints(fRefs);
 
     // decompose into rectangles, indexed by fingerprint
-    const rects = Colorize.identify_groups(fps);
+    const stepRects = Colorize.identify_groups(fps);
+    Colorize.mergeRects(stepRects, rects);
 
     // generate proposed fixes
     const pfs = Colorize.generate_proposed_fixes(rects);
@@ -140,7 +140,7 @@ export async function* incrementalFatCrossAnalysis(
     const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
 
     // adjust proposed fixes by style (mutates input)
-    Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
+    Colorize.adjustProposedFixesByStyleHash(pfs2, ss);
 
     // filter fixes with heuristics
     for (const fix of pfs2) {
