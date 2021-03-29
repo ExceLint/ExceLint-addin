@@ -41,6 +41,7 @@ export interface AppState {
   canRestore: boolean;
   changeat: string;
   time_data: Option<ExceLintTime>;
+  debug: boolean;
 }
 
 /**
@@ -172,12 +173,44 @@ export async function* incrementalFatCrossAnalysis(
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
+  // public static readonly DEBUG = false; // true: shows colors, false: hides colors
+
+  /**
+   * Gets debug state.
+   */
+  public get DEBUG(): boolean {
+    return this.state.debug;
+  }
+
+  /**
+   * Sets debug state.
+   */
+  public set DEBUG(value: boolean) {
+    this.setState({
+      canRestore: this.state.canRestore,
+      changeat: this.state.changeat,
+      time_data: this.state.time_data,
+      debug: value
+    });
+  }
+
+  /**
+   * Toggles the debug state.
+   * @returns The state after toggle is complete.
+   */
+  public toggleDebugState(): boolean {
+    const oldState = this.DEBUG;
+    this.DEBUG = !oldState;
+    return this.DEBUG;
+  }
+
   constructor(props: AppProps, context: Office.Context) {
     super(props, context);
     this.state = {
       canRestore: false,
       changeat: "",
-      time_data: None
+      time_data: None,
+      debug: false
     };
   }
 
@@ -508,15 +541,12 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param appInstance A reference to the `appInstance` instance.
    */
   public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs): Promise<any> {
-    const DEBUG = true; // true: shows colors, false: hides colors
-
     if (args.changeType === "RangeEdited") {
       const t = new Timer("onUpdate");
       await Excel.run(async (context: Excel.RequestContext) => {
         const rng = args.getRange(context);
         const activeSheet = context.workbook.worksheets.getActiveWorksheet();
         const usedRange = await App.getCurrentUsedRange(activeSheet, context);
-        // await context.sync();
 
         // we only care about events where the user changes a single cell
         rng.load(["cellCount", "formulas", "address"]);
@@ -524,15 +554,12 @@ export default class App extends React.Component<AppProps, AppState> {
 
         // now that we have all the data loaded...
         if (rng.cellCount === 1) {
-          // get the restore button
-          const button = document.getElementById("RestoreButton")!;
-
           // get the range's address
           const addr = ExcelUtils.addrA1toR1C1(rng.address);
 
           // const pfs = await App.fullAnalysisOnCellChange(context, rng);
           // const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
-          const proposed_fixes = await incrementalFatCrossAnalysis(context, activeSheet, usedRange, addr, DEBUG);
+          const proposed_fixes = await incrementalFatCrossAnalysis(context, activeSheet, usedRange, addr, this.DEBUG);
           let it: IteratorResult<Maybe<[XLNT.ProposedFix[], OldColor[]]>, Maybe<[XLNT.ProposedFix[], OldColor[]]>>;
           for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
             const v = it.value;
@@ -542,18 +569,28 @@ export default class App extends React.Component<AppProps, AppState> {
                 break;
               case "possibly": {
                 const [pfs, oc] = v.value;
-                // update handler
-                const handler = () => this.restoreColors(oc);
-                button.onclick = handler.bind(this);
+                if (this.DEBUG) {
+                  // get the restore button
+                  const button = document.getElementById("RestoreButton")!;
+
+                  // update handler
+                  const handler = () => this.restoreColors(oc);
+                  button.onclick = handler.bind(this);
+                }
 
                 console.log(pfs);
                 break;
               }
               case "definitely": {
                 const [pfs, oc] = v.value;
-                // update handler
-                const handler = () => this.restoreColors(oc);
-                button.onclick = handler.bind(this);
+                if (this.DEBUG) {
+                  // get the restore button
+                  const button = document.getElementById("RestoreButton")!;
+
+                  // update handler
+                  const handler = () => this.restoreColors(oc);
+                  button.onclick = handler.bind(this);
+                }
                 console.log(pfs);
                 break;
               }
@@ -572,9 +609,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
           // update the UI state
           this.setState({
-            canRestore: button.onclick !== null,
+            canRestore: this.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
             changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
-            time_data: new Some(td)
+            time_data: new Some(td),
+            debug: this.state.debug
           });
           console.log("Analysis finished");
         }
@@ -587,7 +625,8 @@ export default class App extends React.Component<AppProps, AppState> {
    * event handlers, etc.
    */
   public componentDidMount(): void {
-    // Registers an event handler "in context" AFTER React is done rendering.
+    // Any event handlers to be run "in context" AFTER React is done rendering
+    // can be inserted below.
     Excel.run(async (context: Excel.RequestContext) => {
       const worksheets = context.workbook.worksheets;
 
@@ -595,17 +634,18 @@ export default class App extends React.Component<AppProps, AppState> {
       const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact(args);
       worksheets.onChanged.add(handler);
     });
-
-    this.setState({
-      changeat: "",
-      time_data: None
-    });
   }
 
   /**
    * Renders the task pane.
    */
   render() {
+    const button = this.DEBUG ? (
+      <button type="button" disabled={!this.state.canRestore} id="RestoreButton">
+        Restore
+      </button>
+    ) : null;
+
     return (
       <div>
         <div className="ms-welcome">
@@ -614,9 +654,11 @@ export default class App extends React.Component<AppProps, AppState> {
         <div className="ms-welcome">
           Total time: {this.state.time_data.hasValue ? this.state.time_data.value.total_μs : ""} μs
         </div>
-        <button type="button" disabled={!this.state.canRestore} id="RestoreButton">
-          Restore
-        </button>
+        <div>
+          <input type="checkbox" id="doDEBUG" checked={this.DEBUG} onChange={() => this.toggleDebugState()} />
+          <label htmlFor="doDEBUG">Show debug output</label>
+        </div>
+        {button}
       </div>
     );
   }
