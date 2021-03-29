@@ -72,14 +72,14 @@ run(async () => {
  * that the cell is definitely a bug.
  * @param context Excel request context.
  * @param ws An Excel worksheet.
- * @param ur The used range.
+ * @param rng The region of interest.
  * @param addr An Excel address.
  * @returns A tuple containing array of proposed fixes and an array of old colors.
  */
 export async function* incrementalFatCrossAnalysis(
   context: Excel.RequestContext,
   ws: Excel.Worksheet,
-  ur: XLNT.Range,
+  rng: XLNT.Range,
   addr: XLNT.Address,
   use_colors_for_debugging: boolean
 ): AsyncGenerator<
@@ -88,7 +88,7 @@ export async function* incrementalFatCrossAnalysis(
   Maybe<[XLNT.ProposedFix[], OldColor[]]>
 > {
   // get fat cross
-  const fc = RectangleUtils.findFatCross(ur, addr);
+  const fc = RectangleUtils.findFatCross(rng, addr);
 
   // read formulas/styles from active sheet
   const steps = [fc.up, fc.left, fc.down, fc.right];
@@ -99,6 +99,9 @@ export async function* incrementalFatCrossAnalysis(
   const debug_colors = ["#CBAACB", "#FFCCB6", "#ABDEE6", "#F3B0C3"];
   const old_colors: OldColor[] = [];
 
+  // get all the formula data in the range once, at the beginning
+  const all_formulas = await App.getFormulasFromRange(ws, rng, context);
+
   // output
   let pfs3: XLNT.ProposedFix[] = [];
   for (let i = 0; i < steps.length; i++) {
@@ -106,7 +109,15 @@ export async function* incrementalFatCrossAnalysis(
       old_colors.push(await App.colorRange(ws, steps[i], debug_colors[i], context));
     }
 
-    const fs = await App.getFormulasFromRange(ws, steps[i], context);
+    // get the formulas we care about
+    const fAddrs = steps[i].rectangle().expand();
+    const fDict = new XLNT.Dictionary<XLNT.ExceLintVector>();
+    for (const f of fAddrs) {
+      fDict.put(f.asKey(), f);
+    }
+    const fs = all_formulas.keyFilter(k => fDict.contains(k));
+
+    // get formatting
     const ss = await App.getFormattingFromRange(ws, steps[i], context);
     formulas = formulas.merge(fs);
     styles = styles.merge(ss);
@@ -128,9 +139,6 @@ export async function* incrementalFatCrossAnalysis(
 
     // adjust proposed fixes by style (mutates input)
     Colorize.adjustProposedFixesByStyleHash(pfs2, styles);
-
-    // clear pfs3
-    pfs3 = [];
 
     // filter fixes with heuristics
     for (const fix of pfs2) {
