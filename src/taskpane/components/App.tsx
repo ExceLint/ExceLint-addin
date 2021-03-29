@@ -42,6 +42,7 @@ export interface AppState {
   changeat: string;
   time_data: Option<ExceLintTime>;
   debug: boolean;
+  use_styles: boolean;
 }
 
 /**
@@ -81,7 +82,8 @@ export async function* incrementalFatCrossAnalysis(
   ws: Excel.Worksheet,
   rng: XLNT.Range,
   addr: XLNT.Address,
-  use_colors_for_debugging: boolean
+  use_colors_for_debugging: boolean,
+  use_styles: boolean
 ): AsyncGenerator<
   Maybe<[XLNT.ProposedFix[], OldColor[]]>,
   Maybe<[XLNT.ProposedFix[], OldColor[]]>,
@@ -118,7 +120,7 @@ export async function* incrementalFatCrossAnalysis(
     const fs = all_formulas.keyFilter(k => fDict.contains(k));
 
     // get formatting
-    const ss = await App.getFormattingFromRange(ws, steps[i], context);
+    const ss = use_styles ? await App.getFormattingFromRange(ws, steps[i], context) : new XLNT.Dictionary<string>();
     formulas = formulas.merge(fs);
     styles = styles.merge(ss);
 
@@ -198,7 +200,25 @@ export default class App extends React.Component<AppProps, AppState> {
       canRestore: this.state.canRestore,
       changeat: this.state.changeat,
       time_data: this.state.time_data,
-      debug: value
+      debug: value,
+      use_styles: this.state.use_styles
+    });
+  }
+
+  /**
+   * Gets style state.
+   */
+  public get STYLE(): boolean {
+    return this.state.use_styles;
+  }
+
+  public set STYLE(value: boolean) {
+    this.setState({
+      canRestore: this.state.canRestore,
+      changeat: this.state.changeat,
+      time_data: this.state.time_data,
+      debug: this.state.debug,
+      use_styles: value
     });
   }
 
@@ -212,13 +232,24 @@ export default class App extends React.Component<AppProps, AppState> {
     return this.DEBUG;
   }
 
+  /**
+   * Toggles the style state.
+   * @returns The state after toggle is complete.
+   */
+  public toggleStyleState(): boolean {
+    const oldState = this.STYLE;
+    this.STYLE = !oldState;
+    return this.STYLE;
+  }
+
   constructor(props: AppProps, context: Office.Context) {
     super(props, context);
     this.state = {
       canRestore: false,
       changeat: "",
       time_data: None,
-      debug: false
+      debug: false,
+      use_styles: false
     };
   }
 
@@ -537,7 +568,9 @@ export default class App extends React.Component<AppProps, AppState> {
       this.setState({
         canRestore: false,
         changeat: this.state.changeat,
-        time_data: this.state.time_data
+        time_data: this.state.time_data,
+        debug: this.state.debug,
+        use_styles: this.state.use_styles
       });
     });
   }
@@ -567,7 +600,14 @@ export default class App extends React.Component<AppProps, AppState> {
 
           // const pfs = await App.fullAnalysisOnCellChange(context, rng);
           // const pfs = await App.fatCrossAnalysisOnCellChange(context, rng);
-          const proposed_fixes = await incrementalFatCrossAnalysis(context, activeSheet, usedRange, addr, this.DEBUG);
+          const proposed_fixes = await incrementalFatCrossAnalysis(
+            context,
+            activeSheet,
+            usedRange,
+            addr,
+            this.DEBUG,
+            this.STYLE
+          );
           let it: IteratorResult<Maybe<[XLNT.ProposedFix[], OldColor[]]>, Maybe<[XLNT.ProposedFix[], OldColor[]]>>;
           for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
             const v = it.value;
@@ -608,8 +648,7 @@ export default class App extends React.Component<AppProps, AppState> {
           }
 
           // total time
-          const elapsed = t.elapsedTime();
-          console.log(elapsed);
+          const elapsed = Timer.round(t.elapsedTime());
 
           const td = {
             total_μs: elapsed
@@ -620,7 +659,8 @@ export default class App extends React.Component<AppProps, AppState> {
             canRestore: this.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
             changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
             time_data: new Some(td),
-            debug: this.state.debug
+            debug: this.state.debug,
+            use_styles: this.state.use_styles
           });
           console.log("Analysis finished");
         }
@@ -665,6 +705,10 @@ export default class App extends React.Component<AppProps, AppState> {
         <div>
           <input type="checkbox" id="doDEBUG" checked={this.DEBUG} onChange={() => this.toggleDebugState()} />
           <label htmlFor="doDEBUG">Show debug output</label>
+        </div>
+        <div>
+          <input type="checkbox" id="doSTYLES" checked={this.STYLE} onChange={() => this.toggleStyleState()} />
+          <label htmlFor="doSTYLES">Discount with styles</label>
         </div>
         {button}
       </div>
