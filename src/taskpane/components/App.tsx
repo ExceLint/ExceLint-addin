@@ -103,8 +103,11 @@ export async function* incrementalFatCrossAnalysis(
   // get all the formula data in the range once, at the beginning
   const all_formulas = await App.getFormulasFromRange(ws, rng, context);
 
-  // storage for formula groups
+  // inter-iteration storage for formula groups
   let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
+
+  // inter-iteration storage for styles
+  let styles = new XLNT.Dictionary<string>();
 
   // output
   let proposed_fixes: XLNT.ProposedFix[] = [];
@@ -124,6 +127,7 @@ export async function* incrementalFatCrossAnalysis(
 
     // get formatting
     const ss = use_styles ? await App.getFormattingFromRange(ws, steps[i], context) : new XLNT.Dictionary<string>();
+    styles = styles.merge(ss);
 
     // get every reference vector set for every formula, indexed by address vector
     const fRefs = Colorize.relativeFormulaRefs(fs);
@@ -151,7 +155,7 @@ export async function* incrementalFatCrossAnalysis(
     const pfs4 = Colorize.filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
 
     // adjust proposed fixes by style (mutates input)
-    Colorize.adjustProposedFixesByStyleHash(pfs4, ss);
+    Colorize.adjustProposedFixesByStyleHash(pfs4, styles);
 
     // filter fixes with heuristics
     for (const fix of pfs4) {
