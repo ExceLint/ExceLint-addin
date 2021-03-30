@@ -103,22 +103,23 @@ export async function* incrementalFatCrossAnalysis(
   const all_formulas = await App.getFormulasFromRange(ws, rng, context);
 
   // storage for formula groups
-  const rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
+  let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
   // output
-  let pfs3: XLNT.ProposedFix[] = [];
+  let proposed_fixes: XLNT.ProposedFix[] = [];
   for (let i = 0; i < steps.length; i++) {
+    proposed_fixes = []; // clear outputs
     if (use_colors_for_debugging) {
       old_colors.push(await App.colorRange(ws, steps[i], debug_colors[i], context));
     }
 
     // get the formulas we care about
     const fAddrs = steps[i].rectangle().expand();
-    const fDict = new XLNT.Dictionary<XLNT.ExceLintVector>();
+    const fAddrDict = new XLNT.Dictionary<XLNT.ExceLintVector>();
     for (const f of fAddrs) {
-      fDict.put(f.asKey(), f);
+      fAddrDict.put(f.asKey(), f);
     }
-    const fs = all_formulas.keyFilter(k => fDict.contains(k));
+    const fs = all_formulas.keyFilter(k => fAddrDict.contains(k));
 
     // get formatting
     const ss = use_styles ? await App.getFormattingFromRange(ws, steps[i], context) : new XLNT.Dictionary<string>();
@@ -131,9 +132,12 @@ export async function* incrementalFatCrossAnalysis(
 
     // decompose into rectangles, indexed by fingerprint
     const stepRects = Colorize.identify_groups(fps);
-    Colorize.mergeRects(stepRects, rects);
 
-    // generate proposed fixes
+    // merge these new rectangles with the old ones
+    rects = Colorize.mergeRectangleDictionaries(stepRects, rects);
+    rects = Colorize.mergeRectangles(rects);
+
+    // generate proposed fixes for all the new rectanles
     const pfs = Colorize.generate_proposed_fixes(rects);
 
     // filter fixes by user threshold
@@ -148,33 +152,33 @@ export async function* incrementalFatCrossAnalysis(
       // closes over sheet data
       const rectf = (rect: XLNT.Rectangle) => {
         const formulaCoord = rect.upperleft;
-        const firstFormula = formulas.get(formulaCoord.asKey());
+        const firstFormula = all_formulas.get(formulaCoord.asKey());
         return new XLNT.RectInfo(rect, firstFormula);
       };
 
       const ffix = Colorize.filterFix(fix, rectf, true);
-      if (ffix.hasValue) pfs3.push(ffix.value);
+      if (ffix.hasValue) proposed_fixes.push(ffix.value);
     }
 
     if (i === steps.length - 1) {
       // if this is the last step, the answer is conclusive
-      if (pfs3.length === 0) {
+      if (proposed_fixes.length === 0) {
         yield No;
       } else {
-        const tup: [XLNT.ProposedFix[], OldColor[]] = [pfs3, old_colors];
+        const tup: [XLNT.ProposedFix[], OldColor[]] = [proposed_fixes, old_colors];
         yield new Definitely(tup);
       }
     } else {
       // return what we know so far
-      const tup: [XLNT.ProposedFix[], OldColor[]] = [pfs3, old_colors];
+      const tup: [XLNT.ProposedFix[], OldColor[]] = [proposed_fixes, old_colors];
       yield new Possibly(tup);
     }
   }
   // the answer is always conclusive from this point forward
-  if (pfs3.length === 0) {
+  if (proposed_fixes.length === 0) {
     return No;
   } else {
-    const tup: [XLNT.ProposedFix[], OldColor[]] = [pfs3, old_colors];
+    const tup: [XLNT.ProposedFix[], OldColor[]] = [proposed_fixes, old_colors];
     return new Definitely(tup);
   }
 }
