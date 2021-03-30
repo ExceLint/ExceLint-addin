@@ -44,6 +44,7 @@ export interface AppState {
   debug: boolean;
   use_styles: boolean;
   fixes: XLNT.ProposedFix[];
+  formula: string;
 }
 
 /**
@@ -212,11 +213,7 @@ export default class App extends React.Component<AppProps, AppState> {
    */
   public set DEBUG(value: boolean) {
     this.setState({
-      canRestore: this.state.canRestore,
-      changeat: this.state.changeat,
-      time_data: this.state.time_data,
-      debug: value,
-      use_styles: this.state.use_styles
+      debug: value
     });
   }
 
@@ -229,10 +226,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
   public set STYLE(value: boolean) {
     this.setState({
-      canRestore: this.state.canRestore,
-      changeat: this.state.changeat,
-      time_data: this.state.time_data,
-      debug: this.state.debug,
       use_styles: value
     });
   }
@@ -265,7 +258,8 @@ export default class App extends React.Component<AppProps, AppState> {
       time_data: None,
       debug: false,
       use_styles: false,
-      fixes: []
+      fixes: [],
+      formula: ""
     };
   }
 
@@ -582,13 +576,42 @@ export default class App extends React.Component<AppProps, AppState> {
 
       // disable button
       this.setState({
-        canRestore: false,
-        changeat: this.state.changeat,
-        time_data: this.state.time_data,
-        debug: this.state.debug,
-        use_styles: this.state.use_styles
+        canRestore: false
       });
     });
+  }
+
+  /**
+   * When the user selects a cell, populate the taskpane formula input.
+   * @param args
+   */
+  public async onSelectionChange(args: Excel.WorksheetSelectionChangedEventArgs): Promise<void> {
+    if (ExcelUtils.isACell(args.address)) {
+      // convert address to XLNT object
+      const addr = ExcelUtils.addrA1toR1C1(args.address);
+
+      // get contents of cell
+      await Excel.run(async (context: Excel.RequestContext) => {
+        const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+        activeSheet.load("name");
+        const rng = activeSheet.getCell(addr.row - 1, addr.column - 1);
+        rng.load("formulas");
+        await context.sync();
+
+        // rng.formulas returns a 1x1 2D array
+        const formula = rng.formulas[0][0];
+
+        this.setState({
+          changeat: activeSheet.name + "!" + args.address,
+          formula: formula
+        });
+      });
+    } else {
+      this.setState({
+        changeat: args.address,
+        formula: ""
+      });
+    }
   }
 
   /**
@@ -597,7 +620,7 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param args WorksheetChangedEvent information.
    * @param appInstance A reference to the `appInstance` instance.
    */
-  public async onRangeChangeInReact(args: Excel.WorksheetChangedEventArgs): Promise<any> {
+  public async onRangeChange(args: Excel.WorksheetChangedEventArgs): Promise<void> {
     if (args.changeType === "RangeEdited") {
       const t = new Timer("onUpdate");
       await Excel.run(async (context: Excel.RequestContext) => {
@@ -681,8 +704,6 @@ export default class App extends React.Component<AppProps, AppState> {
             canRestore: this.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
             changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
             time_data: new Some(td),
-            debug: this.state.debug,
-            use_styles: this.state.use_styles,
             fixes: found_fixes
           });
           console.log("Analysis finished");
@@ -701,9 +722,13 @@ export default class App extends React.Component<AppProps, AppState> {
     Excel.run(async (context: Excel.RequestContext) => {
       const worksheets = context.workbook.worksheets;
 
-      // register change event with onRangeChange In React
-      const handler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChangeInReact(args);
-      worksheets.onChanged.add(handler);
+      // register change event with onRangeChange
+      const chgHandler = (args: Excel.WorksheetChangedEventArgs) => this.onRangeChange(args);
+      worksheets.onChanged.add(chgHandler);
+
+      // register click event with onRangeSelect
+      const clkHandler = (args: Excel.WorksheetSelectionChangedEventArgs) => this.onSelectionChange(args);
+      worksheets.onSelectionChanged.add(clkHandler);
     });
   }
 
@@ -730,7 +755,7 @@ export default class App extends React.Component<AppProps, AppState> {
     ));
 
     return (
-      <div>
+      <div style={{ padding: "1em", backgroundColor: "#cc99ff" }}>
         <div className="ms-welcome">
           At: <em>{this.state.changeat}</em>
         </div>
@@ -743,11 +768,14 @@ export default class App extends React.Component<AppProps, AppState> {
         </div>
         <div>
           <input type="checkbox" id="doSTYLES" checked={this.STYLE} onChange={() => this.toggleStyleState()} />
-          <label htmlFor="doSTYLES">Discount with styles</label>
+          <label htmlFor="doSTYLES">Use style discounts</label>
         </div>
         {button}
         <div>
           <ol>{fixes}</ol>
+        </div>
+        <div>
+          <input type="text" id="formulaInput" value={this.state.formula} style={{ width: "90%" }} />
         </div>
       </div>
     );
