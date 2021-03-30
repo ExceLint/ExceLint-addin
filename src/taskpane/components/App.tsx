@@ -43,6 +43,7 @@ export interface AppState {
   time_data: Option<ExceLintTime>;
   debug: boolean;
   use_styles: boolean;
+  fixes: XLNT.ProposedFix[];
 }
 
 /**
@@ -256,7 +257,8 @@ export default class App extends React.Component<AppProps, AppState> {
       changeat: "",
       time_data: None,
       debug: false,
-      use_styles: false
+      use_styles: false,
+      fixes: []
     };
   }
 
@@ -616,6 +618,7 @@ export default class App extends React.Component<AppProps, AppState> {
             this.STYLE
           );
           let it: IteratorResult<Maybe<[XLNT.ProposedFix[], OldColor[]]>, Maybe<[XLNT.ProposedFix[], OldColor[]]>>;
+          const found_fixes: XLNT.ProposedFix[] = [];
           for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
             const v = it.value;
             switch (v.type) {
@@ -632,6 +635,8 @@ export default class App extends React.Component<AppProps, AppState> {
                   const handler = () => this.restoreColors(oc);
                   button.onclick = handler.bind(this);
                 }
+                // add to found fixes
+                pfs.forEach(pf => found_fixes.push(pf));
 
                 console.log(pfs);
                 break;
@@ -646,6 +651,9 @@ export default class App extends React.Component<AppProps, AppState> {
                   const handler = () => this.restoreColors(oc);
                   button.onclick = handler.bind(this);
                 }
+                // add to found fixes
+                pfs.forEach(pf => found_fixes.push(pf));
+
                 console.log(pfs);
                 break;
               }
@@ -667,7 +675,8 @@ export default class App extends React.Component<AppProps, AppState> {
             changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
             time_data: new Some(td),
             debug: this.state.debug,
-            use_styles: this.state.use_styles
+            use_styles: this.state.use_styles,
+            fixes: found_fixes
           });
           console.log("Analysis finished");
         }
@@ -701,6 +710,18 @@ export default class App extends React.Component<AppProps, AppState> {
       </button>
     ) : null;
 
+    const fixes = this.state.fixes.map(fix => (
+      <li>
+        {fix.rect1.upperleft +
+          ":" +
+          fix.rect1.bottomright +
+          " and " +
+          fix.rect2.upperleft +
+          ":" +
+          fix.rect2.bottomright}
+      </li>
+    ));
+
     return (
       <div>
         <div className="ms-welcome">
@@ -718,6 +739,9 @@ export default class App extends React.Component<AppProps, AppState> {
           <label htmlFor="doSTYLES">Discount with styles</label>
         </div>
         {button}
+        <div>
+          <ol>{fixes}</ol>
+        </div>
       </div>
     );
   }
