@@ -160,6 +160,9 @@ export async function* incrementalFatCrossAnalysis(
       if (ffix.hasValue) proposed_fixes.push(ffix.value);
     }
 
+    // filter fixes by target address
+    proposed_fixes = proposed_fixes.filter(pf => pf.includesCellAt(addr));
+
     if (i === steps.length - 1) {
       // if this is the last step, the answer is conclusive
       if (proposed_fixes.length === 0) {
