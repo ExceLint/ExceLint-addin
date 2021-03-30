@@ -141,14 +141,20 @@ export async function* incrementalFatCrossAnalysis(
     // generate proposed fixes for all the new rectanles
     const pfs = Colorize.generate_proposed_fixes(rects);
 
+    // remove duplicate fixes
+    const pfs2 = Colorize.filterDuplicateFixes(pfs);
+
+    // filter fixes by target address
+    const pfs3 = pfs2.filter(pf => pf.includesCellAt(addr));
+
     // filter fixes by user threshold
-    const pfs2 = Colorize.filterFixesByUserThreshold(pfs, Config.reportingThreshold);
+    const pfs4 = Colorize.filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
 
     // adjust proposed fixes by style (mutates input)
-    Colorize.adjustProposedFixesByStyleHash(pfs2, ss);
+    Colorize.adjustProposedFixesByStyleHash(pfs4, ss);
 
     // filter fixes with heuristics
-    for (const fix of pfs2) {
+    for (const fix of pfs4) {
       // function to get rectangle info for a rectangle;
       // closes over sheet data
       const rectf = (rect: XLNT.Rectangle) => {
@@ -160,9 +166,6 @@ export async function* incrementalFatCrossAnalysis(
       const ffix = Colorize.filterFix(fix, rectf, true);
       if (ffix.hasValue) proposed_fixes.push(ffix.value);
     }
-
-    // filter fixes by target address
-    proposed_fixes = proposed_fixes.filter(pf => pf.includesCellAt(addr));
 
     if (i === steps.length - 1) {
       // if this is the last step, the answer is conclusive
@@ -618,7 +621,7 @@ export default class App extends React.Component<AppProps, AppState> {
             this.STYLE
           );
           let it: IteratorResult<Maybe<[XLNT.ProposedFix[], OldColor[]]>, Maybe<[XLNT.ProposedFix[], OldColor[]]>>;
-          const found_fixes: XLNT.ProposedFix[] = [];
+          let found_fixes: XLNT.ProposedFix[] = [];
           for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
             const v = it.value;
             switch (v.type) {
@@ -635,8 +638,8 @@ export default class App extends React.Component<AppProps, AppState> {
                   const handler = () => this.restoreColors(oc);
                   button.onclick = handler.bind(this);
                 }
-                // add to found fixes
-                pfs.forEach(pf => found_fixes.push(pf));
+                // replace found fixes
+                found_fixes = pfs;
 
                 console.log(pfs);
                 break;
@@ -651,8 +654,8 @@ export default class App extends React.Component<AppProps, AppState> {
                   const handler = () => this.restoreColors(oc);
                   button.onclick = handler.bind(this);
                 }
-                // add to found fixes
-                pfs.forEach(pf => found_fixes.push(pf));
+                // replace found fixes
+                found_fixes = pfs;
 
                 console.log(pfs);
                 break;
