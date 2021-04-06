@@ -609,17 +609,21 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param args
    */
   public async onSelectionChange(args: Excel.WorksheetSelectionChangedEventArgs): Promise<void> {
+    // get the address string of the change
     const address = args.address;
+
+    // update the event handler that responds to typing with the new address
     const inputField = document.getElementById("formulaInput");
-    inputField?.removeEventListener("input", this.inputListener);
+    inputField!.removeEventListener("input", this.inputListener);
     this.inputListener = async function(this: HTMLElement) {
       // this is just the default handler
       // we remove and replace it anytime the selection changes, to
       // hardcode the address since a appears to be copied by value
       await onInput(this, address);
     };
-    inputField?.addEventListener("input", this.inputListener);
+    inputField!.addEventListener("input", this.inputListener);
 
+    // get the changed string and do some things
     if (ExcelUtils.isACell(args.address)) {
       // convert address to XLNT object
       const addr = ExcelUtils.addrA1toR1C1(args.address);
@@ -635,6 +639,10 @@ export default class App extends React.Component<AppProps, AppState> {
         // rng.formulas returns a 1x1 2D array
         const formula = rng.formulas[0][0];
 
+        // populate the text input with the formula from the selected cell
+        (inputField as HTMLInputElement)!.value = formula;
+
+        // let React know about the change
         this.setState({
           changeat: activeSheet.name + "!" + args.address,
           formula: formula
@@ -822,7 +830,7 @@ export default class App extends React.Component<AppProps, AppState> {
           <ol>{fixes}</ol>
         </div>
         <div>
-          <input type="text" id="formulaInput" value={this.state.formula} style={{ width: "90%" }} />
+          <input type="text" id="formulaInput" style={{ width: "90%" }} />
         </div>
       </div>
     );
