@@ -196,10 +196,33 @@ export async function* incrementalFatCrossAnalysis(
 }
 
 /**
+ * When the user presses a key in the taskpane formula input,
+ * update the selected cell and run an incremental analysis.
+ */
+async function onInput(e: HTMLElement, changeat: string): Promise<void> {
+  e = e; // stupid
+  if (ExcelUtils.isACell(changeat)) {
+    // convert address to XLNT object
+    const addr = ExcelUtils.addrA1toR1C1(changeat);
+    // set contents of cell
+    await Excel.run(async (context: Excel.RequestContext) => {
+      const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+      const rng = activeSheet.getCell(addr.row - 1, addr.column - 1);
+      // get formula text from input
+      const f = (document.getElementById("formulaInput") as HTMLInputElement).value;
+      // set cell contents
+      rng.formulas = [[f]];
+      await context.sync();
+    });
+  }
+}
+
+/**
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
   // public static readonly DEBUG = false; // true: shows colors, false: hides colors
+  private inputListener: (this: HTMLElement) => Promise<void> = async function() {};
 
   /**
    * Gets debug state.
@@ -586,6 +609,17 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param args
    */
   public async onSelectionChange(args: Excel.WorksheetSelectionChangedEventArgs): Promise<void> {
+    const address = args.address;
+    const inputField = document.getElementById("formulaInput");
+    inputField?.removeEventListener("input", this.inputListener);
+    this.inputListener = async function(this: HTMLElement) {
+      // this is just the default handler
+      // we remove and replace it anytime the selection changes, to
+      // hardcode the address since a appears to be copied by value
+      await onInput(this, address);
+    };
+    inputField?.addEventListener("input", this.inputListener);
+
     if (ExcelUtils.isACell(args.address)) {
       // convert address to XLNT object
       const addr = ExcelUtils.addrA1toR1C1(args.address);
@@ -729,6 +763,19 @@ export default class App extends React.Component<AppProps, AppState> {
       // register click event with onRangeSelect
       const clkHandler = (args: Excel.WorksheetSelectionChangedEventArgs) => this.onSelectionChange(args);
       worksheets.onSelectionChanged.add(clkHandler);
+
+      // // register input event with formula text input field
+      // // I don't really understand why I need to use the following form
+      // // except that arrow functions cannot take a 'this' parameter since
+      // // they lexically close over 'this' (and the parameter must literally
+      // // be named 'this' in order to work! FRUSTRATING!!!)
+      // const inputListener = async function(this: HTMLElement) {
+      //   // this is just the default handler
+      //   // we remove and replace it anytime the selection changes, to
+      //   // hardcode the address since a appears to be copied by value
+      //   await onInput(this, "A1");
+      // };
+      // document.getElementById("formulaInput")?.addEventListener("input", inputListener);
     });
   }
 
