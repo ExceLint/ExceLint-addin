@@ -213,6 +213,8 @@ async function onInput(e: HTMLElement, changeat: string): Promise<void> {
       // set cell contents
       rng.formulas = [[f]];
       await context.sync();
+      // get reference tokens on partial string
+      // run analysis
     });
   }
 }
