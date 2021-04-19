@@ -199,22 +199,101 @@ export async function* incrementalFatCrossAnalysis(
  * When the user presses a key in the taskpane formula input,
  * update the selected cell and run an incremental analysis.
  */
-async function onInput(e: HTMLElement, changeat: string): Promise<void> {
+async function onInput(e: HTMLElement, addr: XLNT.Address, app: App): Promise<void> {
   e = e; // stupid
-  if (ExcelUtils.isACell(changeat)) {
-    // convert address to XLNT object
-    const addr = ExcelUtils.addrA1toR1C1(changeat);
+  const t = new Timer("onUpdate");
+
+  if (ExcelUtils.isACell(addr.toA1Ref())) {
     // set contents of cell
     await Excel.run(async (context: Excel.RequestContext) => {
+      // get active sheet
       const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+
+      // get used range
+      const usedRange = await App.getCurrentUsedRange(activeSheet, context);
+
+      // get range contents
       const rng = activeSheet.getCell(addr.row - 1, addr.column - 1);
-      // get formula text from input
+
+      // get formula text from taskpane input
       const f = (document.getElementById("formulaInput") as HTMLInputElement).value;
-      // set cell contents
+
+      // set cell contents from taskpane input
       rng.formulas = [[f]];
       await context.sync();
+
       // get reference tokens on partial string
+
       // run analysis
+      const proposed_fixes = await incrementalFatCrossAnalysis(
+        context,
+        activeSheet,
+        usedRange,
+        addr,
+        app.DEBUG,
+        app.STYLE
+      );
+
+      // iterate through fixes
+      let it: IteratorResult<Maybe<[XLNT.ProposedFix[], OldColor[]]>, Maybe<[XLNT.ProposedFix[], OldColor[]]>>;
+      let found_fixes: XLNT.ProposedFix[] = [];
+      for (it = await proposed_fixes.next(); !it.done; it = await proposed_fixes.next()) {
+        const v = it.value;
+        switch (v.type) {
+          case "no":
+            console.log("No bugs found.");
+            break;
+          case "possibly": {
+            const [pfs, oc] = v.value;
+            if (app.DEBUG) {
+              // get the restore button
+              const button = document.getElementById("RestoreButton")!;
+
+              // update handler
+              const handler = () => app.restoreColors(oc);
+              button.onclick = handler.bind(app);
+            }
+            // replace found fixes
+            found_fixes = pfs;
+
+            console.log(pfs);
+            break;
+          }
+          case "definitely": {
+            const [pfs, oc] = v.value;
+            if (app.DEBUG) {
+              // get the restore button
+              const button = document.getElementById("RestoreButton")!;
+
+              // update handler
+              const handler = () => app.restoreColors(oc);
+              button.onclick = handler.bind(app);
+            }
+            // replace found fixes
+            found_fixes = pfs;
+
+            console.log(pfs);
+            break;
+          }
+          default:
+            console.log("This case should not be possible.");
+        }
+      }
+
+      // total time
+      const elapsed = Timer.round(t.elapsedTime());
+
+      const td = {
+        total_μs: elapsed
+      };
+
+      // update the UI state
+      app.setState({
+        canRestore: app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
+        changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
+        time_data: new Some(td),
+        fixes: found_fixes
+      });
     });
   }
 }
@@ -611,28 +690,40 @@ export default class App extends React.Component<AppProps, AppState> {
    * @param args
    */
   public async onSelectionChange(args: Excel.WorksheetSelectionChangedEventArgs): Promise<void> {
-    // get the address string of the change
-    const address = args.address;
-
-    // update the event handler that responds to typing with the new address
-    const inputField = document.getElementById("formulaInput");
-    inputField!.removeEventListener("input", this.inputListener);
-    this.inputListener = async function(this: HTMLElement) {
-      // this is just the default handler
-      // we remove and replace it anytime the selection changes, to
-      // hardcode the address since a appears to be copied by value
-      await onInput(this, address);
-    };
-    inputField!.addEventListener("input", this.inputListener);
-
-    // get the changed string and do some things
     if (ExcelUtils.isACell(args.address)) {
-      // convert address to XLNT object
-      const addr = ExcelUtils.addrA1toR1C1(args.address);
-
-      // get contents of cell
       await Excel.run(async (context: Excel.RequestContext) => {
+        /*
+         * The following replaces the keypress handler on the taskpane input
+         * with a keypress handler for the current selection.
+         */
+
+        // convert address in selection change event to XLNT object
+        const addr = ExcelUtils.addrA1toR1C1(args.address);
+
+        // read properties since listener this shadow App's this
+        const app = this;
+
+        // update the event handler that responds to typing with the new address
+        const inputField = document.getElementById("formulaInput");
+        inputField!.removeEventListener("input", this.inputListener);
+        this.inputListener = async function(this: HTMLElement) {
+          // this is just the default handler
+          // we remove and replace it anytime the selection changes, to
+          // hardcode the address since a appears to be copied by value
+          await onInput(this, addr, app);
+        };
+        inputField!.addEventListener("input", this.inputListener);
+
+        /*
+         * The following updates taskpane diagnostic information; mainly
+         * it updates the input field with data from the selected cell in
+         * the grid.
+         */
+
+        // get the active sheet
         const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+
+        // query grid for formulas
         activeSheet.load("name");
         const rng = activeSheet.getCell(addr.row - 1, addr.column - 1);
         rng.load("formulas");
@@ -773,19 +864,6 @@ export default class App extends React.Component<AppProps, AppState> {
       // register click event with onRangeSelect
       const clkHandler = (args: Excel.WorksheetSelectionChangedEventArgs) => this.onSelectionChange(args);
       worksheets.onSelectionChanged.add(clkHandler);
-
-      // // register input event with formula text input field
-      // // I don't really understand why I need to use the following form
-      // // except that arrow functions cannot take a 'this' parameter since
-      // // they lexically close over 'this' (and the parameter must literally
-      // // be named 'this' in order to work! FRUSTRATING!!!)
-      // const inputListener = async function(this: HTMLElement) {
-      //   // this is just the default handler
-      //   // we remove and replace it anytime the selection changes, to
-      //   // hardcode the address since a appears to be copied by value
-      //   await onInput(this, "A1");
-      // };
-      // document.getElementById("formulaInput")?.addEventListener("input", inputListener);
     });
   }
 
@@ -819,20 +897,23 @@ export default class App extends React.Component<AppProps, AppState> {
         <div className="ms-welcome">
           Total time: {this.state.time_data.hasValue ? this.state.time_data.value.total_μs : ""} μs
         </div>
+        {/*
         <div>
           <input type="checkbox" id="doDEBUG" checked={this.DEBUG} onChange={() => this.toggleDebugState()} />
           <label htmlFor="doDEBUG">Show debug output</label>
         </div>
+        */}
+
         <div>
           <input type="checkbox" id="doSTYLES" checked={this.STYLE} onChange={() => this.toggleStyleState()} />
           <label htmlFor="doSTYLES">Use style discounts</label>
         </div>
         {button}
         <div>
-          <ol>{fixes}</ol>
+          <input type="text" id="formulaInput" style={{ width: "90%" }} />
         </div>
         <div>
-          <input type="text" id="formulaInput" style={{ width: "90%" }} />
+          <ol>{fixes}</ol>
         </div>
       </div>
     );
