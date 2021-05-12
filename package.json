@@ -57,7 +57,7 @@
     "path": "^0.12.7",
     "path-exists": "^4.0.0",
     "pkg-dir": "^5.0.0",
-    "postcss": "^8.2.2",
+    "postcss": "^8.2.10",
     "postcss-loader": "4.1.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
