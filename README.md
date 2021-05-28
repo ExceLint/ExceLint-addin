@@ -2,7 +2,7 @@
 
 These instructions are valid for 1JS commit `e27a8070e07d7d37ce49e4b7877144e49d9ab3a1` (Fri May 28 17:34:37 2021 +0000) or later.
 
-1. Copy `excelint`, `excelint-tests`, `exceLint.plugin.ts`, and `exceLint.plugin.test.ts` to `1JS\ooui\packages\excel-online-intelligent-formula-autocomplete`.
+1. Copy `excelint`, `excelint-tests`, `exceLint.plugin.ts`, and `exceLint.plugin.test.ts` to `1JS\ooui\packages\excel-online-intelligent-formula-autocomplete\src`.
 2. Find the file `1JS\ooui\packages\excel-online-calc\src\definitions\smartCompletionDefinitions.ts` and change
    ```
    {
