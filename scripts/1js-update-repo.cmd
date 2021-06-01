@@ -1,4 +1,4 @@
-REM @echo off
+@echo off
 REM Use this script to copy ExceLint plugin files from the 1JS repo back into the GitHub repo.
 REM Usage:
 REM   1js-update-repo.cmd <1JS path>
@@ -16,7 +16,7 @@ REM quit if the number is not correct
 IF %argC% EQU 1 GOTO ALLOK
 echo Usage: %self% ^<1JS path^>
 @echo on
-exit 1
+@exit 1
 
 :ALLOK
 REM get the absolute path to the given argument
@@ -44,4 +44,4 @@ REM restore working directory
 cd %olddir%
 
 @echo on
-exit
+@exit 0
