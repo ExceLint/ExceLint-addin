@@ -21,7 +21,6 @@ exit 1
 :ALLOK
 REM get the absolute path to the given argument
 SET target=%~dpnx1
-echo %target%
 
 REM get the path to the current directory, so it can be restored later
 SET olddir=%CD%
@@ -35,12 +34,11 @@ REM started the script someplace else
 cd %batchpath%
 cd ..
 
-REM TODO: update these paths
-REM Xcopy /E /I /Y %1\ooui\packages\excel-online-intelligent-formula-autocomplete\src\excelint excelint
-REM Xcopy /E /I /Y %1\ooui\packages\excel-online-intelligent-formula-autocomplete\src\excelint-tests excelint-tests
-
-REM Xcopy /E /I /Y %1\ooui\packages\excel-online-intelligent-formula-autocomplete\src\exceLint.plugin.ts 
-REM Xcopy /E /I /Y exceLint.plugin.test.ts %1\ooui\packages\excel-online-intelligent-formula-autocomplete\src
+REM now do the copy
+Xcopy /E /I /Y %target%\ooui\packages\excel-online-intelligent-formula-autocomplete\src\excelint excelint
+Xcopy /E /I /Y %target%\ooui\packages\excel-online-intelligent-formula-autocomplete\src\excelint-tests excelint-tests
+Xcopy /E /I /Y %target%\ooui\packages\excel-online-intelligent-formula-autocomplete\src\exceLint.plugin.ts exceLint.plugin.ts
+Xcopy /E /I /Y %target%\ooui\packages\excel-online-intelligent-formula-autocomplete\src\exceLint.plugin.test.ts exceLint.plugin.test.ts
 
 REM restore working directory
 cd %olddir%
