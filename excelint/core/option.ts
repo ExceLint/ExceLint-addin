@@ -21,7 +21,7 @@ export class Some<T> {
     return false;
   }
   public toString(): string {
-    return 'Some(' + this.t + ')';
+    return "Some(" + this.t + ")";
   }
 }
 class NoneType {
@@ -32,7 +32,7 @@ class NoneType {
   }
 
   public toString(): string {
-    return 'None';
+    return "None";
   }
 }
 export const None = new NoneType(); // singleton None
@@ -54,55 +54,3 @@ export function flatMap<U, T>(f: (u: U) => Option<T>, us: U[]): T[] {
   }
   return ts;
 }
-
-export class Definitely<T> {
-  private t: T;
-  public type = 'definitely' as const;
-
-  constructor(t: T) {
-    this.t = t;
-  }
-
-  public get value(): T {
-    return this.t;
-  }
-
-  public equals(o: Maybe<T>): boolean {
-    if (this.type === o.type) {
-      return this.t === (o as Definitely<T>).t;
-    }
-    return false;
-  }
-}
-
-export class Possibly<T> {
-  private t: T;
-  public type = 'possibly' as const;
-
-  constructor(t: T) {
-    this.t = t;
-  }
-
-  public get value(): T {
-    return this.t;
-  }
-
-  public equals(o: Maybe<T>): boolean {
-    if (this.type === o.type) {
-      return this.t === (o as Possibly<T>).t;
-    }
-    return false;
-  }
-}
-
-export class NoKind {
-  public type = 'no' as const;
-
-  public equals(o: Maybe<any>): boolean {
-    return this.type === o.type;
-  }
-}
-
-export const No = new NoKind();
-
-export type Maybe<T> = Definitely<T> | Possibly<T> | NoKind;
