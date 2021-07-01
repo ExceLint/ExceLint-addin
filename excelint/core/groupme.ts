@@ -1,5 +1,5 @@
 import { binsearch, strict_binsearch } from './binsearch';
-import { Colorize } from './colorize';
+import { Analysis } from './analysis';
 import { ExceLintVector, Dictionary, ProposedFix, Rectangle, upperleft, bottomright } from './ExceLintTypes';
 
 // A comparison function to sort by x-coordinate.
@@ -234,7 +234,7 @@ function find_all_matching_rectangles(
         // concatenate them into the match_list
         match_list = match_list.concat(
           matches.map((item: Rectangle) => {
-            const metric = Colorize.compute_fix_metric(parseFloat(thisfp), rect, parseFloat(fp), item);
+            const metric = Analysis.compute_fix_metric(parseFloat(thisfp), rect, parseFloat(fp), item);
             return new ProposedFix(metric, rect, item);
           })
         );

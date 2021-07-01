@@ -17,81 +17,13 @@
  */
 
 import * as XLNT from './core/ExceLintTypes';
-import { Colorize } from './core/colorize';
+import { Analysis } from './core/analysis';
 import { RectangleUtils } from './core/rectangleutils';
 import { Config } from './core/config';
 import { x10, location, util } from '@ms/excel-online-calc';
 import { Some } from './core/option';
-import { padStart } from './core/colorutils';
 
 export module ExceLint {
-  function findUsedRange(fs: XLNT.Dictionary<string>, sheet: string): XLNT.Range {
-    // find grid bounds
-    let tl_x = Number.MAX_SAFE_INTEGER;
-    let tl_y = Number.MAX_SAFE_INTEGER;
-    let br_x = Number.MIN_SAFE_INTEGER;
-    let br_y = Number.MIN_SAFE_INTEGER;
-    for (const key of fs.keys) {
-      const vect = XLNT.ExceLintVector.fromKey(key);
-      if (vect.x < tl_x) {
-        tl_x = vect.x;
-      }
-      if (vect.x > br_x) {
-        br_x = vect.x;
-      }
-      if (vect.y < tl_y) {
-        tl_y = vect.y;
-      }
-      if (vect.y > br_y) {
-        br_y = vect.y;
-      }
-    }
-    const tl = new XLNT.Address(sheet, tl_y, tl_x);
-    const br = new XLNT.Address(sheet, br_y, br_x);
-    return new XLNT.Range(tl, br);
-  }
-
-  function colWidth(fs: XLNT.Dictionary<string>, col: number): number {
-    let maxWidth = 0;
-    for (const key of fs.keys) {
-      const v = XLNT.ExceLintVector.fromKey(key);
-      if (v.x === col) {
-        const f = fs.get(key);
-        if (f.length > maxWidth) {
-          maxWidth = f.length;
-        }
-      }
-    }
-    return maxWidth;
-  }
-
-  export function visualizeGrid(fs: XLNT.Dictionary<string>, sheet: string): string {
-    const ur = findUsedRange(fs, sheet);
-
-    // get col widths
-    const widths = new XLNT.Dictionary<number>();
-    for (let col = ur.upperLeftColumn; col <= ur.bottomRightColumn; col++) {
-      widths.put(col.toString(), colWidth(fs, col));
-    }
-
-    // make string
-    let s = '';
-    for (let row = ur.upperLeftRow; row <= ur.bottomRightRow; row++) {
-      for (let col = ur.upperLeftColumn; col <= ur.bottomRightColumn; col++) {
-        const addr = new XLNT.Address(sheet, row, col);
-        const key = addr.asVector().asKey();
-        const width = widths.get(col.toString());
-        if (fs.contains(key)) {
-          s += '[' + padStart(fs.get(key), width, ' ') + ']';
-        } else {
-          s += '[' + padStart('', width, ' ') + ']';
-        }
-      }
-      s += '\n';
-    }
-    return s;
-  }
-
   function rangeToSheetGridRange(r: XLNT.Range, si: location.SheetIndex): location.SheetGridRange {
     const row = r.addressStart.row - 1;
     const col = r.addressStart.column - 1;
@@ -133,32 +65,32 @@ export module ExceLint {
     let proposed_fixes: XLNT.ProposedFix[] = [];
 
     // get every reference vector set for every formula, indexed by address vector
-    const fRefs = Colorize.relativeFormulaRefs(formulas);
+    const fRefs = Analysis.relativeFormulaRefs(formulas);
 
     // compute fingerprints for reference vector sets, indexed by address vector
-    const fps = Colorize.fingerprints(fRefs);
+    const fps = Analysis.fingerprints(fRefs);
 
     // decompose into rectangles, indexed by fingerprint
-    const stepRects = Colorize.identify_groups(fps);
+    const stepRects = Analysis.identify_groups(fps);
 
     // merge these new rectangles with the old ones
-    rects = Colorize.mergeRectangleDictionaries(stepRects, rects);
-    rects = Colorize.mergeRectangles(rects);
+    rects = Analysis.mergeRectangleDictionaries(stepRects, rects);
+    rects = Analysis.mergeRectangles(rects);
 
     // generate proposed fixes for all the new rectanles
-    const pfs = Colorize.generate_proposed_fixes(rects);
+    const pfs = Analysis.generate_proposed_fixes(rects);
 
     // remove duplicate fixes
-    const pfs2 = Colorize.filterDuplicateFixes(pfs);
+    const pfs2 = Analysis.filterDuplicateFixes(pfs);
 
     // filter fixes by target address
     const pfs3 = pfs2.filter(pf => pf.includesCellAt(addr));
 
     // filter fixes by user threshold
-    const pfs4 = Colorize.filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
+    const pfs4 = Analysis.filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
 
     // adjust proposed fixes by style (mutates input)
-    Colorize.adjustProposedFixesByStyleHash(pfs4, styles);
+    Analysis.adjustProposedFixesByStyleHash(pfs4, styles);
 
     // filter fixes with heuristics
     for (const fix of pfs4) {
@@ -170,7 +102,7 @@ export module ExceLint {
         return new XLNT.RectInfo(rect, firstFormula);
       };
 
-      const ffix = Colorize.filterFix(fix, rectf, false);
+      const ffix = Analysis.filterFix(fix, rectf, false);
       if (ffix.hasValue) proposed_fixes.push(ffix.value);
     }
 

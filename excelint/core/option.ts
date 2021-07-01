@@ -21,7 +21,7 @@ export class Some<T> {
     return false;
   }
   public toString(): string {
-    return "Some(" + this.t + ")";
+    return 'Some(' + this.t + ')';
   }
 }
 class NoneType {
@@ -32,7 +32,7 @@ class NoneType {
   }
 
   public toString(): string {
-    return "None";
+    return 'None';
   }
 }
 export const None = new NoneType(); // singleton None

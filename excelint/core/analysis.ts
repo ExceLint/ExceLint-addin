@@ -8,51 +8,10 @@ import { Some, None, Option } from './option';
 
 declare var console: Console;
 
-export class Colorize {
-  // Color-blind friendly color palette.
-  public static palette = [
-    '#ecaaae',
-    '#74aff3',
-    '#d8e9b2',
-    '#deb1e0',
-    '#9ec991',
-    '#adbce9',
-    '#e9c59a',
-    '#71cdeb',
-    '#bfbb8a',
-    '#94d9df',
-    '#91c7a8',
-    '#b4efd3',
-    '#80b6aa',
-    '#9bd1c6',
-  ]; // removed '#73dad1'
-
-  // True iff this class been initialized.
-  private static initialized = false;
-
-  // The array of colors (used to hash into).
-  private static color_list: string[] = [];
-
+export class Analysis {
   // A hash string indicating no dependencies; in other words,
   // either a formula that makes no references (like `=RAND()`) or a data cell (like `1`)
   private static noDependenciesHash = new XLNT.Fingerprint(12345);
-
-  public static initialize() {
-    if (!this.initialized) {
-      // Create the color palette array.
-      const arr = Colorize.palette;
-      for (let i = 0; i < arr.length; i++) {
-        this.color_list.push(arr[i]);
-      }
-      this.initialized = true;
-    }
-  }
-
-  // Get the color corresponding to a hash value.
-  public static get_color(hashval: number): string {
-    const color = this.color_list[(hashval * 1) % this.color_list.length];
-    return color;
-  }
 
   // return true if this sheet is not the same as the other sheet
   public static isNotSameSheet(thisSheetName: string, otherSheetName: string): boolean {
@@ -188,20 +147,20 @@ export class Colorize {
     beVerbose: boolean
   ): Option<XLNT.ProposedFix> {
     // Determine the direction of the range (vertical or horizontal) by looking at the axes.
-    const is_vert: boolean = Colorize.fixIsVertical(fix);
+    const is_vert: boolean = Analysis.fixIsVertical(fix);
 
     // Formula info for each rectangle
     const rect_info = fix.rectangles.map(rectf);
 
     // Omit fixes that are too small (too few cells).
-    if (Colorize.fixCellCount(fix) < Config.minFixSize) {
+    if (Analysis.fixCellCount(fix) < Config.minFixSize) {
       const print_formulas = JSON.stringify(rect_info.map(fi => fi.print_formula));
       if (beVerbose) console.warn('Omitted ' + print_formulas + '(too small)');
       return None;
     }
 
     // Omit fixes with entropy change over threshold
-    if (Colorize.fixEntropy(fix) > Config.maxEntropy) {
+    if (Analysis.fixEntropy(fix) > Config.maxEntropy) {
       const print_formulas = JSON.stringify(rect_info.map(fi => fi.print_formula));
       if (beVerbose) console.warn('Omitted ' + JSON.stringify(print_formulas) + '(too high entropy)');
       return None;
@@ -218,6 +177,68 @@ export class Colorize {
     // Package everything up with the fix
     fix.analysis = new XLNT.FixAnalysis(bin, rect_info, is_vert);
     return new Some(fix);
+  }
+
+  // /**
+  //  * Returns true iff the two vectors are the same.
+  //  * @param v1
+  //  * @param v2
+  //  * @returns
+  //  */
+  // private static vectorCompare(v1: XLNT.ExceLintVector, v2: XLNT.ExceLintVector): boolean {
+  //   return v1.x === v2.x && v1.y === v2.y && v1.c === v2.c;
+  // }
+
+  /**
+   * Returns true iff vs1 and vs2 are the same.
+   * @param vs1
+   * @param vs2
+   * @returns
+   */
+  public static vectorArrayCompare(f: string, vs1: XLNT.ExceLintVector[], vs2: XLNT.ExceLintVector[]): boolean {
+    let same = true;
+
+    // check for things in vs2 not in vs1
+    const d1 = new XLNT.Dictionary<XLNT.ExceLintVector>();
+    const vs2_missing = new Set<XLNT.ExceLintVector>();
+    for (const v of vs1) {
+      d1.put(v.asKey(), v);
+    }
+    for (const v of vs2) {
+      if (!d1.contains(v.asKey())) {
+        vs2_missing.add(v);
+        same = false;
+      }
+    }
+
+    // check for things in vs1 not in vs2
+    const d2 = new XLNT.Dictionary<XLNT.ExceLintVector>();
+    const vs1_missing = new Set<XLNT.ExceLintVector>();
+    for (const v of vs2) {
+      d2.put(v.asKey(), v);
+    }
+    for (const v of vs1) {
+      if (!d2.contains(v.asKey())) {
+        vs1_missing.add(v);
+        same = false;
+      }
+    }
+
+    // debug
+    if (!same) {
+      let s = '';
+      s += "For formula '" + f + "'\n";
+      s += 'Missing from vs1: \n';
+      for (const v of vs1_missing) {
+        s += v.toString() + '\n';
+      }
+      s += 'Missing from vs2: \n';
+      for (const v of vs2_missing) {
+        s += v.toString() + '\n';
+      }
+      console.warn(s);
+    }
+    return same;
   }
 
   /**
@@ -243,6 +264,7 @@ export class Colorize {
         // If it's a formula, process it.
         if (cell.length > 0) {
           // FIXME MAYBE  && (row[j][0] === '=')) {
+          // Emery's version:
           const vec_array: XLNT.ExceLintVector[] = ExcelUtils.all_dependencies(
             i,
             j,
@@ -256,7 +278,7 @@ export class Colorize {
             if (cell[0] === '=') {
               // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
               const v = new XLNT.ExceLintVector(adjustedX, adjustedY, 0);
-              _d.put(v.asKey(), Colorize.noDependenciesHash);
+              _d.put(v.asKey(), Analysis.noDependenciesHash);
             }
           } else {
             // compute resultant vector
@@ -267,7 +289,7 @@ export class Colorize {
 
             // add to dict
             if (vec.equals(XLNT.ExceLintVector.baseVector())) {
-              _d.put(v.asKey(), Colorize.noDependenciesHash);
+              _d.put(v.asKey(), Analysis.noDependenciesHash);
             } else {
               const hash = vec.hash();
               _d.put(v.asKey(), new XLNT.Fingerprint(hash));
@@ -296,6 +318,11 @@ export class Colorize {
 
       // compute dependencies for formula
       const vec_array: XLNT.ExceLintVector[] = ExcelUtils.all_cell_dependencies(f, addr.x, addr.y);
+      const vec_array2 = ExcelUtils.all_dependencies2(f, addr.x, addr.y);
+
+      // DEBUG: compare
+      const same = Analysis.vectorArrayCompare(f, vec_array, vec_array2);
+      if (!same) throw new Error('Outputs are not the same!');
 
       // add to set
       _d.put(addrKey, vec_array);
@@ -317,7 +344,7 @@ export class Colorize {
 
       // no refs
       if (refs.length === 0) {
-        _d.put(addrKey, Colorize.noDependenciesHash);
+        _d.put(addrKey, Analysis.noDependenciesHash);
       } else {
         // compute resultant vector
         const vec = refs.reduce(XLNT.ExceLintVector.VectorSum);
@@ -325,7 +352,7 @@ export class Colorize {
         // add to dict
         if (vec.equals(XLNT.ExceLintVector.baseVector())) {
           // refs are internal?
-          _d.put(addrKey, Colorize.noDependenciesHash);
+          _d.put(addrKey, Analysis.noDependenciesHash);
         } else {
           // normal resultant
           const hash = vec.hash();
@@ -341,7 +368,7 @@ export class Colorize {
     const _d = new XLNT.Dictionary<XLNT.Fingerprint>();
 
     for (const refvec of refs.keys) {
-      _d.put(refvec, Colorize.noDependenciesHash);
+      _d.put(refvec, Analysis.noDependenciesHash);
     }
 
     return _d;
@@ -369,7 +396,7 @@ export class Colorize {
             const adjustedX = j + origin_col + 1;
             const adjustedY = i + origin_row + 1;
             // See comment at top of function declaration for DistinguishedZeroHash
-            value_array.push([new XLNT.ExceLintVector(adjustedX, adjustedY, 1), Colorize.noDependenciesHash]);
+            value_array.push([new XLNT.ExceLintVector(adjustedX, adjustedY, 1), Analysis.noDependenciesHash]);
           }
         }
       }
@@ -436,11 +463,11 @@ export class Colorize {
    * @returns A dictionary of rectangle groups, indexed by ExceLint fingerprint vectors.
    */
   public static identify_groups(fingerprints: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.Dictionary<XLNT.Rectangle[]> {
-    const id = Colorize.identify_ranges(fingerprints, ExcelUtils.ColumnSort);
-    const gr = Colorize.find_contiguous_regions(id);
+    const id = Analysis.identify_ranges(fingerprints, ExcelUtils.ColumnSort);
+    const gr = Analysis.find_contiguous_regions(id);
     // Now try to merge stuff with the same hash.
     const newGr1 = gr.clone();
-    const mg = Colorize.merge_groups(newGr1);
+    const mg = Analysis.merge_groups(newGr1);
     return mg;
   }
 
@@ -480,11 +507,11 @@ export class Colorize {
     const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
 
     // Filter out non-empty items from whole matrix.
-    if (Colorize.tooManyFormulas(formulas)) {
+    if (Analysis.tooManyFormulas(formulas)) {
       if (beVerbose) console.warn('Too many formulas to perform formula analysis.');
       return new XLNT.Dictionary<XLNT.Fingerprint>();
     } else {
-      return Colorize.fingerprintFormulasImpl(formulas, origin.x - 1, origin.y - 1);
+      return Analysis.fingerprintFormulasImpl(formulas, origin.x - 1, origin.y - 1);
     }
   }
 
@@ -506,14 +533,14 @@ export class Colorize {
     const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
 
     // Filter out non-empty items from whole matrix.
-    if (Colorize.tooManyValues(values)) {
+    if (Analysis.tooManyValues(values)) {
       if (beVerbose) console.warn('Too many values to perform reference analysis.');
       return new XLNT.Dictionary<XLNT.Fingerprint>();
     } else {
       // Compute references (to color referenced data).
       const refs: XLNT.Dictionary<boolean> = ExcelUtils.generate_all_references(formulas, origin.x - 1, origin.y - 1);
 
-      return Colorize.color_all_data(refs);
+      return Analysis.color_all_data(refs);
     }
   }
 
@@ -552,19 +579,19 @@ export class Colorize {
     const processed_formulas = this.fingerprintFormulas(usedRangeAddr, formulas, beVerbose);
 
     // fingerprint all the data
-    const referenced_data = Colorize.fingerprintData(usedRangeAddr, formulas, values, beVerbose);
+    const referenced_data = Analysis.fingerprintData(usedRangeAddr, formulas, values, beVerbose);
 
     // find regions for data
-    const grouped_data = Colorize.identify_groups(referenced_data);
+    const grouped_data = Analysis.identify_groups(referenced_data);
 
     // find regions for formulas
-    const grouped_formulas = Colorize.identify_groups(processed_formulas);
+    const grouped_formulas = Analysis.identify_groups(processed_formulas);
 
     // Identify suspicious cells (disabled)
     let suspicious_cells: XLNT.ExceLintVector[] = [];
 
     // find proposed fixes
-    const proposed_fixes = Colorize.generate_proposed_fixes(grouped_formulas);
+    const proposed_fixes = Analysis.generate_proposed_fixes(grouped_formulas);
 
     return new XLNT.Analysis(
       suspicious_cells,
@@ -652,7 +679,7 @@ export class Colorize {
   public static merge_groups(groups: XLNT.Dictionary<XLNT.Rectangle[]>): XLNT.Dictionary<XLNT.Rectangle[]> {
     for (const k of groups.keys) {
       const g = groups.get(k).slice(); // slice with no args makes a shallow copy
-      groups.put(k, Colorize.merge_individual_groups(g));
+      groups.put(k, Analysis.merge_individual_groups(g));
     }
     return groups;
   }
@@ -893,7 +920,7 @@ export class Colorize {
    * @param rects A dictionary of rectangles, indexed by fingerprint.
    */
   public static mergeRectangles(rects: XLNT.Dictionary<XLNT.Rectangle[]>): XLNT.Dictionary<XLNT.Rectangle[]> {
-    let working = Colorize.rectDictDeepCopy(rects);
+    let working = Analysis.rectDictDeepCopy(rects);
     let mergeHappened = true;
     while (mergeHappened) {
       mergeHappened = false; // reset
@@ -902,7 +929,7 @@ export class Colorize {
       for (const fpKey of working.keys) {
         // for each pair of rects not already merged
         const rects = working.get(fpKey);
-        const pairs = Colorize.allPairsOrderIndependent(rects);
+        const pairs = Analysis.allPairsOrderIndependent(rects);
         const processed = new XLNT.Dictionary<XLNT.Rectangle>(); // indexed by rectangle hash
 
         // initialize merge storage
@@ -947,7 +974,7 @@ export class Colorize {
     a: XLNT.Dictionary<XLNT.Rectangle[]>,
     b: XLNT.Dictionary<XLNT.Rectangle[]>
   ): XLNT.Dictionary<XLNT.Rectangle[]> {
-    const both = Colorize.rectDictDeepCopy(a);
+    const both = Analysis.rectDictDeepCopy(a);
     for (const k of b.keys) {
       let tgt: XLNT.Rectangle[];
       if (both.contains(k)) {

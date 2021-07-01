@@ -4,6 +4,8 @@
 
 import { RectangleUtils } from './rectangleutils';
 import { ExceLintVector, Dictionary, Spreadsheet, Range, Address, Rectangle } from './ExceLintTypes';
+import { Paraformula } from '../paraformula/src/paraformula';
+import { AST } from '../paraformula/src/ast';
 
 declare var console: Console;
 
@@ -50,36 +52,6 @@ export class ExcelUtils {
     'g'
   );
   private static formulas_with_structured_references = new RegExp('\\[([^\\]])*\\]', 'g');
-
-  // private static originalSheetSuffix = '_EL';
-
-  // // Get the saved formats for this sheet (by its unique identifier).
-  // public static saved_original_sheetname(id: string): string {
-  //   return this.hash_sheet(id, 28) + this.originalSheetSuffix;
-  // }
-
-  // Convert the UID string into a hashed version using SHA256, truncated to a max length.
-  // public static hash_sheet(uid: string, maxlen = 31): string {
-  //   // We can't just use the UID because it is too long to be a sheet name in Excel (limit is 31 characters).
-  //   return sjcl.codec.base32.fromBits(sjcl.hash.sha256.hash(uid)).slice(0, maxlen);
-  // }
-
-  // public static get_rectangle(proposed_fixes: ProposedFix[], current_fix: number): [string, string, string, string] {
-  //   if (!proposed_fixes) {
-  //     return null;
-  //   }
-  //   if (proposed_fixes.length > 0) {
-  //     const r = RectangleUtils.bounding_box(proposed_fixes[current_fix].rect1, proposed_fixes[current_fix].rect2);
-  //     // convert to sheet notation
-  //     const col0 = ExcelUtils.column_index_to_name(upperleft(r).x);
-  //     const row0 = upperleft(r).y.toString();
-  //     const col1 = ExcelUtils.column_index_to_name(bottomright(r).x);
-  //     const row1 = bottomright(r).y.toString();
-  //     return [col0, row0, col1, row1];
-  //   } else {
-  //     return null;
-  //   }
-  // }
 
   // Take a range string and compute the number of cells.
   public static get_number_of_cells(address: string): number {
@@ -311,6 +283,151 @@ export class ExcelUtils {
       //		    console.log("process: about to get range " + colname0 + row0 + ":" + colname1 + row1);
       const rangeStr = colname0 + row0 + ':' + colname1 + row1;
       return rangeStr;
+    }
+  }
+
+  /**
+   * Extracts all address subexpressions in a given formula AST.
+   * @param ast
+   */
+  public static cellRefs(ast: AST.Expression): AST.Address[] {
+    switch (ast.type) {
+      case AST.ReferenceRange.type:
+        return [];
+      case AST.ReferenceAddress.type:
+        return [ast.address];
+      case AST.ReferenceNamed.type:
+        return [];
+      case AST.FunctionApplication.type:
+        return ast.args.map(a => ExcelUtils.cellRefs(a)).reduce((acc, addrs) => acc.concat(addrs));
+      case AST.Number.type:
+        return [];
+      case AST.StringLiteral.type:
+        return [];
+      case AST.Boolean.type:
+        return [];
+      case AST.BinOpExpr.type:
+        return ExcelUtils.cellRefs(ast.exprL).concat(ExcelUtils.cellRefs(ast.exprR));
+      case AST.UnaryOpExpr.type:
+        return ExcelUtils.cellRefs(ast.expr);
+      case AST.ParensExpr.type:
+        return ExcelUtils.cellRefs(ast.expr);
+    }
+  }
+
+  /**
+   * Extracts all range subexpressions in a given formula AST.
+   * @param ast
+   */
+  public static rangeRefs(ast: AST.Expression): AST.Range[] {
+    switch (ast.type) {
+      case AST.ReferenceRange.type:
+        return [ast.rng];
+      case AST.ReferenceAddress.type:
+        return [];
+      case AST.ReferenceNamed.type:
+        return [];
+      case AST.FunctionApplication.type:
+        return ast.args.map(a => ExcelUtils.rangeRefs(a)).reduce((acc, addrs) => acc.concat(addrs));
+      case AST.Number.type:
+        return [];
+      case AST.StringLiteral.type:
+        return [];
+      case AST.Boolean.type:
+        return [];
+      case AST.BinOpExpr.type:
+        return ExcelUtils.rangeRefs(ast.exprL).concat(ExcelUtils.rangeRefs(ast.exprR));
+      case AST.UnaryOpExpr.type:
+        return ExcelUtils.rangeRefs(ast.expr);
+      case AST.ParensExpr.type:
+        return ExcelUtils.rangeRefs(ast.expr);
+    }
+  }
+
+  /**
+   * Extracts all constant literals in a given formula AST.
+   * @param ast
+   */
+  public static constants(ast: AST.Expression): number[] {
+    switch (ast.type) {
+      case AST.ReferenceRange.type:
+        return [];
+      case AST.ReferenceAddress.type:
+        return [];
+      case AST.ReferenceNamed.type:
+        return [];
+      case AST.FunctionApplication.type:
+        return ast.args.map(a => ExcelUtils.constants(a)).reduce((acc, addrs) => acc.concat(addrs));
+      case AST.Number.type:
+        return [ast.value];
+      case AST.StringLiteral.type:
+        return [];
+      case AST.Boolean.type:
+        return [];
+      case AST.BinOpExpr.type:
+        return ExcelUtils.constants(ast.exprL).concat(ExcelUtils.constants(ast.exprR));
+      case AST.UnaryOpExpr.type:
+        return ExcelUtils.constants(ast.expr);
+      case AST.ParensExpr.type:
+        return ExcelUtils.constants(ast.expr);
+    }
+  }
+
+  public static addressToVector(origin_x: number, origin_y: number, addr: AST.Address): ExceLintVector {
+    const dx = origin_x - addr.column;
+    const dy = origin_y - addr.row;
+    return new ExceLintVector(dx, dy, 0);
+  }
+
+  public static rangeToVectors(origin_x: number, origin_y: number, rng: AST.Range): ExceLintVector[] {
+    return rng.regions
+      .map(([tl, br]) => {
+        const tlv = new ExceLintVector(tl.column, tl.row, 0);
+        const brv = new ExceLintVector(br.column, br.row, 0);
+        const r = new Rectangle(tlv, brv);
+        const vs = r.expand();
+        return vs.map(v => new ExceLintVector(origin_x - v.x, origin_y - v.y, 0));
+      })
+      .reduce((acc, arr) => acc.concat(arr));
+  }
+
+  /**
+   * Returns all dependencies for the given formula string, one
+   * ExceLintVector per cell reference.  If `include_numbers` is
+   * `true`, includes constant vectors in output.
+   * @param formula
+   * @param origin_x
+   * @param origin_y
+   * @param include_numbers
+   * @returns
+   */
+  public static all_dependencies2(
+    formula: string,
+    origin_x: number,
+    origin_y: number,
+    include_numbers = true
+  ): ExceLintVector[] {
+    try {
+      // parse formula
+      const ast = Paraformula.parse(formula);
+
+      // extract various kinds of references
+      const cellDeps = ExcelUtils.cellRefs(ast);
+      const rngDeps = ExcelUtils.rangeRefs(ast);
+      const cnstDeps = include_numbers ? ExcelUtils.constants(ast) : [];
+
+      // convert references into vectors
+      const cellVects = cellDeps.map(addr => ExcelUtils.addressToVector(origin_x, origin_y, addr));
+      const rngVects = rngDeps
+        .map(rng => ExcelUtils.rangeToVectors(origin_x, origin_y, rng))
+        .reduce((acc, arr) => acc.concat(arr));
+      const cnstVects = cnstDeps.map(_c => new ExceLintVector(0, 0, 1));
+
+      // combine all vectors and return
+      return cellVects.concat(rngVects, cnstVects);
+    } catch (error) {
+      console.warn("Cannot parse formula: '" + formula + "'");
+      return [];
     }
   }
 
