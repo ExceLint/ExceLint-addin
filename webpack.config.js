@@ -1,22 +1,31 @@
-/* eslint-disable no-undef */
-
 const devCerts = require("office-addin-dev-certs");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const webpack = require('webpack');
 
 const urlDev="https://localhost:3000/";
 const urlProd="https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
 
-module.exports = async (env, options) => {
+module.exports = async (env, options)  => {
   const dev = options.mode === "development";
   const buildType = dev ? "dev" : "prod";
   const config = {
     devtool: "source-map",
     entry: {
       polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
-      taskpane: "./src/taskpane/taskpane.ts",
-      commands: "./src/commands/commands.ts"
+      vendor: [
+        'react',
+        'react-dom',
+        'core-js',
+        'office-ui-fabric-react'
+    ],
+    taskpane: [
+        'react-hot-loader/patch',
+        './src/taskpane/index.tsx',
+    ],
+    commands: './src/commands/commands.ts'
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js"]
@@ -24,24 +33,16 @@ module.exports = async (env, options) => {
     module: {
       rules: [
         {
-          test: /\.ts$/,
-          exclude: /node_modules/,
-          use: {
-            loader: "babel-loader",
-            options: {
-              presets: ['@babel/preset-typescript']
-            }
-          }
-        },
-        {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          use: "ts-loader"
+          use: [
+              'react-hot-loader/webpack',
+              'ts-loader'
+          ],
+          exclude: /node_modules/
         },
         {
-          test: /\.html$/,
-          exclude: /node_modules/,
-          use: "html-loader"
+          test: /\.css$/,
+          use: ['style-loader', 'css-loader']
         },
         {
           test: /\.(png|jpg|jpeg|gif)$/,
@@ -51,14 +52,9 @@ module.exports = async (env, options) => {
           }
         }
       ]
-    },
+    },    
     plugins: [
       new CleanWebpackPlugin(),
-      new HtmlWebpackPlugin({
-        filename: "taskpane.html",
-        template: "./src/taskpane/taskpane.html",
-        chunks: ["polyfill", "taskpane"]
-      }),
       new CopyWebpackPlugin({
         patterns: [
         {
@@ -77,13 +73,23 @@ module.exports = async (env, options) => {
           }
         }
       ]}),
+      new ExtractTextPlugin('[name].[hash].css'),
       new HtmlWebpackPlugin({
-        filename: "commands.html",
-        template: "./src/commands/commands.html",
-        chunks: ["polyfill", "commands"]
+        filename: "taskpane.html",
+          template: './src/taskpane/taskpane.html',
+          chunks: ['taskpane', 'vendor', 'polyfills']
+      }),
+      new HtmlWebpackPlugin({
+          filename: "commands.html",
+          template: "./src/commands/commands.html",
+          chunks: ["commands"]
+      }),
+      new webpack.ProvidePlugin({
+        Promise: ["es6-promise", "Promise"]
       })
     ],
     devServer: {
+      hot: true,
       headers: {
         "Access-Control-Allow-Origin": "*"
       },      
