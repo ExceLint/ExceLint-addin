@@ -1,10 +1,10 @@
-import { ExcelUtils } from './excelutils';
-import { RectangleUtils } from './rectangleutils';
-import { find_all_proposed_fixes } from './groupme';
-import * as XLNT from './ExceLintTypes';
-import { Config } from './config';
-import { Classification } from './classification';
-import { Some, None, Option } from './option';
+import { ExcelUtils } from "./excelutils";
+import { RectangleUtils } from "./rectangleutils";
+import { find_all_proposed_fixes } from "./groupme";
+import * as XLNT from "./ExceLintTypes";
+import { Config } from "./config";
+import { Classification } from "./classification";
+import { Some, None, Option } from "./option";
 
 declare var console: Console;
 
@@ -15,7 +15,7 @@ export class Analysis {
 
   // return true if this sheet is not the same as the other sheet
   public static isNotSameSheet(thisSheetName: string, otherSheetName: string): boolean {
-    return thisSheetName !== '' && otherSheetName !== thisSheetName;
+    return thisSheetName !== "" && otherSheetName !== thisSheetName;
   }
 
   // returns true if this is an empty sheet
@@ -26,7 +26,7 @@ export class Analysis {
   // Get rid of multiple exclamation points in the used range address,
   // as these interfere with later regexp parsing.
   public static normalizeAddress(addr: string): string {
-    return addr.replace(/!(!+)/, '!');
+    return addr.replace(/!(!+)/, "!");
   }
 
   // Filter fixes by entropy score threshold
@@ -154,15 +154,15 @@ export class Analysis {
 
     // Omit fixes that are too small (too few cells).
     if (Analysis.fixCellCount(fix) < Config.minFixSize) {
-      const print_formulas = JSON.stringify(rect_info.map(fi => fi.print_formula));
-      if (beVerbose) console.warn('Omitted ' + print_formulas + '(too small)');
+      const print_formulas = JSON.stringify(rect_info.map((fi) => fi.print_formula));
+      if (beVerbose) console.warn("Omitted " + print_formulas + "(too small)");
       return None;
     }
 
     // Omit fixes with entropy change over threshold
     if (Analysis.fixEntropy(fix) > Config.maxEntropy) {
-      const print_formulas = JSON.stringify(rect_info.map(fi => fi.print_formula));
-      if (beVerbose) console.warn('Omitted ' + JSON.stringify(print_formulas) + '(too high entropy)');
+      const print_formulas = JSON.stringify(rect_info.map((fi) => fi.print_formula));
+      if (beVerbose) console.warn("Omitted " + JSON.stringify(print_formulas) + "(too high entropy)");
       return None;
     }
 
@@ -226,15 +226,15 @@ export class Analysis {
 
     // debug
     if (!same) {
-      let s = '';
+      let s = "";
       s += "For formula '" + f + "'\n";
-      s += 'Missing from vs1: \n';
+      s += "Missing from vs1: \n";
       for (const v of vs1_missing) {
-        s += v.toString() + '\n';
+        s += v.toString() + "\n";
       }
-      s += 'Missing from vs2: \n';
+      s += "Missing from vs2: \n";
       for (const v of vs2_missing) {
-        s += v.toString() + '\n';
+        s += v.toString() + "\n";
       }
       console.warn(s);
     }
@@ -275,7 +275,7 @@ export class Analysis {
           const adjustedX = j + origin_col + 1;
           const adjustedY = i + origin_row + 1;
           if (vec_array.length === 0) {
-            if (cell[0] === '=') {
+            if (cell[0] === "=") {
               // It's a formula but it has no dependencies (i.e., it just has constants). Use a distinguished value.
               const v = new XLNT.ExceLintVector(adjustedX, adjustedY, 0);
               _d.put(v.asKey(), Analysis.noDependenciesHash);
@@ -322,7 +322,7 @@ export class Analysis {
 
       // DEBUG: compare
       const same = Analysis.vectorArrayCompare(f, vec_array, vec_array2);
-      if (!same) throw new Error('Outputs are not the same!');
+      if (!same) throw new Error("Outputs are not the same!");
 
       // add to set
       _d.put(addrKey, vec_array);
@@ -389,7 +389,7 @@ export class Analysis {
       for (let j = 0; j < row.length; j++) {
         const cell = row[j].toString();
         // If the value is not from a formula, include it.
-        if (cell.length > 0 && formulas[i][j][0] !== '=') {
+        if (cell.length > 0 && formulas[i][j][0] !== "=") {
           const cellAsNumber = Number(cell).toString();
           if (cellAsNumber === cell) {
             // It's a number. Add it.
@@ -508,7 +508,7 @@ export class Analysis {
 
     // Filter out non-empty items from whole matrix.
     if (Analysis.tooManyFormulas(formulas)) {
-      if (beVerbose) console.warn('Too many formulas to perform formula analysis.');
+      if (beVerbose) console.warn("Too many formulas to perform formula analysis.");
       return new XLNT.Dictionary<XLNT.Fingerprint>();
     } else {
       return Analysis.fingerprintFormulasImpl(formulas, origin.x - 1, origin.y - 1);
@@ -534,7 +534,7 @@ export class Analysis {
 
     // Filter out non-empty items from whole matrix.
     if (Analysis.tooManyValues(values)) {
-      if (beVerbose) console.warn('Too many values to perform reference analysis.');
+      if (beVerbose) console.warn("Too many values to perform reference analysis.");
       return new XLNT.Dictionary<XLNT.Fingerprint>();
     } else {
       // Compute references (to color referenced data).
@@ -699,11 +699,11 @@ export class Analysis {
          * or equal sign ("="), Excel interprets this value as a formula.'
          * https://docs.microsoft.com/en-us/javascript/api/excel/excel.range?view=excel-js-preview#values
          */
-        if (val[0] === '=' || val[0] === '+' || val[0] === '-') {
+        if (val[0] === "=" || val[0] === "+" || val[0] === "-") {
           // save as 1-based Excel vector
           const key = new XLNT.ExceLintVector(origin_x + col, origin_y + row, 0).asKey();
 
-          if (val[0] === '=') {
+          if (val[0] === "=") {
             // remove "=" from start of string and
             d.put(key, val.substr(1));
           } else {
@@ -906,7 +906,7 @@ export class Analysis {
          * values first; this way, e.g., i = 2, j = 3 and
          * i = 3, j = 2 have the same key
          */
-        const key = i < j ? i + ',' + j : j + ',' + i;
+        const key = i < j ? i + "," + j : j + "," + i;
         if (_d.contains(key)) continue;
         _d.put(key, [xs[i], xs[j]]);
       }
