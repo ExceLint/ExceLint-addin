@@ -46,7 +46,7 @@ export interface AppState {
   time_data: Option<ExceLintTime>;
   debug: boolean;
   use_styles: boolean;
-  fixes: XLNT.ProposedFix[];
+  fixes: string[];
   formula: string;
 }
 
@@ -333,10 +333,13 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
       await context.sync();
 
       // get formulas
-      const formulas = await App.getFormulasFromRange(activeSheet, usedRange, context);
+      const formulas = await App.getFormulasFromRange(activeSheet, usedRange, true, context);
 
       // run analysis
       const fixes: XLNT.ProposedFix[] = analyze(addr, formulas);
+
+      // generate fixes
+      const fixstrs = Analysis.synthFixes(addr, fixes, formulas);
 
       // total time
       const elapsed = Timer.round(t.elapsedTime());
@@ -350,7 +353,7 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
         canRestore: app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
         changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
         time_data: new Some(td),
-        fixes: fixes,
+        fixes: fixstrs,
       });
     });
   }
@@ -458,6 +461,7 @@ export default class App extends React.Component<AppProps, AppState> {
   public static async getFormulasFromRange(
     ws: Excel.Worksheet,
     r: XLNT.Range,
+    include_equals: boolean,
     context: Excel.RequestContext
   ): Promise<XLNT.Dictionary<string>> {
     var range = ws.getRange(r.toA1Ref());
@@ -485,10 +489,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
           if (val[0] === "=") {
             // remove "=" from start of string and
-            d.put(key, val.substr(1));
+            d.put(key, include_equals ? val : val.substr(1));
           } else {
             // it's a "+/-" formula
-            d.put(key, val);
+            d.put(key, include_equals ? "=" + val : val);
           }
         }
       }
@@ -828,18 +832,18 @@ export default class App extends React.Component<AppProps, AppState> {
       </button>
     ) : null;
 
-    const fixes = this.state.fixes.map((fix) => (
-      // eslint-disable-next-line react/jsx-key
-      <li>
-        {fix.rect1.upperleft +
-          ":" +
-          fix.rect1.bottomright +
-          " and " +
-          fix.rect2.upperleft +
-          ":" +
-          fix.rect2.bottomright}
-      </li>
-    ));
+    // const fixes = this.state.fixes.map((fix) => (
+    //   // eslint-disable-next-line react/jsx-key
+    //   <li>
+    //     {fix.rect1.upperleft +
+    //       ":" +
+    //       fix.rect1.bottomright +
+    //       " and " +
+    //       fix.rect2.upperleft +
+    //       ":" +
+    //       fix.rect2.bottomright}
+    //   </li>
+    // ));
 
     return (
       <div style={{ padding: "1em", backgroundColor: "#cc99ff" }}>
@@ -865,7 +869,7 @@ export default class App extends React.Component<AppProps, AppState> {
           <input type="text" id="formulaInput" style={{ width: "90%" }} />
         </div>
         <div>
-          <ol>{fixes}</ol>
+          <ol>{this.state.fixes}</ol>
         </div>
       </div>
     );

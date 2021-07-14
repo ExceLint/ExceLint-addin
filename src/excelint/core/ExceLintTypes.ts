@@ -1,7 +1,7 @@
 // import { WorkbookOutput, WorksheetOutput } from './exceljson';
-import { ExcelUtils } from './excelutils';
-import { Classification } from './classification';
-import { IComparable, Option, Some, None } from './option';
+import { ExcelUtils } from "./excelutils";
+import { Classification } from "./classification";
+import { IComparable, Option, Some, None } from "./option";
 
 interface Dict<V> {
   [key: string]: V;
@@ -14,6 +14,7 @@ interface Dict<V> {
  * @param seq The input sequence.
  * @returns The result of folding f across seq.
  */
+/* eslint-disable no-unused-vars */
 function polyFold<A, B>(init: B, f: (acc: B, elem: A) => B, seq: A[]): B {
   let myAcc = init;
   for (const e of seq) {
@@ -85,7 +86,7 @@ export class Dictionary<V> {
     const merged = this.clone();
     for (const key of o.keys) {
       if (merged.contains(key)) {
-        throw new Error('Cannot merge dictionaries that contain copies of the same key.');
+        throw new Error("Cannot merge dictionaries that contain copies of the same key.");
       }
       merged.put(key, o.get(key));
     }
@@ -98,6 +99,7 @@ export class Dictionary<V> {
    * @param f A key predicate.
    * @returns The filtered dictionary.
    */
+  /* eslint-disable no-unused-vars */
   public keyFilter(f: (key: string) => boolean): Dictionary<V> {
     const _d = new Dictionary<V>();
     for (const k of this.keys) {
@@ -155,6 +157,7 @@ export class CSet<V extends IComparable<V>> implements IComparable<CSet<V>> {
     return true;
   }
 
+  /* eslint-disable no-unused-vars */
   public map<X extends IComparable<X>>(f: (v: V) => X): CSet<X> {
     const output = CSet.empty<X>();
     for (let i = 0; i < this._vs.length; i++) {
@@ -181,7 +184,7 @@ export class CSet<V extends IComparable<V>> implements IComparable<CSet<V>> {
   }
 
   public toString(): string {
-    return '{' + this._vs.join(',') + '}';
+    return "{" + this._vs.join(",") + "}";
   }
 }
 
@@ -210,19 +213,19 @@ export class Address implements IComparable<Address> {
     return this._sheet === a._sheet && this._row === a._row && this._column === a._column;
   }
   public toR1C1Ref(): string {
-    return 'R' + this._row + 'C' + this._column;
+    return "R" + this._row + "C" + this._column;
   }
   public toFullyQualifiedR1C1Ref(): string {
-    return this._sheet + '!' + this.toR1C1Ref();
+    return this._sheet + "!" + this.toR1C1Ref();
   }
   public toA1Ref(): string {
     if (this._column <= 0) {
-      throw new Error('Column cannot be zero or negative.');
+      throw new Error("Column cannot be zero or negative.");
     }
     return Address.intToColChars(this._column) + this._row.toString();
   }
   public toFullyQualifiedA1Ref(): string {
-    return this._sheet + '!' + this.toA1Ref();
+    return this._sheet + "!" + this.toA1Ref();
   }
   private static intToColChars(dividend: number): string {
     let quot = Math.floor(dividend / 26);
@@ -230,7 +233,7 @@ export class Address implements IComparable<Address> {
     if (rem === 0) {
       quot -= 1;
     }
-    const ltr = rem === 0 ? 'Z' : String.fromCharCode(64 + rem);
+    const ltr = rem === 0 ? "Z" : String.fromCharCode(64 + rem);
     if (quot === 0) {
       return ltr;
     } else {
@@ -276,16 +279,16 @@ export class Range implements IComparable<Range> {
     return this.toR1C1Ref();
   }
   public toFullyQualifiedR1C1Ref(): string {
-    return this.start.worksheet + '!' + this.toR1C1Ref();
+    return this.start.worksheet + "!" + this.toR1C1Ref();
   }
   public toR1C1Ref(): string {
-    return this.start.toR1C1Ref() + ':' + this.end.toR1C1Ref();
+    return this.start.toR1C1Ref() + ":" + this.end.toR1C1Ref();
   }
   public toFullyQualifiedA1Ref(): string {
-    return this.start.worksheet + '!' + this.toA1Ref();
+    return this.start.worksheet + "!" + this.toA1Ref();
   }
   public toA1Ref(): string {
-    return this.start.toA1Ref() + ':' + this.end.toA1Ref();
+    return this.start.toA1Ref() + ":" + this.end.toA1Ref();
   }
   /**
    * Returns the 1-based upper left column coordinate.
@@ -419,6 +422,10 @@ export class Rectangle implements IComparable<Rectangle> {
     return this._br;
   }
 
+  /**
+   * Expands a Rectangle into an array of vectors.
+   * @returns Array of vectors.
+   */
   public expand(): ExceLintVector[] {
     return expand(this._tl, this._br);
   }
@@ -560,7 +567,7 @@ export class ProposedFix implements IComparable<ProposedFix> {
     if (this._analysis.hasValue) {
       return this._analysis.value;
     } else {
-      throw new Error('Cannot obtain analysis about unanalyzed fix.');
+      throw new Error("Cannot obtain analysis about unanalyzed fix.");
     }
   }
 
@@ -595,6 +602,28 @@ export class ProposedFix implements IComparable<ProposedFix> {
       }
     }
     return false;
+  }
+
+  /**
+   * Returns the rectangle that contains the address, if any
+   * rectangle contains it.
+   * @param addr An address
+   */
+  public getRectOf(addr: Address): Option<Rectangle> {
+    // convert addr to an ExceLintVector
+    const v = new ExceLintVector(addr.column, addr.row, 0);
+
+    // check first rectangle
+    if (this.rect1.contains(v)) {
+      return new Some(this.rect1);
+    }
+
+    // check second rectangle
+    if (this.rect2.contains(v)) {
+      return new Some(this.rect2);
+    }
+
+    return None;
   }
 }
 
@@ -640,6 +669,11 @@ export class ExceLintVector {
     return new ExceLintVector(0, 0, 0);
   }
 
+  // Add other to this vector
+  public add(v: ExceLintVector): ExceLintVector {
+    return new ExceLintVector(this.x + v.x, this.y + v.y, this.c + v.c);
+  }
+
   // Subtract other from this vector
   public subtract(v: ExceLintVector): ExceLintVector {
     return new ExceLintVector(this.x - v.x, this.y - v.y, this.c - v.c);
@@ -647,12 +681,12 @@ export class ExceLintVector {
 
   // Turn this vector into a string that can be used as a dictionary key
   public asKey(): string {
-    return this.x.toString() + ',' + this.y.toString() + ',' + this.c.toString();
+    return this.x.toString() + "," + this.y.toString() + "," + this.c.toString();
   }
 
   // Turn a key into a vector
   public static fromKey(key: string): ExceLintVector {
-    const parts = key.split(',');
+    const parts = key.split(",");
     const x = parseInt(parts[0]);
     const y = parseInt(parts[1]);
     const c = parseInt(parts[2]);
@@ -666,7 +700,7 @@ export class ExceLintVector {
 
   // Pretty-print vectors
   public toString(): string {
-    return '<' + this.asKey() + '>';
+    return "<" + this.asKey() + ">";
   }
 
   // performs a deep eqality check
@@ -718,7 +752,7 @@ export class ExceLintVector {
     // create a hashs et with elements from set1,
     // and then check that set2 induces the same set
     const hset: Set<number> = new Set();
-    set1.forEach(v => hset.add(v.hash()));
+    set1.forEach((v) => hset.add(v.hash()));
 
     // check hset1 for hashes of elements in set2.
     // if there is a match, remove the element from hset1.
@@ -841,7 +875,7 @@ export class RectInfo {
     this.dependence_count = this.dependencies.length;
     this.absolute_refcount = (this.formula.match(/\$/g) || []).length;
     this.r1c1_formula = ExcelUtils.formulaToR1C1(this.formula, x + 1, y + 1);
-    const preface = ExcelUtils.column_index_to_name(x + 1) + (y + 1) + ':';
+    const preface = ExcelUtils.column_index_to_name(x + 1) + (y + 1) + ":";
     this.r1c1_print_formula = preface + this.r1c1_formula;
     this.print_formula = preface + this.formula;
   }

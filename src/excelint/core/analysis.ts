@@ -5,6 +5,8 @@ import * as XLNT from "./ExceLintTypes";
 import { Config } from "./config";
 import { Classification } from "./classification";
 import { Some, None, Option } from "./option";
+import { Paraformula } from "../paraformula/src/paraformula";
+import { AST } from "../paraformula/src/ast";
 
 declare var console: Console;
 
@@ -1004,5 +1006,190 @@ export class Analysis {
       }
     }
     return keep.values;
+  }
+
+  /**
+   * Get the vector from the given address.
+   * @param aexpr A parsed address reference.
+   * @param origin An origin as an ExceLintVector address.
+   */
+  public static getRefVectorsFromAddress(aexpr: AST.Address, origin: XLNT.ExceLintVector): XLNT.ExceLintVector {
+    const dx = aexpr.colMode === AST.RelativeAddress ? origin.x - aexpr.column : origin.x;
+    const dy = aexpr.colMode === AST.RelativeAddress ? origin.y - aexpr.row : origin.y;
+    return new XLNT.ExceLintVector(dx, dy, 0);
+  }
+
+  /**
+   * Expands a region defined by two AST.Address expressions into an array of
+   * addresses.
+   * @param tl Top left address.
+   * @param br Bottom right address.
+   */
+  public static expandAddressRegion(tl: AST.Address, br: AST.Address): AST.Address[] {
+    // we ignore relative/absolute modes in regions for now.
+    const addrs: AST.Address[] = [];
+    for (let x = tl.column; x <= br.column; x++) {
+      for (let y = tl.row; y <= br.row; y++) {
+        const addr = new AST.Address(y, x, AST.RelativeAddress, AST.RelativeAddress, tl.env);
+        addrs.push(addr);
+      }
+    }
+    return addrs;
+  }
+
+  /**
+   * Get the vectors from the given range.  Returns a PAIR of
+   * vectors for each region (which makes sense for discontiguous
+   * ranges).
+   * @param rexpr A parsed range reference.
+   * @param origin An origin as an ExceLintVector address.
+   */
+  public static getRefVectorsFromRange(rexpr: AST.Range, origin: XLNT.ExceLintVector): XLNT.ExceLintVector[][] {
+    const retval: XLNT.ExceLintVector[][] = [];
+    for (const region of rexpr.regions) {
+      const reg_addrs: XLNT.ExceLintVector[] = [];
+      const [tl, br] = region;
+      const addrs = Analysis.expandAddressRegion(tl, br);
+      for (const addr of addrs) {
+        reg_addrs.push(this.getRefVectorsFromAddress(addr, origin));
+      }
+      retval.push(reg_addrs);
+    }
+    return retval;
+  }
+
+  /**
+   * Given a formula address, synthesize a fix for each of the given proposed fixes.
+   * @param addr The address to apply the fix.
+   * @param fixes An array of proposed fixes.
+   * @param formulas A dictionary of formulas, indexed by ExceLintVector address.
+   */
+  public static synthFixes(addr: XLNT.Address, fixes: XLNT.ProposedFix[], formulas: XLNT.Dictionary<string>): string[] {
+    // fix strings to return
+    const fix_strings: string[] = [];
+
+    // convert addr to ExceLintVector address
+    const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
+
+    // do this for every proposed fix
+    for (const fix of fixes) {
+      // whatever rectangle does not contain the given formula
+      // is our fix template.
+      const r = fix.getRectOf(addr);
+      if (!r.hasValue) {
+        throw new Error(`Invalid fix for address ${addr.toA1Ref()}`);
+      }
+      const fixr = fix.rect1 == r.value ? fix.rect2 : fix.rect1;
+
+      // get the first formula in the fix rectangle
+      const faddr = fixr.upperleft;
+      const f = formulas.get(faddr.asKey());
+
+      // parse the formula
+      let ast: AST.Expression;
+      try {
+        ast = Paraformula.parse(f);
+      } catch (e) {
+        throw new Error(`Unable to parse formula at address ${faddr}:\n${e}`);
+      }
+
+      // adjust the formula's AST to reflect a new origin
+      const ast2 = Analysis.adjustFormulaOrigin(v, faddr, ast);
+
+      // generate a new formula string
+      fix_strings.push(ast2.toFormula);
+    }
+
+    return fix_strings;
+  }
+
+  /**
+   * Adjust the origin of the given address by the given delta.
+   * @param delta A delta encoded as an ExceLintVector.
+   * @param addr The address to adjust.
+   */
+  private static adjustAddress(delta: XLNT.ExceLintVector, addr: AST.Address): AST.Address {
+    const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
+    const v2 = v.add(delta);
+    return new AST.Address(v2.y, v2.x, addr.rowMode, addr.colMode, addr.env);
+  }
+
+  /**
+   * Recursively adjust every expression's address by the given address delta.
+   * @param delta An ExceLintVector address delta.
+   * @param expr An expression.
+   */
+  private static adjustExpressionOrigin(delta: XLNT.ExceLintVector, expr: AST.Expression): AST.Expression {
+    switch (expr.type) {
+      case AST.ReferenceRange.type: {
+        // generate a new range
+        const regions: [AST.Address, AST.Address][] = [];
+        for (const region of expr.rng.regions) {
+          const [tl, br] = region;
+          const tl2 = Analysis.adjustAddress(delta, tl);
+          const br2 = Analysis.adjustAddress(delta, br);
+          regions.push([tl2, br2]);
+        }
+        const rng2 = new AST.Range(regions);
+        return new AST.ReferenceRange(regions[0][0].env, rng2);
+      }
+      case AST.ReferenceAddress.type: {
+        // generate a new address
+        const addr2 = Analysis.adjustAddress(delta, expr.address);
+        return new AST.ReferenceAddress(addr2.env, addr2);
+      }
+      case AST.ReferenceNamed.type:
+        // named addresses do not need to be changed
+        return expr;
+      case AST.FunctionApplication.type: {
+        // recursively adjust arguments
+        const args2 = expr.args.map((arg) => Analysis.adjustExpressionOrigin(delta, arg));
+        return new AST.FunctionApplication(expr.name, args2, expr.arity);
+      }
+      case AST.Number.type:
+        // number literals do not need to be changed
+        return expr;
+      case AST.StringLiteral.type:
+        // string literals do not need to be changed
+        return expr;
+      case AST.Boolean.type:
+        // boolean literals do not need to be changed
+        return expr;
+      case AST.BinOpExpr.type: {
+        // recursively adjust operands
+        const lhs = Analysis.adjustExpressionOrigin(delta, expr.exprL);
+        const rhs = Analysis.adjustExpressionOrigin(delta, expr.exprR);
+        return new AST.BinOpExpr(expr.op, lhs, rhs);
+      }
+      case AST.UnaryOpExpr.type: {
+        // recursive adjust operand
+        const expr2 = Analysis.adjustExpressionOrigin(delta, expr.expr);
+        return new AST.UnaryOpExpr(expr.op, expr2);
+      }
+      case AST.ParensExpr.type: {
+        // recursive adjust subexpression
+        const expr2 = Analysis.adjustExpressionOrigin(delta, expr.expr);
+        return new AST.ParensExpr(expr2);
+      }
+      default:
+        throw new Error(`Unknown AST node type '${expr}'`);
+    }
+  }
+
+  /**
+   * Adjusts every address the given expression to reflect a new origin.
+   * @param neworigin
+   * @param oldorigin
+   * @param ast
+   */
+  public static adjustFormulaOrigin(
+    neworigin: XLNT.ExceLintVector,
+    oldorigin: XLNT.ExceLintVector,
+    ast: AST.Expression
+  ): AST.Expression {
+    // calculate delta
+    const delta = neworigin.subtract(oldorigin);
+    // recursively adjust
+    return this.adjustExpressionOrigin(delta, ast);
   }
 }
