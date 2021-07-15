@@ -329,7 +329,9 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
       const f = (document.getElementById("formulaInput") as HTMLInputElement).value;
 
       // set cell contents from taskpane input
+      // also proactively load address for later use
       rng.formulas = [[f]];
+      rng.load(["address"]);
       await context.sync();
 
       // get formulas
@@ -351,11 +353,18 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
       console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
 
       // update the UI state
+      const canRestore = app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
+      const changeAt = addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")";
+      const time_data = new Some(td);
+
       app.setState({
-        canRestore: app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
-        changeat: addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")",
-        time_data: new Some(td),
+        canRestore: canRestore,
+        changeat: changeAt,
+        time_data: time_data,
+        // debug: boolean,
+        // use_styles: boolean,
         fixes: fixstrs,
+        // formula: string
       });
 
       console.log("updated react state");
