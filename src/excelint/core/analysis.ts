@@ -14,7 +14,7 @@ export class Analysis {
   // A hash string indicating no dependencies; in other words,
   // either a formula that makes no references (like `=RAND()`) or a data cell (like `1`)
   private static noDependenciesHash = new XLNT.Fingerprint(12345);
-
+  1;
   // return true if this sheet is not the same as the other sheet
   public static isNotSameSheet(thisSheetName: string, otherSheetName: string): boolean {
     return thisSheetName !== "" && otherSheetName !== thisSheetName;
@@ -145,6 +145,7 @@ export class Analysis {
    */
   public static filterFix(
     fix: XLNT.ProposedFix,
+    /* eslint-disable-next-line no-unused-vars */
     rectf: (r: XLNT.Rectangle) => XLNT.RectInfo,
     beVerbose: boolean
   ): Option<XLNT.ProposedFix> {
@@ -411,6 +412,7 @@ export class Analysis {
   // sorting them (e.g., by columns).
   private static identify_ranges(
     data_fingerprints: XLNT.Dictionary<XLNT.Fingerprint>,
+    /* eslint-disable-next-line no-unused-vars */
     sortfn: (n1: XLNT.ExceLintVector, n2: XLNT.ExceLintVector) => number
   ): XLNT.Dictionary<XLNT.ExceLintVector[]> {
     // Separate into groups based on their XLNT.Fingerprint value.
@@ -727,6 +729,7 @@ export class Analysis {
   public static merge_individual_groups(group: XLNT.Rectangle[]): XLNT.Rectangle[] {
     let numIterations = 0;
     group = group.sort();
+    /* eslint-disable-next-line no-constant-condition */
     while (true) {
       let merged_one = false;
       const deleted_rectangles = new XLNT.Dictionary<boolean>();
@@ -1009,17 +1012,6 @@ export class Analysis {
   }
 
   /**
-   * Get the vector from the given address.
-   * @param aexpr A parsed address reference.
-   * @param origin An origin as an ExceLintVector address.
-   */
-  public static getRefVectorsFromAddress(aexpr: AST.Address, origin: XLNT.ExceLintVector): XLNT.ExceLintVector {
-    const dx = aexpr.colMode === AST.RelativeAddress ? origin.x - aexpr.column : origin.x;
-    const dy = aexpr.colMode === AST.RelativeAddress ? origin.y - aexpr.row : origin.y;
-    return new XLNT.ExceLintVector(dx, dy, 0);
-  }
-
-  /**
    * Expands a region defined by two AST.Address expressions into an array of
    * addresses.
    * @param tl Top left address.
@@ -1035,27 +1027,6 @@ export class Analysis {
       }
     }
     return addrs;
-  }
-
-  /**
-   * Get the vectors from the given range.  Returns a PAIR of
-   * vectors for each region (which makes sense for discontiguous
-   * ranges).
-   * @param rexpr A parsed range reference.
-   * @param origin An origin as an ExceLintVector address.
-   */
-  public static getRefVectorsFromRange(rexpr: AST.Range, origin: XLNT.ExceLintVector): XLNT.ExceLintVector[][] {
-    const retval: XLNT.ExceLintVector[][] = [];
-    for (const region of rexpr.regions) {
-      const reg_addrs: XLNT.ExceLintVector[] = [];
-      const [tl, br] = region;
-      const addrs = Analysis.expandAddressRegion(tl, br);
-      for (const addr of addrs) {
-        reg_addrs.push(this.getRefVectorsFromAddress(addr, origin));
-      }
-      retval.push(reg_addrs);
-    }
-    return retval;
   }
 
   /**

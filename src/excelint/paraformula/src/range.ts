@@ -1,18 +1,18 @@
-import { AST } from './ast';
-import { Primitives as P, CharUtil as CU } from '../../parsecco/src/index';
-import { Primitives as PP } from './primitives';
-import { Address as PA } from './address';
+import { AST } from "./ast";
+import { Primitives as P, CharUtil as CU } from "../../parsecco/src/index";
+import { Primitives as PP } from "./primitives";
+import { Address as PA } from "./address";
 
 export module Range {
   /**
    * Parses an A1 range suffix.
    */
-  export const rangeA1Suffix = P.right<CU.CharStream, AST.Address>(P.str(':'))(PA.addrA1);
+  export const rangeA1Suffix = P.right<CU.CharStream, AST.Address>(P.str(":"))(PA.addrA1);
 
   /**
    * Parses an R1C1 range suffix.
    */
-  export const rangeR1C1Suffix = P.right<CU.CharStream, AST.Address>(P.str(':'))(PA.addrR1C1);
+  export const rangeR1C1Suffix = P.right<CU.CharStream, AST.Address>(P.str(":"))(PA.addrR1C1);
 
   /**
    * Parses an A1-style contiguous range.

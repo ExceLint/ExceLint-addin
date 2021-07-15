@@ -348,6 +348,8 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
         total_μs: elapsed,
       };
 
+      console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
+
       // update the UI state
       app.setState({
         canRestore: app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null,
@@ -355,6 +357,8 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
         time_data: new Some(td),
         fixes: fixstrs,
       });
+
+      console.log("updated react state");
     });
   }
 }
@@ -832,18 +836,12 @@ export default class App extends React.Component<AppProps, AppState> {
       </button>
     ) : null;
 
-    // const fixes = this.state.fixes.map((fix) => (
-    //   // eslint-disable-next-line react/jsx-key
-    //   <li>
-    //     {fix.rect1.upperleft +
-    //       ":" +
-    //       fix.rect1.bottomright +
-    //       " and " +
-    //       fix.rect2.upperleft +
-    //       ":" +
-    //       fix.rect2.bottomright}
-    //   </li>
-    // ));
+    const fixes = this.state.fixes.map((fix) => (
+      // eslint-disable-next-line react/jsx-key
+      <li>{fix}</li>
+    ));
+
+    console.log("In render, have fixes HTML (" + this.state.fixes.length.toString() + "): \n" + fixes);
 
     return (
       <div style={{ padding: "1em", backgroundColor: "#cc99ff" }}>
@@ -869,7 +867,7 @@ export default class App extends React.Component<AppProps, AppState> {
           <input type="text" id="formulaInput" style={{ width: "90%" }} />
         </div>
         <div>
-          <ol>{this.state.fixes}</ol>
+          <ol>{fixes}</ol>
         </div>
       </div>
     );

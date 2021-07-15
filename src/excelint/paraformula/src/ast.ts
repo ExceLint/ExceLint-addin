@@ -1,6 +1,6 @@
 export module AST {
   export class Env {
-    public static readonly type: 'Env' = 'Env';
+    public static readonly type: "Env" = "Env";
     public readonly tag = Env.type;
     public readonly path: string;
     public readonly workbookName: string;
@@ -18,21 +18,21 @@ export module AST {
   }
 
   export interface AbsoluteAddressMode {
-    type: 'AbsoluteAddress';
+    type: "AbsoluteAddress";
   }
   export interface RelativeAddressMode {
-    type: 'RelativeAddress';
+    type: "RelativeAddress";
   }
   export const AbsoluteAddress: AbsoluteAddressMode = {
-    type: 'AbsoluteAddress',
+    type: "AbsoluteAddress",
   };
   export const RelativeAddress: RelativeAddressMode = {
-    type: 'RelativeAddress',
+    type: "RelativeAddress",
   };
   export type AddressMode = AbsoluteAddressMode | RelativeAddressMode;
 
   export class Address {
-    public static readonly type: 'Address' = 'Address';
+    public static readonly type: "Address" = "Address";
     public readonly type = Address.type;
     public readonly row: number;
     public readonly column: number;
@@ -72,11 +72,14 @@ export module AST {
     }
 
     public toString(): string {
-      return '(' + this.column.toString() + ',' + this.row.toString() + ')';
+      return "(" + this.column.toString() + "," + this.row.toString() + ")";
     }
 
+    /**
+     * Pretty-prints an address in A1 format.
+     */
     public get toFormula(): string {
-      return '';
+      return this.toA1Ref();
     }
 
     /**
@@ -94,7 +97,7 @@ export module AST {
       if (rem === 0) {
         quot -= 1;
       }
-      const ltr = rem === 0 ? 'Z' : String.fromCharCode(64 + rem);
+      const ltr = rem === 0 ? "Z" : String.fromCharCode(64 + rem);
       if (quot === 0) {
         return ltr;
       } else {
@@ -107,20 +110,20 @@ export module AST {
     }
 
     public toR1C1Ref(): string {
-      return 'R' + this.row + 'C' + this.column;
+      return "R" + this.row + "C" + this.column;
     }
 
     public toFullyQualifiedR1C1Ref(): string {
-      return this.env.worksheetName + '!' + this.toR1C1Ref();
+      return this.env.worksheetName + "!" + this.toR1C1Ref();
     }
 
     public toFullyQualifiedA1Ref(): string {
-      return this.env.worksheetName + '!' + this.toA1Ref();
+      return this.env.worksheetName + "!" + this.toA1Ref();
     }
   }
 
   export class Range {
-    public static readonly type: 'Range' = 'Range';
+    public static readonly type: "Range" = "Range";
     public readonly type = Range.type;
     public readonly regions: [Address, Address][] = [];
 
@@ -154,12 +157,12 @@ export module AST {
     }
 
     public toString(): string {
-      const sregs = this.regions.map(([tl, br]) => tl.toString() + ':' + br.toString());
-      return 'List(' + sregs.join(',') + ')';
+      const sregs = this.regions.map(([tl, br]) => tl.toString() + ":" + br.toString());
+      return "List(" + sregs.join(",") + ")";
     }
 
     public get toFormula(): string {
-      return this.regions.map(([tl, br]) => tl.toString() + ':' + br.toString()).join(',');
+      return this.regions.map(([tl, br]) => tl.toFormula + ":" + br.toFormula).join(",");
     }
   }
 
@@ -185,7 +188,7 @@ export module AST {
   }
 
   export class ReferenceRange implements IExpr {
-    public static readonly type: 'ReferenceRange' = 'ReferenceRange';
+    public static readonly type: "ReferenceRange" = "ReferenceRange";
     public readonly type = ReferenceRange.type;
     public readonly rng: Range;
 
@@ -198,12 +201,12 @@ export module AST {
     }
 
     public toString(): string {
-      return 'ReferenceRange(' + this.rng.toString() + ')';
+      return "ReferenceRange(" + this.rng.toString() + ")";
     }
   }
 
   export class ReferenceAddress implements IExpr {
-    public static readonly type: 'ReferenceAddress' = 'ReferenceAddress';
+    public static readonly type: "ReferenceAddress" = "ReferenceAddress";
     public readonly type = ReferenceAddress.type;
     public readonly address: Address;
 
@@ -212,7 +215,7 @@ export module AST {
     }
 
     public toString(): string {
-      return 'ReferenceAddress(' + this.address.toString() + ')';
+      return "ReferenceAddress(" + this.address.toString() + ")";
     }
 
     public get toFormula(): string {
@@ -221,7 +224,7 @@ export module AST {
   }
 
   export class ReferenceNamed implements IExpr {
-    public static readonly type: 'ReferenceNamed' = 'ReferenceNamed';
+    public static readonly type: "ReferenceNamed" = "ReferenceNamed";
     public readonly type = ReferenceNamed.type;
     public readonly varName: string;
 
@@ -230,7 +233,7 @@ export module AST {
     }
 
     public toString(): string {
-      return 'ReferenceName(' + this.varName + ')';
+      return "ReferenceName(" + this.varName + ")";
     }
 
     public get toFormula(): string {
@@ -258,7 +261,7 @@ export module AST {
   export type Arity = FixedArity | LowBoundArity | VarArgsArity;
 
   export class FunctionApplication implements IExpr {
-    public static readonly type: 'FunctionApplication' = 'FunctionApplication';
+    public static readonly type: "FunctionApplication" = "FunctionApplication";
     public readonly type = FunctionApplication.type;
     public readonly name: string;
     public readonly args: Expression[];
@@ -271,16 +274,16 @@ export module AST {
     }
 
     public toString(): string {
-      return 'Function[' + this.name + ',' + this.arity + '](' + this.args.map(arg => arg.toFormula).join(',') + ')';
+      return "Function[" + this.name + "," + this.arity + "](" + this.args.map((arg) => arg.toFormula).join(",") + ")";
     }
 
     public get toFormula(): string {
-      return this.name + '(' + this.args.map(arg => arg.toFormula).join(',') + ')';
+      return this.name + "(" + this.args.map((arg) => arg.toFormula).join(",") + ")";
     }
   }
 
   export class Number implements IExpr {
-    public static readonly type: 'Number' = 'Number';
+    public static readonly type: "Number" = "Number";
     public readonly type = Number.type;
     public readonly value: number;
 
@@ -289,7 +292,7 @@ export module AST {
     }
 
     public toString(): string {
-      return 'Number(' + this.value + ')';
+      return "Number(" + this.value + ")";
     }
 
     public get toFormula(): string {
@@ -298,7 +301,7 @@ export module AST {
   }
 
   export class StringLiteral implements IExpr {
-    public static readonly type: 'StringLiteral' = 'StringLiteral';
+    public static readonly type: "StringLiteral" = "StringLiteral";
     public readonly type = StringLiteral.type;
     public readonly value: string;
 
@@ -307,7 +310,7 @@ export module AST {
     }
 
     public toString(): string {
-      return 'String(' + this.value + ')';
+      return "String(" + this.value + ")";
     }
 
     public get toFormula(): string {
@@ -316,7 +319,7 @@ export module AST {
   }
 
   export class Boolean implements IExpr {
-    public static readonly type: 'Boolean' = 'Boolean';
+    public static readonly type: "Boolean" = "Boolean";
     public readonly type = Boolean.type;
     public readonly value: boolean;
 
@@ -325,7 +328,7 @@ export module AST {
     }
 
     public toString(): string {
-      return 'Boolean(' + this.value + ')';
+      return "Boolean(" + this.value + ")";
     }
 
     public get toFormula(): string {
@@ -337,20 +340,20 @@ export module AST {
   // the reserved words class, which is designed
   // to fail
   export class PoisonPill implements IExpr {
-    public static readonly type: 'PoisonPill' = 'PoisonPill';
+    public static readonly type: "PoisonPill" = "PoisonPill";
     public readonly type = PoisonPill.type;
 
     public toString(): string {
-      throw new Error('This object should never appear in an AST.');
+      throw new Error("This object should never appear in an AST.");
     }
 
     public get toFormula(): string {
-      throw new Error('This object should never appear in an AST.');
+      throw new Error("This object should never appear in an AST.");
     }
   }
 
   export class ParensExpr implements IExpr {
-    public static readonly type: 'ParensExpr' = 'ParensExpr';
+    public static readonly type: "ParensExpr" = "ParensExpr";
     public readonly type = ParensExpr.type;
     public readonly expr: Expression;
 
@@ -359,16 +362,16 @@ export module AST {
     }
 
     public toString(): string {
-      return 'Parens(' + this.expr.toString() + ')';
+      return "Parens(" + this.expr.toString() + ")";
     }
 
     public get toFormula(): string {
-      return '(' + this.expr.toFormula + ')';
+      return "(" + this.expr.toFormula + ")";
     }
   }
 
   export class BinOpExpr implements IExpr {
-    public static readonly type: 'BinOpExpr' = 'BinOpExpr';
+    public static readonly type: "BinOpExpr" = "BinOpExpr";
     public readonly type = BinOpExpr.type;
     public readonly op: string;
     public readonly exprL: Expression;
@@ -381,16 +384,16 @@ export module AST {
     }
 
     public get toFormula(): string {
-      return this.exprL.toFormula + ' ' + this.op + ' ' + this.exprR.toFormula;
+      return this.exprL.toFormula + " " + this.op + " " + this.exprR.toFormula;
     }
 
     public toString(): string {
-      return 'BinOpExpr(' + this.op.toString() + ',' + this.exprL.toFormula + ',' + this.exprR.toFormula + ')';
+      return "BinOpExpr(" + this.op.toString() + "," + this.exprL.toFormula + "," + this.exprR.toFormula + ")";
     }
   }
 
   export class UnaryOpExpr implements IExpr {
-    public static readonly type: 'UnaryOpExpr' = 'UnaryOpExpr';
+    public static readonly type: "UnaryOpExpr" = "UnaryOpExpr";
     public readonly type = UnaryOpExpr.type;
     public readonly op: string;
     public readonly expr: Expression;
@@ -405,7 +408,7 @@ export module AST {
     }
 
     public toString(): string {
-      return 'UnaryOpExpr(' + this.op.toString() + ',' + this.expr.toFormula + ')';
+      return "UnaryOpExpr(" + this.op.toString() + "," + this.expr.toFormula + ")";
     }
   }
 

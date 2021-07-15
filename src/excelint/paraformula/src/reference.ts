@@ -1,25 +1,25 @@
-import { AST } from './ast';
-import { Primitives as P, CharUtil as CU } from '../../parsecco/src/index';
-import { Primitives as PP } from './primitives';
-import { Address as PA } from './address';
-import { ReservedWords as RW } from './reserved_words';
+import { AST } from "./ast";
+import { Primitives as P, CharUtil as CU } from "../../parsecco/src/index";
+import { Primitives as PP } from "./primitives";
+import { Address as PA } from "./address";
+import { ReservedWords as RW } from "./reserved_words";
 
 export module Reference {
   /**
    * Parses a quoted worksheet name.
    */
   export const worksheetNameQuoted = (function () {
-    const normalChar = P.sat(ch => ch !== "'");
-    const escapedChar = P.pipe<CU.CharStream, CU.CharStream>(P.str("''"))(_s => new CU.CharStream("'"));
+    const normalChar = P.sat((ch) => ch !== "'");
+    const escapedChar = P.pipe<CU.CharStream, CU.CharStream>(P.str("''"))((_s) => new CU.CharStream("'"));
     const chars = P.choice(normalChar)(escapedChar);
-    const many1Chars = P.pipe<CU.CharStream[], CU.CharStream>(P.many1(chars))(cs => CU.CharStream.concat(cs));
+    const many1Chars = P.pipe<CU.CharStream[], CU.CharStream>(P.many1(chars))((cs) => CU.CharStream.concat(cs));
     return P.between<CU.CharStream, CU.CharStream, CU.CharStream>(P.str("'"))(P.str("'"))(many1Chars);
   })();
 
   /**
    * Parses any valid unquoted worksheet char name.
    */
-  const isWorksheetChar = P.choices(P.digit, P.letter, P.char('-'), P.char(' '));
+  const isWorksheetChar = P.choices(P.digit, P.letter, P.char("-"), P.char(" "));
 
   /**
    * Parses an unquoted worksheet name.
@@ -36,22 +36,22 @@ export module Reference {
   /**
    * Parses a workbook name.
    */
-  export const workbookName = P.between<CU.CharStream, CU.CharStream, CU.CharStream>(P.char('['))(P.char(']'))(
-    P.pipe<CU.CharStream[], CU.CharStream>(P.many1(P.sat(ch => ch !== '[' && ch !== ']')))(CU.CharStream.concat)
+  export const workbookName = P.between<CU.CharStream, CU.CharStream, CU.CharStream>(P.char("["))(P.char("]"))(
+    P.pipe<CU.CharStream[], CU.CharStream>(P.many1(P.sat((ch) => ch !== "[" && ch !== "]")))(CU.CharStream.concat)
   );
 
   /**
    * Parses a path, including no path at all.
    */
-  export const path = P.pipe<CU.CharStream[], CU.CharStream>(P.many(P.sat(ch => ch !== '[')))(CU.CharStream.concat);
+  export const path = P.pipe<CU.CharStream[], CU.CharStream>(P.many(P.sat((ch) => ch !== "[")))(CU.CharStream.concat);
 
   /**
    * Parses a workbook reference.
    * @returns a tuple of [path, workbookname]
    */
-  export const workbook = P.pipe2<CU.CharStream, CU.CharStream, [CU.CharStream, CU.CharStream]>(path)(
-    workbookName
-  )((p, w) => [p, w]);
+  export const workbook = P.pipe2<CU.CharStream, CU.CharStream, [CU.CharStream, CU.CharStream]>(path)(workbookName)(
+    (p, w) => [p, w]
+  );
 
   /**
    * Parses a quoted path-wb-ws prefix to a range.
@@ -72,7 +72,7 @@ export module Reference {
   export function rangeReferenceWorkbook(R: P.IParser<AST.Range>) {
     return P.pipe2<[[CU.CharStream, CU.CharStream], CU.CharStream], AST.Range, AST.ReferenceRange>(
       // first parse the path-wb-ws string
-      P.left<[[CU.CharStream, CU.CharStream], CU.CharStream], CU.CharStream>(quotedPrefix)(P.char('!'))
+      P.left<[[CU.CharStream, CU.CharStream], CU.CharStream], CU.CharStream>(quotedPrefix)(P.char("!"))
     )(
       // then parse the range itself
       R
@@ -89,7 +89,7 @@ export module Reference {
   export function rangeReferenceWorksheet(R: P.IParser<AST.Range>) {
     return P.pipe2<CU.CharStream, AST.Range, AST.ReferenceRange>(
       // first parse the path-wb-ws string
-      P.left<CU.CharStream, CU.CharStream>(worksheetName)(P.char('!'))
+      P.left<CU.CharStream, CU.CharStream>(worksheetName)(P.char("!"))
     )(
       // then parse the range itself
       R
@@ -109,7 +109,7 @@ export module Reference {
       R
     )(
       // then return a RangeReference object
-      r => new AST.ReferenceRange(PP.EnvStub, r)
+      (r) => new AST.ReferenceRange(PP.EnvStub, r)
     );
   }
 
@@ -131,7 +131,7 @@ export module Reference {
     AST.ReferenceAddress
   >(
     // first parse the path-wb-ws string
-    P.left<[[CU.CharStream, CU.CharStream], CU.CharStream], CU.CharStream>(quotedPrefix)(P.char('!'))
+    P.left<[[CU.CharStream, CU.CharStream], CU.CharStream], CU.CharStream>(quotedPrefix)(P.char("!"))
   )(
     // then parse the address itself
     PA.addrAny
@@ -145,7 +145,7 @@ export module Reference {
    */
   export const addressReferenceWorksheet = P.pipe2<CU.CharStream, AST.Address, AST.ReferenceAddress>(
     // first parse the path-wb-ws string
-    P.left<CU.CharStream, CU.CharStream>(worksheetName)(P.char('!'))
+    P.left<CU.CharStream, CU.CharStream>(worksheetName)(P.char("!"))
   )(
     // then parse the address itself
     PA.addrAny
@@ -162,7 +162,7 @@ export module Reference {
     PA.addrAny
   )(
     // then return a RangeAddress object
-    r => new AST.ReferenceAddress(PP.EnvStub, r)
+    (r) => new AST.ReferenceAddress(PP.EnvStub, r)
   );
 
   /**
@@ -177,7 +177,7 @@ export module Reference {
   /**
    * Parses a named reference prefix.
    */
-  export const namedReferenceFirstChar = P.choice(P.sat(ch => ch === '_'))(P.letter);
+  export const namedReferenceFirstChar = P.choice(P.sat((ch) => ch === "_"))(P.letter);
 
   /**
    * Parses a named reference suffix.
@@ -185,7 +185,7 @@ export module Reference {
   export const namedReferenceLastChars = P.pipe<CU.CharStream[], CU.CharStream>(
     P.many1(
       P.choices(
-        P.sat(ch => ch === '_'),
+        P.sat((ch) => ch === "_"),
         P.letter,
         P.digit
       )
@@ -202,23 +202,23 @@ export module Reference {
   /**
    * Parses a constant.
    */
-  export const constant = P.pipe<number, AST.Number>(P.float)(n => new AST.Number(n));
+  export const constant = P.pipe<number, AST.Number>(P.float)((n) => new AST.Number(n));
 
   /**
    * Parses a string literal.
    */
   export const stringLiteral: P.IParser<AST.Expression> = P.pipe<CU.CharStream, AST.StringLiteral>(
     P.between<CU.CharStream, CU.CharStream, CU.CharStream>(P.char('"'))(P.char('"'))(
-      P.pipe<CU.CharStream[], CU.CharStream>(P.many(P.sat(ch => ch !== '"')))(CU.CharStream.concat)
+      P.pipe<CU.CharStream[], CU.CharStream>(P.many(P.sat((ch) => ch !== '"')))(CU.CharStream.concat)
     )
-  )(s => new AST.StringLiteral(s.toString()));
+  )((s) => new AST.StringLiteral(s.toString()));
 
   /**
    * Parses a boolean literal.
    */
   export const booleanLiteral: P.IParser<AST.Expression> = P.pipe<CU.CharStream, AST.Boolean>(
-    P.choice(P.str('TRUE'))(P.str('FALSE'))
-  )(b => new AST.Boolean(b.toString().toLowerCase() === 'true'));
+    P.choice(P.str("TRUE"))(P.str("FALSE"))
+  )((b) => new AST.Boolean(b.toString().toLowerCase() === "true"));
 
   /**
    * Parses any data.
