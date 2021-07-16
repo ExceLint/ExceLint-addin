@@ -337,19 +337,6 @@ module DeadCode {
     );
   }
 
-  // Shannon entropy.
-  function entropy(p: number): number {
-    return -p * Math.log2(p);
-  }
-
-  // Take two counts and compute the normalized entropy difference that would result if these were 'merged'.
-  function entropydiff(oldcount1: number, oldcount2: number) {
-    const total = oldcount1 + oldcount2;
-    const prevEntropy = this.entropy(oldcount1 / total) + this.entropy(oldcount2 / total);
-    const normalizedEntropy = prevEntropy / Math.log2(total);
-    return -normalizedEntropy;
-  }
-
   // Iterate through the size of proposed fixes.
   function count_proposed_fixes(fixes: Array<[number, XLNT.Rectangle, XLNT.Rectangle]>): number {
     let count = 0;

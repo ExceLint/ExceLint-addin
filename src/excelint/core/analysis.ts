@@ -307,9 +307,22 @@ export module Analysis {
     if (fix_distance < 1.0) {
       fix_distance = 1.0;
     }
-    const entropy_drop = this.entropydiff(n_min, n_max); // negative
+    const entropy_drop = Analysis.entropydiff(n_min, n_max); // negative
     const ranking = (1.0 + entropy_drop) / (fix_distance * n_min); // ENTROPY WEIGHTED BY FIX DISTANCE
     return -ranking; // negating to sort in reverse order.
+  }
+
+  // Take two counts and compute the normalized entropy difference that would result if these were 'merged'.
+  export function entropydiff(oldcount1: number, oldcount2: number) {
+    const total = oldcount1 + oldcount2;
+    const prevEntropy = Analysis.entropy(oldcount1 / total) + Analysis.entropy(oldcount2 / total);
+    const normalizedEntropy = prevEntropy / Math.log2(total);
+    return -normalizedEntropy;
+  }
+
+  // Shannon entropy.
+  export function entropy(p: number): number {
+    return -p * Math.log2(p);
   }
 
   export function generate_proposed_fixes(groups: XLNT.Dictionary<XLNT.Rectangle[]>): XLNT.ProposedFix[] {
@@ -705,6 +718,6 @@ export module Analysis {
     // calculate delta
     const delta = neworigin.subtract(oldorigin);
     // recursively adjust
-    return this.adjustExpressionOrigin(delta, ast);
+    return Analysis.adjustExpressionOrigin(delta, ast);
   }
 }
