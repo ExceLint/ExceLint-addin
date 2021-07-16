@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 export module AST {
   export class Env {
     public static readonly type: "Env" = "Env";
@@ -78,8 +80,8 @@ export module AST {
     /**
      * Pretty-prints an address in A1 format.
      */
-    public get toFormula(): string {
-      return this.toA1Ref();
+    public toFormula(r1c1: boolean = false): string {
+      return r1c1 ? this.toR1C1Ref() : this.toA1Ref();
     }
 
     /**
@@ -161,8 +163,8 @@ export module AST {
       return "List(" + sregs.join(",") + ")";
     }
 
-    public get toFormula(): string {
-      return this.regions.map(([tl, br]) => tl.toFormula + ":" + br.toFormula).join(",");
+    public toFormula(r1c1: boolean = false): string {
+      return this.regions.map(([tl, br]) => tl.toFormula(r1c1) + ":" + br.toFormula(r1c1)).join(",");
     }
   }
 
@@ -177,8 +179,10 @@ export module AST {
 
     /**
      * Generates a valid Excel formula from this expression.
+     * @param r1c1 If true, returns a formula with R1C1 references,
+     * otherwise returns a formula with A1 references.
      */
-    toFormula: string;
+    toFormula(r1c1: boolean): string;
 
     /**
      * Pretty-prints the AST as a string.  Note that this
@@ -196,8 +200,8 @@ export module AST {
       this.rng = r.copyWithNewEnv(env);
     }
 
-    public get toFormula(): string {
-      return this.rng.toFormula;
+    public toFormula(r1c1: boolean = false): string {
+      return this.rng.toFormula(r1c1);
     }
 
     public toString(): string {
@@ -218,8 +222,8 @@ export module AST {
       return "ReferenceAddress(" + this.address.toString() + ")";
     }
 
-    public get toFormula(): string {
-      return this.address.toFormula;
+    public toFormula(r1c1: boolean = false): string {
+      return this.address.toFormula(r1c1);
     }
   }
 
@@ -236,7 +240,7 @@ export module AST {
       return "ReferenceName(" + this.varName + ")";
     }
 
-    public get toFormula(): string {
+    public toFormula(r1c1: boolean = false): string {
       return this.varName;
     }
   }
@@ -277,8 +281,8 @@ export module AST {
       return "Function[" + this.name + "," + this.arity + "](" + this.args.map((arg) => arg.toFormula).join(",") + ")";
     }
 
-    public get toFormula(): string {
-      return this.name + "(" + this.args.map((arg) => arg.toFormula).join(",") + ")";
+    public toFormula(r1c1: boolean = false): string {
+      return this.name + "(" + this.args.map((arg) => arg.toFormula(r1c1)).join(",") + ")";
     }
   }
 
@@ -295,7 +299,7 @@ export module AST {
       return "Number(" + this.value + ")";
     }
 
-    public get toFormula(): string {
+    public toFormula(r1c1: boolean = false): string {
       return this.value.toString();
     }
   }
@@ -313,7 +317,7 @@ export module AST {
       return "String(" + this.value + ")";
     }
 
-    public get toFormula(): string {
+    public toFormula(r1c1: boolean = false): string {
       return '"' + this.value + '"';
     }
   }
@@ -331,7 +335,7 @@ export module AST {
       return "Boolean(" + this.value + ")";
     }
 
-    public get toFormula(): string {
+    public toFormula(r1c1: boolean = false): string {
       return this.value.toString().toUpperCase();
     }
   }
@@ -347,7 +351,7 @@ export module AST {
       throw new Error("This object should never appear in an AST.");
     }
 
-    public get toFormula(): string {
+    public toFormula(r1c1: boolean = false): string {
       throw new Error("This object should never appear in an AST.");
     }
   }
@@ -365,8 +369,8 @@ export module AST {
       return "Parens(" + this.expr.toString() + ")";
     }
 
-    public get toFormula(): string {
-      return "(" + this.expr.toFormula + ")";
+    public toFormula(r1c1: boolean = false): string {
+      return "(" + this.expr.toFormula(r1c1) + ")";
     }
   }
 
@@ -383,12 +387,14 @@ export module AST {
       this.exprL = exprL;
     }
 
-    public get toFormula(): string {
-      return this.exprL.toFormula + " " + this.op + " " + this.exprR.toFormula;
+    public toFormula(r1c1: boolean = false): string {
+      return this.exprL.toFormula(r1c1) + " " + this.op + " " + this.exprR.toFormula(r1c1);
     }
 
     public toString(): string {
-      return "BinOpExpr(" + this.op.toString() + "," + this.exprL.toFormula + "," + this.exprR.toFormula + ")";
+      return (
+        "BinOpExpr(" + this.op.toString() + "," + this.exprL.toFormula(false) + "," + this.exprR.toFormula(false) + ")"
+      );
     }
   }
 
@@ -403,12 +409,12 @@ export module AST {
       this.expr = expr;
     }
 
-    public get toFormula(): string {
-      return this.op + this.expr.toFormula;
+    public toFormula(r1c1: boolean = false): string {
+      return this.op + this.expr.toFormula(r1c1);
     }
 
     public toString(): string {
-      return "UnaryOpExpr(" + this.op.toString() + "," + this.expr.toFormula + ")";
+      return "UnaryOpExpr(" + this.op.toString() + "," + this.expr.toFormula(false) + ")";
     }
   }
 
@@ -424,3 +430,5 @@ export module AST {
     | UnaryOpExpr
     | ParensExpr;
 }
+
+/* eslint-enable no-unused-vars */

@@ -2,6 +2,7 @@
 import { ExcelUtils } from "./excelutils";
 import { Classification } from "./classification";
 import { IComparable, Option, Some, None } from "./option";
+import { Paraformula } from "../paraformula/src/paraformula";
 
 interface Dict<V> {
   [key: string]: V;
@@ -420,6 +421,15 @@ export class Rectangle implements IComparable<Rectangle> {
 
   public get bottomright() {
     return this._br;
+  }
+
+  /**
+   * Returns the area of the rectangle, in cells.
+   */
+  public get size() {
+    const dx = this._br.x - this._tl.x + 1;
+    const dy = this._br.y - this._tl.y + 1;
+    return dx * dy;
   }
 
   /**
@@ -860,24 +870,20 @@ export class RectInfo {
   dependence_count: number; // the number of dependent cells
   absolute_refcount: number; // the number of absolute references in each formula
   r1c1_formula: string; // formula in R1C1 format
-  r1c1_print_formula: string; // as above, but for R1C1 formulas
-  print_formula: string; // formula with a preface (the cell name containing each)
 
   constructor(rect: Rectangle, firstFormula: string) {
+    const ast = Paraformula.parse(firstFormula);
     // the coordinates of the cell containing the first formula in the proposed fix range
     const formulaCoord = rect.upperleft;
     const y = formulaCoord.y - 1; // row
     const x = formulaCoord.x - 1; // col
     this.formula = firstFormula; // the formula itself
-    this.constants = ExcelUtils.numeric_constants(this.formula); // all numeric constants in the formula
+    this.constants = ExcelUtils.constants(ast);
     this.sum = this.constants.reduce((a, b) => a + b, 0); // the sum of all numeric constants
     this.dependencies = ExcelUtils.all_cell_dependencies(this.formula, x + 1, y + 1, false);
     this.dependence_count = this.dependencies.length;
     this.absolute_refcount = (this.formula.match(/\$/g) || []).length;
-    this.r1c1_formula = ExcelUtils.formulaToR1C1(this.formula, x + 1, y + 1);
-    const preface = ExcelUtils.column_index_to_name(x + 1) + (y + 1) + ":";
-    this.r1c1_print_formula = preface + this.r1c1_formula;
-    this.print_formula = preface + this.formula;
+    this.r1c1_formula = ast.toFormula(true);
   }
 }
 

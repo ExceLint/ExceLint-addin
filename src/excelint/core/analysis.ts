@@ -15,7 +15,12 @@ export module Analysis {
   // either a formula that makes no references (like `=RAND()`) or a data cell (like `1`)
   export const noDependenciesHash = new XLNT.Fingerprint(12345);
 
-  // Filter fixes by entropy score threshold
+  /**
+   * Filter the given set of fixes by the given entropy threshold.
+   * @param fixes An array of fixes.
+   * @param thresh An entropy score threshold.
+   * @returns
+   */
   export function filterFixesByUserThreshold(fixes: XLNT.ProposedFix[], thresh: number): XLNT.ProposedFix[] {
     const fixes2: XLNT.ProposedFix[] = [];
     for (let ind = 0; ind < fixes.length; ind++) {
@@ -28,23 +33,29 @@ export module Analysis {
     return fixes2;
   }
 
-  // Returns true if the "direction" of a fix is vertical
+  /**
+   * Returns true if the "direction" of a fix is vertical
+   * @param fix A fix.
+   * @returns
+   */
   export function fixIsVertical(fix: XLNT.ProposedFix): boolean {
     const rect1_ul_x = XLNT.upperleft(fix.rect1).x;
     const rect2_ul_x = XLNT.upperleft(fix.rect2).x;
     return rect1_ul_x === rect2_ul_x;
   }
 
+  /**
+   * Returns the number of cells in a given fix.
+   * @param fix
+   * @returns
+   */
   export function fixCellCount(fix: XLNT.ProposedFix): number {
-    const fixRange = XLNT.expand(XLNT.upperleft(fix.rect1), XLNT.bottomright(fix.rect1)).concat(
-      XLNT.expand(XLNT.upperleft(fix.rect2), XLNT.bottomright(fix.rect2))
-    );
-    return fixRange.length;
+    return fix.rect1.size + fix.rect2.size;
   }
 
   export function fixEntropy(fix: XLNT.ProposedFix): number {
-    const leftFixSize = XLNT.expand(XLNT.upperleft(fix.rect1), XLNT.bottomright(fix.rect1)).length;
-    const rightFixSize = XLNT.expand(XLNT.upperleft(fix.rect2), XLNT.bottomright(fix.rect2)).length;
+    const leftFixSize = fix.rect1.size;
+    const rightFixSize = fix.rect2.size;
     const totalSize = leftFixSize + rightFixSize;
     const fixEntropy = -(
       (leftFixSize / totalSize) * Math.log2(leftFixSize / totalSize) +
@@ -74,14 +85,14 @@ export module Analysis {
 
     // Omit fixes that are too small (too few cells).
     if (Analysis.fixCellCount(fix) < Config.minFixSize) {
-      const print_formulas = JSON.stringify(rect_info.map((fi) => fi.print_formula));
+      const print_formulas = JSON.stringify(rect_info.map((fi) => fi.formula));
       if (beVerbose) console.warn("Omitted " + print_formulas + "(too small)");
       return None;
     }
 
     // Omit fixes with entropy change over threshold
     if (Analysis.fixEntropy(fix) > Config.maxEntropy) {
-      const print_formulas = JSON.stringify(rect_info.map((fi) => fi.print_formula));
+      const print_formulas = JSON.stringify(rect_info.map((fi) => fi.formula));
       if (beVerbose) console.warn("Omitted " + JSON.stringify(print_formulas) + "(too high entropy)");
       return None;
     }
@@ -167,12 +178,7 @@ export module Analysis {
       const addr = XLNT.ExceLintVector.fromKey(addrKey);
 
       // compute dependencies for formula
-      const vec_array: XLNT.ExceLintVector[] = ExcelUtils.all_cell_dependencies(f, addr.x, addr.y);
-      const vec_array2 = ExcelUtils.all_dependencies2(f, addr.x, addr.y);
-
-      // DEBUG: compare
-      const same = Analysis.vectorArrayCompare(f, vec_array, vec_array2);
-      if (!same) throw new Error("Outputs are not the same!");
+      const vec_array = ExcelUtils.all_cell_dependencies(f, addr.x, addr.y);
 
       // add to set
       _d.put(addrKey, vec_array);
@@ -625,7 +631,7 @@ export module Analysis {
       const ast2 = Analysis.adjustFormulaOrigin(v, faddr, ast);
 
       // generate a new formula string
-      fix_strings.push(ast2.toFormula);
+      fix_strings.push(ast2.toFormula());
     }
 
     return fix_strings;

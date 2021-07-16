@@ -1,5 +1,7 @@
-import * as XLNT from './ExceLintTypes';
-import { Config } from './config';
+import * as XLNT from "./ExceLintTypes";
+import { Config } from "./config";
+
+declare var console: Console;
 
 /**
  * A polyfill for Array.includes. Uses the `===` operator
@@ -46,7 +48,7 @@ export class Classification {
   // Checks for recurrent formula fixes
   // NOTE: not sure if this is working currently
   private static isRecurrentFormula(rect_info: XLNT.RectInfo[], direction_is_vert: boolean): boolean {
-    const rect_dependencies = rect_info.map(ri => ri.dependencies);
+    const rect_dependencies = rect_info.map((ri) => ri.dependencies);
     for (let rect = 0; rect < rect_dependencies.length; rect++) {
       // get the dependencies for this fix rectangle
       const dependencies = rect_dependencies[rect];
@@ -66,20 +68,20 @@ export class Classification {
 
   // Checks whether rectangles in fix have different refcounts
   private static hasDifferingRefcounts(rect_info: XLNT.RectInfo[]): boolean {
-    const dependence_count = rect_info.map(ri => ri.dependence_count);
+    const dependence_count = rect_info.map((ri) => ri.dependence_count);
     // Different number of referents (dependencies).
     return dependence_count[0] !== dependence_count[1];
   }
 
   // Checks whether one formula has one more constant than the other
   private static hasOneExtraConstant(rect_info: XLNT.RectInfo[]): boolean {
-    const constants = rect_info.map(ri => ri.constants);
+    const constants = rect_info.map((ri) => ri.constants);
     return constants[0].length !== constants[1].length && Math.abs(constants[0].length - constants[1].length) === 1;
   }
 
   // Checks whether one formula has one more constant than the other
   private static numberOfConstantsMismatch(rect_info: XLNT.RectInfo[]): boolean {
-    const constants = rect_info.map(ri => ri.constants);
+    const constants = rect_info.map((ri) => ri.constants);
     return constants[0].length !== constants[1].length && !(Math.abs(constants[0].length - constants[1].length) === 1);
   }
 
@@ -130,7 +132,7 @@ export class Classification {
 
   // Checks for off-axis reference
   private static offAxisReference(rect_info: XLNT.RectInfo[]) {
-    const all_dependencies = rect_info.map(ri => ri.dependencies);
+    const all_dependencies = rect_info.map((ri) => ri.dependencies);
 
     for (let rect = 0; rect < all_dependencies.length; rect++) {
       // if both x and y offsets are not zero, their product will not be zero;
@@ -201,7 +203,7 @@ export class Classification {
 
   // Should we omit some fixes depending on the user configuration?
   public static omitFixes(bin: Classification.BinCategory[], rect_info: XLNT.RectInfo[], beVerbose: boolean): boolean {
-    const print_formulas = rect_info.map(ri => ri.print_formula);
+    const print_formulas = rect_info.map((ri) => ri.formula);
 
     if (
       bin.length > Config.maxCategories || // Too many categories
@@ -218,10 +220,10 @@ export class Classification {
       (bin.indexOf(Classification.BinCategory.AbsoluteRefMismatch) !== -1 && Config.suppressAbsoluteRefMismatch) ||
       (bin.indexOf(Classification.BinCategory.OffAxisReference) !== -1 && Config.suppressOffAxisReference)
     ) {
-      if (beVerbose) console.warn('Omitted ' + JSON.stringify(print_formulas) + '(' + JSON.stringify(bin) + ')');
+      if (beVerbose) console.warn("Omitted " + JSON.stringify(print_formulas) + "(" + JSON.stringify(bin) + ")");
       return true;
     } else {
-      if (beVerbose) console.warn('NOT omitted ' + JSON.stringify(print_formulas) + '(' + JSON.stringify(bin) + ')');
+      if (beVerbose) console.warn("NOT omitted " + JSON.stringify(print_formulas) + "(" + JSON.stringify(bin) + ")");
       return false;
     }
   }
@@ -229,20 +231,20 @@ export class Classification {
 
 export namespace Classification {
   export enum BinCategory {
-    FatFix = 'Inconsistent multiple columns/rows', // fix is not a single column or single row
-    RecurrentFormula = 'Formula(s) refer to each other', // formulas refer to each other
-    OneExtraConstant = 'Formula(s) with an extra constant', // one has no constant and the other has one constant
-    NumberOfConstantsMismatch = 'Formulas have different number of constants', // both have constants but not the same number of constants
-    BothConstants = 'All constants, but different values', // both have only constants but differ in numeric value
-    OneIsAllConstants = 'Mix of constants and formulas', // one is entirely constants and other is formula
-    AbsoluteRefMismatch = 'Mix of absolute ($) and regular references', // relative vs. absolute mismatch
-    OffAxisReference = 'References refer to different rows/columns', // references refer to different columns or rows
-    R1C1Mismatch = 'Refers to different ranges', // different R1C1 representations
-    DifferentReferentCount = 'Formula ranges are of different sizes', // ranges have different number of referents
+    FatFix = "Inconsistent multiple columns/rows", // fix is not a single column or single row
+    RecurrentFormula = "Formula(s) refer to each other", // formulas refer to each other
+    OneExtraConstant = "Formula(s) with an extra constant", // one has no constant and the other has one constant
+    NumberOfConstantsMismatch = "Formulas have different number of constants", // both have constants but not the same number of constants
+    BothConstants = "All constants, but different values", // both have only constants but differ in numeric value
+    OneIsAllConstants = "Mix of constants and formulas", // one is entirely constants and other is formula
+    AbsoluteRefMismatch = "Mix of absolute ($) and regular references", // relative vs. absolute mismatch
+    OffAxisReference = "References refer to different rows/columns", // references refer to different columns or rows
+    R1C1Mismatch = "Refers to different ranges", // different R1C1 representations
+    DifferentReferentCount = "Formula ranges are of different sizes", // ranges have different number of referents
     // Not yet implemented.
-    RefersToEmptyCells = 'Formulas refer to empty cells',
-    UsesDifferentOperations = 'Formulas use different functions', // e.g. SUM vs. AVERAGE
+    RefersToEmptyCells = "Formulas refer to empty cells",
+    UsesDifferentOperations = "Formulas use different functions", // e.g. SUM vs. AVERAGE
     // Fall-through category
-    Unclassified = 'unclassified',
+    Unclassified = "unclassified",
   }
 }

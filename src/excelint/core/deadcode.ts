@@ -127,7 +127,7 @@ module DeadCode {
         if (cell.length > 0) {
           // FIXME MAYBE  && (row[j][0] === '=')) {
           // Emery's version:
-          const vec_array: XLNT.ExceLintVector[] = ExcelUtils.all_dependencies(
+          const vec_array: XLNT.ExceLintVector[] = DeadCode.all_dependencies(
             i,
             j,
             origin_row + i,
@@ -237,8 +237,8 @@ module DeadCode {
     formulas: XLNT.Spreadsheet,
     beVerbose: boolean
   ): XLNT.Dictionary<XLNT.Fingerprint> {
-    const [, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-    const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
+    const [, startCell] = DeadCode.extract_sheet_cell(usedRangeAddress);
+    const origin = DeadCode.cell_dependency(startCell, 0, 0);
 
     // Filter out non-empty items from whole matrix.
     if (DeadCode.tooManyFormulas(formulas)) {
@@ -263,8 +263,8 @@ module DeadCode {
     values: XLNT.Spreadsheet,
     beVerbose: boolean
   ): XLNT.Dictionary<XLNT.Fingerprint> {
-    const [, startCell] = ExcelUtils.extract_sheet_cell(usedRangeAddress);
-    const origin = ExcelUtils.cell_dependency(startCell, 0, 0);
+    const [, startCell] = DeadCode.extract_sheet_cell(usedRangeAddress);
+    const origin = DeadCode.cell_dependency(startCell, 0, 0);
 
     // Filter out non-empty items from whole matrix.
     if (DeadCode.tooManyValues(values)) {
@@ -272,7 +272,7 @@ module DeadCode {
       return new XLNT.Dictionary<XLNT.Fingerprint>();
     } else {
       // Compute references (to color referenced data).
-      const refs: XLNT.Dictionary<boolean> = ExcelUtils.generate_all_references(formulas, origin.x - 1, origin.y - 1);
+      const refs: XLNT.Dictionary<boolean> = DeadCode.generate_all_references(formulas, origin.x - 1, origin.y - 1);
 
       return DeadCode.color_all_data(refs);
     }
@@ -454,5 +454,488 @@ module DeadCode {
       }
     }
     return addrs;
+  }
+
+  function all_cell_dependencies(
+    range: string,
+    origin_col: number,
+    origin_row: number,
+    include_numbers = true
+  ): XLNT.ExceLintVector[] {
+    const all_vectors: XLNT.ExceLintVector[] = [];
+
+    if (typeof range !== "string") {
+      return [];
+    }
+
+    // Zap all the formulas with the below characteristics.
+    range = range.replace(this.formulas_with_numbers, "_"); // Don't track these.
+    range = range.replace(this.formulas_with_quoted_sheetnames_2, "_");
+    range = range.replace(this.formulas_with_quoted_sheetnames_1, "_");
+    range = range.replace(this.formulas_with_unquoted_sheetnames_2, "_");
+    range = range.replace(this.formulas_with_unquoted_sheetnames_1, "_");
+    range = range.replace(this.formulas_with_unquoted_sheetnames_1, "_");
+    range = range.replace(this.formulas_with_structured_references, "_");
+
+    /// FIX ME - should we count the same range multiple times? Or just once?
+
+    // First, get all the range pairs out.
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const found_pair = DeadCode.range_pair.exec(range);
+      if (found_pair) {
+        const first_cell = found_pair[1];
+        const first_vec = DeadCode.cell_dependency(first_cell, origin_col, origin_row);
+        const last_cell = found_pair[2];
+        const last_vec = DeadCode.cell_dependency(last_cell, origin_col, origin_row);
+
+        // First_vec is the upper-left hand side of a rectangle.
+        // Last_vec is the lower-right hand side of a rectangle.
+
+        // Generate all vectors.
+        const length = last_vec.x - first_vec.x + 1;
+        const width = last_vec.y - first_vec.y + 1;
+        for (let x = 0; x < length; x++) {
+          for (let y = 0; y < width; y++) {
+            all_vectors.push(new XLNT.ExceLintVector(x + first_vec.x, y + first_vec.y, 0));
+          }
+        }
+
+        // Wipe out the matched contents of range.
+        range = range.replace(found_pair[0], "_");
+      } else {
+        break;
+      }
+    }
+
+    // Now look for singletons.
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const singleton = DeadCode.single_dep.exec(range);
+      if (singleton) {
+        const first_cell = singleton[1];
+        const vec = DeadCode.cell_dependency(first_cell, origin_col, origin_row);
+        all_vectors.push(vec);
+        // Wipe out the matched contents of range.
+        range = range.replace(singleton[0], "_");
+      } else {
+        break;
+      }
+    }
+
+    if (include_numbers) {
+      // Optionally roll numbers in formulas into the dependency vectors. Each number counts as "1".
+      /* eslint-disable-next-line no-constant-condition */
+      while (true) {
+        const number = DeadCode.number_dep.exec(range);
+        if (number) {
+          all_vectors.push(new XLNT.ExceLintVector(0, 0, 1)); // just add 1 for every number
+          // Wipe out the matched contents of range.
+          range = range.replace(number[0], "_");
+        } else {
+          break;
+        }
+      }
+    }
+    //	console.log("all_vectors " + originalRange + " = " + JSON.stringify(all_vectors));
+    return all_vectors;
+  }
+
+  // Matchers for all kinds of Excel expressions.
+  const general_re = "\\$?[A-Z][A-Z]?\\$?[\\d\\u2000-\\u6000]+"; // column and row number, optionally with $
+  const sheet_re = "[^\\!]+";
+  const sheet_plus_cell = new RegExp("(" + DeadCode.sheet_re + ")\\!(" + DeadCode.general_re + ")");
+  const sheet_plus_range = new RegExp(
+    "(" + DeadCode.sheet_re + ")\\!(" + DeadCode.general_re + "):(" + DeadCode.general_re + ")"
+  );
+  const single_dep = new RegExp("(" + DeadCode.general_re + ")");
+  const number_dep = new RegExp("([0-9]+\\.?[0-9]*)");
+  const cell_both_relative = new RegExp("[^\\$A-Z]?([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)");
+  const cell_col_absolute = new RegExp("\\$([A-Z][A-Z]?)([\\d\\u2000-\\u6000]+)");
+  const cell_row_absolute = new RegExp("[^\\$A-Z]?([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)");
+  const cell_both_absolute = new RegExp("\\$([A-Z][A-Z]?)\\$([\\d\\u2000-\\u6000]+)");
+
+  // We need to filter out all formulas with these characteristics so they don't mess with our dependency regexps.
+
+  const formulas_with_numbers = new RegExp(
+    "/ATAN2|BIN2DEC|BIN2HEX|BIN2OCT|DAYS360|DEC2BIN|DEC2HEX|DEC2OCT|HEX2BIN|HEX2DEC|HEX2OCT|IMLOG2|IMLOG10|LOG10|OCT2BIN|OCT2DEC|OCT2HEX|SUNX2MY2|SUMX2PY2|SUMXMY2|T.DIST.2T|T.INV.2T/",
+    "g"
+  );
+  // Same with sheet name references.
+  const formulas_with_quoted_sheetnames_1 = new RegExp("'[^']*'!" + "\\$?[A-Z][A-Z]?\\$?\\d+", "g");
+  const formulas_with_quoted_sheetnames_2 = new RegExp(
+    "'[^']*'!" + "\\$?[A-Z][A-Z]?\\$?\\d+" + ":" + "\\$?[A-Z][A-Z]?\\$?\\d+",
+    "g"
+  );
+  const formulas_with_unquoted_sheetnames_1 = new RegExp("[A-Za-z0-9]+!" + "\\$?[A-Z][A-Z]?\\$?\\d+", "g");
+  const formulas_with_unquoted_sheetnames_2 = new RegExp(
+    "[A-Za-z0-9]+!" + "\\$?[A-Z][A-Z]?\\$?\\d+" + ":" + "\\$?[A-Z][A-Z]?\\$?\\d+",
+    "g"
+  );
+  const formulas_with_structured_references = new RegExp("\\[([^\\]])*\\]", "g");
+
+  // Take a range string and compute the number of cells.
+  function get_number_of_cells(address: string): number {
+    // Compute the number of cells in the range "usedRange".
+    const usedRangeAddresses = DeadCode.extract_sheet_range(address);
+    const upperLeftCorner = DeadCode.cell_dependency(usedRangeAddresses[1], 0, 0);
+    const lowerRightCorner = DeadCode.cell_dependency(usedRangeAddresses[2], 0, 0);
+    const numberOfCellsUsed = RectangleUtils.area(new Rectangle(upperLeftCorner, lowerRightCorner));
+    return numberOfCellsUsed;
+  }
+
+  // Convert an Excel column name (a string of alphabetical charcaters) into a number.
+  function column_name_to_index(name: string): number {
+    if (name.length === 1) {
+      // optimizing for the overwhelmingly common case
+      return name[0].charCodeAt(0) - "A".charCodeAt(0) + 1;
+    }
+    let value = 0;
+    const split_name = name.split("");
+    for (const i of split_name) {
+      value *= 26;
+      value += i.charCodeAt(0) - "A".charCodeAt(0) + 1;
+    }
+    return value;
+  }
+
+  // Convert a column number to a name (as in, 3 => 'C').
+  function column_index_to_name(index: number): string {
+    let str = "";
+    while (index > 0) {
+      str += String.fromCharCode(((index - 1) % 26) + 65); // 65 = 'A'
+      index = Math.floor((index - 1) / 26);
+    }
+    return str.split("").reverse().join("");
+  }
+
+  // Returns a vector (x, y) corresponding to the column and row of the computed dependency.
+  function cell_dependency(cell: string, origin_col: number, origin_row: number): ExceLintVector {
+    const alwaysReturnAdjustedColRow = false;
+    {
+      const r = DeadCode.cell_both_absolute.exec(cell);
+      if (r) {
+        const col = DeadCode.column_name_to_index(r[1]);
+        let row = Number(r[2]);
+        if (r[2][0] >= "\u2000") {
+          row = Number(r[2].charCodeAt(0) - 16384);
+        }
+        if (alwaysReturnAdjustedColRow) {
+          return new ExceLintVector(col - origin_col, row - origin_row, 0);
+        } else {
+          return new ExceLintVector(col, row, 0);
+        }
+      }
+    }
+
+    {
+      const r = DeadCode.cell_col_absolute.exec(cell);
+      if (r) {
+        const col = DeadCode.column_name_to_index(r[1]);
+        let row = Number(r[2]);
+        if (r[2][0] >= "\u2000") {
+          row = Number(r[2].charCodeAt(0) - 16384);
+        }
+        if (alwaysReturnAdjustedColRow) {
+          return new ExceLintVector(col, row, 0);
+        } else {
+          return new ExceLintVector(col, row - origin_row, 0);
+        }
+      }
+    }
+
+    {
+      const r = DeadCode.cell_row_absolute.exec(cell);
+      if (r) {
+        const col = DeadCode.column_name_to_index(r[1]);
+        let row = Number(r[2]);
+        if (r[2][0] >= "\u2000") {
+          row = Number(r[2].charCodeAt(0) - 16384);
+        }
+        if (alwaysReturnAdjustedColRow) {
+          return new ExceLintVector(col, row, 0);
+        } else {
+          return new ExceLintVector(col - origin_col, row, 0);
+        }
+      }
+    }
+
+    {
+      const r = DeadCode.cell_both_relative.exec(cell);
+      if (r) {
+        const col = DeadCode.column_name_to_index(r[1]);
+        let row = Number(r[2]);
+        if (r[2][0] >= "\u2000") {
+          row = Number(r[2].charCodeAt(0) - 16384);
+        }
+        if (alwaysReturnAdjustedColRow) {
+          return new ExceLintVector(col, row, 0);
+        } else {
+          return new ExceLintVector(col - origin_col, row - origin_row, 0);
+        }
+      }
+    }
+
+    console.log("cell is " + cell + ", origin_col = " + origin_col + ", origin_row = " + origin_row);
+    throw new Error("We should never get here.");
+  }
+
+  function toR1C1(srcCell: string, destCell: string, greek = false): string {
+    // Dependencies are column, then row.
+    const vec1 = DeadCode.cell_dependency(srcCell, 0, 0);
+    const vec2 = DeadCode.cell_dependency(destCell, 0, 0);
+    let R = "R";
+    let C = "C";
+    if (greek) {
+      // We use this encoding to avoid confusion with, say, "C1", downstream.
+      R = "ρ";
+      C = "γ";
+    }
+    // Compute the difference.
+    const resultVec = vec2.subtract(vec1);
+    // Now generate the R1C1 notation version, which varies
+    // depending whether it's a relative or absolute reference.
+    let resultStr = "";
+    if (DeadCode.cell_both_absolute.exec(destCell)) {
+      resultStr = R + vec2.y + C + vec2.x;
+    } else if (DeadCode.cell_col_absolute.exec(destCell)) {
+      if (resultVec.y === 0) {
+        resultStr += R;
+      } else {
+        resultStr += R + "[" + resultVec.y + "]";
+      }
+      resultStr += C + vec2.x;
+    } else if (DeadCode.cell_row_absolute.exec(destCell)) {
+      if (resultVec.x === 0) {
+        resultStr += C;
+      } else {
+        resultStr += C + "[" + resultVec.x + "]";
+      }
+      resultStr = R + vec2.y + resultStr;
+    } else {
+      // Common case, both relative.
+      if (resultVec.y === 0) {
+        resultStr += R;
+      } else {
+        resultStr += R + "[" + resultVec.y + "]";
+      }
+      if (resultVec.x === 0) {
+        resultStr += C;
+      } else {
+        resultStr += C + "[" + resultVec.x + "]";
+      }
+    }
+    return resultStr;
+  }
+
+  function extract_sheet_cell(str: string): Array<string> {
+    //	console.log("extract_sheet_cell " + str);
+    const matched = DeadCode.sheet_plus_cell.exec(str);
+    if (matched) {
+      //	    console.log("extract_sheet_cell matched " + str);
+      // There is only one thing to match for this pattern: we convert it into a range.
+      return [matched[1], matched[2], matched[2]];
+    }
+    //	console.log("extract_sheet_cell failed for "+str);
+    return ["", "", ""];
+  }
+
+  function extract_sheet_range(str: string): Array<string> {
+    const matched = DeadCode.sheet_plus_range.exec(str);
+    if (matched) {
+      //	    console.log("extract_sheet_range matched " + str);
+      return [matched[1], matched[2], matched[3]];
+    }
+    //	console.log("extract_sheet_range failed to match " + str);
+    return DeadCode.extract_sheet_cell(str);
+  }
+
+  function make_range_string(theRange: Array<ExceLintVector>): string {
+    const r = theRange;
+    const col0 = r[0].x;
+    const row0 = r[0].y;
+    const col1 = r[1].x;
+    const row1 = r[1].y;
+
+    if (!r[0].isReference()) {
+      // Not a real dependency. Skip.
+      console.log("NOT A REAL DEPENDENCY: " + col1 + "," + row1);
+      return "";
+    } else if (col0 < 0 || row0 < 0 || col1 < 0 || row1 < 0) {
+      // Defensive programming.
+      console.log("WARNING: FOUND NEGATIVE VALUES.");
+      return "";
+    } else {
+      const colname0 = DeadCode.column_index_to_name(col0);
+      const colname1 = DeadCode.column_index_to_name(col1);
+      //		    console.log("process: about to get range " + colname0 + row0 + ":" + colname1 + row1);
+      const rangeStr = colname0 + row0 + ":" + colname1 + row1;
+      return rangeStr;
+    }
+  }
+
+  function all_dependencies(
+    row: number,
+    col: number,
+    origin_row: number,
+    origin_col: number,
+    formulas: Spreadsheet
+  ): ExceLintVector[] {
+    // Discard references to cells outside the formula range.
+    if (row >= formulas.length || col >= formulas[0].length || row < 0 || col < 0) {
+      return [];
+    }
+
+    // Check if this cell is a formula.
+    const cell = formulas[row][col];
+    if (cell.length > 1 && cell[0] === "=") {
+      // It is. Compute the dependencies.
+      return ExcelUtils.all_cell_dependencies(cell, origin_col, origin_row);
+    } else {
+      return [];
+    }
+  }
+
+  // This function returns a dictionary (Dict<boolean>)) of all of the addresses
+  // that are referenced by some formula, where the key is the address and the
+  // value is always the boolean true.
+  function generate_all_references(formulas: Spreadsheet, origin_col: number, origin_row: number): Dictionary<boolean> {
+    // initialize dictionary
+    const _d = new Dictionary<boolean>();
+
+    let counter = 0;
+    for (let i = 0; i < formulas.length; i++) {
+      const row = formulas[i];
+      for (let j = 0; j < row.length; j++) {
+        const cell = row[j];
+        counter++;
+        if (counter % 1000 === 0) {
+          //		    console.log(counter + " references down");
+        }
+
+        if (cell[0] === "=") {
+          // It's a formula.
+          const direct_refs = ExcelUtils.all_cell_dependencies(cell, 0, 0); // origin_col, origin_row); // was just 0,0....  origin_col, origin_row);
+          for (const dep of direct_refs) {
+            if (!dep.isReference()) {
+              // Not a real reference. Skip.
+            } else {
+              // Check to see if this is data or a formula.
+              // If it's not a formula, add it.
+              const rowIndex = dep.x - origin_col - 1;
+              const colIndex = dep.y - origin_row - 1;
+              const outsideFormulaRange =
+                colIndex >= formulas.length || rowIndex >= formulas[0].length || rowIndex < 0 || colIndex < 0;
+              let addReference = false;
+              if (outsideFormulaRange) {
+                addReference = true;
+              } else {
+                // Only include non-formulas (if they are in the range).
+                const referentCell = formulas[colIndex][rowIndex];
+                if (referentCell !== undefined && referentCell[0] !== "=") {
+                  addReference = true;
+                }
+              }
+              if (addReference) {
+                _d.put(dep.asKey(), true);
+              }
+            }
+          }
+        }
+      }
+    }
+    return _d;
+  }
+
+  export const range_pair = new RegExp("(" + DeadCode.general_re + "):(" + DeadCode.general_re + ")", "g");
+
+  export function numeric_constants(range: string): number[] {
+    const numbers: number[] = [];
+    range = range.slice();
+    if (typeof range !== "string") {
+      return numbers;
+    }
+
+    // Zap all the formulas with the below characteristics.
+    range = range.replace(this.formulas_with_numbers, "_"); // Don't track these.
+    range = range.replace(this.formulas_with_quoted_sheetnames_2, "_");
+    range = range.replace(this.formulas_with_quoted_sheetnames_1, "_");
+    range = range.replace(this.formulas_with_unquoted_sheetnames_2, "_");
+    range = range.replace(this.formulas_with_unquoted_sheetnames_1, "_");
+    range = range.replace(this.formulas_with_unquoted_sheetnames_1, "_");
+    range = range.replace(this.formulas_with_structured_references, "_");
+
+    // First, get all the range pairs out.
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const found_pair = ExcelUtils.range_pair.exec(range);
+      if (found_pair) {
+        // Wipe out the matched contents of range.
+        range = range.replace(found_pair[0], "_");
+      } else {
+        break;
+      }
+    }
+
+    // Now look for singletons.
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const singleton = ExcelUtils.single_dep.exec(range);
+      if (singleton) {
+        // Wipe out the matched contents of range.
+        range = range.replace(singleton[0], "_");
+      } else {
+        break;
+      }
+    }
+
+    // Now aggregate total numeric constants (sum them).
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const number = ExcelUtils.number_dep.exec(range);
+      if (number) {
+        numbers.push(parseFloat(number[0]));
+        // Wipe out the matched contents of range.
+        range = range.replace(number[0], "_");
+      } else {
+        break;
+      }
+    }
+    return numbers; // total;
+  }
+
+  export function formulaToR1C1(formula: string, origin_col: number, origin_row: number): string {
+    let range = formula.slice();
+    const origin = ExcelUtils.column_index_to_name(origin_col) + origin_row;
+    // First, get all the range pairs out.
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const found_pair = ExcelUtils.range_pair.exec(range);
+      if (found_pair) {
+        range = range.replace(
+          found_pair[0],
+          ExcelUtils.toR1C1(origin, found_pair[1], true) + ":" + ExcelUtils.toR1C1(origin, found_pair[2], true)
+        );
+      } else {
+        break;
+      }
+    }
+
+    // Now look for singletons.
+    /* eslint-disable-next-line no-constant-condition */
+    while (true) {
+      const singleton = ExcelUtils.single_dep.exec(range);
+      if (singleton) {
+        const first_cell = singleton[1];
+        range = range.replace(singleton[0], ExcelUtils.toR1C1(origin, first_cell, true));
+      } else {
+        break;
+      }
+    }
+    // Now, we de-greek.
+    range = range.replace(/ρ/g, "R");
+    range = range.replace(/γ/g, "C");
+
+    return range;
   }
 }
