@@ -82,7 +82,7 @@
     "webpack-cli": "^4.3.1",
     "webpack-dev-server": "^3.11.2",
     "webpack-sources": "^2.2.0",
-    "xlsx": "^0.16.9",
+    "xlsx": "^0.17.0",
     "xregexp": "^4.4.1",
     "y18n": "^5.0.5",
     "yargs": "^16.2.0",
