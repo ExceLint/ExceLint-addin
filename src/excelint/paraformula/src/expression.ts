@@ -1,8 +1,8 @@
-import { Primitives as P, CharUtil as CU } from "../../parsecco/src/index";
-import { AST } from "./ast";
-import { Primitives as PP } from "./primitives";
-import { Reference as PRF } from "./reference";
-import { ReservedWords as PRW } from "./reserved_words";
+import { Primitives as P, CharUtil as CU } from 'parsecco';
+import { AST } from './ast';
+import { Primitives as PP } from './primitives';
+import { Reference as PRF } from './reference';
+import { ReservedWords as PRW } from './reserved_words';
 
 export module Expression {
   /**
@@ -16,7 +16,7 @@ export module Expression {
    * https://support.microsoft.com/en-us/office/calculation-operators-and-precedence-in-excel-48be406d-4975-4d31-b2b8-7af9e0e2878a
    */
   abstract class PrecedenceClass {
-    tag = "precedenceclass";
+    tag = 'precedenceclass';
     public readonly op: string;
     public readonly expr: AST.Expression;
     constructor(op: string, e: AST.Expression) {
@@ -29,30 +29,30 @@ export module Expression {
    * Level 2: exponentiation (^)
    */
   class PrecedenceLevel2 extends PrecedenceClass {
-    tag = "precedencelevel2";
+    tag = 'precedencelevel2';
     constructor(e: AST.Expression) {
-      super("^", e);
+      super('^', e);
     }
   }
   /**
    * Level 3: addition (+) and subtraction (-)
    */
   class PrecedenceLevel3 extends PrecedenceClass {
-    tag = "precedencelevel3";
+    tag = 'precedencelevel3';
   }
   /**
    * Level 4: multiplication (*) and division (/)
    */
   class PrecedenceLevel4 extends PrecedenceClass {
-    tag = "precedencelevel4";
+    tag = 'precedencelevel4';
   }
   /**
    * Level 5: concatenation (&)
    */
   class PrecedenceLevel5 extends PrecedenceClass {
-    tag = "precedencelevel5";
+    tag = 'precedencelevel5';
     constructor(e: AST.Expression) {
-      super("&", e);
+      super('&', e);
     }
   }
   /**
@@ -61,69 +61,69 @@ export module Expression {
    * greater than or equal to (>=).
    */
   class PrecedenceLevel6 extends PrecedenceClass {
-    tag = "precedencelevel6";
+    tag = 'precedencelevel6';
   }
 
   function exponent(R: P.IParser<AST.Range>) {
     // exponent MUST consume something
-    return P.pipe2<AST.Expression, CU.CharStream, PrecedenceLevel2>(level1(R))(PP.wsPad(P.char("^")))(
+    return P.pipe2<AST.Expression, CU.CharStream, PrecedenceLevel2>(level1(R))(PP.wsPad(P.char('^')))(
       (e, _op) => new PrecedenceLevel2(e)
     );
   }
 
   function mult(R: P.IParser<AST.Range>) {
     // mult MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("*")))(level2(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('*')))(level2(R))((_op, e) => e);
   }
 
   function divide(R: P.IParser<AST.Range>) {
     // divide MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("/")))(level2(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('/')))(level2(R))((_op, e) => e);
   }
 
   function plus(R: P.IParser<AST.Range>) {
     // plus MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("+")))(level3(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('+')))(level3(R))((_op, e) => e);
   }
 
   function minus(R: P.IParser<AST.Range>) {
     // minus MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("-")))(level3(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('-')))(level3(R))((_op, e) => e);
   }
 
   function concatenation(R: P.IParser<AST.Range>) {
     // concatenation MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("&")))(level4(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('&')))(level4(R))((_op, e) => e);
   }
 
   function equalTo(R: P.IParser<AST.Range>) {
     // equalTo MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("=")))(level5(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('=')))(level5(R))((_op, e) => e);
   }
 
   function notEqualTo(R: P.IParser<AST.Range>) {
     // notEqualTo MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.str("<>")))(level5(R))((_siopgn, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.str('<>')))(level5(R))((_siopgn, e) => e);
   }
 
   function greaterThan(R: P.IParser<AST.Range>) {
     // greaterThan MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char(">")))(level5(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('>')))(level5(R))((_op, e) => e);
   }
 
   function lessThan(R: P.IParser<AST.Range>) {
     // lessThan MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char("<")))(level5(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.char('<')))(level5(R))((_op, e) => e);
   }
 
   function lessThanOrEqualTo(R: P.IParser<AST.Range>) {
     // lessThanOrEqualTo MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.str("<=")))(level5(R))((_sopign, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.str('<=')))(level5(R))((_sopign, e) => e);
   }
 
   function greaterThanOrEqualTo(R: P.IParser<AST.Range>) {
     // greaterThanOrEqualTo MUST consume something
-    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.str(">=")))(level5(R))((_op, e) => e);
+    return P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(PP.wsPad(P.str('>=')))(level5(R))((_op, e) => e);
   }
 
   function level1(R: P.IParser<AST.Range>) {
@@ -166,8 +166,8 @@ export module Expression {
     )(
       // then the operation and another term
       P.many1(
-        P.choice(P.pipe<AST.Expression, PrecedenceLevel3>(mult(R))((e) => new PrecedenceLevel3("*", e)))(
-          P.pipe<AST.Expression, PrecedenceLevel3>(divide(R))((e) => new PrecedenceLevel3("/", e))
+        P.choice(P.pipe<AST.Expression, PrecedenceLevel3>(mult(R))(e => new PrecedenceLevel3('*', e)))(
+          P.pipe<AST.Expression, PrecedenceLevel3>(divide(R))(e => new PrecedenceLevel3('/', e))
         )
       )
     )(
@@ -187,8 +187,8 @@ export module Expression {
     )(
       // then the operation and another term
       P.many1(
-        P.choice(P.pipe<AST.Expression, PrecedenceLevel4>(plus(R))((e) => new PrecedenceLevel4("+", e)))(
-          P.pipe<AST.Expression, PrecedenceLevel4>(minus(R))((e) => new PrecedenceLevel4("-", e))
+        P.choice(P.pipe<AST.Expression, PrecedenceLevel4>(plus(R))(e => new PrecedenceLevel4('+', e)))(
+          P.pipe<AST.Expression, PrecedenceLevel4>(minus(R))(e => new PrecedenceLevel4('-', e))
         )
       )
     )(
@@ -207,7 +207,7 @@ export module Expression {
       level4(R)
     )(
       // then the operation and another term
-      P.many1(P.pipe<AST.Expression, PrecedenceLevel5>(concatenation(R))((e) => new PrecedenceLevel5(e)))
+      P.many1(P.pipe<AST.Expression, PrecedenceLevel5>(concatenation(R))(e => new PrecedenceLevel5(e)))
     )(
       // yields a binop from a list of addends
       (t1, t2) => t2.reduce((acc, rhs) => new AST.BinOpExpr(rhs.op, acc, rhs.expr), t1)
@@ -226,12 +226,12 @@ export module Expression {
       // then the operation and another term
       P.many1(
         P.choices(
-          P.pipe<AST.Expression, PrecedenceLevel6>(equalTo(R))((e) => new PrecedenceLevel6("=", e)),
-          P.pipe<AST.Expression, PrecedenceLevel6>(lessThan(R))((e) => new PrecedenceLevel6("<", e)),
-          P.pipe<AST.Expression, PrecedenceLevel6>(greaterThan(R))((e) => new PrecedenceLevel6(">", e)),
-          P.pipe<AST.Expression, PrecedenceLevel6>(lessThanOrEqualTo(R))((e) => new PrecedenceLevel6("<=", e)),
-          P.pipe<AST.Expression, PrecedenceLevel6>(greaterThanOrEqualTo(R))((e) => new PrecedenceLevel6(">=", e)),
-          P.pipe<AST.Expression, PrecedenceLevel6>(notEqualTo(R))((e) => new PrecedenceLevel6("<>", e))
+          P.pipe<AST.Expression, PrecedenceLevel6>(equalTo(R))(e => new PrecedenceLevel6('=', e)),
+          P.pipe<AST.Expression, PrecedenceLevel6>(lessThan(R))(e => new PrecedenceLevel6('<', e)),
+          P.pipe<AST.Expression, PrecedenceLevel6>(greaterThan(R))(e => new PrecedenceLevel6('>', e)),
+          P.pipe<AST.Expression, PrecedenceLevel6>(lessThanOrEqualTo(R))(e => new PrecedenceLevel6('<=', e)),
+          P.pipe<AST.Expression, PrecedenceLevel6>(greaterThanOrEqualTo(R))(e => new PrecedenceLevel6('>=', e)),
+          P.pipe<AST.Expression, PrecedenceLevel6>(notEqualTo(R))(e => new PrecedenceLevel6('<>', e))
         )
       )
     )(
@@ -246,14 +246,14 @@ export module Expression {
    */
   function unary(R: P.IParser<AST.Range>): P.IParser<AST.Expression> {
     return P.choices<AST.Expression>(
-      P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(P.char("+"))(exprSimple(R))(
-        (_sign, e) => new AST.UnaryOpExpr("+", e)
+      P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(P.char('+'))(exprSimple(R))(
+        (_sign, e) => new AST.UnaryOpExpr('+', e)
       ),
-      P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(P.char("-"))(exprSimple(R))(
-        (_sign, e) => new AST.UnaryOpExpr("-", e)
+      P.pipe2<CU.CharStream, AST.Expression, AST.Expression>(P.char('-'))(exprSimple(R))(
+        (_sign, e) => new AST.UnaryOpExpr('-', e)
       ),
-      P.pipe2<AST.Expression, CU.CharStream, AST.Expression>(exprSimple(R))(P.char("%"))(
-        (e, _op) => new AST.UnaryOpExpr("%", e)
+      P.pipe2<AST.Expression, CU.CharStream, AST.Expression>(exprSimple(R))(P.char('%'))(
+        (e, _op) => new AST.UnaryOpExpr('%', e)
       )
     );
   }
@@ -314,40 +314,40 @@ export module Expression {
   export function fApply(R: P.IParser<AST.Range>): P.IParser<AST.FunctionApplication> {
     return P.bind<CU.CharStream, AST.FunctionApplication>(
       // first parse the function name
-      P.left<CU.CharStream, CU.CharStream>(functionName)(P.char("("))
-    )((nameCS) => {
+      P.left<CU.CharStream, CU.CharStream>(functionName)(P.char('('))
+    )(nameCS => {
       // what happens next depends on the arity associated with the name
       const name = nameCS.toString();
       switch (PRW.whichArity(name)) {
-        case "fixed" /* fixed arity */: {
+        case 'fixed' /* fixed arity */: {
           const fixedArities = PRW.arityFixed[name];
-          const next = P.left<AST.Expression[], CU.CharStream>(sepBy(expr(R))(PP.Comma))(P.char(")"));
-          return P.bind<AST.Expression[], AST.FunctionApplication>(next)((exprs) => {
+          const next = P.left<AST.Expression[], CU.CharStream>(sepBy(expr(R))(PP.Comma))(P.char(')'));
+          return P.bind<AST.Expression[], AST.FunctionApplication>(next)(exprs => {
             // is this an arity that we expect?
             if (!fixedArities.has(exprs.length)) {
-              return P.zero<AST.FunctionApplication>("Arity " + fixedArities + " expected for function " + name);
+              return P.zero<AST.FunctionApplication>('Arity ' + fixedArities + ' expected for function ' + name);
             }
             return P.result(new AST.FunctionApplication(name, exprs, new AST.FixedArity(exprs.length)));
           });
         }
-        case "atleast": {
+        case 'atleast': {
           const atLeastArity = PRW.arityAtLeastN[name];
-          const next = P.left<AST.Expression[], CU.CharStream>(sepBy1(expr(R))(PP.Comma))(P.char(")"));
-          return P.bind<AST.Expression[], AST.FunctionApplication>(next)((exprs) => {
+          const next = P.left<AST.Expression[], CU.CharStream>(sepBy1(expr(R))(PP.Comma))(P.char(')'));
+          return P.bind<AST.Expression[], AST.FunctionApplication>(next)(exprs => {
             // is this an arity that we expect?
             if (!(exprs.length >= atLeastArity)) {
-              return P.zero<AST.FunctionApplication>("Arity " + atLeastArity + " expected for function " + name);
+              return P.zero<AST.FunctionApplication>('Arity ' + atLeastArity + ' expected for function ' + name);
             }
             return P.result(new AST.FunctionApplication(name, exprs, new AST.LowBoundArity(atLeastArity)));
           });
         }
-        case "any": {
-          const next = P.left<AST.Expression[], CU.CharStream>(sepBy(expr(R))(PP.Comma))(P.char(")"));
-          return P.bind<AST.Expression[], AST.FunctionApplication>(next)((exprs) => {
+        case 'any': {
+          const next = P.left<AST.Expression[], CU.CharStream>(sepBy(expr(R))(PP.Comma))(P.char(')'));
+          return P.bind<AST.Expression[], AST.FunctionApplication>(next)(exprs => {
             return P.result(new AST.FunctionApplication(name, exprs, AST.VarArgsArityInst));
           });
         }
-        case "unknown":
+        case 'unknown':
           return P.zero<AST.FunctionApplication>("Unrecognized function name '" + name + "'");
       }
     });
@@ -400,8 +400,8 @@ export module Expression {
    * @returns
    */
   export function exprParens(R: P.IParser<AST.Range>) {
-    return P.between<CU.CharStream, CU.CharStream, AST.ParensExpr>(P.char("("))(P.char(")"))(
-      P.pipe<AST.Expression, AST.ParensExpr>(expr(R))((e) => new AST.ParensExpr(e))
+    return P.between<CU.CharStream, CU.CharStream, AST.ParensExpr>(P.char('('))(P.char(')'))(
+      P.pipe<AST.Expression, AST.ParensExpr>(expr(R))(e => new AST.ParensExpr(e))
     );
   }
 

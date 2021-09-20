@@ -2,6 +2,8 @@ import { CharUtil } from './charstream';
 import CharStream = CharUtil.CharStream;
 
 export namespace Primitives {
+  export let PAD = 10; // PAD*2 is the max diagnostic message size
+
   export class EOFMark {
     private static _instance: EOFMark;
     private constructor() {}
@@ -45,9 +47,9 @@ export namespace Primitives {
      * If the failure is critical, then parsing will stop immediately.
      *
      * @param istream The string, unmodified, that was given to the parser.
-     * @param error_pos The position of the parsing failure in istream
-     * @param error_msg The error message for the failure
-     * @param is_critical Whether or not the failure is critical
+     * @param error_pos The position of the parsing failure in istream.
+     * @param error_msg The error message for the failure.
+     * @param is_critical Whether or not the failure should cause an enclosing choice to fail (i.e., short-circuit).
      */
     constructor(istream: CharStream, error_pos: number, error_msg: string = '', is_critical = false) {
       this.inputstream = istream;
@@ -153,7 +155,7 @@ export namespace Primitives {
         const o = yield* p(istream);
         switch (o.tag) {
           case 'success':
-            return new Failure(istream, istream.startpos, msg, true);
+            return new Failure(istream, istream.startpos, msg, false);
           case 'failure':
             return new Success(istream, undefined);
         }
@@ -674,7 +676,6 @@ export namespace Primitives {
             console.log('success: ' + label + ', startpos: ' + istream.startpos + ', endpos: ' + istream.endpos);
             break;
           case 'failure':
-            const PAD = 10;
             console.log(
               'failure: ' +
                 label +
@@ -683,7 +684,7 @@ export namespace Primitives {
                 ', endpos: ' +
                 istream.endpos +
                 '\n' +
-                diagnosticMessage(PAD, o.error_pos, o.inputstream.toString(), o.error_msg)
+                diagnosticMessage(o, PAD)
             );
             break;
         }
@@ -736,6 +737,28 @@ export namespace Primitives {
   }
 
   /**
+   * Finds the index of the newline closest to the failure position in the right side of the input window.
+   * @param rightIndex The right bound of the input window.
+   * @param failurePos The position of the error in the input stream.
+   * @param buffer The input.
+   * @returns An index.
+   */
+  function indexOfFirstNewlineRightWindow(rightIndex: number, failurePos: number, buffer: string): number {
+    function searchForward(pos: number): number {
+      if (pos >= rightIndex) {
+        return -1;
+      } else if (buffer[pos] === '\n') {
+        return pos;
+      } else {
+        return searchForward(pos + 1);
+      }
+    }
+
+    const idx = searchForward(failurePos - 1);
+    return idx === -1 ? rightIndex : idx;
+  }
+
+  /**
    * Pads a string `s` with `padStr` `num` times.
    * @param s
    * @param padStr
@@ -748,26 +771,29 @@ export namespace Primitives {
 
   /**
    * Produce a diagnostic message for a parser failure.
+   * @param fail The Failure object.
    * @param windowSz The amount of context (in chars) to show to the left and right of the failure position.
-   * @param failurePos Where the parse failed.
-   * @param buffer The input stream.
-   * @param err The error message.
    */
-  export function diagnosticMessage(windowSz: number, failurePos: number, buffer: string, err: string): string {
+  export function diagnosticMessage(fail: Failure, windowSz: number): string {
+    const failurePos = fail.error_pos;
+    const buffer = fail.inputstream.input.toString();
+    const err = fail.error_msg;
+
     // compute window
     const leftIdx = windowLeftIndex(windowSz, failurePos);
     const rightIdx = windowRightIndex(windowSz, failurePos, buffer.length);
-    const lastNLLeft = indexOfLastNewlineLeftWindow(leftIdx, failurePos, buffer);
+    const afterLastNLLeft = indexOfLastNewlineLeftWindow(leftIdx, failurePos, buffer) + 1;
+    const beforeFirstNLRight = indexOfFirstNewlineRightWindow(rightIdx, failurePos, buffer) - 1;
+    const winLeftIdx = Math.max(leftIdx, afterLastNLLeft);
+    const winRightIdx = Math.min(rightIdx, beforeFirstNLRight);
+    const window = buffer.substr(winLeftIdx, winRightIdx - winLeftIdx + 1);
 
     // find caret position in last line
-    const caretPos = failurePos - lastNLLeft;
-
-    // create window string
-    const window = buffer.substr(leftIdx, failurePos - leftIdx + 1 + rightIdx - failurePos);
+    const caretPos = failurePos - winLeftIdx + 1;
 
     // augment with diagnostic information
     const diag =
-      leftPad('', '=', rightIdx - leftIdx) +
+      leftPad('', '=', winRightIdx - winLeftIdx + 1) +
       '\n' +
       err +
       '\n' +
@@ -775,7 +801,7 @@ export namespace Primitives {
       '\n' +
       leftPad('^', ' ', caretPos - 1) +
       '\n' +
-      leftPad('', '=', rightIdx - leftIdx) +
+      leftPad('', '=', winRightIdx - winLeftIdx + 1) +
       '\n';
 
     return diag;

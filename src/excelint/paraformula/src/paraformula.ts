@@ -1,13 +1,13 @@
-import { AST } from "./ast";
-import { Primitives as P, CharUtil as CU } from "../../parsecco/src/index";
-import { Expression as PE } from "./expression";
-import { Range as PR } from "./range";
+import { AST } from './ast';
+import { Primitives as P, CharUtil as CU } from 'parsecco';
+import { Expression as PE } from './expression';
+import { Range as PR } from './range';
 
 export module Paraformula {
   /**
    * Top-level grammar definition.
    */
-  export const grammar: P.IParser<AST.Expression> = P.right<CU.CharStream, AST.Expression>(P.char("="))(
+  export const grammar: P.IParser<AST.Expression> = P.right<CU.CharStream, AST.Expression>(P.char('='))(
     PE.expr(PR.rangeAny)
   );
 
@@ -23,13 +23,13 @@ export module Paraformula {
     if (elem.done) {
       const output = elem.value;
       switch (output.tag) {
-        case "success":
+        case 'success':
           return output.result;
-        case "failure":
-          throw new Error("Unable to parse input: " + output.error_msg);
+        case 'failure':
+          throw new Error('Unable to parse input: ' + output.error_msg);
       }
     } else {
-      throw new Error("This should never happen.");
+      throw new Error('This should never happen.');
     }
   }
 
@@ -42,10 +42,10 @@ export module Paraformula {
     const cs = new CU.CharStream(input);
     const output = yield* grammar(cs);
     switch (output.tag) {
-      case "success":
+      case 'success':
         return output.result;
-      case "failure":
-        throw new Error("Unable to parse input: " + output.error_msg);
+      case 'failure':
+        throw new Error('Unable to parse input: ' + output.error_msg);
     }
   }
 }
