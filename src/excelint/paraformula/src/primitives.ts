@@ -1,20 +1,20 @@
-import { AST } from './ast';
-import { Primitives as P, CharUtil as CU } from 'parsecco';
+import { AST } from "./ast";
+import { Primitives as P, CharUtil as CU } from "../../parsecco/src";
 
 export module Primitives {
   /**
    * TODO remove: this is a stub until parsecco supports parsing with user state.
    */
-  export const EnvStub = new AST.Env('', '', '');
+  export const EnvStub = new AST.Env("", "", "");
 
   /**
    * Parse an Excel integer.
    */
   export const Z = P.choices(
     // leading + sign
-    P.pipe2<CU.CharStream, number, number>(P.str('+'))(P.integer)((_sign, num) => num),
+    P.pipe2<CU.CharStream, number, number>(P.str("+"))(P.integer)((_sign, num) => num),
     // leading - sign
-    P.pipe2<CU.CharStream, number, number>(P.str('-'))(P.integer)((_sign, num) => -num),
+    P.pipe2<CU.CharStream, number, number>(P.str("-"))(P.integer)((_sign, num) => -num),
     // no leading sign
     P.integer
   );
@@ -31,5 +31,5 @@ export module Primitives {
   /**
    * Parses a comma surrounded by optional whitespace.
    */
-  export const Comma = wsPad(P.str(','));
+  export const Comma = wsPad(P.str(","));
 }
