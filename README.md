@@ -1,4 +1,43 @@
-# Installation Instructions
+# ExceLint
+
+This repository is for the latest version of ExceLint in development. ExceLint is currently being developed as a plugin for the forthcoming Excel X10 plugin architecture, which is also in development. In order to facilitate development, this codebase is developed against a mock X10 plugin architecture. The mock plugin adapts the X10 architecture to the ordinary OfficeJS plugin architecture.
+
+Consequently, ExceLint can be run either as an OfficeJS plugin or installed into the 1JS Office repository for use with X10. Both sets of instructions are given below.
+
+## Run as an OfficeJS Plugin
+
+**Prerequisites**. You must have the following installed:
+
+- NodeJS
+- NPM
+
+1. Clone this repository (an ordinary non-recursive clone is fine). E.g.,
+   ```
+   $ git clone git@github.com:ExceLint/ExceLint-addin.git
+   ```
+1. `cd ExceLint-addin`
+1. Be sure that you're on the `x10-patchsets` branch.
+   ```
+   $ git checkout x10-patchsets
+   ```
+1. Install NPM dependencies:
+   ```
+   $ npm install
+   ```
+1. Build the plugin and package using webpack:
+   ```
+   $ npm run build
+   ```
+1. Start the dev server.
+   ```
+   # npm run dev-server
+   ```
+1. Finally, start Excel, sideloading the plugin.
+   ```
+   $ npm run start
+   ```
+
+## 1JS Installation Instructions
 
 These instructions are valid for 1JS commit `e27a8070e07d7d37ce49e4b7877144e49d9ab3a1` (Fri May 28 17:34:37 2021 +0000) or later.
 
