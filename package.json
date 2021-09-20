@@ -47,7 +47,6 @@
     "mkdirp": "^1.0.4",
     "neat-csv": "^6.0.0",
     "neo-async": "^2.6.2",
-    "node": "^15.4.0",
     "npx": "^10.2.2",
     "office-addin-dev-certs": "^1.5.9",
     "office-js": "^0.1.0",
