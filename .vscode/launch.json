@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "ExceLint CLI",
       "program": "${workspaceFolder}/dist/cli/excelint-cli.js",
-      "args": ["--directory benchmarks/files"],
+      "args": ["--directory", "benchmarks/files"],
       "sourceMaps": true,
       "preLaunchTask": "npm: debug"
     },

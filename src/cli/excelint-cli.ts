@@ -39,12 +39,6 @@ const args: CLIConfig = process_arguments();
 // open annotations file
 const theBugs = new AnnotationData(BUG_DATA_PATH);
 
-// DEBUG
-console.log("THIS HAPPENED");
-if (args != null) {
-  process.exit(0);
-}
-
 // get base directory
 const base = args.directory ? args.directory + "/" : "";
 
