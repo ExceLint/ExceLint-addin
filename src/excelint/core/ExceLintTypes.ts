@@ -4,7 +4,7 @@ import { Classification } from "./classification";
 import { IComparable, Option, Some, None } from "./option";
 import { Paraformula } from "../paraformula/src/paraformula";
 
-interface Dict<V> {
+export interface Dict<V> {
   [key: string]: V;
 }
 

@@ -1,8 +1,7 @@
 {
-  "plugins": [
-    "office-addins"
-  ],
-  "extends": [
-    "plugin:office-addins/react"
-  ]
+  "plugins": ["office-addins"],
+  "extends": ["plugin:office-addins/react"],
+  "globals": {
+    "NodeJS": true
+  }
 }

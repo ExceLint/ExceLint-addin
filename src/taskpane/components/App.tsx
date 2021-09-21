@@ -4,7 +4,6 @@ import * as XLNT from "../../excelint/core/ExceLintTypes";
 import { Option, None, Some } from "../../excelint/core/option";
 import { ExcelUtils } from "../../excelint/core/excelutils";
 import { Timer } from "../../excelint/core/timer";
-import { Config } from "../../excelint/core/config";
 
 /* vvvv This is an eslint directive vvvv */
 /* global console, document, Office, Excel */
@@ -51,70 +50,6 @@ run(async () => {
 });
 
 /**
- * Run analysis.  The given address must correspond to a single cell.
- *
- * @param addr An Excel address.
- * @param formulas All the formulas in the region of interest.
- * @returns An array of proposed fixes.
- */
-function analyze(addr: XLNT.Address, formulas: XLNT.Dictionary<string>): XLNT.ProposedFix[] {
-  // console.log(visualizeGrid(formulas, addr.worksheet));
-
-  // formula groups
-  let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
-
-  // styles
-  let styles = new XLNT.Dictionary<string>();
-
-  // output
-  let proposed_fixes: XLNT.ProposedFix[] = [];
-
-  // get every reference vector set for every formula, indexed by address vector
-  const fRefs = Analysis.relativeFormulaRefs(formulas);
-
-  // compute fingerprints for reference vector sets, indexed by address vector
-  const fps = Analysis.fingerprints(fRefs);
-
-  // decompose into rectangles, indexed by fingerprint
-  const stepRects = Analysis.identify_groups(fps);
-
-  // merge these new rectangles with the old ones
-  rects = Analysis.mergeRectangleDictionaries(stepRects, rects);
-  rects = Analysis.mergeRectangles(rects);
-
-  // generate proposed fixes for all the new rectanles
-  const pfs = Analysis.generate_proposed_fixes(rects);
-
-  // remove duplicate fixes
-  const pfs2 = Analysis.filterDuplicateFixes(pfs);
-
-  // filter fixes by target address
-  const pfs3 = pfs2.filter((pf) => pf.includesCellAt(addr));
-
-  // filter fixes by user threshold
-  const pfs4 = Analysis.filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
-
-  // adjust proposed fixes by style (mutates input)
-  Analysis.adjustProposedFixesByStyleHash(pfs4, styles);
-
-  // filter fixes with heuristics
-  for (const fix of pfs4) {
-    // function to get rectangle info for a rectangle;
-    // closes over sheet data
-    const rectf = (rect: XLNT.Rectangle) => {
-      const formulaCoord = rect.upperleft;
-      const firstFormula = formulas.get(formulaCoord.asKey());
-      return new XLNT.RectInfo(rect, firstFormula);
-    };
-
-    const ffix = Analysis.filterFix(fix, rectf, false);
-    if (ffix.hasValue) proposed_fixes.push(ffix.value);
-  }
-
-  return proposed_fixes;
-}
-
-/**
  * When the user presses a key in the taskpane formula input,
  * update the selected cell and run an incremental analysis.
  */
@@ -146,7 +81,7 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
       const formulas = await App.getFormulasFromRange(activeSheet, usedRange, true, context);
 
       // run analysis
-      const fixes: XLNT.ProposedFix[] = analyze(addr, formulas);
+      const fixes: XLNT.ProposedFix[] = Analysis.analyze(addr, formulas);
 
       // generate fixes
       const fixstrs = Analysis.synthFixes(addr, fixes, formulas);
