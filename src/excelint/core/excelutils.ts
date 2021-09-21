@@ -176,14 +176,14 @@ export module ExcelUtils {
       const cellVects = cellDeps.map((addr) => ExcelUtils.getRefVectorsFromAddress(origin_x, origin_y, addr));
       const rngVects = rngDeps
         .map((rng) => ExcelUtils.getRefVectorsFromRange(origin_x, origin_y, rng))
-        .reduce((acc, arr) => acc.concat(arr));
+        .reduce((acc, arr) => acc.concat(arr), []);
       /* eslint-disable-next-line no-unused-vars */
       const cnstVects = cnstDeps.map((_c) => new ExceLintVector(0, 0, 1));
 
       // combine all vectors and return
       return cellVects.concat(rngVects, cnstVects);
     } catch (error) {
-      console.warn("Cannot parse formula: '" + formula + "'");
+      console.warn("Cannot parse formula: '" + formula + "': " + error);
       return [];
     }
   }

@@ -28,11 +28,11 @@ Consequently, ExceLint can be run either as an OfficeJS plugin or installed into
    ```
    $ npm run build
    ```
-1. Start the dev server.
+1. Start the dev server. If this is your first time running it, OfficeJS will generate and install self-signed TLS certificates so that the plugin can communicate with Excel over HTTPS. Note that, by default, this command runs the dev server in the foreground, and that whenever it detects a source code change, will rerun webpack and restart the server.
    ```
-   # npm run dev-server
+   $ npm run dev-server
    ```
-1. Finally, start Excel, sideloading the plugin.
+1. Finally, in another terminal window, start Excel, sideloading the plugin.
    ```
    $ npm run start
    ```
