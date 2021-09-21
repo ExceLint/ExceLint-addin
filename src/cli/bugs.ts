@@ -23,6 +23,7 @@ export class AnnotationData {
   constructor(bug_path: string) {
     const absPath = path.resolve(bug_path);
 
+    // eslint-disable-next-line no-undef
     let annotated_bugs: Buffer;
     try {
       annotated_bugs = fs.readFileSync(absPath);
