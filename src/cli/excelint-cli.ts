@@ -2,6 +2,8 @@
 // by Emery Berger, Microsoft Research / University of Massachusetts Amherst
 // www.emeryberger.com
 
+/* eslint-disable */
+
 "use strict";
 import { ExcelJSON, WorksheetAnalysis } from "./exceljson";
 import { Analysis } from "../excelint/core/analysis";
@@ -21,8 +23,9 @@ import { AnnotationData } from "./bugs";
 import { Timer } from "../excelint/core/timer";
 
 declare var console: Console;
+declare var process: NodeJS.Process;
 
-const BUG_DATA_PATH = "test/annotations-processed.json";
+const BUG_DATA_PATH = "benchmarks/annotations-processed.json";
 
 //
 // Process arguments.
@@ -35,6 +38,12 @@ const args: CLIConfig = process_arguments();
 
 // open annotations file
 const theBugs = new AnnotationData(BUG_DATA_PATH);
+
+// DEBUG
+console.log("THIS HAPPENED");
+if (args != null) {
+  process.exit(0);
+}
 
 // get base directory
 const base = args.directory ? args.directory + "/" : "";
@@ -137,3 +146,5 @@ if (args.elapsedTime) {
     }
   }
 }
+
+/* eslint-enable */

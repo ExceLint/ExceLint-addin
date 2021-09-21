@@ -5,6 +5,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "node",
+      "request": "launch",
+      "name": "ExceLint CLI",
+      "program": "${workspaceFolder}/dist/cli/excelint-cli.js",
+      "args": ["--directory benchmarks/files"],
+      "sourceMaps": true,
+      "preLaunchTask": "npm: debug"
+    },
+    {
       "name": "Excel Desktop (Edge Chromium)",
       "type": "edge",
       "request": "attach",
