@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "webpack -p --mode production --https false",
+    "build:cli": "npx tsc",
     "build:dev": "webpack --mode development --https false",
     "build-dev": "webpack --mode development --https false && echo . && echo . && echo . && echo Please use 'build:dev' instead of 'build-dev'.",
     "dev-server": "webpack-dev-server --mode development",
