@@ -11,16 +11,15 @@
     "allowUnusedLabels": false,
     "noImplicitReturns": true,
     "noUnusedParameters": true,
-      "noUnusedLocals": false,
-      "downlevelIteration": true,
+    "noUnusedLocals": false,
+    "downlevelIteration": true,
     "pretty": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ]
+    "typeRoots": ["node_modules/@types"],
+    "target": "ES2019"
   },
-  "exclude": [
-    "node_modules"
-  ],
+  "exclude": ["node_modules"],
   "compileOnSave": false,
-  "buildOnSave": false
+  "buildOnSave": false,
+  "types": ["office-js"],
+  "lib": ["es2019"]
 }
