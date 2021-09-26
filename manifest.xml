@@ -16,8 +16,8 @@
   <ProviderName>PLASMA @ UMass Amherst</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <!-- The display name of your add-in. Used on the store and various places of the Office UI such as the add-ins dialog. -->
-  <DisplayName DefaultValue="Exce-Lint" />
-  <Description DefaultValue="Exce-Lint is Excellent"/>
+  <DisplayName DefaultValue="ExceLint" />
+  <Description DefaultValue="ExceLint is Excellent"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
   <IconUrl DefaultValue="https://github.com/plasma-umass/ExceLint-addin/blob/master/assets/icon-32.png?raw=true" />
@@ -139,13 +139,13 @@
       </bt:Urls>
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
-        <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="Exce-Lint" />
+        <bt:String id="Contoso.TaskpaneButton.Label" DefaultValue="ExceLint" />
         <bt:String id="Contoso.Group1Label" DefaultValue="Insights" />
-        <bt:String id="Contoso.GetStarted.Title" DefaultValue="Exce-Lint" />
+        <bt:String id="Contoso.GetStarted.Title" DefaultValue="ExceLint" />
       </bt:ShortStrings>
       <!-- LongStrings max characters==250. -->
       <bt:LongStrings>
-        <bt:String id="Contoso.TaskpaneButton.Tooltip" DefaultValue="Exce-Lint" />
+        <bt:String id="Contoso.TaskpaneButton.Tooltip" DefaultValue="ExceLint" />
         <bt:String id="Contoso.GetStarted.Description" DefaultValue="Automatically Finds Formula Errors" />
       </bt:LongStrings>
     </Resources>
