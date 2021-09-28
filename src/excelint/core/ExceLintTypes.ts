@@ -547,6 +547,8 @@ export class ProposedFix implements IComparable<ProposedFix> {
   private _sameFormat: boolean = true; // the two rectangles have the same format
   private _analysis: Option<FixAnalysis> = None; // we add this later, after we analyze the fix
 
+  // rect1 should be used as the cell under analysis; i.e., the one the
+  // user is actively manipulating in the ExceLint incremental version
   constructor(score: number, rect1: Rectangle, rect2: Rectangle) {
     this._score = score;
     this._rect1 = rect1;

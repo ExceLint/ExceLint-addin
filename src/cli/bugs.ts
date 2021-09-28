@@ -1,5 +1,6 @@
 import fs = require("fs");
 import path = require("path");
+import { ExceLintVector } from "../excelint/core/ExceLintTypes";
 import { WorkbookOutput } from "./exceljson";
 
 declare var console: Console;
@@ -59,5 +60,28 @@ export class AnnotationData {
       }
     }
     return new AnnotationFacts(hasError, hasFormula, numSheets);
+  }
+
+  /**
+   * Returns true if the given address contains a bug annotation.
+   * @param workbook The name of the workbook
+   * @param worksheet The name of the worksheet
+   * @param addrv The address vector.
+   */
+  public hasBug(workbook: string, worksheet: string, addrv: ExceLintVector): boolean {
+    if (workbook in this._data) {
+      if (worksheet in this._data[workbook]) {
+        const bugs = this._data[workbook][worksheet]["bugs"];
+        // compare
+        for (const bug of bugs) {
+          const [x, y, c] = bug;
+          if (addrv.x === x && addrv.y === y && addrv.c == c) {
+            // bail the moment we find one
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 }

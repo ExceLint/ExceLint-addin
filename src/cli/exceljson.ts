@@ -4,19 +4,12 @@ import path = require("path");
 import * as XLSX from "xlsx";
 import * as sha224 from "crypto-js/sha224";
 import * as base64 from "crypto-js/enc-base64";
-import {
-  Spreadsheet,
-  ProposedFix,
-  Analysis,
-  ExceLintVector,
-  Dict,
-  Dictionary,
-  Rectangle,
-  expand,
-} from "../excelint/core/ExceLintTypes";
+import { Spreadsheet, ProposedFix, ExceLintVector, Dictionary, expand, Address } from "../excelint/core/ExceLintTypes";
 import { Some, None, flatMap } from "../excelint/core/option";
 import { Config } from "../excelint/core/config";
 import { flatten } from "./polyfill";
+import { Analysis } from "../excelint/core/analysis";
+import { AnnotationData } from "./bugs";
 
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
@@ -28,25 +21,18 @@ export enum Selections {
 }
 
 export class WorksheetOutput {
-  sheetName: string;
-  usedRangeAddress: string;
-  // Spreadsheet is just a row-major string[][]
-  formulas: Spreadsheet;
-  values: Spreadsheet;
-  styles: Spreadsheet;
+  public readonly formulaDict: Dictionary<string>; // indexed by excelintvector
 
   constructor(
-    sheetName: string,
-    usedRangeAddress: string,
-    formulas: Spreadsheet,
-    values: Spreadsheet,
-    styles: Spreadsheet
+    // Spreadsheet is just a row-major string[][]
+    /* eslint-disable no-unused-vars */
+    public readonly sheetName: string,
+    public readonly usedRangeAddress: string,
+    public readonly formulas: Spreadsheet,
+    public readonly values: Spreadsheet,
+    public readonly styles: Spreadsheet
   ) {
-    this.sheetName = sheetName;
-    this.usedRangeAddress = usedRangeAddress;
-    this.formulas = formulas;
-    this.values = values;
-    this.styles = styles;
+    this.formulaDict = this.exportFormulaDict();
   }
 
   /**
@@ -58,9 +44,11 @@ export class WorksheetOutput {
     const d = new Dictionary<string>();
     for (let row = 0; row < this.formulas.length; row++) {
       for (let col = 0; col < this.formulas[row].length; col++) {
+        const formula = this.formulas[row][col];
+        // we don't care about non-formulas
+        if (formula.charAt(0) != "=") continue;
         const addr = new ExceLintVector(col, row, 0);
-        const value = this.formulas[row][col];
-        d.put(addr.asKey(), value);
+        d.put(addr.asKey(), formula);
       }
     }
     return d;
@@ -215,10 +203,70 @@ export class ExcelJSON {
     const str = base64.stringify(sha224(styleString));
     return str.slice(0, 10);
   }
+
+  public static CSV(wbas: WorkbookAnalysis[], annotations: AnnotationData): string {
+    const rows: CSVRow[] = [];
+
+    // for each workbook
+    for (const wba of wbas) {
+      // for each worksheet
+      for (const wsa of wba.sheets) {
+        // for each flagged
+        for (const flag of wsa.flags) {
+          rows.push(
+            new CSVRow(
+              wba.workbook.workbookName,
+              wsa.worksheet.sheetName,
+              flag,
+              wsa.formulaForSheet(flag),
+              annotations.hasBug(wba.workbook.workbookName, wsa.worksheet.sheetName, flag),
+              wsa.suggestionsFor(flag)
+            )
+          );
+        }
+      }
+    }
+
+    // convert to string
+    return rows.map((row) => row.toString()).join("\n");
+  }
+}
+
+class CSVRow {
+  constructor(
+    /* eslint-disable no-unused-vars */
+    public readonly wb: string,
+    public readonly ws: string,
+    public readonly flag_addr: ExceLintVector,
+    public readonly formula: string,
+    public readonly is_true_positive: boolean,
+    public readonly suggestions: string[]
+  ) {}
+
+  private static q(s: string): string {
+    return '"' + s + '"';
+  }
+
+  private static a(ss: string[]): string {
+    return ss.reduce((acc, s) => acc + "," + s);
+  }
+
+  public toString(): string {
+    const suggs = this.suggestions.reduce((acc, sugg) => acc + ";" + sugg, "");
+    const addr = new Address(this.ws, this.flag_addr.y, this.flag_addr.x);
+    return CSVRow.a([
+      CSVRow.q(this.wb),
+      CSVRow.q(this.ws),
+      CSVRow.q(addr.toA1Ref()),
+      CSVRow.q(this.formula),
+      CSVRow.q(this.is_true_positive.toString()),
+      CSVRow.q(suggs),
+    ]);
+  }
 }
 
 export class WorkbookAnalysis {
-  private sheets: Dict<WorksheetAnalysis> = {};
+  private _sheets = new Dictionary<WorksheetAnalysis>();
   private wb: WorkbookOutput;
 
   constructor(wb: WorkbookOutput) {
@@ -226,71 +274,76 @@ export class WorkbookAnalysis {
   }
 
   public getSheet(name: string) {
-    return this.sheets[name];
+    return this._sheets[name];
   }
 
   public addSheet(s: WorksheetAnalysis) {
-    this.sheets[s.name] = s;
+    this._sheets[s.name] = s;
   }
 
   public get workbook(): WorkbookOutput {
     return this.wb;
   }
+
+  public get sheets(): WorksheetAnalysis[] {
+    return this._sheets.values;
+  }
 }
 
 export class WorksheetAnalysis {
-  private readonly sheet: WorksheetOutput;
-  private readonly pf: ProposedFix[];
+  private readonly data: WorksheetOutput;
+  private readonly pfs: Dictionary<ProposedFix[]>; // all the proposed fixes for a given cell
   private readonly foundBugs: ExceLintVector[];
-  private readonly analysis: Analysis;
 
-  constructor(sheet: WorksheetOutput, pf: ProposedFix[], a: Analysis) {
-    this.sheet = sheet;
-    this.pf = pf;
-    this.foundBugs = WorksheetAnalysis.createBugList(pf);
-    this.analysis = a;
-  }
-
-  // Get the grouped data
-  get groupedData(): Dictionary<Rectangle[]> {
-    return this.analysis.grouped_data;
-  }
-
-  // Get the grouped formulas
-  get groupedFormulas(): Dictionary<Rectangle[]> {
-    return this.analysis.grouped_formulas;
+  constructor(sheet: WorksheetOutput, pfs: Dictionary<ProposedFix[]>) {
+    this.data = sheet;
+    this.pfs = pfs;
+    this.foundBugs = WorksheetAnalysis.createBugList(pfs.values.flat());
   }
 
   // Get the sheet name
   get name(): string {
-    return this.sheet.sheetName;
+    return this.data.sheetName;
   }
 
   // Get all of the proposed fixes.
-  get proposedFixes(): ProposedFix[] {
-    return this.pf;
+  // get proposedFixes(): ProposedFix[] {
+  //   return this.pf;
+  // }
+
+  // return the formula for a given cell
+  public formulaForSheet(addrv: ExceLintVector): string {
+    if (this.data.formulaDict.contains(addrv.asKey())) {
+      return this.data.formulaDict.get(addrv.asKey());
+    }
+    return "";
+  }
+
+  // return the entire formula dictionary
+  public get formulas(): Dictionary<string> {
+    return this.data.formulaDict;
   }
 
   // Compute number of cells containing formulas.
   get numFormulaCells(): number {
-    const fs = flatten(this.sheet.formulas);
+    const fs = flatten(this.data.formulas);
     return fs.filter((x) => x.length > 0).length;
   }
 
   // Count the number of non-empty cells.
   get numValueCells(): number {
-    const vs = flatten(this.sheet.values);
+    const vs = flatten(this.data.values);
     return vs.filter((x) => x.length > 0).length;
   }
 
   // Compute number of columns
   get columns(): number {
-    return this.sheet.values[0].length;
+    return this.data.values[0].length;
   }
 
   // Compute number of rows
   get rows(): number {
-    return this.sheet.values.length;
+    return this.data.values.length;
   }
 
   // Compute total number of cells
@@ -299,18 +352,39 @@ export class WorksheetAnalysis {
   }
 
   // Produce a sum total of all of the entropy scores for use as a weight
-  get weightedAnomalousRanges(): number {
-    return this.pf.map((x) => x.score).reduce((x, y) => x + y, 0);
-  }
+  // get weightedAnomalousRanges(): number {
+  //   return this.pf.map((x) => x.score).reduce((x, y) => x + y, 0);
+  // }
 
   // Get the total number of anomalous cells
   get numAnomalousCells(): number {
     return this.foundBugs.length;
   }
 
+  // Return the complete set of bug flags
+  get flags(): ExceLintVector[] {
+    return this.foundBugs;
+  }
+
   // Get the underlying sheet object
   get worksheet(): WorksheetOutput {
-    return this.sheet;
+    return this.data;
+  }
+
+  // get the proposed fixes for a given cell, if there are any
+  public fixesFor(addrv: ExceLintVector): ProposedFix[] {
+    if (this.pfs.contains(addrv.asKey())) {
+      return this.pfs.get(addrv.asKey());
+    }
+    return [];
+  }
+
+  // get the fix suggestions for a given cell, if there are any
+  public suggestionsFor(addrv: ExceLintVector): string[] {
+    // gin up an address
+    const addr = new Address(this.data.sheetName, addrv.y, addrv.x);
+    // and call the synthesis module from ExceLint
+    return Analysis.synthFixes(addr, this.fixesFor(addrv), this.formulas);
   }
 
   // For every proposed fix, if it is above the score threshold, keep it,
@@ -329,72 +403,3 @@ export class WorksheetAnalysis {
     return ExceLintVector.toSet(flattened);
   }
 }
-
-// // Performs an analysis on an entire workbook
-// export function process_workbook(inp: WorkbookOutput, sheetName: string, beVerbose: boolean = false): WorkbookAnalysis {
-//   const wba = new WorkbookAnalysis(inp);
-
-//   // look for the requested sheet
-//   for (let i = 0; i < inp.worksheets.length; i++) {
-//     const sheet = inp.worksheets[i];
-
-//     // function to get rectangle info for a rectangle;
-//     // closes over sheet data
-//     const rectf = (rect: Rectangle) => {
-//       const formulaCoord = rect.upperleft;
-//       const y = formulaCoord.y - 1; // row
-//       const x = formulaCoord.x - 1; // col
-//       const firstFormula = sheet.formulas[y][x];
-//       return new RectInfo(rect, firstFormula);
-//     };
-
-//     // skip sheets that don't match sheetName or are empty
-//     if (isNotSameSheet(sheetName, sheet.sheetName) || isEmptySheet(sheet)) {
-//       continue;
-//     }
-
-//     // get the used range
-//     const usedRangeAddress = normalizeAddress(sheet.usedRangeAddress);
-
-//     // Get anomalous cells and proposed fixes, among others.
-//     const a = Analysis.process_suspicious(usedRangeAddress, sheet.formulas, sheet.values, beVerbose);
-
-//     // Eliminate fixes below user threshold
-//     a.proposed_fixes = Analysis.filterFixesByUserThreshold(a.proposed_fixes, Config.reportingThreshold);
-
-//     // Remove fixes that require fixing both a formula AND formatting.
-//     // NB: origin_col and origin_row currently hard-coded at 0,0.
-//     Analysis.adjust_proposed_fixes(a.proposed_fixes, sheet.styles, 0, 0);
-
-//     // Process all the fixes, classifying and optionally pruning them.
-//     const final_adjusted_fixes: ProposedFix[] = []; // We will eventually trim these.
-//     for (let ind = 0; ind < a.proposed_fixes.length; ind++) {
-//       // Get this fix
-//       const fix = a.proposed_fixes[ind];
-
-//       // check to see whether the fix should be rejected
-//       const ffix = this.filterFix(fix, rectf, beVerbose);
-//       if (ffix.hasValue) final_adjusted_fixes.push(ffix.value);
-//     }
-
-//     // gather all statistics about the sheet
-//     wba.addSheet(new WorksheetAnalysis(sheet, final_adjusted_fixes, a));
-//   }
-//   return wba;
-// }
-
-// // return true if this sheet is not the same as the other sheet
-// function isNotSameSheet(thisSheetName: string, otherSheetName: string): boolean {
-//   return thisSheetName !== "" && otherSheetName !== thisSheetName;
-// }
-
-// // returns true if this is an empty sheet
-// function isEmptySheet(sheet: any): boolean {
-//   return sheet.formulas.length === 0 && sheet.values.length === 0;
-// }
-
-// // Get rid of multiple exclamation points in the used range address,
-// // as these interfere with later regexp parsing.
-// function normalizeAddress(addr: string): string {
-//   return addr.replace(/!(!+)/, "!");
-// }

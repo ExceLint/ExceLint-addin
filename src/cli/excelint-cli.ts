@@ -7,15 +7,7 @@
 "use strict";
 import { ExcelJSON, WorksheetAnalysis } from "./exceljson";
 import { Analysis } from "../excelint/core/analysis";
-import {
-  Address,
-  Dictionary,
-  ExceLintVector,
-  ProposedFix,
-  Analysis as AnalysisObj,
-  Fingerprint,
-  Rectangle,
-} from "../excelint/core/ExceLintTypes";
+import { Address, Dictionary, ExceLintVector, ProposedFix } from "../excelint/core/ExceLintTypes";
 import { WorkbookAnalysis } from "./exceljson";
 import { Config } from "../excelint/core/config";
 import { CLIConfig, process_arguments } from "./args";
@@ -44,6 +36,7 @@ const base = args.directory ? args.directory + "/" : "";
 
 // for each parameter setting, run analyses on all files
 const outputs: WorkbookAnalysis[] = [];
+
 // an array of times indexed by benchmark name
 const times = new Dictionary<number[]>();
 for (const parms of args.parameters) {
@@ -62,6 +55,7 @@ for (const parms of args.parameters) {
     const time_arr: number[] = [];
     times.put(fname, time_arr);
 
+    // FOREACH WORKBOOK
     for (let i = 0; i < args.runs; i++) {
       // Open the given input spreadsheet
       const inp = ExcelJSON.processWorkbook(base, fname);
@@ -79,16 +73,20 @@ for (const parms of args.parameters) {
       args.numSheets += facts.numSheets;
 
       const t = new Timer("full analysis");
+      // FOREACH WORKSHEET
       for (let j = 0; j < inp.sheets.length; j++) {
+        // allocate pf dict for this sheet; indexed by address vector
+        const pfsd = new Dictionary<ProposedFix[]>();
+
         // process the given worksheet
         const sheet = inp.sheets[j];
-        console.warn("processing sheet " + sheet.sheetName);
+        console.warn("  processing sheet " + sheet.sheetName);
 
         // convert worksheet formula array into dictionary
         const formulas = sheet.exportFormulaDict();
 
-        // all pfs on sheet
-        let spfs: ProposedFix[] = [];
+        // don't bother if there are no formulas
+        if (formulas.size === 0) continue;
 
         // run the check for every formula
         for (const key of formulas.keys) {
@@ -98,23 +96,15 @@ for (const parms of args.parameters) {
           // get proposed fixes
           const pfs = Analysis.analyze(addr, formulas);
 
-          // concat with the rest of the discoveries
-          spfs = spfs.concat(pfs);
+          // save fixes in dictionary
+          pfsd.put(key, pfs);
         }
 
-        // I am abusing this for now
-        const a = new AnalysisObj(
-          [],
-          new Dictionary<Rectangle[]>(),
-          new Dictionary<Rectangle[]>(),
-          spfs,
-          new Dictionary<Fingerprint>(),
-          new Dictionary<Fingerprint>()
-        );
-        const sheetOutput = new WorksheetAnalysis(sheet, spfs, a);
+        // save sheet analysis to workbook object
+        const sheetOutput = new WorksheetAnalysis(sheet, pfsd);
         output.addSheet(sheetOutput);
 
-        // const output = Analysis.process_workbook(inp, sheet.sheetName, !args.suppressOutput); // no bug processing for now; just get all sheets
+        // save workbook analysis to global array
         outputs.push(output);
       }
 
@@ -125,7 +115,8 @@ for (const parms of args.parameters) {
 }
 
 if (!args.suppressOutput && !args.elapsedTime) {
-  console.log(JSON.stringify(outputs, null, "\t"));
+  console.log(ExcelJSON.CSV(outputs, theBugs));
+  // console.log(JSON.stringify(outputs, null, "\t"));
 }
 
 if (args.elapsedTime) {
