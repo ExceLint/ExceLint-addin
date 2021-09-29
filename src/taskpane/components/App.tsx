@@ -54,6 +54,35 @@ run(async () => {
  * update the selected cell and run an incremental analysis.
  */
 async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<void> {
+  const [fixstrs, elapsed] = await doAnalysis(addr);
+
+  if (fixstrs.length > 0) {
+    const td = {
+      total_μs: elapsed,
+    };
+
+    console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
+
+    // update the UI state
+    const canRestore = app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
+    const changeAt = addr.worksheet + "!R" + addr.row + "C" + addr.column; // + " (" + rng.address + ")";
+    const time_data = new Some(td);
+
+    app.setState({
+      canRestore: canRestore,
+      changeat: changeAt,
+      time_data: time_data,
+      // debug: boolean,
+      // use_styles: boolean,
+      fixes: fixstrs,
+      // formula: string
+    });
+
+    console.log("updated react state");
+  }
+}
+
+async function doAnalysis(addr: XLNT.Address): Promise<[string[], number]> {
   const t = new Timer("onUpdate");
 
   if (ExcelUtils.isACell(addr.toA1Ref())) {
@@ -89,30 +118,10 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
       // total time
       const elapsed = Timer.round(t.elapsedTime());
 
-      const td = {
-        total_μs: elapsed,
-      };
-
-      console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
-
-      // update the UI state
-      const canRestore = app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
-      const changeAt = addr.worksheet + "!R" + addr.row + "C" + addr.column + " (" + rng.address + ")";
-      const time_data = new Some(td);
-
-      app.setState({
-        canRestore: canRestore,
-        changeat: changeAt,
-        time_data: time_data,
-        // debug: boolean,
-        // use_styles: boolean,
-        fixes: fixstrs,
-        // formula: string
-      });
-
-      console.log("updated react state");
+      return [fixstrs, elapsed];
     });
   }
+  return [[], 0];
 }
 
 /**
@@ -381,6 +390,9 @@ export default class App extends React.Component<AppProps, AppState> {
         {button}
         <div>
           <input type="text" id="formulaInput" style={{ width: "90%" }} />
+        </div>
+        <div>
+          <button onClick={() => console.log("hey")}>Audit All</button>
         </div>
         <div>
           <ol>{fixes}</ol>
