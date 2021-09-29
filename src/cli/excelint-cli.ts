@@ -93,7 +93,7 @@ for (const parms of args.parameters) {
           const keyVect = ExceLintVector.fromKey(key);
           try {
             const addr = new Address(sheet.sheetName, keyVect.y, keyVect.x);
-            console.log("    analyzing " + addr.toA1Ref() + "...");
+            console.error("    analyzing " + addr.toA1Ref() + "...");
 
             // get proposed fixes
             const pfs = Analysis.analyze(addr, formulas);
