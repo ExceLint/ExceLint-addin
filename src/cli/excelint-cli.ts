@@ -91,14 +91,19 @@ for (const parms of args.parameters) {
         // run the check for every formula
         for (const key of formulas.keys) {
           const keyVect = ExceLintVector.fromKey(key);
-          const addr = new Address(sheet.sheetName, keyVect.y, keyVect.x);
-          console.log("    analyzing " + addr.toA1Ref() + "...");
+          try {
+            const addr = new Address(sheet.sheetName, keyVect.y, keyVect.x);
+            console.log("    analyzing " + addr.toA1Ref() + "...");
 
-          // get proposed fixes
-          const pfs = Analysis.analyze(addr, formulas);
+            // get proposed fixes
+            const pfs = Analysis.analyze(addr, formulas);
 
-          // save fixes in dictionary
-          if (pfs.length > 0) pfsd.put(key, pfs);
+            // save fixes in dictionary
+            if (pfs.length > 0) pfsd.put(key, pfs);
+          } catch (e) {
+            console.log(e);
+            // do nothing for now
+          }
         }
 
         // save sheet analysis to workbook object
