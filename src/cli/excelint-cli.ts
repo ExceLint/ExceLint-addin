@@ -98,7 +98,7 @@ for (const parms of args.parameters) {
           const pfs = Analysis.analyze(addr, formulas);
 
           // save fixes in dictionary
-          pfsd.put(key, pfs);
+          if (pfs.length > 0) pfsd.put(key, pfs);
         }
 
         // save sheet analysis to workbook object
@@ -116,7 +116,8 @@ for (const parms of args.parameters) {
 }
 
 if (!args.suppressOutput && !args.elapsedTime) {
-  console.log(ExcelJSON.CSV(outputs, theBugs));
+  const foo = ExcelJSON.CSV(outputs, theBugs);
+  console.log(foo);
   // console.log(JSON.stringify(outputs, null, "\t"));
 }
 

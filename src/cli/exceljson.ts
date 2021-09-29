@@ -278,7 +278,7 @@ export class WorkbookAnalysis {
   }
 
   public addSheet(s: WorksheetAnalysis) {
-    this._sheets[s.name] = s;
+    this._sheets.put(s.name, s);
   }
 
   public get workbook(): WorkbookOutput {

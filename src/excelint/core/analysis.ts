@@ -29,10 +29,10 @@ export module Analysis {
     let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
     // styles
-    let styles = new XLNT.Dictionary<string>();
+    // let styles = new XLNT.Dictionary<string>();
 
-    // output
-    let proposed_fixes: XLNT.ProposedFix[] = [];
+    // // output
+    // let proposed_fixes: XLNT.ProposedFix[] = [];
 
     // get every reference vector set for every formula, indexed by address vector
     const fRefs = relativeFormulaRefs(formulas);
@@ -60,23 +60,23 @@ export module Analysis {
     const pfs4 = filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
 
     // adjust proposed fixes by style (mutates input)
-    adjustProposedFixesByStyleHash(pfs4, styles);
+    // adjustProposedFixesByStyleHash(pfs4, styles);
 
-    // filter fixes with heuristics
-    for (const fix of pfs4) {
-      // function to get rectangle info for a rectangle;
-      // closes over sheet data
-      const rectf = (rect: XLNT.Rectangle) => {
-        const formulaCoord = rect.upperleft;
-        const firstFormula = formulas.get(formulaCoord.asKey());
-        return new XLNT.RectInfo(rect, firstFormula);
-      };
+    // // filter fixes with heuristics
+    // for (const fix of pfs4) {
+    //   // function to get rectangle info for a rectangle;
+    //   // closes over sheet data
+    //   const rectf = (rect: XLNT.Rectangle) => {
+    //     const formulaCoord = rect.upperleft;
+    //     const firstFormula = formulas.get(formulaCoord.asKey());
+    //     return new XLNT.RectInfo(rect, firstFormula);
+    //   };
 
-      const ffix = filterFix(fix, rectf, false);
-      if (ffix.hasValue) proposed_fixes.push(ffix.value);
-    }
+    //   const ffix = filterFix(fix, rectf, false);
+    //   if (ffix.hasValue) proposed_fixes.push(ffix.value);
+    // }
 
-    return proposed_fixes;
+    return pfs4;
   }
 
   /**
