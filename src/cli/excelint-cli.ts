@@ -112,6 +112,9 @@ for (const parms of args.parameters) {
 
         // save workbook analysis to global array
         outputs.push(output);
+
+        // DEBUG: gimme results as you go!
+        // ExcelJSON.CSV([output], theBugs);
       }
 
       const elapsed_us = t.elapsedTime();
