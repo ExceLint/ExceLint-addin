@@ -101,7 +101,7 @@ for (const parms of args.parameters) {
             // save fixes in dictionary
             if (pfs.length > 0) pfsd.put(key, pfs);
           } catch (e) {
-            console.log(e);
+            console.error(e);
             // do nothing for now
           }
         }
