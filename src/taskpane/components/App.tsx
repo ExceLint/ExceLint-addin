@@ -85,6 +85,9 @@ async function onInput(_e: HTMLElement, addr: XLNT.Address, app: App): Promise<v
 async function doAnalysis(addr: XLNT.Address): Promise<[string[], number]> {
   const t = new Timer("onUpdate");
 
+  let fixstrs: string[] = [];
+  let elapsed = 0;
+
   if (ExcelUtils.isACell(addr.toA1Ref())) {
     // set contents of cell
     await Excel.run(async (context: Excel.RequestContext) => {
@@ -113,15 +116,42 @@ async function doAnalysis(addr: XLNT.Address): Promise<[string[], number]> {
       const fixes: XLNT.ProposedFix[] = Analysis.analyze(addr, formulas);
 
       // generate fixes
-      const fixstrs = Analysis.synthFixes(addr, fixes, formulas);
+      fixstrs = Analysis.synthFixes(addr, fixes, formulas);
 
       // total time
-      const elapsed = Timer.round(t.elapsedTime());
-
-      return [fixstrs, elapsed];
+      elapsed = Timer.round(t.elapsedTime());
     });
   }
-  return [[], 0];
+  return [fixstrs, elapsed];
+}
+
+async function audit(): Promise<[XLNT.Dictionary<string[]>, number]> {
+  const d = new XLNT.Dictionary<string[]>();
+  let total_time = 0;
+
+  await Excel.run(async (context: Excel.RequestContext) => {
+    // get active sheet
+    const activeSheet = context.workbook.worksheets.getActiveWorksheet();
+
+    // get used range
+    const usedRange = await App.getCurrentUsedRange(activeSheet, context);
+
+    // get formulas
+    const formulas = await App.getFormulasFromRange(activeSheet, usedRange, true, context);
+
+    // sheet name
+    const wsname = await App.getWorksheetName();
+
+    for (const key of formulas.keys) {
+      const addrv = XLNT.ExceLintVector.fromKey(key);
+      const addr = new XLNT.Address(wsname, addrv.y, addrv.x);
+      const [fixstrs, elapsed] = await doAnalysis(addr);
+      d.put(key, fixstrs);
+      total_time += elapsed;
+    }
+  });
+
+  return [d, total_time];
 }
 
 /**
@@ -130,6 +160,82 @@ async function doAnalysis(addr: XLNT.Address): Promise<[string[], number]> {
 export default class App extends React.Component<AppProps, AppState> {
   // eslint-disable-next-line no-unused-vars
   private inputListener: (this: HTMLElement) => Promise<void> = async function () {};
+
+  /* eslint-disable no-unused-vars */
+  private auditListener: (this: HTMLElement) => Promise<void> = async function () {
+    // sheet name
+    const wsname = await App.getWorksheetName();
+
+    const [fixes, time] = await audit();
+    if (fixes.size > 0) {
+      const td = {
+        total_μs: time,
+      };
+
+      const fixstrs = fixes.keys.map((k) => {
+        const addrv = XLNT.ExceLintVector.fromKey(k);
+        const addr = new XLNT.Address(wsname, addrv.y, addrv.x);
+        const fixstrs = fixes.get(k);
+        return addr.toA1Ref() + " -> " + fixstrs.join("; ");
+      });
+
+      console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
+
+      // update the UI state
+      // const canRestore = app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
+      const time_data = new Some(td);
+
+      console.log("audit time: " + time_data);
+      console.log("audit results:\n" + fixstrs);
+
+      // app.setState({
+      //   canRestore: canRestore,
+      //   time_data: time_data,
+      //   // debug: boolean,
+      //   // use_styles: boolean,
+      //   fixes: fixstrs,
+      //   // formula: string
+      // });
+
+      // console.log("updated react state");
+    }
+  };
+
+  public async auditListener3(_e: HTMLElement): Promise<void> {
+    // sheet name
+    const wsname = await App.getWorksheetName();
+
+    const [fixes, time] = await audit();
+    if (fixes.size > 0) {
+      const td = {
+        total_μs: time,
+      };
+
+      const fixstrs = fixes.keys.map((k) => {
+        const addrv = XLNT.ExceLintVector.fromKey(k);
+        const addr = new XLNT.Address(wsname, addrv.y, addrv.x);
+        const fixstrs = fixes.get(k);
+        return addr.toA1Ref() + " -> " + fixstrs.join("; ");
+      });
+
+      console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
+
+      // update the UI state
+      const canRestore = this.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
+      const time_data = new Some(td);
+
+      this.setState({
+        canRestore: canRestore,
+        time_data: time_data,
+        // debug: boolean,
+        // use_styles: boolean,
+        fixes: fixstrs,
+        // formula: string
+      });
+
+      console.log("updated react state");
+    }
+  }
 
   /**
    * Gets debug state.
@@ -392,7 +498,7 @@ export default class App extends React.Component<AppProps, AppState> {
           <input type="text" id="formulaInput" style={{ width: "90%" }} />
         </div>
         <div>
-          <button onClick={() => console.log("hey")}>Audit All</button>
+          <button onClick={this.auditListener}>Audit All</button>
         </div>
         <div>
           <ol>{fixes}</ol>
