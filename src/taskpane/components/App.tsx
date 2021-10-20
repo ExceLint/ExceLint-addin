@@ -480,7 +480,9 @@ export default class App extends React.Component<AppProps, AppState> {
       </button>
     ) : null;
 
-    const fixes = this.state.fixes.map((fix) => (
+    const nodupefixes = Array.from(new Set(this.state.fixes));
+
+    const fixes = nodupefixes.map((fix) => (
       // eslint-disable-next-line react/jsx-key
       <li>{fix}</li>
     ));
@@ -502,10 +504,10 @@ export default class App extends React.Component<AppProps, AppState> {
         </div>
         */}
 
-        <div>
+        {/* <div>
           <input type="checkbox" id="doSTYLES" checked={this.STYLE} onChange={() => this.toggleStyleState()} />
           <label htmlFor="doSTYLES">Use style discounts</label>
-        </div>
+        </div> */}
         {button}
         <div>
           <input type="text" id="formulaInput" style={{ width: "90%" }} />
