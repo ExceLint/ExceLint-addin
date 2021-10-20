@@ -162,7 +162,7 @@ export default class App extends React.Component<AppProps, AppState> {
   private inputListener: (this: HTMLElement) => Promise<void> = async function () {};
 
   /* eslint-disable no-unused-vars */
-  private auditListener: (this: HTMLElement) => Promise<void> = async function () {
+  public auditListener: (this: HTMLElement) => Promise<void> = async function () {
     // sheet name
     const wsname = await App.getWorksheetName();
 
@@ -234,6 +234,15 @@ export default class App extends React.Component<AppProps, AppState> {
       });
 
       console.log("updated react state");
+    } else {
+      this.setState({
+        canRestore: false,
+        time_data: None,
+        // debug: boolean,
+        // use_styles: boolean,
+        fixes: [],
+        // formula: string
+      });
     }
   }
 
@@ -427,12 +436,16 @@ export default class App extends React.Component<AppProps, AppState> {
         this.setState({
           changeat: activeSheet.name + "!" + args.address,
           formula: formula,
+          fixes: [],
+          time_data: None,
         });
       });
     } else {
       this.setState({
         changeat: args.address,
         formula: "",
+        fixes: [],
+        time_data: None,
       });
     }
   }
@@ -497,9 +510,9 @@ export default class App extends React.Component<AppProps, AppState> {
         <div>
           <input type="text" id="formulaInput" style={{ width: "90%" }} />
         </div>
-        <div>
+        {/* <div>
           <button onClick={this.auditListener}>Audit All</button>
-        </div>
+        </div> */}
         <div>
           <ol>{fixes}</ol>
         </div>
