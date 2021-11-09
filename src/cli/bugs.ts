@@ -71,12 +71,15 @@ export class AnnotationData {
   public hasBug(workbook: string, worksheet: string, addrv: ExceLintVector): boolean {
     if (workbook in this._data) {
       if (worksheet in this._data[workbook]) {
-        const bugs = this._data[workbook][worksheet]["bugs"];
-        // compare
+        const bugs: [number, number, number][] = this._data[workbook][worksheet]["bugs"];
+        // if the annotations file has no bugs, move on
+        if (bugs.length == 0) return false;
+
+        // otherwise, try to find the flagged cell in our list of bugs
         for (const bug of bugs) {
           const [x, y, c] = bug;
           if (addrv.x === x && addrv.y === y && addrv.c == c) {
-            // bail the moment we find one
+            // bail the moment we find a match
             return true;
           }
         }

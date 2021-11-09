@@ -145,7 +145,6 @@ for (const parms of args.parameters) {
 
 if (!args.suppressOutput && !args.elapsedTime) {
   const csv = ExcelJSON.CSV(outputs, theBugs);
-  console.log(csv);
   writeFile(OUTFILE, csv, (err) => {
     if (err) throw err;
     console.log("CSV written to '" + OUTFILE + "'");
