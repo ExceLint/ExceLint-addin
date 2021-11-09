@@ -80,13 +80,12 @@ export module Analysis {
   }
 
   /**
-   * Run analysis.  The given address must correspond to a single cell.
-   *
-   * @param addr An Excel address.
-   * @param formulas All the formulas in the region of interest.
-   * @returns An array of proposed fixes.
+   * Greedily produces contiguous rectangular decomposition of a
+   * spreadsheet into regions sharing a fingerprint.
+   * @param fps A map from ExceLint address vectors to fingerprints.
+   * @returns A dictionary indexed by fingerprint value.
    */
-  export function analyzeLess(addr: XLNT.Address, fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
+  export function findGroups(fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.Dictionary<XLNT.Rectangle[]> {
     // formula groups
     let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
@@ -96,6 +95,19 @@ export module Analysis {
     // merge these new rectangles with the old ones
     rects = mergeRectangleDictionaries(stepRects, rects);
     rects = mergeRectangles(rects);
+
+    return rects;
+  }
+
+  /**
+   * Run analysis.  The given address must correspond to a single cell.
+   *
+   * @param addr An Excel address.
+   * @param formulas All the formulas in the region of interest.
+   * @returns An array of proposed fixes.
+   */
+  export function analyzeLess(addr: XLNT.Address, fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
+    const rects = findGroups(fps);
 
     // generate proposed fixes for all the new rectanles
     const pfs = generate_proposed_fixes(rects);

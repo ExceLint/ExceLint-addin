@@ -1,5 +1,5 @@
 import { ExceLintVector, Rectangle, Range, Address, Dictionary } from "./ExceLintTypes";
-import { Option, None, Some } from "./option";
+import { Option, None, Some, flatMap } from "./option";
 
 export class FatCross {
   public readonly up: Option<Range>;
@@ -41,6 +41,20 @@ export class FatCross {
       const addr = new Address(sheetName, keyVect.y, keyVect.x);
       return this.contains(addr);
     });
+  }
+
+  /**
+   * Takes a dictionary containing rectangles, indexed by fingerprint, and returns
+   * a dictionary, indexed by fingerprint, that contains only the rectangles contained
+   * withing the fat cross.
+   * @param rects
+   */
+  public filterRectanglesByFingerprint(rects: Dictionary<Rectangle[]>): Dictionary<Rectangle[]> {
+    // for every rectangle in the fat cross, intersect it with
+    // the same rectangle in the dictionary
+    const fatrectopts = [this.up, this.left, this.down, this.right];
+    const fatrects = flatMap<Option<Range>, Rectangle>((ro) => ro, fatrectopts);
+    // ack-- rects not ranges
   }
 }
 

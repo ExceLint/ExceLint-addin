@@ -545,6 +545,35 @@ export class Rectangle implements IComparable<Rectangle> {
   public is(v: ExceLintVector): boolean {
     return this.contains(v) && this.upperleft.x === this.bottomright.x && this.upperleft.y === this.bottomright.y;
   }
+
+  /**
+   * Compute the set intersection of two rectangles.
+   * @param r Another rectangle
+   */
+  public intersect(r: Rectangle): Option<Rectangle> {
+    const a = new Set(this.expand());
+    const b = new Set(r.expand());
+    const intersection = Array.from(new Set([...a].filter((x) => b.has(x))));
+    if (intersection.length == 0) {
+      return None;
+    } else {
+      let ul_x = intersection[0].x;
+      let ul_y = intersection[0].y;
+      let br_x = intersection[0].x;
+      let br_y = intersection[0].y;
+
+      for (const cell of intersection) {
+        if (cell.x < ul_x) ul_x = cell.x;
+        if (cell.y < ul_y) ul_y = cell.y;
+        if (cell.x > br_x) br_x = cell.x;
+        if (cell.y < br_y) br_y = cell.y;
+      }
+
+      const ul = new ExceLintVector(ul_x, ul_y, 0);
+      const br = new ExceLintVector(br_x, br_y, 0);
+      return new Some(new Rectangle(ul, br));
+    }
+  }
 }
 
 export class ProposedFix implements IComparable<ProposedFix> {
