@@ -47,8 +47,10 @@ export class WorksheetOutput {
     // get the used range
     const ura = this.usedRangeAddress;
 
-    const expr = Paraformula.parse("=" + ura);
-
+    // paraformula has trouble with spaces in worksheet names, apparently;
+    // just remove the worksheet name since we don't use it anyway
+    const bits = ura.split("!");
+    const expr = Paraformula.parse("=" + bits[1]);
     switch (expr.type) {
       case "ReferenceRange": {
         const ast_range = expr.rng;
@@ -64,58 +66,9 @@ export class WorksheetOutput {
         this.usedRange = rng;
         break;
       }
-      default: {
-        // use a shitty fallback for now
-        const bits = ura.split("!");
-        const expr = Paraformula.parse("=" + bits[1]);
-        switch (expr.type) {
-          case "ReferenceRange": {
-            const ast_range = expr.rng;
-            const regions = ast_range.regions;
-            if (regions.length > 1) {
-              throw new Error("Discontiguous ranges are not supported.");
-            }
-            const start = regions[0][0];
-            const end = regions[0][1];
-            const a_start = new Address(start.worksheetName, start.row, start.column);
-            const a_end = new Address(end.worksheetName, end.row, end.column);
-            const rng = new Range(a_start, a_end);
-            this.usedRange = rng;
-            break;
-          }
-          default:
-            throw new Error("Unable to parse range: " + ura);
-        }
-      }
+      default:
+        throw new Error("Unable to parse range: " + ura);
     }
-
-    // const input = new CU.CharStream(ura);
-    // const it = RangeParser.rangeAny(input);
-    // const elem = it.next();
-    // if (elem.done) {
-    //   const output = elem.value;
-    //   switch (output.tag) {
-    //     case "success": {
-    //       // parse used range and stick it into the usedRange field
-    //       const ast_range = output.result;
-    //       const regions = ast_range.regions;
-    //       if (regions.length > 1) {
-    //         throw new Error("Discontiguous ranges are not supported.");
-    //       }
-    //       const start = regions[0][0];
-    //       const end = regions[0][1];
-    //       const a_start = new Address(start.worksheetName, start.row, start.column);
-    //       const a_end = new Address(end.worksheetName, end.row, end.column);
-    //       const rng = new Range(a_start, a_end);
-    //       this.usedRange = rng;
-    //       break;
-    //     }
-    //     case "failure":
-    //       throw new Error("Unable to parse input: " + ura + "\n" + output.error_msg);
-    //   }
-    // } else {
-    //   throw new Error("This should never happen.");
-    // }
   }
 
   /**

@@ -86,17 +86,9 @@ export module Analysis {
    * @param formulas All the formulas in the region of interest.
    * @returns An array of proposed fixes.
    */
-  export function analyzeLess(addr: XLNT.Address, formulas: XLNT.Dictionary<string>): XLNT.ProposedFix[] {
-    // console.log(visualizeGrid(formulas, addr.worksheet));
-
+  export function analyzeLess(addr: XLNT.Address, fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
     // formula groups
     let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
-
-    // get every reference vector set for every formula, indexed by address vector
-    const fRefs = relativeFormulaRefs(formulas);
-
-    // compute fingerprints for reference vector sets, indexed by address vector
-    const fps = fingerprints(fRefs);
 
     // decompose into rectangles, indexed by fingerprint
     const stepRects = identify_groups(fps);

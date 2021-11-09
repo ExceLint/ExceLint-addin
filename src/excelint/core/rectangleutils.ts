@@ -31,11 +31,11 @@ export class FatCross {
   /**
    * Takes a formula dictionary and returns one that contains only the
    * formulas found in the fat cross.
-   * @param fs A formula Dictionary, indexed by ExceLint address vector.
+   * @param fs A Dictionary, indexed by ExceLint address vector; specific value type does not matter
    * @param sheetName The name of the worksheet
    * @returns
    */
-  public filterFormulas(fs: Dictionary<string>, sheetName: string): Dictionary<string> {
+  public filterFormulas<T>(fs: Dictionary<T>, sheetName: string): Dictionary<T> {
     return fs.keyFilter((key) => {
       const keyVect = ExceLintVector.fromKey(key);
       const addr = new Address(sheetName, keyVect.y, keyVect.x);

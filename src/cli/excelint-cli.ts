@@ -92,6 +92,12 @@ for (const parms of args.parameters) {
         // get used range
         const usedRange = sheet.usedRange;
 
+        // get every reference vector set for every formula, indexed by address vector
+        const fRefs = Analysis.relativeFormulaRefs(formulas);
+
+        // compute fingerprints for reference vector sets, indexed by address vector
+        const fps = Analysis.fingerprints(fRefs);
+
         // FOREACH CELL
         for (const key of formulas.keys) {
           const t = new Timer("cell analysis");
@@ -101,12 +107,12 @@ for (const parms of args.parameters) {
 
             // get fat cross for address
             const fc = RectangleUtils.findFatCross(usedRange, addr);
-            const formulas2 = fc.filterFormulas(formulas, sheet.sheetName);
+            const fps2 = fc.filterFormulas(fps, sheet.sheetName);
 
             process.stderr.write("    analyzing " + addr.toA1Ref() + "... ");
 
             // get proposed fixes
-            const pfs = Analysis.analyze(addr, formulas2);
+            const pfs = Analysis.analyzeLess(addr, fps2);
 
             // save fixes in dictionary
             if (pfs.length > 0) pfsd.put(key, pfs);
