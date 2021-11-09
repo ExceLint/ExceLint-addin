@@ -292,6 +292,20 @@ export class Range implements IComparable<Range> {
     return this.start.toA1Ref() + ":" + this.end.toA1Ref();
   }
   /**
+   * Returns true if the given address is contained within
+   * this range.
+   */
+  public containsAddress(a: Address): boolean {
+    const ul_x = this.start.column;
+    const ul_y = this.start.row;
+    const br_x = this.end.column;
+    const br_y = this.end.row;
+    const a_x = a.column;
+    const a_y = a.row;
+    return a_x >= ul_x && a_x <= br_x && a_y >= ul_y && a_y <= br_y;
+  }
+
+  /**
    * Returns the 1-based upper left column coordinate.
    */
   public get upperLeftColumn(): number {

@@ -1,5 +1,5 @@
-import { ExceLintVector, Rectangle, Range, Address } from './ExceLintTypes';
-import { Option, None, Some } from './option';
+import { ExceLintVector, Rectangle, Range, Address, Dictionary } from "./ExceLintTypes";
+import { Option, None, Some } from "./option";
 
 export class FatCross {
   public readonly up: Option<Range>;
@@ -12,6 +12,35 @@ export class FatCross {
     this.down = down;
     this.left = left;
     this.right = right;
+  }
+
+  /**
+   * Returns true if the fat cross contains the given address
+   * @param addr an address
+   * @returns
+   */
+  public contains(addr: Address): boolean {
+    return (
+      (this.up.hasValue && this.up.value.containsAddress(addr)) ||
+      (this.left.hasValue && this.left.value.containsAddress(addr)) ||
+      (this.down.hasValue && this.down.value.containsAddress(addr)) ||
+      (this.right.hasValue && this.right.value.containsAddress(addr))
+    );
+  }
+
+  /**
+   * Takes a formula dictionary and returns one that contains only the
+   * formulas found in the fat cross.
+   * @param fs A formula Dictionary, indexed by ExceLint address vector.
+   * @param sheetName The name of the worksheet
+   * @returns
+   */
+  public filterFormulas(fs: Dictionary<string>, sheetName: string): Dictionary<string> {
+    return fs.keyFilter((key) => {
+      const keyVect = ExceLintVector.fromKey(key);
+      const addr = new Address(sheetName, keyVect.y, keyVect.x);
+      return this.contains(addr);
+    });
   }
 }
 
@@ -111,7 +140,7 @@ export class RectangleUtils {
    */
   public static truncateRangeInRange(rngContainer: Range, rngTarget: Range): Option<Range> {
     if (rngContainer.addressStart.worksheet !== rngTarget.addressStart.worksheet) {
-      throw new Error('Both ranges must be on the same worksheet.');
+      throw new Error("Both ranges must be on the same worksheet.");
     }
 
     // shortcuts

@@ -4,12 +4,21 @@ import path = require("path");
 import * as XLSX from "xlsx";
 import * as sha224 from "crypto-js/sha224";
 import * as base64 from "crypto-js/enc-base64";
-import { Spreadsheet, ProposedFix, ExceLintVector, Dictionary, expand, Address } from "../excelint/core/ExceLintTypes";
+import {
+  Address,
+  Range,
+  Spreadsheet,
+  ProposedFix,
+  ExceLintVector,
+  Dictionary,
+  expand,
+} from "../excelint/core/ExceLintTypes";
 import { Some, None, flatMap } from "../excelint/core/option";
 import { Config } from "../excelint/core/config";
 import { flatten } from "./polyfill";
 import { Analysis } from "../excelint/core/analysis";
 import { AnnotationData } from "./bugs";
+import { Paraformula } from "../excelint/paraformula/src/paraformula";
 
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
@@ -22,6 +31,7 @@ export enum Selections {
 
 export class WorksheetOutput {
   public readonly formulaDict: Dictionary<string>; // indexed by excelintvector
+  public readonly usedRange: Range;
 
   constructor(
     // Spreadsheet is just a row-major string[][]
@@ -33,6 +43,79 @@ export class WorksheetOutput {
     public readonly styles: Spreadsheet
   ) {
     this.formulaDict = this.exportFormulaDict();
+
+    // get the used range
+    const ura = this.usedRangeAddress;
+
+    const expr = Paraformula.parse("=" + ura);
+
+    switch (expr.type) {
+      case "ReferenceRange": {
+        const ast_range = expr.rng;
+        const regions = ast_range.regions;
+        if (regions.length > 1) {
+          throw new Error("Discontiguous ranges are not supported.");
+        }
+        const start = regions[0][0];
+        const end = regions[0][1];
+        const a_start = new Address(start.worksheetName, start.row, start.column);
+        const a_end = new Address(end.worksheetName, end.row, end.column);
+        const rng = new Range(a_start, a_end);
+        this.usedRange = rng;
+        break;
+      }
+      default: {
+        // use a shitty fallback for now
+        const bits = ura.split("!");
+        const expr = Paraformula.parse("=" + bits[1]);
+        switch (expr.type) {
+          case "ReferenceRange": {
+            const ast_range = expr.rng;
+            const regions = ast_range.regions;
+            if (regions.length > 1) {
+              throw new Error("Discontiguous ranges are not supported.");
+            }
+            const start = regions[0][0];
+            const end = regions[0][1];
+            const a_start = new Address(start.worksheetName, start.row, start.column);
+            const a_end = new Address(end.worksheetName, end.row, end.column);
+            const rng = new Range(a_start, a_end);
+            this.usedRange = rng;
+            break;
+          }
+          default:
+            throw new Error("Unable to parse range: " + ura);
+        }
+      }
+    }
+
+    // const input = new CU.CharStream(ura);
+    // const it = RangeParser.rangeAny(input);
+    // const elem = it.next();
+    // if (elem.done) {
+    //   const output = elem.value;
+    //   switch (output.tag) {
+    //     case "success": {
+    //       // parse used range and stick it into the usedRange field
+    //       const ast_range = output.result;
+    //       const regions = ast_range.regions;
+    //       if (regions.length > 1) {
+    //         throw new Error("Discontiguous ranges are not supported.");
+    //       }
+    //       const start = regions[0][0];
+    //       const end = regions[0][1];
+    //       const a_start = new Address(start.worksheetName, start.row, start.column);
+    //       const a_end = new Address(end.worksheetName, end.row, end.column);
+    //       const rng = new Range(a_start, a_end);
+    //       this.usedRange = rng;
+    //       break;
+    //     }
+    //     case "failure":
+    //       throw new Error("Unable to parse input: " + ura + "\n" + output.error_msg);
+    //   }
+    // } else {
+    //   throw new Error("This should never happen.");
+    // }
   }
 
   /**

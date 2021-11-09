@@ -80,6 +80,47 @@ export module Analysis {
   }
 
   /**
+   * Run analysis.  The given address must correspond to a single cell.
+   *
+   * @param addr An Excel address.
+   * @param formulas All the formulas in the region of interest.
+   * @returns An array of proposed fixes.
+   */
+  export function analyzeLess(addr: XLNT.Address, formulas: XLNT.Dictionary<string>): XLNT.ProposedFix[] {
+    // console.log(visualizeGrid(formulas, addr.worksheet));
+
+    // formula groups
+    let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
+
+    // get every reference vector set for every formula, indexed by address vector
+    const fRefs = relativeFormulaRefs(formulas);
+
+    // compute fingerprints for reference vector sets, indexed by address vector
+    const fps = fingerprints(fRefs);
+
+    // decompose into rectangles, indexed by fingerprint
+    const stepRects = identify_groups(fps);
+
+    // merge these new rectangles with the old ones
+    rects = mergeRectangleDictionaries(stepRects, rects);
+    rects = mergeRectangles(rects);
+
+    // generate proposed fixes for all the new rectanles
+    const pfs = generate_proposed_fixes(rects);
+
+    // remove duplicate fixes
+    const pfs2 = filterDuplicateFixes(pfs);
+
+    // filter fixes by target address
+    const pfs3 = pfs2.filter((pf) => pf.includesCellAt(addr));
+
+    // filter fixes by user threshold
+    const pfs4 = filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
+
+    return pfs4;
+  }
+
+  /**
    * Filter the given set of fixes by the given entropy threshold.
    * @param fixes An array of fixes.
    * @param thresh An entropy score threshold.

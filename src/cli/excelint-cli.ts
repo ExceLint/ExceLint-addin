@@ -13,6 +13,7 @@ import { Config } from "../excelint/core/config";
 import { CLIConfig, process_arguments } from "./args";
 import { AnnotationData } from "./bugs";
 import { Timer } from "../excelint/core/timer";
+import { RectangleUtils } from "../excelint/core/rectangleutils";
 
 declare var console: Console;
 declare var process: NodeJS.Process;
@@ -88,15 +89,24 @@ for (const parms of args.parameters) {
         // don't bother if there are no formulas
         if (formulas.size === 0) continue;
 
-        // run the check for every formula
+        // get used range
+        const usedRange = sheet.usedRange;
+
+        // FOREACH CELL
         for (const key of formulas.keys) {
+          const t = new Timer("cell analysis");
           const keyVect = ExceLintVector.fromKey(key);
           try {
             const addr = new Address(sheet.sheetName, keyVect.y, keyVect.x);
-            console.error("    analyzing " + addr.toA1Ref() + "...");
+
+            // get fat cross for address
+            const fc = RectangleUtils.findFatCross(usedRange, addr);
+            const formulas2 = fc.filterFormulas(formulas, sheet.sheetName);
+
+            process.stderr.write("    analyzing " + addr.toA1Ref() + "... ");
 
             // get proposed fixes
-            const pfs = Analysis.analyze(addr, formulas);
+            const pfs = Analysis.analyze(addr, formulas2);
 
             // save fixes in dictionary
             if (pfs.length > 0) pfsd.put(key, pfs);
@@ -104,6 +114,8 @@ for (const parms of args.parameters) {
             console.error(e);
             // do nothing for now
           }
+          const elapsed_us = t.elapsedTime();
+          process.stderr.write(elapsed_us + " μs\n");
         }
 
         // save sheet analysis to workbook object
