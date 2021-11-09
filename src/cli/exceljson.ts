@@ -243,20 +243,32 @@ export class ExcelJSON {
   public static CSV(wbas: WorkbookAnalysis[], annotations: AnnotationData): string {
     const rows: CSVRow[] = [];
 
+    // prepend header
+    const header = new CSVRow("workbook", "worksheet", "vector", "formula", "gt_buggy", "suggested_fixes");
+    rows.push(header);
+
     // for each workbook
     for (const wba of wbas) {
       // for each worksheet
       for (const wsa of wba.sheets) {
         // for each flagged
         for (const flag of wsa.flags) {
+          const workbook = wba.workbook.workbookName;
+
+          // convert ExceLintVector to A1 address
+          const addr = new Address(workbook, flag.y, flag.x).toA1Ref();
+
+          // fold suggested fixes into a single string
+          const suggs = wsa.suggestionsFor(flag).reduce((acc, sugg) => acc + ";" + sugg, "");
+
           rows.push(
             new CSVRow(
-              wba.workbook.workbookName,
+              workbook,
               wsa.worksheet.sheetName,
-              flag,
+              addr,
               wsa.formulaForSheet(flag),
-              annotations.hasBug(wba.workbook.workbookName, wsa.worksheet.sheetName, flag),
-              wsa.suggestionsFor(flag)
+              annotations.hasBug(wba.workbook.workbookName, wsa.worksheet.sheetName, flag).toString(),
+              suggs
             )
           );
         }
@@ -273,10 +285,10 @@ class CSVRow {
     /* eslint-disable no-unused-vars */
     public readonly wb: string,
     public readonly ws: string,
-    public readonly flag_addr: ExceLintVector,
+    public readonly flag_addr: string,
     public readonly formula: string,
-    public readonly is_true_positive: boolean,
-    public readonly suggestions: string[]
+    public readonly is_true_positive: string,
+    public readonly suggestions: string
   ) {}
 
   private static q(s: string): string {
@@ -288,15 +300,13 @@ class CSVRow {
   }
 
   public toString(): string {
-    const suggs = this.suggestions.reduce((acc, sugg) => acc + ";" + sugg, "");
-    const addr = new Address(this.ws, this.flag_addr.y, this.flag_addr.x);
     return CSVRow.a([
       CSVRow.q(this.wb),
       CSVRow.q(this.ws),
-      CSVRow.q(addr.toA1Ref()),
+      CSVRow.q(this.flag_addr),
       CSVRow.q(this.formula),
       CSVRow.q(this.is_true_positive.toString()),
-      CSVRow.q(suggs),
+      CSVRow.q(this.suggestions),
     ]);
   }
 }

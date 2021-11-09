@@ -14,11 +14,13 @@ import { CLIConfig, process_arguments } from "./args";
 import { AnnotationData } from "./bugs";
 import { Timer } from "../excelint/core/timer";
 import { RectangleUtils } from "../excelint/core/rectangleutils";
+import { writeFile } from "fs";
 
 declare var console: Console;
 declare var process: NodeJS.Process;
 
 const BUG_DATA_PATH = "benchmarks/annotations-processed.json";
+const OUTFILE = "results.csv";
 
 //
 // Process arguments.
@@ -142,8 +144,12 @@ for (const parms of args.parameters) {
 }
 
 if (!args.suppressOutput && !args.elapsedTime) {
-  const foo = ExcelJSON.CSV(outputs, theBugs);
-  console.log(foo);
+  const csv = ExcelJSON.CSV(outputs, theBugs);
+  console.log(csv);
+  writeFile(OUTFILE, csv, (err) => {
+    if (err) throw err;
+    console.log("CSV written to '" + OUTFILE + "'");
+  });
   // console.log(JSON.stringify(outputs, null, "\t"));
 }
 
