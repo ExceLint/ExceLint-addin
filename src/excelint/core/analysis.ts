@@ -51,10 +51,10 @@ export module Analysis {
     const pfs = generate_proposed_fixes(rects);
 
     // remove duplicate fixes
-    const pfs2 = filterDuplicateFixes(pfs);
+    // const pfs2 = filterDuplicateFixes(pfs);
 
     // filter fixes by target address
-    const pfs3 = pfs2.filter((pf) => pf.includesCellAt(addr));
+    const pfs3 = pfs.filter((pf) => pf.includesCellAt(addr));
 
     // filter fixes by user threshold
     const pfs4 = filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
@@ -112,16 +112,13 @@ export module Analysis {
     // generate proposed fixes for all the new rectanles
     const pfs = generate_proposed_fixes(rects);
 
-    // remove duplicate fixes
-    const pfs2 = filterDuplicateFixes(pfs);
-
     // filter fixes by target address
-    const pfs3 = pfs2.filter((pf) => pf.includesCellAt(addr));
+    const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));
 
     // filter fixes by user threshold
-    const pfs4 = filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
+    const pfs3 = filterFixesByUserThreshold(pfs2, Config.reportingThreshold);
 
-    return pfs4;
+    return pfs3;
   }
 
   /**
@@ -681,24 +678,27 @@ export module Analysis {
     return both;
   }
 
-  /**
-   * Remove all duplicate fixes.
-   * @param proposed_fixes An array of proposed fixes.
-   * @returns An array of proposed fixes with all dupes removed.
-   */
-  export function filterDuplicateFixes(proposed_fixes: XLNT.ProposedFix[]): XLNT.ProposedFix[] {
-    const keep = new XLNT.Dictionary<XLNT.ProposedFix>();
-    for (const pf of proposed_fixes) {
-      const hash = pf.rect1.hash() + pf.rect2.hash();
-      if (!keep.contains(hash)) {
-        keep.put(hash, pf);
-      }
-    }
-    return keep.values;
-  }
+  // /**
+  //  * Remove all duplicate fixes.
+  //  * @param proposed_fixes An array of proposed fixes.
+  //  * @returns An array of proposed fixes with all dupes removed.
+  //  */
+  // export function filterDuplicateFixes(proposed_fixes: XLNT.ProposedFix[]): XLNT.ProposedFix[] {
+  //   const keep = new XLNT.Dictionary<XLNT.ProposedFix>();
+  //   for (const pf of proposed_fixes) {
+  //     const hash = pf.rect1.hash() + pf.rect2.hash();
+  //     if (!keep.contains(hash)) {
+  //       keep.put(hash, pf);
+  //     }
+  //   }
+  //   return keep.values;
+  // }
 
   /**
    * Given a formula address, synthesize a fix for each of the given proposed fixes.
+   * Fixes are ranked by the amount of duplicate evidence given, and duplicates are
+   * removed.
+   *
    * @param addr The address to apply the fix.
    * @param fixes An array of proposed fixes.
    * @param formulas A dictionary of formulas, indexed by ExceLintVector address.
@@ -709,7 +709,11 @@ export module Analysis {
     formulas: XLNT.Dictionary<string>
   ): string[] {
     // fix strings to return
-    const fix_strings: string[] = [];
+    // const fix_strings: string[] = [];
+
+    // store a map from fix string to count of times
+    // the same string has been generated
+    const fix_strings_ranks = new XLNT.Dictionary<number>();
 
     // convert addr to ExceLintVector address
     const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
@@ -740,10 +744,29 @@ export module Analysis {
       const ast2 = Analysis.adjustFormulaOrigin(v, faddr, ast);
 
       // generate a new formula string
-      fix_strings.push(ast2.toFormula());
+      const fixstr = ast2.toFormula();
+
+      // count string
+      if (fix_strings_ranks.contains(fixstr)) {
+        // add one to count
+        fix_strings_ranks.put(fixstr, fix_strings_ranks.get(fixstr) + 1);
+      } else {
+        // never seen before-- add to dict
+        fix_strings_ranks.put(fixstr, 1);
+      }
     }
 
-    return fix_strings;
+    // order dict by rank and return in that order
+    const fix_strings_flat: [string, number][] = [];
+    for (const key of fix_strings_ranks.keys) {
+      fix_strings_flat.push([key, fix_strings_ranks.get(key)]);
+    }
+    fix_strings_flat.sort(([, aval], [, bval]) => aval - bval);
+
+    // remove count
+    const just_strs = fix_strings_flat.map(([str]) => str);
+
+    return just_strs;
   }
 
   /**
