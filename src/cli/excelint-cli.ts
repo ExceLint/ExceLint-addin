@@ -19,7 +19,6 @@ import { writeFile } from "fs";
 declare var console: Console;
 declare var process: NodeJS.Process;
 
-const BUG_DATA_PATH = "benchmarks/annotations-processed.json";
 const OUTFILE = "results.csv";
 
 //
@@ -32,7 +31,7 @@ const args: CLIConfig = process_arguments();
 //
 
 // open annotations file
-const theBugs = new AnnotationData(BUG_DATA_PATH);
+const theBugs = new AnnotationData(args.annotationsFile);
 
 // get base directory
 const base = args.directory ? args.directory + "/" : "";

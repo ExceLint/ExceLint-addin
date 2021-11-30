@@ -23,6 +23,7 @@ export class CLIConfig {
   reportingThreshold: number = this.defaultReportingThreshold;
   maxEntropy: number = this.defaultMaxEntropy;
   allFiles: string[] = [];
+  annotationsFile: string;
 
   public get directory(): string {
     return this.args.directory;
@@ -66,6 +67,9 @@ export function process_arguments(): CLIConfig {
     .command("input", "Input from FILENAME (.xls / .xlsx file).")
     .alias("i", "input")
     .nargs("input", 1)
+    .command("annotations", "Annotation data FILENAME (.json file).")
+    .alias("a", "annotations")
+    .nargs("annotations", 1)
     .command("directory", "Read from a directory of files (all ending in .xls / .xlsx).")
     .alias("d", "directory")
     .command(
@@ -117,6 +121,15 @@ export function process_arguments(): CLIConfig {
   if (args.input) {
     fname = args.input as string;
     conf.allFiles = [fname];
+  }
+
+  // argument:
+  // annotations = filename
+  if (args.annotations) {
+    conf.annotationsFile = args.annotations as string;
+  } else {
+    // default
+    conf.annotationsFile = "benchmarks/annotations-processed.json";
   }
 
   //

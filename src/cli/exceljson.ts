@@ -83,7 +83,7 @@ export class WorksheetOutput {
         const formula = this.formulas[row][col];
         // we don't care about non-formulas
         if (formula.charAt(0) != "=") continue;
-        const addr = new ExceLintVector(col, row, 0);
+        const addr = new ExceLintVector(col + 1, row + 1, 0);
         d.put(addr.asKey(), formula);
       }
     }
