@@ -244,7 +244,7 @@ export class ExcelJSON {
     const rows: CSVRow[] = [];
 
     // prepend header
-    const header = new CSVRow("workbook", "worksheet", "vector", "formula", "gt_buggy", "suggested_fixes");
+    const header = new CSVRow("workbook", "worksheet", "vector", "formula", "gt_buggy", "suggested_fixes", "scores");
     rows.push(header);
 
     // for each workbook
@@ -259,7 +259,13 @@ export class ExcelJSON {
           const addr = new Address(workbook, flag.y, flag.x).toA1Ref();
 
           // fold suggested fixes into a single string
-          const suggs = wsa.suggestionsFor(flag).reduce((acc, sugg) => acc + ";" + sugg, "");
+          const suggs = wsa.suggestionsFor(flag).join("; ");
+
+          // fold scores into a single string
+          const scores = wsa
+            .fixesFor(flag)
+            .map((fix) => fix.score.toFixed(3).toString())
+            .join("; ");
 
           rows.push(
             new CSVRow(
@@ -268,7 +274,8 @@ export class ExcelJSON {
               addr,
               wsa.formulaForSheet(flag),
               annotations.hasBug(wba.workbook.workbookName, wsa.worksheet.sheetName, flag).toString(),
-              suggs
+              suggs,
+              scores
             )
           );
         }
@@ -288,7 +295,8 @@ class CSVRow {
     public readonly flag_addr: string,
     public readonly formula: string,
     public readonly is_true_positive: string,
-    public readonly suggestions: string
+    public readonly suggestions: string,
+    public readonly scores: string
   ) {}
 
   private static q(s: string): string {
@@ -307,6 +315,7 @@ class CSVRow {
       CSVRow.q(this.formula),
       CSVRow.q(this.is_true_positive.toString()),
       CSVRow.q(this.suggestions),
+      CSVRow.q(this.scores),
     ]);
   }
 }

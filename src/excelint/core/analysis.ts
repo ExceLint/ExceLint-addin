@@ -701,7 +701,7 @@ export module Analysis {
    * @param fix A proposed fix.
    * @returns True iff addr is at a boundary.
    */
-  export function isExtremal(addr: XLNT.Address, fix: XLNT.ProposedFix) {
+  export function atDiscontinuity(addr: XLNT.Address, fix: XLNT.ProposedFix) {
     // convert addr to ExceLintVector address
     const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
 
@@ -778,7 +778,7 @@ export module Analysis {
       }
 
       // if the address of the fix is not at a fix boundary, skip
-      if (!isExtremal(addr, fix)) {
+      if (!atDiscontinuity(addr, fix)) {
         continue;
       }
 
