@@ -695,9 +695,35 @@ export module Analysis {
   // }
 
   /**
+   * Returns true if the cell flagged for fixing is at a fix
+   * boundary.
+   * @param addr Cell to fix.
+   * @param fix A proposed fix.
+   * @returns True iff addr is at a boundary.
+   */
+  export function isExtremal(addr: XLNT.Address, fix: XLNT.ProposedFix) {
+    // convert addr to ExceLintVector address
+    const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
+
+    // fix \in rect1, adjacent cell \in rect2 or
+    // fix \in rect2, adjacent cell \in rect1
+    return (
+      (fix.rect1.contains(v) && fix.rect2.contains(v.up)) ||
+      (fix.rect1.contains(v) && fix.rect2.contains(v.left)) ||
+      (fix.rect1.contains(v) && fix.rect2.contains(v.down)) ||
+      (fix.rect1.contains(v) && fix.rect2.contains(v.right)) ||
+      (fix.rect2.contains(v) && fix.rect1.contains(v.up)) ||
+      (fix.rect2.contains(v) && fix.rect1.contains(v.left)) ||
+      (fix.rect2.contains(v) && fix.rect1.contains(v.down)) ||
+      (fix.rect2.contains(v) && fix.rect1.contains(v.right))
+    );
+  }
+
+  /**
    * Given a formula address, synthesize a fix for each of the given proposed fixes.
    * Fixes are ranked by the amount of duplicate evidence given, and duplicates are
-   * removed.
+   * removed.  Also, if the synthesized formula is the same as the formula itself,
+   * the fix is ignored.
    *
    * @param addr The address to apply the fix.
    * @param fixes An array of proposed fixes.
@@ -745,6 +771,16 @@ export module Analysis {
 
       // generate a new formula string
       const fixstr = ast2.toFormula();
+
+      // if the formula is the same as the one we already have, skip
+      if (formulas.contains(addr.asKey()) && formulas.get(addr.asKey()) === fixstr) {
+        continue;
+      }
+
+      // if the address of the fix is not at a fix boundary, skip
+      if (!isExtremal(addr, fix)) {
+        continue;
+      }
 
       // count string
       if (fix_strings_ranks.contains(fixstr)) {

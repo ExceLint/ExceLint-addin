@@ -116,7 +116,9 @@ for (const parms of args.parameters) {
             const pfs = Analysis.analyzeLess(addr, fps2);
 
             // save fixes in dictionary
-            if (pfs.length > 0) pfsd.put(key, pfs);
+            if (pfs.length > 0) {
+              pfsd.put(key, pfs);
+            }
           } catch (e) {
             console.error(e);
             // do nothing for now
