@@ -734,9 +734,6 @@ export module Analysis {
     fixes: XLNT.ProposedFix[],
     formulas: XLNT.Dictionary<string>
   ): string[] {
-    // fix strings to return
-    // const fix_strings: string[] = [];
-
     // store a map from fix string to count of times
     // the same string has been generated
     const fix_strings_ranks = new XLNT.Dictionary<number>();
@@ -763,7 +760,8 @@ export module Analysis {
       try {
         ast = Paraformula.parse(f);
       } catch (e) {
-        throw new Error(`Unable to parse formula at address ${faddr}:\n${e}`);
+        console.warn(`Unable to parse formula '${f}' at address ${faddr}:\n${e} in worksheet ${addr.worksheet}`);
+        continue;
       }
 
       // adjust the formula's AST to reflect a new origin

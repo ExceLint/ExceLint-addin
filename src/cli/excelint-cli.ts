@@ -14,7 +14,6 @@ import { CLIConfig, process_arguments } from "./args";
 import { AnnotationData } from "./bugs";
 import { Timer } from "../excelint/core/timer";
 import { RectangleUtils } from "../excelint/core/rectangleutils";
-import { writeFile } from "fs";
 
 declare var console: Console;
 declare var process: NodeJS.Process;
@@ -36,8 +35,8 @@ const theBugs = new AnnotationData(args.annotationsFile);
 // get base directory
 const base = args.directory ? args.directory + "/" : "";
 
-// for each parameter setting, run analyses on all files
-const outputs: WorkbookAnalysis[] = [];
+// first run?
+let firstRun = true;
 
 // an array of times indexed by benchmark name
 const times = new Dictionary<number[]>();
@@ -131,26 +130,20 @@ for (const parms of args.parameters) {
         const sheetOutput = new WorksheetAnalysis(sheet, pfsd);
         output.addSheet(sheetOutput);
 
-        // save workbook analysis to global array
-        outputs.push(output);
-
-        // DEBUG: gimme results as you go!
-        // ExcelJSON.CSV([output], theBugs);
+        // convert workbook analysis to CSV rows and
+        // write out as we go
+        if (!args.suppressOutput && !args.elapsedTime) {
+          const rows = ExcelJSON.CSV([output], theBugs);
+          const csvstr = ExcelJSON.CSVtoString(rows);
+          ExcelJSON.writeFile(OUTFILE, csvstr, !firstRun);
+          if (firstRun) firstRun = false;
+        }
       }
 
       const elapsed_us = t.elapsedTime();
       time_arr.push(elapsed_us);
     }
   }
-}
-
-if (!args.suppressOutput && !args.elapsedTime) {
-  const csv = ExcelJSON.CSV(outputs, theBugs);
-  writeFile(OUTFILE, csv, (err) => {
-    if (err) throw err;
-    console.log("CSV written to '" + OUTFILE + "'");
-  });
-  // console.log(JSON.stringify(outputs, null, "\t"));
 }
 
 if (args.elapsedTime) {

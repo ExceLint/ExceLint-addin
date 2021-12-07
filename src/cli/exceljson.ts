@@ -19,6 +19,7 @@ import { flatten } from "./polyfill";
 import { Analysis } from "../excelint/core/analysis";
 import { AnnotationData } from "./bugs";
 import { Paraformula } from "../excelint/paraformula/src/paraformula";
+import { appendFileSync, writeFileSync } from "fs";
 
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
@@ -240,12 +241,8 @@ export class ExcelJSON {
     return str.slice(0, 10);
   }
 
-  public static CSV(wbas: WorkbookAnalysis[], annotations: AnnotationData): string {
+  public static CSV(wbas: WorkbookAnalysis[], annotations: AnnotationData): CSVRow[] {
     const rows: CSVRow[] = [];
-
-    // prepend header
-    const header = new CSVRow("workbook", "worksheet", "vector", "formula", "gt_buggy", "suggested_fixes", "scores");
-    rows.push(header);
 
     // for each workbook
     for (const wba of wbas) {
@@ -282,12 +279,25 @@ export class ExcelJSON {
       }
     }
 
+    return rows;
+  }
+
+  public static writeFile(file: string, data: string, append: boolean): void {
+    if (append) {
+      appendFileSync(file, data);
+    } else {
+      writeFileSync(file, ExcelJSON.CSVtoString([CSVRow.header]));
+      appendFileSync(file, data);
+    }
+  }
+
+  public static CSVtoString(rows: CSVRow[]): string {
     // convert to string
-    return rows.map((row) => row.toString()).join("\n");
+    return rows.map((row) => row.toString()).join("\n") + "\n";
   }
 }
 
-class CSVRow {
+export class CSVRow {
   constructor(
     /* eslint-disable no-unused-vars */
     public readonly wb: string,
@@ -299,6 +309,10 @@ class CSVRow {
     public readonly scores: string
   ) {}
 
+  public static get header(): CSVRow {
+    return new CSVRow("workbook", "worksheet", "vector", "formula", "gt_buggy", "suggested_fixes", "scores");
+  }
+
   private static q(s: string): string {
     return '"' + s + '"';
   }
@@ -308,13 +322,21 @@ class CSVRow {
   }
 
   public toString(): string {
+    // remove the leading = if present and add '
+    const short = this.formula.slice(1);
+    const cond = this.formula.charAt(0) === "=";
+    const fmod = cond ? "'" + short : this.formula;
+
+    // add ' to nonempty suggestions
+    const smod = this.suggestions.length > 0 ? "'" + this.suggestions : this.suggestions;
+
     return CSVRow.a([
       CSVRow.q(this.wb),
       CSVRow.q(this.ws),
       CSVRow.q(this.flag_addr),
-      CSVRow.q(this.formula),
+      CSVRow.q(fmod),
       CSVRow.q(this.is_true_positive.toString()),
-      CSVRow.q(this.suggestions),
+      CSVRow.q(smod),
       CSVRow.q(this.scores),
     ]);
   }

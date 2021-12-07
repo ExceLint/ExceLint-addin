@@ -1,3 +1,5 @@
+declare var console: Console;
+
 export module AST {
   export class Env {
     public static readonly type: "Env" = "Env";
@@ -92,6 +94,10 @@ export module AST {
     }
 
     private static intToColChars(dividend: number): string {
+      if (dividend < 0) {
+        console.warn("Dividend is negative!");
+        return "";
+      }
       let quot = Math.floor(dividend / 26);
       const rem = dividend % 26;
       if (rem === 0) {
