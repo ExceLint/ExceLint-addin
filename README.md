@@ -131,8 +131,16 @@ These instructions are valid for 1JS commit `e27a8070e07d7d37ce49e4b7877144e49d9
 
 ExceLint should pass all (two) tests.
 
+## ExceLint benchmarks
+
+This repository includes a sample of spreadsheets taken from the EUSES corpus used in the evaluation of the [CUSTODES](https://ieeexplore.ieee.org/document/7886926) smell detection tool. We manually audited these spreadsheets for reference errors and include them in our `benchmarks` folder. To run ExceLint against this benchmark suite, run
+
+```
+$ npm run build:cli
+$ npm run cli -- --directory benchmarks/files --annotations benchmarks/annotations-processed.json
+```
+
 ## TODOs
 
 1. Condition analysis on the partial string being typed in by the user; integrate partial parsing.
-2. Synthesize replacement formulas.
-3. Remove dead code.
+1. Remove dead code.

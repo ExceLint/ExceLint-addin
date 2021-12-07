@@ -124,7 +124,7 @@ for (const parms of args.parameters) {
             // do nothing for now
           }
           const elapsed_us = t.elapsedTime();
-          process.stderr.write(elapsed_us + " μs\n");
+          process.stderr.write(elapsed_us.toFixed(1) + " μs\n");
         }
 
         // save sheet analysis to workbook object
