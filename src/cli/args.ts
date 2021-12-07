@@ -6,7 +6,6 @@ declare var console: Console;
 declare var process: NodeJS.Process;
 
 export class CLIConfig {
-  readonly usageString = "Usage: $0 <command> [options]";
   readonly defaultFormattingDiscount = Config.getFormattingDiscount();
   readonly defaultReportingThreshold = Config.getReportingThreshold();
   readonly defaultMaxCategories = Config.maxCategories; // FIXME should be an accessor
@@ -24,6 +23,19 @@ export class CLIConfig {
   maxEntropy: number = this.defaultMaxEntropy;
   allFiles: string[] = [];
   annotationsFile: string;
+
+  public static get scriptName() {
+    return "npm run cli";
+  }
+
+  public static get usageString() {
+    const str =
+      `Usage: ${CLIConfig.scriptName} -- [options]\n\n` +
+      "where [options] include:\n\n" +
+      "\t--directory <path>\tdenotes the path to a directory containing benchmark files.\n" +
+      "\t--annotations <path>\tdenotes the path to a JSON file containing annotations.\n";
+    return str;
+  }
 
   public get directory(): string {
     return this.args.directory;
@@ -63,7 +75,7 @@ export class CLIConfig {
 export function process_arguments(): CLIConfig {
   const conf = new CLIConfig();
   const args = yargs(process.argv)
-    .usage(conf.usageString)
+    .usage(CLIConfig.usageString)
     .command("input", "Input from FILENAME (.xls / .xlsx file).")
     .alias("i", "input")
     .nargs("input", 1)
@@ -136,7 +148,7 @@ export function process_arguments(): CLIConfig {
   // Validation
   //
   if (!args.directory && !args.input) {
-    console.warn("Must specify either --directory or --input.");
+    console.warn(CLIConfig.usageString);
     process.exit(-1);
   }
   if (args.elapsedTime) {
