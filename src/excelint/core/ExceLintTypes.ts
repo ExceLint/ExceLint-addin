@@ -916,7 +916,7 @@ export class RectInfo {
   absolute_refcount: number; // the number of absolute references in each formula
   r1c1_formula: string; // formula in R1C1 format
 
-  constructor(rect: Rectangle, firstFormula: string) {
+  constructor(rect: Rectangle, firstFormula: string, sheetOrigin: string) {
     const ast = Paraformula.parse(firstFormula);
     // the coordinates of the cell containing the first formula in the proposed fix range
     const formulaCoord = rect.upperleft;
@@ -925,7 +925,7 @@ export class RectInfo {
     this.formula = firstFormula; // the formula itself
     this.constants = ExcelUtils.constants(ast);
     this.sum = this.constants.reduce((a, b) => a + b, 0); // the sum of all numeric constants
-    this.dependencies = ExcelUtils.all_cell_dependencies(this.formula, x + 1, y + 1, false);
+    this.dependencies = ExcelUtils.all_cell_dependencies(this.formula, x + 1, y + 1, sheetOrigin);
     this.dependence_count = this.dependencies.length;
     this.absolute_refcount = (this.formula.match(/\$/g) || []).length;
     this.r1c1_formula = ast.toFormula(true);

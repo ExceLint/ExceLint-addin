@@ -5,6 +5,7 @@
 import { ExceLintVector, Range, Address, Rectangle } from "./ExceLintTypes";
 import { Paraformula } from "../paraformula/src/paraformula";
 import { AST } from "../paraformula/src/ast";
+import { flatMap, None, Some } from "./option";
 
 declare var console: Console;
 
@@ -154,14 +155,18 @@ export module ExcelUtils {
    * @param formula
    * @param origin_x
    * @param origin_y
+   * @param sheetOrigin The name of the sheet from which formulas are taken.
    * @param include_numbers
+   * @param ignoreOffSheet Do not return references for data on a different sheet.
    * @returns
    */
   export function all_cell_dependencies(
     formula: string,
     origin_x: number,
     origin_y: number,
-    include_numbers = true
+    sheetOrigin: string,
+    include_numbers = true,
+    ignoreOffSheet = true
   ): ExceLintVector[] {
     try {
       // parse formula
@@ -172,11 +177,32 @@ export module ExcelUtils {
       const rngDeps = ExcelUtils.rangeRefs(ast);
       const cnstDeps = include_numbers ? ExcelUtils.constants(ast) : [];
 
-      // convert references into vectors
-      const cellVects = cellDeps.map((addr) => ExcelUtils.getRefVectorsFromAddress(origin_x, origin_y, addr));
-      const rngVects = rngDeps
-        .map((rng) => ExcelUtils.getRefVectorsFromRange(origin_x, origin_y, rng))
-        .reduce((acc, arr) => acc.concat(arr), []);
+      // convert cell references into vectors
+      const cellVects = flatMap((addr) => {
+        // don't extract off-sheet references
+        // Paraformula may set worksheetName to the empty string if the reference is local
+        if (ignoreOffSheet && addr.worksheetName != "" && addr.worksheetName != sheetOrigin) {
+          return None;
+        } else {
+          const refs = ExcelUtils.getRefVectorsFromAddress(origin_x, origin_y, addr);
+          return new Some(refs);
+        }
+      }, cellDeps);
+
+      // convert range references into vectors
+      const rngVects = flatMap((rng) => {
+        // don't extract off-sheet referencs
+        // we assume that rng is entirely contained within one sheet
+        // (PRETTY sure the language does not allow discontiguous multi-sheet ranges)
+        // ditto note about Paraformula making workbook the empty string for local refs
+        if (ignoreOffSheet && rng.regions[0][0].worksheetName != "" && rng.regions[0][0].worksheetName != sheetOrigin) {
+          return None;
+        } else {
+          const refs = ExcelUtils.getRefVectorsFromRange(origin_x, origin_y, rng);
+          return new Some(refs);
+        }
+      }, rngDeps).reduce((acc, arr) => acc.concat(arr), []);
+
       /* eslint-disable-next-line no-unused-vars */
       const cnstVects = cnstDeps.map((_c) => new ExceLintVector(0, 0, 1));
 

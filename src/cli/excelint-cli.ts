@@ -93,7 +93,7 @@ for (const parms of args.parameters) {
         const usedRange = sheet.usedRange;
 
         // get every reference vector set for every formula, indexed by address vector
-        const fRefs = Analysis.relativeFormulaRefs(formulas);
+        const fRefs = Analysis.relativeFormulaRefs(formulas, sheet.sheetName);
 
         // compute fingerprints for reference vector sets, indexed by address vector
         const fps = Analysis.fingerprints(fRefs);

@@ -35,7 +35,7 @@ export module Analysis {
     // let proposed_fixes: XLNT.ProposedFix[] = [];
 
     // get every reference vector set for every formula, indexed by address vector
-    const fRefs = relativeFormulaRefs(formulas);
+    const fRefs = relativeFormulaRefs(formulas, addr.worksheet);
 
     // compute fingerprints for reference vector sets, indexed by address vector
     const fps = fingerprints(fRefs);
@@ -272,9 +272,13 @@ export module Analysis {
    * Given a dictionary of formulas indexed by ExceLintVector addresses, return
    * a mapping from ExceLintVector addresses to a formula's relative reference set.
    * @param formulas Dictionary mapping ExceLint address vectors to formula strings.
+   * @param sheetOrigin The name of the sheet from which formulas are taken.
    * @returns A dictionary of reference vector sets, indexed by address vector.
    */
-  export function relativeFormulaRefs(formulas: XLNT.Dictionary<string>): XLNT.Dictionary<XLNT.ExceLintVector[]> {
+  export function relativeFormulaRefs(
+    formulas: XLNT.Dictionary<string>,
+    sheetOrigin: string
+  ): XLNT.Dictionary<XLNT.ExceLintVector[]> {
     const _d = new XLNT.Dictionary<XLNT.ExceLintVector[]>();
     for (const addrKey of formulas.keys) {
       // get formula itself
@@ -284,7 +288,7 @@ export module Analysis {
       const addr = XLNT.ExceLintVector.fromKey(addrKey);
 
       // compute dependencies for formula
-      const vec_array = ExcelUtils.all_cell_dependencies(f, addr.x, addr.y);
+      const vec_array = ExcelUtils.all_cell_dependencies(f, addr.x, addr.y, sheetOrigin);
 
       // add to set
       _d.put(addrKey, vec_array);
