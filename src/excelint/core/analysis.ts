@@ -737,6 +737,21 @@ export module Analysis {
   }
 
   /**
+   * Filters out fixes whose entropy reduction score is 0.
+   * @param fixes An array of proposed fixes.
+   * @returns A filtered array of proposed fixes.
+   */
+  export function filterZeroScoreFixes(fixes: XLNT.ProposedFix[]) {
+    const fixes_to_keep: XLNT.ProposedFix[] = [];
+    for (const fix of fixes) {
+      if (fix.score > 0) {
+        fixes_to_keep.push(fix);
+      }
+    }
+    return fixes_to_keep;
+  }
+
+  /**
    * Given a formula address, synthesize a fix for each of the given proposed fixes.
    * Fixes are ranked by the amount of duplicate evidence given, and duplicates are
    * removed.  Also, if the synthesized formula is the same as the formula itself,

@@ -116,12 +116,15 @@ for (const parms of args.parameters) {
             // get proposed fixes
             const pfs = Analysis.analyzeLess(addr, fps2);
 
-            // filter proposed fixes
+            // remove fixes that are not at boundary
             const pfs2 = Analysis.filterContiguousFixes(addr, pfs);
 
+            // remove fixes that have no effect on entropy
+            const pfs3 = Analysis.filterZeroScoreFixes(pfs2);
+
             // save fixes in dictionary
-            if (pfs2.length > 0) {
-              pfsd.put(key, pfs2);
+            if (pfs3.length > 0) {
+              pfsd.put(key, pfs3);
             }
           } catch (e) {
             console.error(e);
