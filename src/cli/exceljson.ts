@@ -283,7 +283,12 @@ export class ExcelJSON {
 
   public static CSVtoString(rows: CSVRow[]): string {
     // convert to string
-    return rows.map((row) => row.toString()).join("\n") + "\n";
+    const s = rows.map((row) => row.toString()).join("\n");
+    if (s != "") {
+      return s + "\n";
+    } else {
+      return s;
+    }
   }
 }
 
