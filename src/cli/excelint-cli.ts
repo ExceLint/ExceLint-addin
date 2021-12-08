@@ -122,9 +122,12 @@ for (const parms of args.parameters) {
             // remove fixes that have no effect on entropy
             const pfs3 = Analysis.filterZeroScoreFixes(pfs2);
 
+            // remove fixes from the "big" part of a proposed fix
+            const pfs4 = Analysis.filterBigFixes(addr, pfs3);
+
             // save fixes in dictionary
-            if (pfs3.length > 0) {
-              pfsd.put(key, pfs3);
+            if (pfs4.length > 0) {
+              pfsd.put(key, pfs4);
             }
           } catch (e) {
             console.error(e);

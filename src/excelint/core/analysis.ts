@@ -752,6 +752,26 @@ export module Analysis {
   }
 
   /**
+   * Filters out fixes from the "big" rectangle.
+   * @param addr Cell to fix
+   * @param fixes An array of proposed fixes.
+   * @returns A filtered array of proposed fixes.
+   */
+  export function filterBigFixes(addr: XLNT.Address, fixes: XLNT.ProposedFix[]) {
+    const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
+    const fixes_to_keep: XLNT.ProposedFix[] = [];
+    for (const fix of fixes) {
+      if (
+        (fix.rect1.size < fix.rect2.size && fix.rect1.contains(v)) ||
+        (fix.rect2.size < fix.rect1.size && fix.rect2.contains(v))
+      ) {
+        fixes_to_keep.push(fix);
+      }
+    }
+    return fixes_to_keep;
+  }
+
+  /**
    * Given a formula address, synthesize a fix for each of the given proposed fixes.
    * Fixes are ranked by the amount of duplicate evidence given, and duplicates are
    * removed.  Also, if the synthesized formula is the same as the formula itself,
