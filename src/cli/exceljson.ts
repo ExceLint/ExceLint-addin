@@ -4,17 +4,7 @@ import path = require("path");
 import * as XLSX from "xlsx";
 import * as sha224 from "crypto-js/sha224";
 import * as base64 from "crypto-js/enc-base64";
-import {
-  Address,
-  Range,
-  Spreadsheet,
-  ProposedFix,
-  ExceLintVector,
-  Dictionary,
-  expand,
-} from "../excelint/core/ExceLintTypes";
-import { Some, None, flatMap } from "../excelint/core/option";
-import { Config } from "../excelint/core/config";
+import { Address, Range, Spreadsheet, ProposedFix, ExceLintVector, Dictionary } from "../excelint/core/ExceLintTypes";
 import { flatten } from "./polyfill";
 import { Analysis } from "../excelint/core/analysis";
 import { AnnotationData } from "./bugs";
@@ -306,11 +296,21 @@ export class CSVRow {
     public readonly formula: string,
     public readonly is_true_positive: string,
     public readonly suggestions: string,
-    public readonly scores: string
+    public readonly scores: string,
+    public readonly is_header: boolean = false
   ) {}
 
   public static get header(): CSVRow {
-    return new CSVRow("workbook", "worksheet", "vector", "formula", "gt_buggy", "suggested_fixes", "scores");
+    return new CSVRow(
+      "workbook",
+      "worksheet",
+      "address",
+      "formula",
+      "true_positive",
+      "suggested_fixes",
+      "scores",
+      true
+    );
   }
 
   private static q(s: string): string {
@@ -324,11 +324,11 @@ export class CSVRow {
   public toString(): string {
     // remove the leading = if present and add '
     const short = this.formula.slice(1);
-    const cond = this.formula.charAt(0) === "=";
+    const cond = !this.is_header && this.formula.charAt(0) === "=";
     const fmod = cond ? "'" + short : this.formula;
 
     // add ' to nonempty suggestions
-    const smod = this.suggestions.length > 0 ? "'" + this.suggestions : this.suggestions;
+    const smod = !this.is_header && this.suggestions.length > 0 ? "'" + this.suggestions : this.suggestions;
 
     return CSVRow.a([
       CSVRow.q(this.wb),
@@ -370,23 +370,18 @@ export class WorkbookAnalysis {
 export class WorksheetAnalysis {
   private readonly data: WorksheetOutput;
   private readonly pfs: Dictionary<ProposedFix[]>; // all the proposed fixes for a given cell
-  private readonly foundBugs: ExceLintVector[];
+  // private readonly foundBugs: ExceLintVector[];
 
   constructor(sheet: WorksheetOutput, pfs: Dictionary<ProposedFix[]>) {
     this.data = sheet;
     this.pfs = pfs;
-    this.foundBugs = WorksheetAnalysis.createBugList(pfs.values.flat());
+    // this.foundBugs = WorksheetAnalysis.createBugList(pfs.values.flat());
   }
 
   // Get the sheet name
   get name(): string {
     return this.data.sheetName;
   }
-
-  // Get all of the proposed fixes.
-  // get proposedFixes(): ProposedFix[] {
-  //   return this.pf;
-  // }
 
   // return the formula for a given cell
   public formulaForSheet(addrv: ExceLintVector): string {
@@ -435,12 +430,12 @@ export class WorksheetAnalysis {
 
   // Get the total number of anomalous cells
   get numAnomalousCells(): number {
-    return this.foundBugs.length;
+    return this.pfs.size;
   }
 
   // Return the complete set of bug flags
   get flags(): ExceLintVector[] {
-    return this.foundBugs;
+    return this.pfs.keys.map((k) => ExceLintVector.fromKey(k));
   }
 
   // Get the underlying sheet object
@@ -464,19 +459,19 @@ export class WorksheetAnalysis {
     return Analysis.synthFixes(addr, this.fixesFor(addrv), this.formulas);
   }
 
-  // For every proposed fix, if it is above the score threshold, keep it,
-  // and return the unique set of all vectors contained in any kept fix.
-  private static createBugList(pf: ProposedFix[]): ExceLintVector[] {
-    const keep: ExceLintVector[][] = flatMap((pf: ProposedFix) => {
-      if (pf.score >= Config.reportingThreshold / 100) {
-        const rect1cells = expand(pf.rect1.upperleft, pf.rect1.bottomright);
-        const rect2cells = expand(pf.rect2.upperleft, pf.rect2.bottomright);
-        return new Some(rect1cells.concat(rect2cells));
-      } else {
-        return None;
-      }
-    }, pf);
-    const flattened = flatten(keep);
-    return ExceLintVector.toSet(flattened);
-  }
+  // // For every proposed fix, if it is above the score threshold, keep it,
+  // // and return the unique set of all vectors contained in any kept fix.
+  // private static createBugList(pf: ProposedFix[]): ExceLintVector[] {
+  //   const keep: ExceLintVector[][] = flatMap((pf: ProposedFix) => {
+  //     if (pf.score >= Config.reportingThreshold / 100) {
+  //       const rect1cells = expand(pf.rect1.upperleft, pf.rect1.bottomright);
+  //       const rect2cells = expand(pf.rect2.upperleft, pf.rect2.bottomright);
+  //       return new Some(rect1cells.concat(rect2cells));
+  //     } else {
+  //       return None;
+  //     }
+  //   }, pf);
+  //   const flattened = flatten(keep);
+  //   return ExceLintVector.toSet(flattened);
+  // }
 }

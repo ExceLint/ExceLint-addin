@@ -720,6 +720,23 @@ export module Analysis {
   }
 
   /**
+   * Filters out fixes that are not at a fix boundary (i.e., non-discontiguous).
+   * @param addr Cell to fix
+   * @param fixes An array of proposed fixes.
+   * @returns A filtered array of proposed fixes.
+   */
+  export function filterContiguousFixes(addr: XLNT.Address, fixes: XLNT.ProposedFix[]) {
+    const fixes_to_keep: XLNT.ProposedFix[] = [];
+    for (const fix of fixes) {
+      // if the address of the fix is not at a fix boundary, skip
+      if (atDiscontinuity(addr, fix)) {
+        fixes_to_keep.push(fix);
+      }
+    }
+    return fixes_to_keep;
+  }
+
+  /**
    * Given a formula address, synthesize a fix for each of the given proposed fixes.
    * Fixes are ranked by the amount of duplicate evidence given, and duplicates are
    * removed.  Also, if the synthesized formula is the same as the formula itself,

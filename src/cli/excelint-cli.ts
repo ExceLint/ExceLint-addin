@@ -109,14 +109,19 @@ for (const parms of args.parameters) {
             const fc = RectangleUtils.findFatCross(usedRange, addr);
             const fps2 = fc.filterFormulas(fps, sheet.sheetName);
 
-            process.stderr.write("    analyzing " + addr.toA1Ref() + "... ");
+            const a1 = addr.toA1Ref();
+
+            process.stderr.write("    analyzing " + a1 + "... ");
 
             // get proposed fixes
             const pfs = Analysis.analyzeLess(addr, fps2);
 
+            // filter proposed fixes
+            const pfs2 = Analysis.filterContiguousFixes(addr, pfs);
+
             // save fixes in dictionary
-            if (pfs.length > 0) {
-              pfsd.put(key, pfs);
+            if (pfs2.length > 0) {
+              pfsd.put(key, pfs2);
             }
           } catch (e) {
             console.error(e);
