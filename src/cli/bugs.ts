@@ -87,4 +87,47 @@ export class AnnotationData {
     }
     return false;
   }
+
+  /**
+   * Return the total number of bugs for the given worksheet in the
+   * given workbook.
+   * @param workbook The name of a workbook.
+   * @param worksheet The name of a worksheet.
+   * @returns The number of bugs in the ground truth.
+   */
+  public totalBugs(workbook: string, worksheet: string): number {
+    if (workbook in this._data) {
+      if (worksheet in this._data[workbook]) {
+        const bugs: [number, number, number][] = this._data[workbook][worksheet]["bugs"];
+        return bugs.length;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * Computes precision.
+   * @param tp Number of true positives.
+   * @param fp Number of false positives.
+   */
+  public static precision(tp: number, fp: number): number {
+    if (tp === 0 && fp === 0) {
+      return 1;
+    } else {
+      return tp / (tp + fp);
+    }
+  }
+
+  /**
+   * Computes recall.
+   * @param tp Number of true positives.
+   * @param fn Number of false negatives.
+   */
+  public static recall(tp: number, fn: number): number {
+    if (tp === 0 && fn === 0) {
+      return 1;
+    } else {
+      return tp / (tp + fn);
+    }
+  }
 }

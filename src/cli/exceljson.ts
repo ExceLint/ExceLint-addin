@@ -10,6 +10,7 @@ import { Analysis } from "../excelint/core/analysis";
 import { AnnotationData } from "./bugs";
 import { Paraformula } from "../excelint/paraformula/src/paraformula";
 import { appendFileSync, writeFileSync } from "fs";
+import { Option } from "../excelint/core/option";
 
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
@@ -272,11 +273,19 @@ export class ExcelJSON {
     return rows;
   }
 
-  public static writeFile(file: string, data: string, append: boolean): void {
-    if (append) {
+  /**
+   * Appends data to the specified file.  If a header is given, the header is
+   * written first, overwriting anything at the given path, and then data is
+   * appended.
+   * @param file A path to a file.
+   * @param data A line of data (e.g., a CSV row)
+   * @param header_opt An optional header
+   */
+  public static writeFile(file: string, data: string, header_opt: Option<string>): void {
+    if (!header_opt.hasValue) {
       appendFileSync(file, data);
     } else {
-      writeFileSync(file, ExcelJSON.CSVtoString([CSVRow.header]));
+      writeFileSync(file, header_opt.value);
       appendFileSync(file, data);
     }
   }
@@ -318,11 +327,11 @@ export class CSVRow {
     );
   }
 
-  private static q(s: string): string {
+  public static q(s: string): string {
     return '"' + s + '"';
   }
 
-  private static a(ss: string[]): string {
+  public static a(ss: string[]): string {
     return ss.reduce((acc, s) => acc + "," + s);
   }
 
@@ -343,6 +352,42 @@ export class CSVRow {
       CSVRow.q(this.is_true_positive.toString()),
       CSVRow.q(smod),
       CSVRow.q(this.scores),
+    ]);
+  }
+}
+
+export class SummaryCSVRow {
+  constructor(
+    public readonly wb: string,
+    public readonly ws: string,
+    public readonly true_positives: number,
+    public readonly false_positives: number,
+    public readonly false_negatives: number,
+    public readonly precision: number,
+    public readonly recall: number
+  ) {}
+
+  public static get header(): string {
+    return CSVRow.a([
+      "workbook",
+      "worksheet",
+      "true_positives",
+      "false_positives",
+      "false_negatives",
+      "precision",
+      "recall",
+    ]);
+  }
+
+  public toString(): string {
+    return CSVRow.a([
+      CSVRow.q(this.wb),
+      CSVRow.q(this.ws),
+      CSVRow.q(this.true_positives.toFixed(0)),
+      CSVRow.q(this.false_positives.toFixed(0)),
+      CSVRow.q(this.false_negatives.toFixed(0)),
+      CSVRow.q(this.precision.toFixed(2)),
+      CSVRow.q(this.recall.toFixed(2)),
     ]);
   }
 }

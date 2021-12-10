@@ -5,7 +5,7 @@
 /* eslint-disable */
 
 "use strict";
-import { ExcelJSON, WorksheetAnalysis } from "./exceljson";
+import { ExcelJSON, WorksheetAnalysis, CSVRow, SummaryCSVRow } from "./exceljson";
 import { Analysis } from "../excelint/core/analysis";
 import { Address, Dictionary, ExceLintVector, ProposedFix } from "../excelint/core/ExceLintTypes";
 import { WorkbookAnalysis } from "./exceljson";
@@ -14,11 +14,13 @@ import { CLIConfig, process_arguments } from "./args";
 import { AnnotationData } from "./bugs";
 import { Timer } from "../excelint/core/timer";
 import { RectangleUtils } from "../excelint/core/rectangleutils";
+import { None, Some } from "../excelint/core/option";
 
 declare var console: Console;
 declare var process: NodeJS.Process;
 
-const OUTFILE = "results.csv";
+const RESULTSFILE = "results.csv";
+const SUMMARYFILE = "summary.csv";
 
 //
 // Process arguments.
@@ -98,6 +100,11 @@ for (const parms of args.parameters) {
         // compute fingerprints for reference vector sets, indexed by address vector
         const fps = Analysis.fingerprints(fRefs);
 
+        // for precision and recall
+        let true_positives = 0;
+        let false_positives = 0;
+        let false_negatives = 0;
+
         // FOREACH CELL
         for (const key of formulas.keys) {
           const t = new Timer("cell analysis");
@@ -145,9 +152,28 @@ for (const parms of args.parameters) {
         // write out as we go
         if (!args.suppressOutput && !args.elapsedTime) {
           const rows = ExcelJSON.CSV([output], theBugs);
+          true_positives = rows.reduce((acc, row) => acc + (row.is_true_positive ? 1 : 0), 0);
+          false_positives = rows.reduce((acc, row) => acc + (row.is_true_positive ? 0 : 1), 0);
+          false_negatives = theBugs.totalBugs(output.workbook.workbookName, sheet.sheetName);
           const csvstr = ExcelJSON.CSVtoString(rows);
-          ExcelJSON.writeFile(OUTFILE, csvstr, !firstRun);
+          const header = firstRun ? new Some(ExcelJSON.CSVtoString([CSVRow.header])) : None;
+          ExcelJSON.writeFile(RESULTSFILE, csvstr, header);
           if (firstRun) firstRun = false;
+        }
+
+        // also write out summary CSV
+        if (!args.suppressOutput && !args.elapsedTime) {
+          const row = new SummaryCSVRow(
+            output.workbook.workbookName,
+            sheet.sheetName,
+            true_positives,
+            false_positives,
+            false_negatives,
+            AnnotationData.precision(true_positives, false_positives),
+            AnnotationData.recall(true_positives, false_negatives)
+          );
+          const header = i === 0 ? new Some(SummaryCSVRow.header + "\n") : None;
+          ExcelJSON.writeFile(SUMMARYFILE, row.toString(), header);
         }
       }
 
