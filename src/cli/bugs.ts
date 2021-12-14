@@ -63,12 +63,12 @@ export class AnnotationData {
   }
 
   /**
-   * Returns true if the given address contains a bug annotation.
+   * Returns true if the given address is a true positive.
    * @param workbook The name of the workbook
    * @param worksheet The name of the worksheet
    * @param addrv The address vector.
    */
-  public hasBug(workbook: string, worksheet: string, addrv: ExceLintVector): boolean {
+  public isBug(workbook: string, worksheet: string, addrv: ExceLintVector): boolean {
     if (workbook in this._data) {
       if (worksheet in this._data[workbook]) {
         const bugs: [number, number, number][] = this._data[workbook][worksheet]["bugs"];

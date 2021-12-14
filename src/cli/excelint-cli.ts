@@ -152,11 +152,19 @@ for (const parms of args.parameters) {
         // write out as we go
         if (!args.suppressOutput && !args.elapsedTime) {
           const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs);
-          true_positives = rows.reduce((acc, row) => acc + (row.is_true_positive ? 1 : 0), 0);
-          false_positives = rows.reduce((acc, row) => acc + (row.is_true_positive ? 0 : 1), 0);
-          false_negatives = theBugs.totalBugs(output.workbook.workbookName, sheet.sheetName);
+          true_positives = rows.reduce((acc, row) => {
+            const is_tp = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
+            const acc2 = acc + (is_tp ? 1 : 0);
+            return acc2;
+          }, 0);
+          false_positives = rows.reduce((acc, row) => {
+            const is_tp = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
+            const acc2 = acc + (is_tp ? 0 : 1);
+            return acc2;
+          }, 0);
+          false_negatives = theBugs.totalBugs(output.workbook.workbookName, sheet.sheetName) - true_positives;
           const csvstr = ExcelJSON.CSVtoString(rows);
-          const header = firstRun ? new Some(ExcelJSON.CSVtoString([CSVRow.header])) : None;
+          const header = firstRun ? new Some(CSVRow.header) : None;
           ExcelJSON.writeFile(CELLRESULTS, csvstr, header);
         }
 
@@ -168,6 +176,7 @@ for (const parms of args.parameters) {
             true_positives,
             false_positives,
             false_negatives,
+            theBugs.totalBugs(output.workbook.workbookName, sheet.sheetName),
             AnnotationData.precision(true_positives, false_positives),
             AnnotationData.recall(true_positives, false_negatives)
           );

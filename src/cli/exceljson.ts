@@ -237,9 +237,6 @@ export class ExcelJSON {
 
     // for each flagged
     for (const flag of wsa.flags) {
-      // convert ExceLintVector to A1 address
-      const addr = new Address(workbookName, flag.y, flag.x).toA1Ref();
-
       // fold suggested fixes into a single string
       const suggs = wsa.suggestionsFor(flag).join("; ");
 
@@ -253,9 +250,9 @@ export class ExcelJSON {
         new CSVRow(
           workbookName,
           wsa.worksheet.sheetName,
-          addr,
+          flag,
           wsa.formulaForSheet(flag),
-          annotations.hasBug(workbookName, wsa.worksheet.sheetName, flag).toString(),
+          annotations.isBug(workbookName, wsa.worksheet.sheetName, flag).toString(),
           suggs,
           scores
         )
@@ -298,25 +295,17 @@ export class CSVRow {
     /* eslint-disable no-unused-vars */
     public readonly wb: string,
     public readonly ws: string,
-    public readonly flag_addr: string,
+    public readonly flag_vector: ExceLintVector,
     public readonly formula: string,
     public readonly is_true_positive: string,
     public readonly suggestions: string,
-    public readonly scores: string,
-    public readonly is_header: boolean = false
+    public readonly scores: string
   ) {}
 
-  public static get header(): CSVRow {
-    return new CSVRow(
-      "workbook",
-      "worksheet",
-      "address",
-      "formula",
-      "true_positive",
-      "suggested_fixes",
-      "scores",
-      true
-    );
+  public static get header(): string {
+    const hdr = ["workbook", "worksheet", "address", "formula", "true_positive", "suggested_fixes", "scores"];
+    const hdresc = hdr.map((elem) => CSVRow.q(elem)).join(",");
+    return hdresc + "\n";
   }
 
   public static q(s: string): string {
@@ -330,16 +319,19 @@ export class CSVRow {
   public toString(): string {
     // remove the leading = if present and add '
     const short = this.formula.slice(1);
-    const cond = !this.is_header && this.formula.charAt(0) === "=";
+    const cond = this.formula.charAt(0) === "=";
     const fmod = cond ? "'" + short : this.formula;
 
     // add ' to nonempty suggestions
-    const smod = !this.is_header && this.suggestions.length > 0 ? "'" + this.suggestions : this.suggestions;
+    const smod = this.suggestions.length > 0 ? "'" + this.suggestions : this.suggestions;
+
+    // convert ExceLintVector to A1 address
+    const addr = new Address(this.ws, this.flag_vector.y, this.flag_vector.x).toA1Ref();
 
     return CSVRow.a([
       CSVRow.q(this.wb),
       CSVRow.q(this.ws),
-      CSVRow.q(this.flag_addr),
+      CSVRow.q(addr),
       CSVRow.q(fmod),
       CSVRow.q(this.is_true_positive.toString()),
       CSVRow.q(smod),
@@ -355,6 +347,7 @@ export class SummaryCSVRow {
     public readonly true_positives: number,
     public readonly false_positives: number,
     public readonly false_negatives: number,
+    public readonly num_bugs: number,
     public readonly precision: number,
     public readonly recall: number
   ) {}
@@ -367,6 +360,7 @@ export class SummaryCSVRow {
         "true_positives",
         "false_positives",
         "false_negatives",
+        "num_bugs",
         "precision",
         "recall",
       ]) + "\n"
@@ -381,6 +375,7 @@ export class SummaryCSVRow {
         CSVRow.q(this.true_positives.toFixed(0)),
         CSVRow.q(this.false_positives.toFixed(0)),
         CSVRow.q(this.false_negatives.toFixed(0)),
+        CSVRow.q(this.num_bugs.toFixed(0)),
         CSVRow.q(this.precision.toFixed(2)),
         CSVRow.q(this.recall.toFixed(2)),
       ]) + "\n"
