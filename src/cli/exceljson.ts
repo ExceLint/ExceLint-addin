@@ -232,42 +232,34 @@ export class ExcelJSON {
     return str.slice(0, 10);
   }
 
-  public static CSV(wbas: WorkbookAnalysis[], annotations: AnnotationData): CSVRow[] {
+  public static CSV(workbookName: string, wsa: WorksheetAnalysis, annotations: AnnotationData): CSVRow[] {
     const rows: CSVRow[] = [];
 
-    // for each workbook
-    for (const wba of wbas) {
-      // for each worksheet
-      for (const wsa of wba.sheets) {
-        // for each flagged
-        for (const flag of wsa.flags) {
-          const workbook = wba.workbook.workbookName;
+    // for each flagged
+    for (const flag of wsa.flags) {
+      // convert ExceLintVector to A1 address
+      const addr = new Address(workbookName, flag.y, flag.x).toA1Ref();
 
-          // convert ExceLintVector to A1 address
-          const addr = new Address(workbook, flag.y, flag.x).toA1Ref();
+      // fold suggested fixes into a single string
+      const suggs = wsa.suggestionsFor(flag).join("; ");
 
-          // fold suggested fixes into a single string
-          const suggs = wsa.suggestionsFor(flag).join("; ");
+      // fold scores into a single string
+      const scores = wsa
+        .fixesFor(flag)
+        .map((fix) => fix.score.toFixed(3).toString())
+        .join("; ");
 
-          // fold scores into a single string
-          const scores = wsa
-            .fixesFor(flag)
-            .map((fix) => fix.score.toFixed(3).toString())
-            .join("; ");
-
-          rows.push(
-            new CSVRow(
-              workbook,
-              wsa.worksheet.sheetName,
-              addr,
-              wsa.formulaForSheet(flag),
-              annotations.hasBug(wba.workbook.workbookName, wsa.worksheet.sheetName, flag).toString(),
-              suggs,
-              scores
-            )
-          );
-        }
-      }
+      rows.push(
+        new CSVRow(
+          workbookName,
+          wsa.worksheet.sheetName,
+          addr,
+          wsa.formulaForSheet(flag),
+          annotations.hasBug(workbookName, wsa.worksheet.sheetName, flag).toString(),
+          suggs,
+          scores
+        )
+      );
     }
 
     return rows;
@@ -368,27 +360,31 @@ export class SummaryCSVRow {
   ) {}
 
   public static get header(): string {
-    return CSVRow.a([
-      "workbook",
-      "worksheet",
-      "true_positives",
-      "false_positives",
-      "false_negatives",
-      "precision",
-      "recall",
-    ]);
+    return (
+      CSVRow.a([
+        "workbook",
+        "worksheet",
+        "true_positives",
+        "false_positives",
+        "false_negatives",
+        "precision",
+        "recall",
+      ]) + "\n"
+    );
   }
 
   public toString(): string {
-    return CSVRow.a([
-      CSVRow.q(this.wb),
-      CSVRow.q(this.ws),
-      CSVRow.q(this.true_positives.toFixed(0)),
-      CSVRow.q(this.false_positives.toFixed(0)),
-      CSVRow.q(this.false_negatives.toFixed(0)),
-      CSVRow.q(this.precision.toFixed(2)),
-      CSVRow.q(this.recall.toFixed(2)),
-    ]);
+    return (
+      CSVRow.a([
+        CSVRow.q(this.wb),
+        CSVRow.q(this.ws),
+        CSVRow.q(this.true_positives.toFixed(0)),
+        CSVRow.q(this.false_positives.toFixed(0)),
+        CSVRow.q(this.false_negatives.toFixed(0)),
+        CSVRow.q(this.precision.toFixed(2)),
+        CSVRow.q(this.recall.toFixed(2)),
+      ]) + "\n"
+    );
   }
 }
 

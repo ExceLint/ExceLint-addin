@@ -19,8 +19,8 @@ import { None, Some } from "../excelint/core/option";
 declare var console: Console;
 declare var process: NodeJS.Process;
 
-const RESULTSFILE = "results.csv";
-const SUMMARYFILE = "summary.csv";
+const CELLRESULTS = "cells.csv";
+const SHEETRESULTS = "sheets.csv";
 
 //
 // Process arguments.
@@ -151,14 +151,13 @@ for (const parms of args.parameters) {
         // convert workbook analysis to CSV rows and
         // write out as we go
         if (!args.suppressOutput && !args.elapsedTime) {
-          const rows = ExcelJSON.CSV([output], theBugs);
+          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs);
           true_positives = rows.reduce((acc, row) => acc + (row.is_true_positive ? 1 : 0), 0);
           false_positives = rows.reduce((acc, row) => acc + (row.is_true_positive ? 0 : 1), 0);
           false_negatives = theBugs.totalBugs(output.workbook.workbookName, sheet.sheetName);
           const csvstr = ExcelJSON.CSVtoString(rows);
           const header = firstRun ? new Some(ExcelJSON.CSVtoString([CSVRow.header])) : None;
-          ExcelJSON.writeFile(RESULTSFILE, csvstr, header);
-          if (firstRun) firstRun = false;
+          ExcelJSON.writeFile(CELLRESULTS, csvstr, header);
         }
 
         // also write out summary CSV
@@ -172,9 +171,13 @@ for (const parms of args.parameters) {
             AnnotationData.precision(true_positives, false_positives),
             AnnotationData.recall(true_positives, false_negatives)
           );
-          const header = i === 0 ? new Some(SummaryCSVRow.header + "\n") : None;
-          ExcelJSON.writeFile(SUMMARYFILE, row.toString(), header);
+          const header = firstRun ? new Some(SummaryCSVRow.header) : None;
+          ExcelJSON.writeFile(SHEETRESULTS, row.toString(), header);
         }
+
+        // set firstrun to false if we've logged at least one thing
+        // (i.e., made it this far)
+        if (firstRun) firstRun = false;
       }
 
       const elapsed_us = t.elapsedTime();
