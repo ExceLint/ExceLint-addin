@@ -742,13 +742,14 @@ export module Analysis {
 
   /**
    * Filters out fixes whose entropy reduction score is 0.
+   * @param score_theshold The minimum entropy score to accept a fix.
    * @param fixes An array of proposed fixes.
    * @returns A filtered array of proposed fixes.
    */
-  export function filterZeroScoreFixes(fixes: XLNT.ProposedFix[]) {
+  export function filterScoreThreshold(score_theshold: number, fixes: XLNT.ProposedFix[]): XLNT.ProposedFix[] {
     const fixes_to_keep: XLNT.ProposedFix[] = [];
     for (const fix of fixes) {
-      if (fix.score > 0) {
+      if (fix.score >= score_theshold) {
         fixes_to_keep.push(fix);
       }
     }

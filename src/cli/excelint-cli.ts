@@ -21,6 +21,7 @@ declare var process: NodeJS.Process;
 
 const CELLRESULTS = "cells.csv";
 const SHEETRESULTS = "sheets.csv";
+const SCORE_THRESH = 0.05;
 
 //
 // Process arguments.
@@ -39,6 +40,11 @@ const base = args.directory ? args.directory + "/" : "";
 
 // first run?
 let firstRun = true;
+
+// for global precision and recall
+let glob_true_positives = 0;
+let glob_false_positives = 0;
+let glob_false_negatives = 0;
 
 // an array of times indexed by benchmark name
 const times = new Dictionary<number[]>();
@@ -127,7 +133,7 @@ for (const parms of args.parameters) {
             const pfs2 = Analysis.filterContiguousFixes(addr, pfs);
 
             // remove fixes that have no effect on entropy
-            const pfs3 = Analysis.filterZeroScoreFixes(pfs2);
+            const pfs3 = Analysis.filterScoreThreshold(SCORE_THRESH, pfs2);
 
             // remove fixes from the "big" part of a proposed fix
             const pfs4 = Analysis.filterBigFixes(addr, pfs3);
@@ -187,6 +193,11 @@ for (const parms of args.parameters) {
         // set firstrun to false if we've logged at least one thing
         // (i.e., made it this far)
         if (firstRun) firstRun = false;
+
+        // add counters to globals
+        glob_true_positives += true_positives;
+        glob_false_positives += false_positives;
+        glob_false_negatives += false_negatives;
       }
 
       const elapsed_us = t.elapsedTime();
@@ -194,6 +205,10 @@ for (const parms of args.parameters) {
     }
   }
 }
+
+// global precision and recall
+console.log(`Global precision: ${AnnotationData.precision(glob_true_positives, glob_false_positives).toFixed(3)}`);
+console.log(`Global recall: ${AnnotationData.recall(glob_true_positives, glob_false_negatives).toFixed(3)}`);
 
 if (args.elapsedTime) {
   console.log("Full analysis times:");
