@@ -11,6 +11,7 @@ import { AnnotationData } from "./bugs";
 import { Paraformula } from "../excelint/paraformula/src/paraformula";
 import { appendFileSync, writeFileSync } from "fs";
 import { Option } from "../excelint/core/option";
+import { Filters } from "../excelint/core/filters";
 
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
@@ -232,17 +233,22 @@ export class ExcelJSON {
     return str.slice(0, 10);
   }
 
-  public static CSV(workbookName: string, wsa: WorksheetAnalysis, annotations: AnnotationData): CSVRow[] {
+  public static CSV(
+    workbookName: string,
+    wsa: WorksheetAnalysis,
+    annotations: AnnotationData,
+    reasond: Dictionary<Filters.FilterReason[]>
+  ): CSVRow[] {
     const rows: CSVRow[] = [];
 
-    // for each flagged
-    for (const flag of wsa.flags) {
+    // for every proposed fix
+    for (const fix of wsa.fixes) {
       // fold suggested fixes into a single string
-      const suggs = wsa.suggestionsFor(flag).join("; ");
+      const suggs = wsa.suggestionsFor(fix).join("; ");
 
       // fold scores into a single string
       const scores = wsa
-        .fixesFor(flag)
+        .fixesFor(fix)
         .map((fix) => fix.score.toFixed(3).toString())
         .join("; ");
 
@@ -250,11 +256,16 @@ export class ExcelJSON {
         new CSVRow(
           workbookName,
           wsa.worksheet.sheetName,
-          flag,
-          wsa.formulaForSheet(flag),
-          annotations.isBug(workbookName, wsa.worksheet.sheetName, flag).toString(),
+          fix,
+          wsa.wasFlagged(fix),
+          wsa.formulaForSheet(fix),
+          annotations.isBug(workbookName, wsa.worksheet.sheetName, fix).toString(),
           suggs,
-          scores
+          scores,
+          Filters.belowUserThreshold(fix, reasond),
+          Filters.notOnBoundary(fix, reasond),
+          Filters.hasLowScore(fix, reasond),
+          Filters.isInBigRectangle(fix, reasond)
         )
       );
     }
@@ -291,19 +302,38 @@ export class ExcelJSON {
 }
 
 export class CSVRow {
+  /* eslint-disable no-unused-vars */
   constructor(
-    /* eslint-disable no-unused-vars */
     public readonly wb: string,
     public readonly ws: string,
     public readonly flag_vector: ExceLintVector,
+    public readonly was_flagged: boolean,
     public readonly formula: string,
     public readonly is_true_positive: string,
     public readonly suggestions: string,
-    public readonly scores: string
+    public readonly scores: string,
+    public readonly belowUserThreshold: boolean,
+    public readonly notOnBoundary: boolean,
+    public readonly lowScore: boolean,
+    public readonly inBigRectangle: boolean
   ) {}
+  /* eslint-enable no-unused-vars */
 
   public static get header(): string {
-    const hdr = ["workbook", "worksheet", "address", "formula", "true_positive", "suggested_fixes", "scores"];
+    const hdr = [
+      "workbook",
+      "worksheet",
+      "address",
+      "was_flagged",
+      "formula",
+      "true_positive",
+      "suggested_fixes",
+      "scores",
+      "belowUserThreshold",
+      "notOnBoundary",
+      "lowScoreLT" + Filters.SCORE_THRESH,
+      "inBigRectangle",
+    ];
     const hdresc = hdr.map((elem) => CSVRow.q(elem)).join(",");
     return hdresc + "\n";
   }
@@ -332,15 +362,21 @@ export class CSVRow {
       CSVRow.q(this.wb),
       CSVRow.q(this.ws),
       CSVRow.q(addr),
+      CSVRow.q(this.was_flagged.toString()),
       CSVRow.q(fmod),
       CSVRow.q(this.is_true_positive.toString()),
       CSVRow.q(smod),
       CSVRow.q(this.scores),
+      CSVRow.q(this.belowUserThreshold.toString()),
+      CSVRow.q(this.notOnBoundary.toString()),
+      CSVRow.q(this.lowScore.toString()),
+      CSVRow.q(this.inBigRectangle.toString()),
     ]);
   }
 }
 
 export class SummaryCSVRow {
+  /* eslint-disable no-unused-vars */
   constructor(
     public readonly wb: string,
     public readonly ws: string,
@@ -351,6 +387,7 @@ export class SummaryCSVRow {
     public readonly precision: number,
     public readonly recall: number
   ) {}
+  /* eslint-enable no-unused-vars */
 
   public static get header(): string {
     return (
@@ -410,12 +447,22 @@ export class WorkbookAnalysis {
 
 export class WorksheetAnalysis {
   private readonly data: WorksheetOutput;
-  private readonly pfs: Dictionary<ProposedFix[]>; // all the proposed fixes for a given cell
+  private readonly all: Dictionary<ProposedFix[]>; // all the proposed fixes for a given cell
+  private readonly pfs: Dictionary<ProposedFix[]>; // all the flagged fixes for a given cell
+  private readonly reasond: Dictionary<Filters.FilterReason[]>;
   // private readonly foundBugs: ExceLintVector[];
 
-  constructor(sheet: WorksheetOutput, pfs: Dictionary<ProposedFix[]>) {
+  constructor(sheet: WorksheetOutput, all_pfs: Dictionary<ProposedFix[]>, reasond: Dictionary<Filters.FilterReason[]>) {
     this.data = sheet;
-    this.pfs = pfs;
+    this.all = all_pfs;
+    this.reasond = reasond;
+    this.pfs = new Dictionary<ProposedFix[]>();
+    // only store flagged things here
+    for (const key of all_pfs.keys) {
+      if (this.reasond.get(key).length === 0) {
+        this.pfs.put(key, this.all.get(key));
+      }
+    }
     // this.foundBugs = WorksheetAnalysis.createBugList(pfs.values.flat());
   }
 
@@ -479,6 +526,12 @@ export class WorksheetAnalysis {
     return this.pfs.keys.map((k) => ExceLintVector.fromKey(k));
   }
 
+  // Return the complete set of proposed fixes, whether they were actually raised
+  // as alarms or not (i.e., the unfiltered set of proposed fixes)
+  get fixes(): ExceLintVector[] {
+    return this.all.keys.map((k) => ExceLintVector.fromKey(k));
+  }
+
   // Get the underlying sheet object
   get worksheet(): WorksheetOutput {
     return this.data;
@@ -490,6 +543,11 @@ export class WorksheetAnalysis {
       return this.pfs.get(addrv.asKey());
     }
     return [];
+  }
+
+  // returns true if the given cell was flagged
+  public wasFlagged(addr: ExceLintVector): boolean {
+    return this.pfs.contains(addr.asKey());
   }
 
   // get the fix suggestions for a given cell, if there are any

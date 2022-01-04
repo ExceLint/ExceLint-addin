@@ -7,6 +7,7 @@ import { Classification } from "./classification";
 import { Some, None, Option } from "./option";
 import { Paraformula } from "../paraformula/src/paraformula";
 import { AST } from "../paraformula/src/ast";
+import { Filters } from "./filters";
 
 declare var console: Console;
 
@@ -26,7 +27,7 @@ export module Analysis {
     // console.log(visualizeGrid(formulas, addr.worksheet));
 
     // formula groups
-    let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
+    // let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
     // styles
     // let styles = new XLNT.Dictionary<string>();
@@ -40,43 +41,29 @@ export module Analysis {
     // compute fingerprints for reference vector sets, indexed by address vector
     const fps = fingerprints(fRefs);
 
-    // decompose into rectangles, indexed by fingerprint
-    const stepRects = identify_groups(fps);
+    // // decompose into rectangles, indexed by fingerprint
+    // const stepRects = identify_groups(fps);
 
-    // merge these new rectangles with the old ones
-    rects = mergeRectangleDictionaries(stepRects, rects);
-    rects = mergeRectangles(rects);
+    // // merge these new rectangles with the old ones
+    // rects = mergeRectangleDictionaries(stepRects, rects);
+    // rects = mergeRectangles(rects);
+
+    // // generate proposed fixes for all the new rectanles
+    // const pfs = generate_proposed_fixes(rects);
 
     // generate proposed fixes for all the new rectanles
-    const pfs = generate_proposed_fixes(rects);
+    const pfs = analyzeLess(fps);
 
-    // remove duplicate fixes
-    // const pfs2 = filterDuplicateFixes(pfs);
+    // we never care about fixes for cells other than addr
+    const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));
 
-    // filter fixes by target address
-    const pfs3 = pfs.filter((pf) => pf.includesCellAt(addr));
+    // match filters
+    const filtered = Filters.matchFilters(pfs2, addr, Config.reportingThreshold);
 
-    // filter fixes by user threshold
-    const pfs4 = filterFixesByUserThreshold(pfs3, Config.reportingThreshold);
+    // apply filters
+    const pfs3 = Filters.doFilter(pfs2, filtered);
 
-    // adjust proposed fixes by style (mutates input)
-    // adjustProposedFixesByStyleHash(pfs4, styles);
-
-    // // filter fixes with heuristics
-    // for (const fix of pfs4) {
-    //   // function to get rectangle info for a rectangle;
-    //   // closes over sheet data
-    //   const rectf = (rect: XLNT.Rectangle) => {
-    //     const formulaCoord = rect.upperleft;
-    //     const firstFormula = formulas.get(formulaCoord.asKey());
-    //     return new XLNT.RectInfo(rect, firstFormula);
-    //   };
-
-    //   const ffix = filterFix(fix, rectf, false);
-    //   if (ffix.hasValue) proposed_fixes.push(ffix.value);
-    // }
-
-    return pfs4;
+    return pfs3;
   }
 
   /**
@@ -102,41 +89,14 @@ export module Analysis {
   /**
    * Run analysis.  The given address must correspond to a single cell.
    *
-   * @param addr An Excel address.
    * @param formulas All the formulas in the region of interest.
    * @returns An array of proposed fixes.
    */
-  export function analyzeLess(addr: XLNT.Address, fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
+  export function analyzeLess(fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
     const rects = findGroups(fps);
 
     // generate proposed fixes for all the new rectanles
-    const pfs = generate_proposed_fixes(rects);
-
-    // filter fixes by target address
-    const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));
-
-    // filter fixes by user threshold
-    const pfs3 = filterFixesByUserThreshold(pfs2, Config.reportingThreshold);
-
-    return pfs3;
-  }
-
-  /**
-   * Filter the given set of fixes by the given entropy threshold.
-   * @param fixes An array of fixes.
-   * @param thresh An entropy score threshold.
-   * @returns
-   */
-  export function filterFixesByUserThreshold(fixes: XLNT.ProposedFix[], thresh: number): XLNT.ProposedFix[] {
-    const fixes2: XLNT.ProposedFix[] = [];
-    for (let ind = 0; ind < fixes.length; ind++) {
-      const pf = fixes[ind];
-      let adjusted_score = -pf.score;
-      if (adjusted_score * 100 >= thresh) {
-        fixes2.push(new XLNT.ProposedFix(adjusted_score, pf.rect1, pf.rect2));
-      }
-    }
-    return fixes2;
+    return generate_proposed_fixes(rects);
   }
 
   /**
@@ -682,22 +642,6 @@ export module Analysis {
     return both;
   }
 
-  // /**
-  //  * Remove all duplicate fixes.
-  //  * @param proposed_fixes An array of proposed fixes.
-  //  * @returns An array of proposed fixes with all dupes removed.
-  //  */
-  // export function filterDuplicateFixes(proposed_fixes: XLNT.ProposedFix[]): XLNT.ProposedFix[] {
-  //   const keep = new XLNT.Dictionary<XLNT.ProposedFix>();
-  //   for (const pf of proposed_fixes) {
-  //     const hash = pf.rect1.hash() + pf.rect2.hash();
-  //     if (!keep.contains(hash)) {
-  //       keep.put(hash, pf);
-  //     }
-  //   }
-  //   return keep.values;
-  // }
-
   /**
    * Returns true if the cell flagged for fixing is at a fix
    * boundary.
@@ -721,59 +665,6 @@ export module Analysis {
       (fix.rect2.contains(v) && fix.rect1.contains(v.down)) ||
       (fix.rect2.contains(v) && fix.rect1.contains(v.right))
     );
-  }
-
-  /**
-   * Filters out fixes that are not at a fix boundary (i.e., non-discontiguous).
-   * @param addr Cell to fix
-   * @param fixes An array of proposed fixes.
-   * @returns A filtered array of proposed fixes.
-   */
-  export function filterContiguousFixes(addr: XLNT.Address, fixes: XLNT.ProposedFix[]) {
-    const fixes_to_keep: XLNT.ProposedFix[] = [];
-    for (const fix of fixes) {
-      // if the address of the fix is not at a fix boundary, skip
-      if (atDiscontinuity(addr, fix)) {
-        fixes_to_keep.push(fix);
-      }
-    }
-    return fixes_to_keep;
-  }
-
-  /**
-   * Filters out fixes whose entropy reduction score is 0.
-   * @param score_theshold The minimum entropy score to accept a fix.
-   * @param fixes An array of proposed fixes.
-   * @returns A filtered array of proposed fixes.
-   */
-  export function filterScoreThreshold(score_theshold: number, fixes: XLNT.ProposedFix[]): XLNT.ProposedFix[] {
-    const fixes_to_keep: XLNT.ProposedFix[] = [];
-    for (const fix of fixes) {
-      if (fix.score >= score_theshold) {
-        fixes_to_keep.push(fix);
-      }
-    }
-    return fixes_to_keep;
-  }
-
-  /**
-   * Filters out fixes from the "big" rectangle.
-   * @param addr Cell to fix
-   * @param fixes An array of proposed fixes.
-   * @returns A filtered array of proposed fixes.
-   */
-  export function filterBigFixes(addr: XLNT.Address, fixes: XLNT.ProposedFix[]) {
-    const v = new XLNT.ExceLintVector(addr.column, addr.row, 0);
-    const fixes_to_keep: XLNT.ProposedFix[] = [];
-    for (const fix of fixes) {
-      if (
-        (fix.rect1.size < fix.rect2.size && fix.rect1.contains(v)) ||
-        (fix.rect2.size < fix.rect1.size && fix.rect2.contains(v))
-      ) {
-        fixes_to_keep.push(fix);
-      }
-    }
-    return fixes_to_keep;
   }
 
   /**

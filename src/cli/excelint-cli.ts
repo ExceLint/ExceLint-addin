@@ -7,6 +7,7 @@
 "use strict";
 import { ExcelJSON, WorksheetAnalysis, CSVRow, SummaryCSVRow } from "./exceljson";
 import { Analysis } from "../excelint/core/analysis";
+import { Filters } from "../excelint/core/filters";
 import { Address, Dictionary, ExceLintVector, ProposedFix } from "../excelint/core/ExceLintTypes";
 import { WorkbookAnalysis } from "./exceljson";
 import { Config } from "../excelint/core/config";
@@ -21,7 +22,6 @@ declare var process: NodeJS.Process;
 
 const CELLRESULTS = "cells.csv";
 const SHEETRESULTS = "sheets.csv";
-const SCORE_THRESH = 0.05;
 
 //
 // Process arguments.
@@ -84,8 +84,11 @@ for (const parms of args.parameters) {
       const t = new Timer("full analysis");
       // FOREACH WORKSHEET
       for (let j = 0; j < inp.sheets.length; j++) {
-        // allocate pf dict for this sheet; indexed by address vector
+        // allocate pf dict for this sheet; indexed by target address vector
         const pfsd = new Dictionary<ProposedFix[]>();
+
+        // allocate pf reject dict for this sheet; indexed by target address vector
+        const reasond = new Dictionary<Filters.FilterReason[]>();
 
         // process the given worksheet
         const sheet = inp.sheets[j];
@@ -127,20 +130,45 @@ for (const parms of args.parameters) {
             process.stderr.write("    analyzing " + a1 + "... ");
 
             // get proposed fixes
-            const pfs = Analysis.analyzeLess(addr, fps2);
+            const pfs = Analysis.analyzeLess(fps2);
 
-            // remove fixes that are not at boundary
-            const pfs2 = Analysis.filterContiguousFixes(addr, pfs);
+            // we never care about fixes for cells other than addr
+            const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));
 
-            // remove fixes that have no effect on entropy
-            const pfs3 = Analysis.filterScoreThreshold(SCORE_THRESH, pfs2);
+            // // START OLD: this should match NEW
 
-            // remove fixes from the "big" part of a proposed fix
-            const pfs4 = Analysis.filterBigFixes(addr, pfs3);
+            // // filter fixes by user threshold
+            // const old_pfs3 = Filters.OLDfilterFixesByUserThreshold(pfs2, Config.reportingThreshold);
 
-            // save fixes in dictionary
-            if (pfs4.length > 0) {
-              pfsd.put(key, pfs4);
+            // // remove fixes that are not at boundary
+            // const old_pfs4 = Filters.OLDfilterNonBoundaryFixes(addr, old_pfs3);
+
+            // // remove fixes that produce only small changes in entropy
+            // const old_pfs5 = Filters.OLDfilterLowScore(Filters.SCORE_THRESH, old_pfs4);
+
+            // // remove fixes from the "big" part of a proposed fix
+            // const old_pfs6 = Filters.OLDfilterBigFixes(addr, old_pfs5);
+
+            // // END OLD: this should match NEW
+
+            // // save fixes in dictionary
+            // if (old_pfs6.length > 0) {
+            //   pfsd.put(key, old_pfs6);
+            // }
+
+            // match filters
+            const filtered = Filters.matchFilters(pfs2, addr, Config.reportingThreshold);
+
+            // save ALL proposed fixes in dictionary
+            // we do not filter in the benchmark runner; we just report outputs
+            if (pfs2.length > 0) {
+              pfsd.put(key, pfs2);
+            }
+
+            // for every filtered target fix, put filter reasons in dictionary
+            for (const pf of pfs2) {
+              const reasons = filtered.get(pf);
+              reasond.put(key, reasons);
             }
           } catch (e) {
             console.error(e);
@@ -151,21 +179,21 @@ for (const parms of args.parameters) {
         }
 
         // save sheet analysis to workbook object
-        const sheetOutput = new WorksheetAnalysis(sheet, pfsd);
+        const sheetOutput = new WorksheetAnalysis(sheet, pfsd, reasond);
         output.addSheet(sheetOutput);
 
         // convert workbook analysis to CSV rows and
         // write out as we go
         if (!args.suppressOutput && !args.elapsedTime) {
-          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs);
+          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs, reasond);
           true_positives = rows.reduce((acc, row) => {
-            const is_tp = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
-            const acc2 = acc + (is_tp ? 1 : 0);
+            const is_a_bug = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
+            const acc2 = acc + (row.was_flagged && is_a_bug ? 1 : 0);
             return acc2;
           }, 0);
           false_positives = rows.reduce((acc, row) => {
-            const is_tp = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
-            const acc2 = acc + (is_tp ? 0 : 1);
+            const is_a_bug = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
+            const acc2 = acc + (row.was_flagged && !is_a_bug ? 1 : 0);
             return acc2;
           }, 0);
           false_negatives = theBugs.totalBugs(output.workbook.workbookName, sheet.sheetName) - true_positives;
