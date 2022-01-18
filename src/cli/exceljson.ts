@@ -254,6 +254,10 @@ export class ExcelJSON {
         .map((fix) => fix.score.toFixed(3).toString())
         .join("; ");
 
+      // get fix classifications
+      const key = fix.asKey();
+      const fclasses = classd.get(key);
+
       rows.push(
         new CSVRow(
           workbookName,
@@ -267,7 +271,20 @@ export class ExcelJSON {
           Filters.belowUserThreshold(fix, reasond),
           Filters.notOnBoundary(fix, reasond),
           Filters.hasLowScore(fix, reasond),
-          Filters.isInBigRectangle(fix, reasond)
+          Filters.isInBigRectangle(fix, reasond),
+          fclasses.indexOf(Classification.BinCategory.FatFix) !== -1,
+          fclasses.indexOf(Classification.BinCategory.RecurrentFormula) !== -1,
+          fclasses.indexOf(Classification.BinCategory.OneExtraConstant) !== -1,
+          fclasses.indexOf(Classification.BinCategory.NumberOfConstantsMismatch) !== -1,
+          fclasses.indexOf(Classification.BinCategory.BothConstants) !== -1,
+          fclasses.indexOf(Classification.BinCategory.OneIsAllConstants) !== -1,
+          fclasses.indexOf(Classification.BinCategory.AbsoluteRefMismatch) !== -1,
+          fclasses.indexOf(Classification.BinCategory.OffAxisReference) !== -1,
+          fclasses.indexOf(Classification.BinCategory.R1C1Mismatch) !== -1,
+          fclasses.indexOf(Classification.BinCategory.DifferentReferentCount) !== -1,
+          fclasses.indexOf(Classification.BinCategory.RefersToEmptyCells) !== -1,
+          fclasses.indexOf(Classification.BinCategory.UsesDifferentOperations) !== -1,
+          fclasses.indexOf(Classification.BinCategory.Unclassified) !== -1
         )
       );
     }
@@ -318,7 +335,19 @@ export class CSVRow {
     public readonly notOnBoundary: boolean,
     public readonly lowScore: boolean,
     public readonly inBigRectangle: boolean,
-    public readonly
+    public readonly isFatFix: boolean,
+    public readonly isRecurrentFormula: boolean,
+    public readonly hasOneExtraConstant: boolean,
+    public readonly numberOfConstantsMismatch: boolean,
+    public readonly bothOnlyConstants: boolean,
+    public readonly oneIsAllConstants: boolean,
+    public readonly hasAbsoluteRefMismatch: boolean,
+    public readonly isOffAxisReference: boolean,
+    public readonly isR1C1Mismatch: boolean,
+    public readonly hasDifferenceReferentCount: boolean,
+    public readonly refersToEmptyCells: boolean,
+    public readonly usesDifferentOperations: boolean,
+    public readonly unclassified: boolean
   ) {}
   /* eslint-enable no-unused-vars */
 
@@ -336,6 +365,19 @@ export class CSVRow {
       "notOnBoundary",
       "lowScoreLT" + Filters.SCORE_THRESH,
       "inBigRectangle",
+      "isFatFix",
+      "isRecurrentFormula",
+      "hasOneExtraConstant",
+      "numberOfConstantsMismatch",
+      "bothOnlyConstants",
+      "oneIsAllConstants",
+      "hasAbsoluteRefMismatch",
+      "isOffAxisReference",
+      "isR1C1Mismatch",
+      "hasDifferenceReferentCount",
+      "refersToEmptyCells",
+      "usesDifferentOperations",
+      "unclassified",
     ];
     const hdresc = hdr.map((elem) => CSVRow.q(elem)).join(",");
     return hdresc + "\n";
@@ -374,6 +416,19 @@ export class CSVRow {
       CSVRow.q(this.notOnBoundary.toString()),
       CSVRow.q(this.lowScore.toString()),
       CSVRow.q(this.inBigRectangle.toString()),
+      CSVRow.q(this.isFatFix.toString()),
+      CSVRow.q(this.isRecurrentFormula.toString()),
+      CSVRow.q(this.hasOneExtraConstant.toString()),
+      CSVRow.q(this.numberOfConstantsMismatch.toString()),
+      CSVRow.q(this.bothOnlyConstants.toString()),
+      CSVRow.q(this.oneIsAllConstants.toString()),
+      CSVRow.q(this.hasAbsoluteRefMismatch.toString()),
+      CSVRow.q(this.isOffAxisReference.toString()),
+      CSVRow.q(this.isR1C1Mismatch.toString()),
+      CSVRow.q(this.hasDifferenceReferentCount.toString()),
+      CSVRow.q(this.refersToEmptyCells.toString()),
+      CSVRow.q(this.usesDifferentOperations.toString()),
+      CSVRow.q(this.unclassified.toString()),
     ]);
   }
 }
