@@ -8,7 +8,7 @@
 import { ExcelJSON, WorksheetAnalysis, CSVRow, SummaryCSVRow } from "./exceljson";
 import { Analysis } from "../excelint/core/analysis";
 import { Filters } from "../excelint/core/filters";
-import { Address, Dictionary, ExceLintVector, ProposedFix } from "../excelint/core/ExceLintTypes";
+import { Address, Dictionary, ExceLintVector, ProposedFix, RectInfo } from "../excelint/core/ExceLintTypes";
 import { WorkbookAnalysis } from "./exceljson";
 import { Config } from "../excelint/core/config";
 import { CLIConfig, process_arguments } from "./args";
@@ -16,6 +16,7 @@ import { AnnotationData } from "./bugs";
 import { Timer } from "../excelint/core/timer";
 import { RectangleUtils } from "../excelint/core/rectangleutils";
 import { None, Some } from "../excelint/core/option";
+import { Classification } from "../excelint/core/classification";
 
 declare var console: Console;
 declare var process: NodeJS.Process;
@@ -90,6 +91,9 @@ for (const parms of args.parameters) {
         // allocate pf reject dict for this sheet; indexed by target address vector
         const reasond = new Dictionary<Filters.FilterReason[]>();
 
+        // allocate pf classification for for this sheet; indexed by target address vector
+        const classd = new Dictionary<Classification.BinCategory[]>();
+
         // process the given worksheet
         const sheet = inp.sheets[j];
         console.warn("  processing sheet " + sheet.sheetName);
@@ -135,27 +139,6 @@ for (const parms of args.parameters) {
             // we never care about fixes for cells other than addr
             const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));
 
-            // // START OLD: this should match NEW
-
-            // // filter fixes by user threshold
-            // const old_pfs3 = Filters.OLDfilterFixesByUserThreshold(pfs2, Config.reportingThreshold);
-
-            // // remove fixes that are not at boundary
-            // const old_pfs4 = Filters.OLDfilterNonBoundaryFixes(addr, old_pfs3);
-
-            // // remove fixes that produce only small changes in entropy
-            // const old_pfs5 = Filters.OLDfilterLowScore(Filters.SCORE_THRESH, old_pfs4);
-
-            // // remove fixes from the "big" part of a proposed fix
-            // const old_pfs6 = Filters.OLDfilterBigFixes(addr, old_pfs5);
-
-            // // END OLD: this should match NEW
-
-            // // save fixes in dictionary
-            // if (old_pfs6.length > 0) {
-            //   pfsd.put(key, old_pfs6);
-            // }
-
             // match filters
             const filtered = Filters.matchFilters(pfs2, addr, Config.reportingThreshold);
 
@@ -165,10 +148,22 @@ for (const parms of args.parameters) {
               pfsd.put(key, pfs2);
             }
 
-            // for every filtered target fix, put filter reasons in dictionary
+            // for every target fix, put filter reasons and classifications
+            // in dictionary
             for (const pf of pfs2) {
+              // filter reasons
               const reasons = filtered.get(pf);
               reasond.put(key, reasons);
+
+              // classifications
+              const is_vert: boolean = Analysis.fixIsVertical(pf);
+              const rect_info = pf.rectangles.map((r) => {
+                const fkey = r.upperleft.asKey();
+                const f = formulas.get(fkey);
+                return new RectInfo(r, f, sheet.sheetName);
+              });
+              const classes = Classification.classifyFixes(pf, is_vert, rect_info);
+              classd.put(key, classes);
             }
           } catch (e) {
             console.error(e);
@@ -185,7 +180,7 @@ for (const parms of args.parameters) {
         // convert workbook analysis to CSV rows and
         // write out as we go
         if (!args.suppressOutput && !args.elapsedTime) {
-          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs, reasond);
+          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs, reasond, classd);
           true_positives = rows.reduce((acc, row) => {
             const is_a_bug = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
             const acc2 = acc + (row.was_flagged && is_a_bug ? 1 : 0);

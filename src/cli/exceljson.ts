@@ -12,6 +12,7 @@ import { Paraformula } from "../excelint/paraformula/src/paraformula";
 import { appendFileSync, writeFileSync } from "fs";
 import { Option } from "../excelint/core/option";
 import { Filters } from "../excelint/core/filters";
+import { Classification } from "../excelint/core/classification";
 
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
@@ -237,7 +238,8 @@ export class ExcelJSON {
     workbookName: string,
     wsa: WorksheetAnalysis,
     annotations: AnnotationData,
-    reasond: Dictionary<Filters.FilterReason[]>
+    reasond: Dictionary<Filters.FilterReason[]>,
+    classd: Dictionary<Classification.BinCategory[]>
   ): CSVRow[] {
     const rows: CSVRow[] = [];
 
@@ -315,7 +317,8 @@ export class CSVRow {
     public readonly belowUserThreshold: boolean,
     public readonly notOnBoundary: boolean,
     public readonly lowScore: boolean,
-    public readonly inBigRectangle: boolean
+    public readonly inBigRectangle: boolean,
+    public readonly
   ) {}
   /* eslint-enable no-unused-vars */
 
