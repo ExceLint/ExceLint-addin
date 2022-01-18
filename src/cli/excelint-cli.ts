@@ -91,8 +91,11 @@ for (const parms of args.parameters) {
         // allocate pf reject dict for this sheet; indexed by target address vector
         const reasond = new Dictionary<Filters.FilterReason[]>();
 
-        // allocate pf classification for for this sheet; indexed by target address vector
+        // allocate pf classification for this sheet; indexed by target address vector
         const classd = new Dictionary<Classification.BinCategory[]>();
+
+        // allocate pf analysis times in microseconds for this sheet; indexec by target address vector
+        const elapsedd = new Dictionary<number>();
 
         // process the given worksheet
         const sheet = inp.sheets[j];
@@ -168,8 +171,13 @@ for (const parms of args.parameters) {
           } catch (e) {
             console.error(e);
             // do nothing for now
+            continue;
           }
           const elapsed_us = t.elapsedTime();
+
+          // save timing information
+          elapsedd.put(key, elapsed_us);
+
           process.stderr.write(elapsed_us.toFixed(1) + " μs\n");
         }
 
@@ -180,7 +188,7 @@ for (const parms of args.parameters) {
         // convert workbook analysis to CSV rows and
         // write out as we go
         if (!args.suppressOutput && !args.elapsedTime) {
-          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs, reasond, classd);
+          const rows = ExcelJSON.CSV(output.workbook.workbookName, sheetOutput, theBugs, reasond, classd, elapsedd);
           true_positives = rows.reduce((acc, row) => {
             const is_a_bug = theBugs.isBug(output.workbook.workbookName, sheet.sheetName, row.flag_vector);
             const acc2 = acc + (row.was_flagged && is_a_bug ? 1 : 0);

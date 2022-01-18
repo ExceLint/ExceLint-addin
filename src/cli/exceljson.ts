@@ -14,6 +14,9 @@ import { Option } from "../excelint/core/option";
 import { Filters } from "../excelint/core/filters";
 import { Classification } from "../excelint/core/classification";
 
+// for debugging
+declare var console: Console;
+
 export enum Selections {
   // eslint-disable-next-line no-unused-vars
   FORMULAS,
@@ -239,7 +242,8 @@ export class ExcelJSON {
     wsa: WorksheetAnalysis,
     annotations: AnnotationData,
     reasond: Dictionary<Filters.FilterReason[]>,
-    classd: Dictionary<Classification.BinCategory[]>
+    classd: Dictionary<Classification.BinCategory[]>,
+    elapsedd: Dictionary<number>
   ): CSVRow[] {
     const rows: CSVRow[] = [];
 
@@ -256,6 +260,12 @@ export class ExcelJSON {
 
       // get fix classifications
       const key = fix.asKey();
+
+      // if an expression is unparseable for some reason, there
+      // will be no classes; in that case, skip it
+      if (!classd.contains(key)) {
+        continue;
+      }
       const fclasses = classd.get(key);
 
       rows.push(
@@ -263,6 +273,7 @@ export class ExcelJSON {
           workbookName,
           wsa.worksheet.sheetName,
           fix,
+          elapsedd.get(key).toFixed(0),
           wsa.wasFlagged(fix),
           wsa.formulaForSheet(fix),
           annotations.isBug(workbookName, wsa.worksheet.sheetName, fix).toString(),
@@ -326,6 +337,7 @@ export class CSVRow {
     public readonly wb: string,
     public readonly ws: string,
     public readonly flag_vector: ExceLintVector,
+    public readonly elapsed_us: string,
     public readonly was_flagged: boolean,
     public readonly formula: string,
     public readonly is_true_positive: string,
@@ -356,6 +368,7 @@ export class CSVRow {
       "workbook",
       "worksheet",
       "address",
+      "elapsed_microsec",
       "was_flagged",
       "formula",
       "true_positive",
@@ -407,6 +420,7 @@ export class CSVRow {
       CSVRow.q(this.wb),
       CSVRow.q(this.ws),
       CSVRow.q(addr),
+      CSVRow.q(this.elapsed_us),
       CSVRow.q(this.was_flagged.toString()),
       CSVRow.q(fmod),
       CSVRow.q(this.is_true_positive.toString()),
