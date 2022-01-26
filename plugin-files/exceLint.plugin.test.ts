@@ -1,19 +1,19 @@
-import { location, x10, core } from '@ms/excel-online-calc';
-import { ExceLintPlugin } from './exceLint.plugin';
+import { location, x10, core } from "@ms/excel-online-calc";
+import { ExceLintPlugin } from "./exceLint.plugin";
 
 const stopDelta = x10.FormulaBarScheduler.defaultPluginResultWindows[x10.RequestKind.functionSuggestion].stopDelta;
 
-describe('Test ExceLint with async grid', () => {
-  it('should find nothing', async () => {
-    const document = location.documentLoc(undefined, 'MyDoc');
+describe("Test ExceLint with async grid", () => {
+  it("should find nothing", async () => {
+    const document = location.documentLoc(undefined, "MyDoc");
     const sheet = location.sheetIndex(document, 0);
-    const sheetName = 'MySheet';
+    const sheetName = "MySheet";
 
     // start scheduler
     const timer = new x10.MockTimerImmediate();
     const scheduler = new x10.FormulaBarScheduler(undefined, timer);
     const messages: core.Optional<core.Optional<string>[]>[] = [];
-    scheduler.subscribe({ handleFunctionSuggestion: msg => messages.push(msg) });
+    scheduler.subscribe({ handleFunctionSuggestion: (msg) => messages.push(msg) });
 
     // create spreadsheet
     const grid = [
@@ -22,7 +22,7 @@ describe('Test ExceLint with async grid', () => {
       [7, 8, 9],
       [10, 11, 12],
       [13, 14, 15],
-      ['=SUM(A1:A5)', '=SUM(B1:B5)', '=SUM(C1:C4)'],
+      ["=SUM(A1:A5)", "=SUM(B1:B5)", "=SUM(C1:C4)"],
     ];
     const asyncGrid = x10.createMockAsyncGrid();
     asyncGrid.setSheet(sheet.index, sheetName, grid);
@@ -36,7 +36,7 @@ describe('Test ExceLint with async grid', () => {
     scheduler.createAndAttachPlugin(ExceLintPlugin);
 
     // "type something in"
-    const content = '=SUM(A1:A5)';
+    const content = "=SUM(A1:A5)";
     scheduler.notify({ content, endOffset: 0, beginOffset: 0, type: x10.MessageType.Insert });
 
     // wait for scheduler to run the plugin
@@ -46,16 +46,16 @@ describe('Test ExceLint with async grid', () => {
     expect(messages).toEqual([[]]);
   });
 
-  it('should suggest a fix for an off-by-one formula', async () => {
-    const document = location.documentLoc(undefined, 'MyDoc');
+  it("should suggest a fix for an off-by-one formula", async () => {
+    const document = location.documentLoc(undefined, "MyDoc");
     const sheet = location.sheetIndex(document, 0);
-    const sheetName = 'MySheet';
+    const sheetName = "MySheet";
 
     // start scheduler
     const timer = new x10.MockTimerImmediate();
     const scheduler = new x10.FormulaBarScheduler(undefined, timer);
     const messages: core.Optional<core.Optional<string>[]>[] = [];
-    scheduler.subscribe({ handleFunctionSuggestion: msg => messages.push(msg) });
+    scheduler.subscribe({ handleFunctionSuggestion: (msg) => messages.push(msg) });
 
     // create spreadsheet
     const grid = [
@@ -64,7 +64,7 @@ describe('Test ExceLint with async grid', () => {
       [7, 8, 9],
       [10, 11, 12],
       [13, 14, 15],
-      ['=SUM(A1:A5)', '=SUM(B1:B5)', '=SUM(C1:C4)'],
+      ["=SUM(A1:A5)", "=SUM(B1:B5)", "=SUM(C1:C4)"],
     ];
     const asyncGrid = x10.createMockAsyncGrid();
     asyncGrid.setSheet(sheet.index, sheetName, grid);
@@ -78,7 +78,7 @@ describe('Test ExceLint with async grid', () => {
     scheduler.createAndAttachPlugin(ExceLintPlugin);
 
     // "type something in"
-    const content = '=SUM(C1:C4)';
+    const content = "=SUM(C1:C4)";
     scheduler.notify({ content, endOffset: 0, beginOffset: 0, type: x10.MessageType.Insert });
 
     // wait for scheduler to run the plugin
@@ -87,6 +87,6 @@ describe('Test ExceLint with async grid', () => {
     // check output
     // TODO: update this test when ExceLint actually can synthesize
     //       replacement formulas.
-    expect(messages).toEqual([['<3,6,0>:<3,6,0> and <1,6,0>:<2,6,0>']]);
+    expect(messages).toEqual([["SUM(C1:C5)"]]);
   });
 });
