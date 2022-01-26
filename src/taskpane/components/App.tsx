@@ -97,7 +97,7 @@ async function doAnalysis(addr: XLNT.Address): Promise<[string[], number]> {
       // get used range
       const usedRange = await App.getCurrentUsedRange(activeSheet, context);
 
-      // get range contents
+      // get cell contents
       const rng = activeSheet.getCell(addr.row - 1, addr.column - 1);
 
       // get formula text from taskpane input
@@ -125,126 +125,12 @@ async function doAnalysis(addr: XLNT.Address): Promise<[string[], number]> {
   return [fixstrs, elapsed];
 }
 
-async function audit(): Promise<[XLNT.Dictionary<string[]>, number]> {
-  const d = new XLNT.Dictionary<string[]>();
-  let total_time = 0;
-
-  await Excel.run(async (context: Excel.RequestContext) => {
-    // get active sheet
-    const activeSheet = context.workbook.worksheets.getActiveWorksheet();
-
-    // get used range
-    const usedRange = await App.getCurrentUsedRange(activeSheet, context);
-
-    // get formulas
-    const formulas = await App.getFormulasFromRange(activeSheet, usedRange, true, context);
-
-    // sheet name
-    const wsname = await App.getWorksheetName();
-
-    for (const key of formulas.keys) {
-      const addrv = XLNT.ExceLintVector.fromKey(key);
-      const addr = new XLNT.Address(wsname, addrv.y, addrv.x);
-      const [fixstrs, elapsed] = await doAnalysis(addr);
-      d.put(key, fixstrs);
-      total_time += elapsed;
-    }
-  });
-
-  return [d, total_time];
-}
-
 /**
  * The class that represents the task pane, including React UI state.
  */
 export default class App extends React.Component<AppProps, AppState> {
   // eslint-disable-next-line no-unused-vars
   private inputListener: (this: HTMLElement) => Promise<void> = async function () {};
-
-  /* eslint-disable no-unused-vars */
-  public auditListener: (this: HTMLElement) => Promise<void> = async function () {
-    // sheet name
-    const wsname = await App.getWorksheetName();
-
-    const [fixes, time] = await audit();
-    if (fixes.size > 0) {
-      const td = {
-        total_μs: time,
-      };
-
-      const fixstrs = fixes.keys.map((k) => {
-        const addrv = XLNT.ExceLintVector.fromKey(k);
-        const addr = new XLNT.Address(wsname, addrv.y, addrv.x);
-        const fixstrs = fixes.get(k);
-        return addr.toA1Ref() + " -> " + fixstrs.join("; ");
-      });
-
-      console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
-
-      // update the UI state
-      // const canRestore = app.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
-      const time_data = new Some(td);
-
-      console.log("audit time: " + time_data);
-      console.log("audit results:\n" + fixstrs);
-
-      // app.setState({
-      //   canRestore: canRestore,
-      //   time_data: time_data,
-      //   // debug: boolean,
-      //   // use_styles: boolean,
-      //   fixes: fixstrs,
-      //   // formula: string
-      // });
-
-      // console.log("updated react state");
-    }
-  };
-
-  public async auditListener3(_e: HTMLElement): Promise<void> {
-    // sheet name
-    const wsname = await App.getWorksheetName();
-
-    const [fixes, time] = await audit();
-    if (fixes.size > 0) {
-      const td = {
-        total_μs: time,
-      };
-
-      const fixstrs = fixes.keys.map((k) => {
-        const addrv = XLNT.ExceLintVector.fromKey(k);
-        const addr = new XLNT.Address(wsname, addrv.y, addrv.x);
-        const fixstrs = fixes.get(k);
-        return addr.toA1Ref() + " -> " + fixstrs.join("; ");
-      });
-
-      console.log("Found fixes:\n" + fixstrs.map((s) => "\t" + s).join("\n"));
-
-      // update the UI state
-      const canRestore = this.DEBUG && document.getElementById("RestoreButton")!.onclick !== null;
-      const time_data = new Some(td);
-
-      this.setState({
-        canRestore: canRestore,
-        time_data: time_data,
-        // debug: boolean,
-        // use_styles: boolean,
-        fixes: fixstrs,
-        // formula: string
-      });
-
-      console.log("updated react state");
-    } else {
-      this.setState({
-        canRestore: false,
-        time_data: None,
-        // debug: boolean,
-        // use_styles: boolean,
-        fixes: [],
-        // formula: string
-      });
-    }
-  }
 
   /**
    * Gets debug state.

@@ -137,7 +137,7 @@ for (const parms of args.parameters) {
             process.stderr.write("    analyzing " + a1 + "... ");
 
             // get proposed fixes
-            const pfs = Analysis.analyzeLess(fps2);
+            const pfs = Analysis.getProposedFixesForRegion(fps2);
 
             // we never care about fixes for cells other than addr
             const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));

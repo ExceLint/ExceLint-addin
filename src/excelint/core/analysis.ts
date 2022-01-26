@@ -18,22 +18,19 @@ export module Analysis {
 
   /**
    * Run analysis.  The given address must correspond to a single cell.
+   * The type signature of this function MUST NOT BE CHANGED as the
+   * X10 plugin relies on this to be a stable interface.
    *
    * @param addr An Excel address.
    * @param formulas All the formulas in the region of interest.
    * @returns An array of proposed fixes.
    */
   export function analyze(addr: XLNT.Address, formulas: XLNT.Dictionary<string>): XLNT.ProposedFix[] {
+    // Uncomment to visualize the given formulas for debugging purposes
     // console.log(visualizeGrid(formulas, addr.worksheet));
-
-    // formula groups
-    // let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
     // styles
     // let styles = new XLNT.Dictionary<string>();
-
-    // // output
-    // let proposed_fixes: XLNT.ProposedFix[] = [];
 
     // get every reference vector set for every formula, indexed by address vector
     const fRefs = relativeFormulaRefs(formulas, addr.worksheet);
@@ -41,20 +38,10 @@ export module Analysis {
     // compute fingerprints for reference vector sets, indexed by address vector
     const fps = fingerprints(fRefs);
 
-    // // decompose into rectangles, indexed by fingerprint
-    // const stepRects = identify_groups(fps);
+    // generate proposed fixes for the region in fps
+    const pfs = getProposedFixesForRegion(fps);
 
-    // // merge these new rectangles with the old ones
-    // rects = mergeRectangleDictionaries(stepRects, rects);
-    // rects = mergeRectangles(rects);
-
-    // // generate proposed fixes for all the new rectanles
-    // const pfs = generate_proposed_fixes(rects);
-
-    // generate proposed fixes for all the new rectanles
-    const pfs = analyzeLess(fps);
-
-    // we never care about fixes for cells other than addr
+    // remove any generated fix not localized to the given address
     const pfs2 = pfs.filter((pf) => pf.includesCellAt(addr));
 
     // match filters
@@ -72,7 +59,7 @@ export module Analysis {
    * @param fps A map from ExceLint address vectors to fingerprints.
    * @returns A dictionary indexed by fingerprint value.
    */
-  export function findGroups(fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.Dictionary<XLNT.Rectangle[]> {
+  export function generate_rectangles(fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.Dictionary<XLNT.Rectangle[]> {
     // formula groups
     let rects = new XLNT.Dictionary<XLNT.Rectangle[]>();
 
@@ -87,13 +74,14 @@ export module Analysis {
   }
 
   /**
-   * Run analysis.  The given address must correspond to a single cell.
+   * Generate proposed fixes for the region of interest.
    *
    * @param formulas All the formulas in the region of interest.
    * @returns An array of proposed fixes.
    */
-  export function analyzeLess(fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
-    const rects = findGroups(fps);
+  export function getProposedFixesForRegion(fps: XLNT.Dictionary<XLNT.Fingerprint>): XLNT.ProposedFix[] {
+    // get rectangles
+    const rects = generate_rectangles(fps);
 
     // generate proposed fixes for all the new rectanles
     return generate_proposed_fixes(rects);
