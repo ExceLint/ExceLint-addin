@@ -32,6 +32,11 @@ Consequently, ExceLint can be run either as an OfficeJS plugin or installed into
    ```
    $ npm run dev-server
    ```
+   If this is your first time using an OfficeJS plugin, you may be prompted to install a CA certificate like so.  This is to be expected:
+   ```
+   Installing CA certificate "Developer CA for Microsoft Office Add-ins"...
+   Password:
+   ```
 1. Finally, in another terminal window, start Excel, sideloading the plugin.
    ```
    $ npm run start
