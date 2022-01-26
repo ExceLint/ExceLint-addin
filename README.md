@@ -145,6 +145,10 @@ This repository includes a sample of spreadsheets taken from the EUSES corpus us
 $ npm run build:cli
 $ npm run cli -- --directory benchmarks/files --annotations benchmarks/annotations-processed.json
 ```
+This program produces two output files:
+
+1. `summary.csv` is a performance summary (e.g., precision and recall) across all sheets in the given `--directory`.
+2. `detailed_results.csv` decribes the actions ExceLint took for every cell in every sheet in the given `--directory`, internal score information, and which filters/heuristics might filter it, etc.
 
 ## TODOs
 
