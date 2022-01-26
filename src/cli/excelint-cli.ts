@@ -21,8 +21,8 @@ import { Classification } from "../excelint/core/classification";
 declare var console: Console;
 declare var process: NodeJS.Process;
 
-const CELLRESULTS = "cells.csv";
-const SHEETRESULTS = "sheets.csv";
+const CELLRESULTS = "detailed_results.csv";
+const SHEETRESULTS = "summary.csv";
 
 //
 // Process arguments.
