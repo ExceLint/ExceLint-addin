@@ -41,7 +41,7 @@ Consequently, ExceLint can be run either as an OfficeJS plugin or installed into
    ```
    $ npm run start
    ```
-1. To activate the plugin once Excel starts, look for the `Show Taskpane` button on the Excel ribbon, and click it.  ExceLint when then appear in a taskpane window.  To trigger an on-cell-change analysis, select a cell and then edit the cell's contents _in the taskpane_.  Editing this way is necessary because OfficeJS does not have an on-cell-change event (whereas X10 does).
+1. To activate the plugin once Excel starts, look for the `Show Taskpane` button on the Excel ribbon, and click it.  ExceLint will then appear in a taskpane window.  To trigger an on-cell-change analysis, select a cell and then edit the cell's contents _in the taskpane_.  Editing this way is necessary because OfficeJS does not have an on-cell-change event (whereas X10 does).
 
 ## 1JS Installation Instructions
 
