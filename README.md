@@ -47,7 +47,7 @@ Consequently, ExceLint can be run either as an OfficeJS plugin or installed into
 
 NOTE: These instructions were last tested with 1JS commit `e27a8070e07d7d37ce49e4b7877144e49d9ab3a1` (Fri May 28 17:34:37 2021 +0000).
 
-1. Copy `excelint` to `1JS\ooui\packages\excel-online-intelligent-formula-autocomplete\src`.
+1. Copy the `excelint` directory to `1JS\ooui\packages\excel-online-intelligent-formula-autocomplete\src`.
 2. Copy `excelint.ts`, `exceLint.plugin.ts`, and `exceLint.plugin.test.ts` from `plugin-files` to `1JS\ooui\packages\excel-online-intelligent-formula-autocomplete\src`.
 3. Find the file `1JS\ooui\packages\excel-online-calc\src\definitions\smartCompletionDefinitions.ts` and change
    ```
