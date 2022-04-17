@@ -27,7 +27,8 @@
     "stop": "office-addin-debugging stop manifest.xml",
     "validate": "office-addin-manifest validate manifest.xml",
     "watch": "webpack --mode development --watch",
-    "cli": "node dist/cli/excelint-cli.js"
+    "cli": "node dist/cli/excelint-cli.js",
+    "test": "npx jest test"
   },
   "dependencies": {
     "@types/node": "^16.9.4",
@@ -80,7 +81,9 @@
     "react-hot-loader": "^4.12.6",
     "source-map-loader": "^0.2.4",
     "style-loader": "^0.23.1",
+    "ts-jest": "^27.1.4",
     "ts-loader": "^6.2.2",
+    "ts-node": "^10.7.0",
     "typescript": "^4.4.3",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12",

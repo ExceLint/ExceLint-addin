@@ -1,5 +1,5 @@
-import * as XLNT from "../core/ExceLintTypes";
-import { Analysis } from "../core/analysis";
+import * as XLNT from "../excelint/core/ExceLintTypes";
+import { Analysis } from "../excelint/core/analysis";
 
 describe("Analysis.relativeFormulaRefs", () => {
   it("should correctly extract range refs", () => {
