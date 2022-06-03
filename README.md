@@ -71,6 +71,7 @@ First, run the following commands to build and start the local ExceLint service 
 ```
 git clone https://github.com/plasma-umass/ExceLint-addin
 cd ExceLint-addin
+export NODE_OPTIONS=--no-experimental-fetch
 npm install
 npm run start-local
 ```
