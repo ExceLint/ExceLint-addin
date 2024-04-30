@@ -59,10 +59,12 @@ OOPSLA.
 ## Development
 
 The ExceLint addin is written entirely in TypeScript. It is already set up to be hostable locally.
+_Note:_ See also the **Running in Docker** secton below.
 
 ### Requirements
 
 To run ExceLint locally, you will first need to install [Node](https://nodejs.org/en/) and [Git](https://git-scm.com/downloads).
+This version works successfully with Node 16.4.0.
 
 ### Running the ExceLint service locally
 
@@ -86,7 +88,6 @@ file `manifest-localhost.xml`. If everything works as planned, you should
 see an icon for ExceLint on the Home ribbon. Click on it and it should open
 the task pane on the right-hand side of the window.
 
-
 ## Acknowledgements
 
 This material is based upon work supported by the National Science
@@ -94,3 +95,54 @@ Foundation under Grant No. CCF-1617892. Any opinions, findings, and
 conclusions or recommendations expressed in this material are those
 of the author(s) and do not necessarily reflect the views of the National
 Science Foundation.
+
+## Running in Docker
+
+The _Dockerfile_ in this repo permits testing/use of ExceLint locally without
+installing a number of software packages that may or may not conflict
+with other installations on your computer.
+In addition, the Dockerfile "locks" the software tools to known-good versions
+so that all collaborators are working with the same configuration.
+
+- To **install** Docker on your computer, use any of the guides on the internet.
+This one-time task lets you run any Docker container on your system.
+
+- To **build** the Docker `excelint-addin-local` container,
+run the commands below.
+
+    ```bash
+    cd <directory-for-ExceLint>
+    docker build -t excelint-addin-local .
+    ```
+
+- To **run** the container, run the command below.
+It starts the container, then starts the `webpack serve` process.
+
+    ```bash
+    docker run -p 3000:3000 --rm excelint-addin-local
+    ```
+
+- To **test,** browse to
+[https://0.0.0.0:3000/index.html](https://0.0.0.0:3000/index.html).
+You should see an ExceLint logo and a (perpetual) "Initializing" spinner.
+
+- To **exit** the container, simply type ^C (Ctl-C).
+
+_Note:_ It takes a minute or so for the container to be ready to respond.
+Wait ~60 seconds until you see the "Compiled with warnings" message.
+
+_Note:_ Your browser may display a "self-signed certificate"
+warning when you first connect. This is expected.
+
+## Using ExceLint add-in with Excel
+
+To use this container with the ExceLint add-in:
+
+1. Install the ExceLint addin using the
+[instructions in the ExceLint github repo](https://github.com/ExceLint/ExceLint-addin#installation)
+2. You must install the _manifest-localhost.xml_ file on your computer.
+3. Run the `excelint-addin-local` container as described above.
+4. Click the "Add-ins" button in Excel to install the ExceLint add-in.
+5. When installing the ExceLint add-in into Excel, you may see
+"Add-in Error" explaining that there is a self-signed certificate.
+Look for a means to "Accept the certificate".
