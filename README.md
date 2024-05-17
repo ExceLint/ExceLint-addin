@@ -22,11 +22,12 @@ Research).
 ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
 You need to install the file `manifest.xml` following the appropriate instructions for each platform:
 
-* Windows: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins
-* on-line: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing
-* Mac: https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac
+* **Windows:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins)
+* **On-line:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing)
+* **Mac:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac)
 
-
+*Note:* If you are hosting ExceLint locally (for further development), you need to install `manifest-localhost.xml` instead.
+ 
 ## Source code
 
 Source code for the add-in may be found [at its GitHub
@@ -50,7 +51,7 @@ requests](https://github.com/plasma-umass/ExceLint-addin/issues/new?assignees=db
 The following technical paper describes how ExceLint works and includes
 an extensive empirical evaluation: [*ExceLint: Automatically Finding
 Spreadsheet Formula
-Errors*](https://github.com/ExceLint/ExceLint/blob/master/ExceLint-OOPSLA2018.pdf),
+Errors*](https://github.com/ExceLint/ExceLint-addin/blob/master/docs/ExceLint-OOPSLA2018.pdf),
 Daniel W. Barowy (Williams College), Emery D. Berger (University of
 Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In
 *Proceedings of the ACM on Programming Languages*, Volume 2, Number
@@ -107,7 +108,7 @@ so that all collaborators are working with the same configuration.
 - To **install** Docker on your computer, use any of the guides on the internet.
 This one-time task lets you run any Docker container on your system.
 
-- To **build** the Docker `excelint-addin-local` container,
+- To **build** the Docker container named `excelint-addin-local`
 run the commands below.
 
     ```bash
@@ -115,7 +116,7 @@ run the commands below.
     docker build -t excelint-addin-local .
     ```
 
-- To **run** the container, run the command below.
+- To **run** the container, use the command below.
 It starts the container, then starts the `webpack serve` process.
 
     ```bash
@@ -125,6 +126,7 @@ It starts the container, then starts the `webpack serve` process.
 - To **test,** browse to
 [https://0.0.0.0:3000/index.html](https://0.0.0.0:3000/index.html).
 You should see an ExceLint logo and a (perpetual) "Initializing" spinner.
+This should allow Excel to connect to the add-in.
 
 - To **exit** the container, simply type ^C (Ctl-C).
 
