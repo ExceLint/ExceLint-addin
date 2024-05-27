@@ -20,8 +20,8 @@
   <Description DefaultValue="ExceLint is Excellent"/>
 
   <!-- Icon for your add-in. Used on installation screens and the add-ins dialog. -->
-  <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png"/>
+  <IconUrl DefaultValue="https://0.0.0.0:3000/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://0.0.0.0:3000/assets/icon-80.png"/>
 
   <!--If you plan to submit this add-in to the Office Store, uncomment the SupportUrl element below-->
   <SupportUrl DefaultValue="https://github.com/plasma-umass/ExceLint-addin/issues/new/choose" />
@@ -39,7 +39,7 @@
     <Host Name="Workbook" />
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://localhost:3000/index.html" />
+    <SourceLocation DefaultValue="https://0.0.0.0:3000/index.html" />
   </DefaultSettings>
   <!-- End TaskPane Mode integration.  -->
 
@@ -127,14 +127,14 @@
     <!-- You can use resources across hosts and form factors. -->
     <Resources>
       <bt:Images>
-        <bt:Image id="Contoso.tpicon_16x16" DefaultValue="https://localhost:3000/assets/icon-16.png" />
-        <bt:Image id="Contoso.tpicon_32x32" DefaultValue="https://localhost:3000/assets/icon-32.png" />
-        <bt:Image id="Contoso.tpicon_80x80" DefaultValue="https://localhost:3000/assets/icon-80.png" />
+        <bt:Image id="Contoso.tpicon_16x16" DefaultValue="https://0.0.0.0:3000/assets/icon-16.png" />
+        <bt:Image id="Contoso.tpicon_32x32" DefaultValue="https://0.0.0.0:3000/assets/icon-32.png" />
+        <bt:Image id="Contoso.tpicon_80x80" DefaultValue="https://0.0.0.0:3000/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Contoso.Taskpane.Url" DefaultValue="https://localhost:3000/index.html" />
+        <bt:Url id="Contoso.Taskpane.Url" DefaultValue="https://0.0.0.0:3000/index.html" />
         <bt:Url id="Contoso.GetStarted.LearnMoreUrl" DefaultValue="https://go.microsoft.com/fwlink/?LinkId=276812" />
-        <bt:Url id="Contoso.DesktopFunctionFile.Url" DefaultValue="https://localhost:3000/function-file/function-file.html" />
+        <bt:Url id="Contoso.DesktopFunctionFile.Url" DefaultValue="https://0.0.0.0:3000/function-file/function-file.html" />
       </bt:Urls>
       <!-- ShortStrings max characters==125. -->
       <bt:ShortStrings>
