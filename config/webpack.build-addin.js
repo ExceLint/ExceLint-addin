@@ -13,7 +13,8 @@ module.exports = async (env, options) => {
 
     output: {
      filename: '[name].bundle.js',
-     path: path.resolve(__dirname, '../addin-dist')
+     path: path.resolve(__dirname, '../addin-dist'),
+     publicPath: './'
       },
     plugins: [
         new webpack.HotModuleReplacementPlugin()
