@@ -18,6 +18,20 @@ _config/webpack.common.js_) to bundle all the files to the destination.
 3. Wait a moment while Github Pages processes the files.
 4. Ensure the _manifest.xml_ file points to the proper URL for the Github Pages.
 
+
+### Testing before and after deployment
+
+After building the _addin-dist_ directory, you can test the local file by:
+
+```
+cd <ExceLint directory>
+npx http-server addin-dist # opens port 8080
+```
+ and browse to [localhost:8080](localhost:8080).
+ You should see the ExceLint logo and a perpetual spinner.
+ 
+ **After deploying to Github Pages:** Browse to the Github url
+
 ## Development on a local machine
 
 The ExceLint addin is written entirely in TypeScript.
