@@ -29,7 +29,7 @@
     "autoprefixer": "^10.1.0",
     "chokidar": "^3.4.3",
     "core-js": "^3.8.1",
-    "crypto-js": "^4.0.0",
+    "crypto-js": "^4.2.0",
     "css-loader": "^5.0.1",
     "csv-parser": "^3.0.0",
     "debug": "^4.3.1",
