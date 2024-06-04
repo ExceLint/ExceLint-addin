@@ -30,7 +30,11 @@ OOPSLA.
 ## Installing ExceLint Add-in on your computer
 
 ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
-You need to install the file `manifest.xml` following the appropriate instructions for each platform:
+You need to install the file `manifest.xml` following the appropriate instructions for each platform.
+
+First, download [`manifest.xml`](https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml).
+
+Next follow the specific instructions:
 
 * **Windows:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins)
 * **On-line:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing)
