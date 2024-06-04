@@ -11,6 +11,7 @@
     "start-local": "webpack serve --inline --host localhost --port 3000 --config config/webpack.dev-local.js --progress",
     "sideload": "office-toolbox sideload -m manifest.xml -a Excel",
     "build": "shx rm -rf src/components/ExceLint-core && git clone https://github.com/ExceLint/ExceLint-core src/components/ExceLint-core && npm run clean && webpack --mode production --config config/webpack.prod.js --progress",
+    "build-addin": "webpack --config config/webpack.build-addin.js --progress",
     "validate": "office-toolbox validate -m manifest.xml",
     "run-in-docker": "node_modules/.bin/webpack serve --inline --host 0.0.0.0 --port 3000 --config config/webpack.dev-local.js"
   },
