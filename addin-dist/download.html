@@ -6,9 +6,15 @@
     <title>Download</title>
 </head>
 <body>
-    <a id="download-link" href="https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml" download="manifest.xml">Download manifest.xml</a>
     <script>
-        document.getElementById('download-link').click();
+      const downloadUrl = 'https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml';
+        const fileName = 'manifest.xml';
+        const anchor = document.createElement('a');
+        anchor.href = downloadUrl;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
     </script>
 </body>
 </html>
