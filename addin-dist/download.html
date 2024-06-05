@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download</title>
+    <title>Download manifest.xml</title>
 </head>
 <body>
+    <p>If the download doesn't start automatically, <a id="download-link" href="https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml" download="manifest.xml">click here to download</a>.</p>
     <script>
-      const downloadUrl = 'https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml';
-        const fileName = 'manifest.xml';
-        const anchor = document.createElement('a');
-        anchor.href = downloadUrl;
-        anchor.download = fileName;
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
+        window.onload = function() {
+            const downloadLink = document.getElementById('download-link');
+            downloadLink.click();
+        };
     </script>
 </body>
 </html>
