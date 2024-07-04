@@ -10,6 +10,22 @@ Microsoft Research), and [Ben
 Zorn](https://www.microsoft.com/en-us/research/people/zorn/) (Microsoft
 Research).
 
+## Installing ExceLint Add-in on your computer
+
+ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
+You need to install the file `manifest.xml` following the appropriate instructions for each platform.
+
+First, <a href="https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml" download>download `manifest.xml`.</a>
+
+Next, follow the specific instructions for your platform:
+
+* **Windows:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins)
+* **On-line:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing)
+* **Mac:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac)
+
+*Note:* If you are hosting ExceLint locally (for further development), you need to install `manifest-localhost.xml` instead.
+ 
+
 ## Talks on ExceLint
 
 * [ExceLint - Automatically Finding Spreadsheet Formula Errors](https://www.youtube.com/watch?v=rEwUA0h2dsw), OOPSLA 2018 conference talk by Dan Barowy
@@ -27,21 +43,6 @@ Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In
 *Proceedings of the ACM on Programming Languages*, Volume 2, Number
 OOPSLA.
 
-## Installing ExceLint Add-in on your computer
-
-ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
-You need to install the file `manifest.xml` following the appropriate instructions for each platform.
-
-First, [download `manifest.xml`](https://excelint.github.io/ExceLint-addin/download.html)
-
-Next, follow the specific instructions for your platform:
-
-* **Windows:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/create-a-network-shared-folder-catalog-for-task-pane-and-content-add-ins)
-* **On-line:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing)
-* **Mac:** [https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac](https://docs.microsoft.com/en-us/office/dev/add-ins/testing/sideload-an-office-add-in-on-ipad-and-mac#sideload-an-add-in-in-office-on-mac)
-
-*Note:* If you are hosting ExceLint locally (for further development), you need to install `manifest-localhost.xml` instead.
- 
 ## Privacy
 
 The ExceLint add-in does not collect personally identifiable
