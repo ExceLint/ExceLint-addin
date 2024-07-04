@@ -15,7 +15,7 @@ Research).
 ExceLint works as an add-in for all modern versions of Excel, including Mac, Windows, and online.
 You need to install the file `manifest.xml` following the appropriate instructions for each platform.
 
-First, <a href="https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml" download="manifest.xml">download `manifest.xml`.</a>
+First, right-click on the following link and select "Save link as...": <a href="https://raw.githubusercontent.com/ExceLint/ExceLint-addin/master/manifest.xml" download="manifest.xml">`manifest.xml`.</a>
 
 Next, follow the specific instructions for your platform:
 
